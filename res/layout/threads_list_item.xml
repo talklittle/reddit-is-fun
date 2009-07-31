@@ -1,0 +1,102 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+/*
+ * reddit is fun
+ *
+ * by talklittle
+ */
+-->
+
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="fill_parent"
+    android:layout_height="?android:attr/listPreferredItemHeight"
+    android:paddingLeft="14dip"
+    android:paddingRight="5dip"
+>
+
+<!-- Left side -->
+    <ImageView android:id="@+id/thumbnail"
+        android:layout_width="32dip"
+        android:layout_height="32dip"
+        android:layout_alignParentLeft="true"
+        android:layout_marginRight="5dip"
+        android:layout_centerVertical="true"
+
+        android:gravity="center"
+        android:scaleType="centerInside"
+    />
+
+<!-- Bottom row -->
+    <TextView android:id="@+id/numComments"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_toRightOf="@id/thumbnail"
+        android:layout_alignParentBottom="true"
+        android:layout_marginBottom="8dip"
+        android:layout_marginTop="-8dip"
+
+        android:singleLine="true"
+        android:ellipsize="marquee"
+        android:textAppearance="?android:attr/textAppearanceSmall"
+        android:textStyle="bold"
+    />
+
+    <TextView android:id="@+id/submissionTime"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginLeft="5dip"
+        android:layout_toRightOf="@id/numComments"
+        android:layout_alignBaseline="@id/numComments"
+        android:layout_toLeftOf="@id/submitter"
+        android:layout_alignWithParentIfMissing="true"
+
+        android:singleLine="true"
+        android:ellipsize="marquee"
+        android:textAppearance="?android:attr/textAppearanceSmall"
+    />
+    
+    <TextView android:id="@+id/submitter"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginLeft="5dip"
+        android:layout_toRightOf="@id/submissionTime"
+        android:layout_alignBaseline="@id/numComments"
+        android:layout_alignWithParentIfMissing="true"
+
+        android:singleLine="true"
+        android:ellipsize="marquee"
+        android:textAppearance="?android:attr/textAppearanceSmall"
+    />
+
+<!-- Top row -->
+    <TextView android:id="@+id/title"
+        android:layout_width="0dip"
+        android:layout_height="0dip"
+        android:layout_above="@id/numComments"
+        android:layout_alignWithParentIfMissing="true"
+        android:layout_alignParentTop="true"
+        android:layout_marginBottom="1dip"
+
+        android:gravity="center_vertical|left"
+        android:textAppearance="?android:attr/textAppearanceLarge"
+    />
+        <!-- snipped from title...
+        android:singleLine="true"
+        android:ellipsize="marquee"
+        -->
+        
+    <TextView android:id="@+id/linkDomain"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginLeft="5dip"
+        android:layout_toRightOf="@id/title"
+        android:layout_alignBaseline="@id/title"
+        android:layout_alignParentTop="true"
+        android:layout_alignWithParentIfMissing="true"
+
+        android:singleLine="true"
+        android:ellipsize="marquee"
+        android:textAppearance="?android:attr/textAppearanceSmall"
+    />
+
+</RelativeLayout>
