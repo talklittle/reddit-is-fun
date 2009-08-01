@@ -7,8 +7,8 @@ import java.lang.ref.WeakReference;
 import java.net.URL;
 import java.net.URLConnection;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
-import java.util.Locale;
 
 import org.codehaus.jackson.JsonFactory;
 import org.codehaus.jackson.JsonParseException;
@@ -17,34 +17,25 @@ import org.codehaus.jackson.JsonToken;
 
 import android.app.Activity;
 import android.app.ListActivity;
-import android.app.SearchManager;
 import android.content.AsyncQueryHandler;
 import android.content.Context;
 import android.content.Intent;
-import android.database.CharArrayBuffer;
-import android.database.Cursor;
 import android.graphics.Bitmap;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Parcelable;
-import android.provider.Contacts.People;
-import android.text.TextUtils;
 import android.util.SparseArray;
-import android.view.Menu;
-import android.view.MenuItem;
+import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.View.OnClickListener;
-import android.widget.AlphabetIndexer;
+import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.EditText;
-import android.widget.Filter;
-import android.widget.ImageView;
 import android.widget.ListView;
-import android.widget.ResourceCursorAdapter;
-import android.widget.SectionIndexer;
 import android.widget.TextView;
+import android.widget.TwoLineListItem;
 
 /**
  * Class representing a Subreddit, i.e., a Thread List.
@@ -76,26 +67,6 @@ public final class RedditIsFun extends ListActivity
     private ThreadsWorker mWorker;
 //    /** Take this many chars from the front of the description. */
 //    public static final int SNIPPET_LENGTH = 90;
-    
-//    static final String[] THREADS_PROJECTION = new String[] {
-//        ThreadInfo.ID, // 0
-//        ThreadInfo.TITLE, // 1
-//        ThreadInfo.SCORE, // 2
-//        ThreadInfo.DOMAIN, // 3
-//        ThreadInfo.AUTHOR, // 4
-//        ThreadInfo.CREATED, // 5
-//        ThreadInfo.NUM_COMMENTS, // 6
-//        SORT_STRING, // 7
-//    };
-    
-    static final int ID_COLUMN_INDEX = 0;
-    static final int TITLE_COLUMN_INDEX = 1;
-    static final int LINKDOMAIN_COLUMN_INDEX = 2;
-    static final int SUBMITTER_COLUMN_INDEX = 3;
-    static final int SUBMISSIONTIME_COLUMN_INDEX = 4;
-    static final int NUMCOMMENTS_COLUMN_INDEX = 5;
-    static final int VOTES_COLUMN_INDEX = 6;
-    static final int THUMBNAIL_COLUMN_INDEX = 7;
     
     private static final int QUERY_TOKEN = 42;
     
@@ -131,7 +102,7 @@ public final class RedditIsFun extends ListActivity
 
         // Install our custom RSSListAdapter.
         List<ThreadInfo> items = new ArrayList<ThreadInfo>();
-        mAdapter = new ThreadsListAdapter(this);
+        mAdapter = new ThreadsListAdapter(this, items);
         getListView().setAdapter(mAdapter);
 
         // Get pointers to the UI elements in the threads_list_content layout
@@ -160,57 +131,30 @@ public final class RedditIsFun extends ListActivity
             mActivity = new WeakReference<RedditIsFun>((RedditIsFun) context);
         }
 
-        @Override
-        protected void onQueryComplete(int token, Object cookie, Cursor cursor) {
-            final RedditIsFun activity = mActivity.get();
-            if (activity != null && !activity.isFinishing()) {
-                activity.mAdapter.setLoading(false);
-                activity.getListView().clearTextFilter();                
-                activity.mAdapter.changeCursor(cursor);
-                
-                // Now that the cursor is populated again, it's possible to restore the list state
-                if (activity.mListState != null) {
-                    activity.mList.onRestoreInstanceState(activity.mListState);
-                    if (activity.mListHasFocus) {
-                        activity.mList.requestFocus();
-                    }
-                    activity.mListHasFocus = false;
-                    activity.mListState = null;
-                }
-            } else {
-                cursor.close();
-            }
-        }
+//        @Override
+//        protected void onQueryComplete(int token, Object cookie, Cursor cursor) {
+//            final RedditIsFun activity = mActivity.get();
+//            if (activity != null && !activity.isFinishing()) {
+//                activity.mAdapter.setLoading(false);
+//                activity.getListView().clearTextFilter();                
+//                activity.mAdapter.changeCursor(cursor);
+//                
+//                // Now that the cursor is populated again, it's possible to restore the list state
+//                if (activity.mListState != null) {
+//                    activity.mList.onRestoreInstanceState(activity.mListState);
+//                    if (activity.mListHasFocus) {
+//                        activity.mList.requestFocus();
+//                    }
+//                    activity.mListHasFocus = false;
+//                    activity.mListState = null;
+//                }
+//            } else {
+//                cursor.close();
+//            }
+//        }
     }
 
-    final static class ThreadsListItemCache {
-    	public TextView titleView;
-    	public CharArrayBuffer titleBuffer = new CharArrayBuffer(128);
-    	public TextView linkDomainView;
-    	public CharArrayBuffer linkDomainBuffer = new CharArrayBuffer(128);
-    	public TextView votesView;
-    	public CharArrayBuffer votesBuffer = new CharArrayBuffer(128);
-    	public TextView numCommentsView;
-    	public CharArrayBuffer numCommentsBuffer = new CharArrayBuffer(128);
-    	public TextView submissionTimeView;
-    	public CharArrayBuffer submissionTimeBuffer = new CharArrayBuffer(128);
-    	public TextView submitterView;
-    	public CharArrayBuffer submitterBuffer = new CharArrayBuffer(128);
-    	public ImageView thumbnailView;
-    }
-
-    private Uri getPeopleFilterUri(String filter) {
-        if (!TextUtils.isEmpty(filter)) {
-            return Uri.withAppendedPath(People.CONTENT_FILTER_URI, Uri.encode(filter));
-        } else {
-            return People.CONTENT_URI;
-        }
-    }
-
-    private static String getSortOrder(String[] projectionType) {
-    	return ThreadInfo.ID + " ASC";
-    }
-    
+    // TODO: do something like this when you select a new subreddit through Menu.
     void startQuery() {
         mAdapter.setLoading(true);
         
@@ -218,8 +162,8 @@ public final class RedditIsFun extends ListActivity
         mQueryHandler.cancelOperation(QUERY_TOKEN);
 
         // Kick off the new query
-        mQueryHandler.startQuery(QUERY_TOKEN, null, People.CONTENT_URI, CONTACTS_PROJECTION,
-                null, null, getSortOrder(CONTACTS_PROJECTION));
+//        mQueryHandler.startQuery(QUERY_TOKEN, null, People.CONTENT_URI, CONTACTS_PROJECTION,
+//                null, null, getSortOrder(CONTACTS_PROJECTION));
     }
 
 
@@ -236,46 +180,20 @@ public final class RedditIsFun extends ListActivity
 //        		getSortOrder(CONTACTS_PROJECTION));
 //    }
 
-    private final class ThreadsListAdapter extends ResourceCursorAdapter
-    		implements SectionIndexer {
-    	private SectionIndexer mIndexer;
-    	private String mAlphabet;
-        private Context mContext;
+    private final class ThreadsListAdapter extends ArrayAdapter<ThreadInfo> {
+    	private LayoutInflater mInflater;
         private boolean mLoading = true;
-//        private CharSequence mUnknownNameText;
-//        private CharSequence[] mLocalizedLabels;
-        private boolean mDisplayPhotos = false;
-        private SparseArray<SoftReference<Bitmap>> mBitmapCache = null;
+        private boolean mDisplayThumbnails = false; // TODO: use this
+        private SparseArray<SoftReference<Bitmap>> mBitmapCache = null; // TODO?: use this?
         private int mFrequentSeparatorPos = ListView.INVALID_POSITION;
 
         
-        public ThreadsListAdapter(Context context) {
-            super(context, R.layout.threads_list_item, null, false);
+        public ThreadsListAdapter(Context context, List<ThreadInfo> objects) {
+            super(context, 0, objects);
+            
+            mInflater = (LayoutInflater)context.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
         }
 
-        private SectionIndexer getNewIndexer(Cursor cursor) {
-            return new AlphabetIndexer(cursor, TITLE_COLUMN_INDEX, mAlphabet);
-        }
-        
-        /**
-         * Callback on the UI thread when the content observer on the backing cursor fires.
-         * Instead of calling requery we need to do an async query so that the requery doesn't
-         * block the UI thread for a long time. 
-         */
-        @Override
-        protected void onContentChanged() {
-            CharSequence constraint = getListView().getTextFilter();
-            if (!TextUtils.isEmpty(constraint)) {
-                // Reset the filter state then start an async filter operation
-                Filter filter = getFilter();
-                filter.filter(constraint);
-            } else {
-                // Start an async query
-            	// XXX
-//                startQuery();
-            }
-        }
-        
         public void setLoading(boolean loading) {
             mLoading = loading;
         }
@@ -306,95 +224,40 @@ public final class RedditIsFun extends ListActivity
 
             // Here view may be passed in for re-use, or we make a new one.
             if (convertView == null) {
-            	// XXX Cursor
-                view = newView(mContext, getCursor(), parent);
+                view = mInflater.inflate(R.layout.threads_list_item, null);
             } else {
                 view = convertView;
             }
-
-            bindView(view, mContext, getCursor());
-            return view;
-        }
-        
-        @Override
-        public View newView(Context context, Cursor cursor, ViewGroup parent) {
-            final View view = super.newView(context, cursor, parent);
-
-            ThreadsListItemCache cache = new ThreadsListItemCache();
-            cache.titleView = (TextView) view.findViewById(R.id.title);
-            cache.linkDomainView = (TextView) view.findViewById(R.id.linkDomain);
-            cache.numCommentsView = (TextView) view.findViewById(R.id.numComments);
-            cache.submissionTimeView = (TextView) view.findViewById(R.id.submissionTime);
-            cache.submitterView = (TextView) view.findViewById(R.id.submitter);
-            cache.votesView = (TextView) view.findViewById(R.id.votes);
-            cache.thumbnailView = (ImageView) view.findViewById(R.id.thumbnail);
-
-            return view;
-        }
-
-        @Override
-        public void bindView(View view, Context context, Cursor cursor) {
-            final ThreadsListItemCache cache = (ThreadsListItemCache) view.getTag();
             
-            int size;
-            // Set the TextView fields
-            cursor.copyStringToBuffer(TITLE_COLUMN_INDEX, cache.titleBuffer);
-            size = cache.titleBuffer.sizeCopied;
-            if (size != 0) {
-                cache.titleView.setText(cache.titleBuffer.data, 0, size);
-            } else {
-                // TODO: Error. This shouldn't ever happen.
-            }
-            cursor.copyStringToBuffer(NUMCOMMENTS_COLUMN_INDEX, cache.numCommentsBuffer);
-            size = cache.numCommentsBuffer.sizeCopied;
-            if (size != 0) {
-                cache.numCommentsView.setText(cache.numCommentsBuffer.data, 0, size);
-            } else {
-                // TODO: Error. This shouldn't ever happen.
-            }
-            cursor.copyStringToBuffer(LINKDOMAIN_COLUMN_INDEX, cache.linkDomainBuffer);
-            size = cache.linkDomainBuffer.sizeCopied;
-            if (size != 0) {
-                cache.linkDomainView.setText(cache.linkDomainBuffer.data, 0, size);
-            } else {
-                // TODO: Error. This shouldn't ever happen.
-            }
-            cursor.copyStringToBuffer(SUBMITTER_COLUMN_INDEX, cache.submitterBuffer);
-            size = cache.submitterBuffer.sizeCopied;
-            if (size != 0) {
-                cache.submitterView.setText(cache.submitterBuffer.data, 0, size);
-            } else {
-                // TODO: Error. This shouldn't ever happen.
-            }
-            cursor.copyStringToBuffer(SUBMISSIONTIME_COLUMN_INDEX, cache.submissionTimeBuffer);
-            size = cache.submissionTimeBuffer.sizeCopied;
-            if (size != 0) {
-                cache.submissionTimeView.setText(cache.submissionTimeBuffer.data, 0, size);
-            } else {
-                // TODO: Error. This shouldn't ever happen.
-            }
-            cursor.copyStringToBuffer(VOTES_COLUMN_INDEX, cache.votesBuffer);
-            size = cache.votesBuffer.sizeCopied;
-            if (size != 0) {
-                cache.votesView.setText(cache.votesBuffer.data, 0, size);
-            } else {
-                // TODO: Error. This shouldn't ever happen.
-            }
+            ThreadInfo item = this.getItem(position);
             
-            // TODO?: Reddit thread SEARCH query mode?
-            // Bail out early if using a specific SEARCH query mode, usually for
-            // matching a specific E-mail or phone number. Any contact details
-            // shown would be identical, and columns might not even be present
-            // in the returned cursor.
-//            if (mQueryMode != QUERY_MODE_NONE) {
-//                cache.numberView.setVisibility(View.GONE);
-//                cache.labelView.setVisibility(View.GONE);
-//                cache.presenceView.setVisibility(View.GONE);
-//                return;
-//            }
+            // Set the values of the Views for the ThreadsListItem
             
+            TextView titleView = (TextView) view.findViewById(R.id.title);
+            TextView votesView = (TextView) view.findViewById(R.id.votes);
+            TextView linkDomainView = (TextView) view.findViewById(R.id.linkDomain);
+            TextView numCommentsView = (TextView) view.findViewById(R.id.numComments);
+            TextView submitterView = (TextView) view.findViewById(R.id.submitter);
+            TextView submissionTimeView = (TextView) view.findViewById(R.id.submissionTime);
+            TextView linkView = (TextView) view.findViewById(R.id.link);
+            
+            titleView.setText(item.getTitle());
+            votesView.setText(item.getNumVotes());
+            linkDomainView.setText("("+item.getLinkDomain()+")");
+            numCommentsView.setText(item.getNumComments());
+            submitterView.setText(item.getSubmitter());
+            Date submissionTimeDate = new Date((long) (Double.parseDouble(item.getSubmissionTime()) / 1000));
+            // TODO: convert submission time to a displayable time
+            submissionTimeView.setText("XXX");
+            linkView.setText(item.getLink());
+            
+            // TODO: Thumbnail
+//            view.getThumbnail().
 
             // TODO: If thumbnail, download it and create ImageView
+            // Some thumbnails may be absolute paths instead of URLs:
+            // "/static/noimage.png"
+            
             // Set the proper icon (star or presence or nothing)
 //            ImageView presenceView = cache.presenceView;
 //            if ((mMode & MODE_MASK_NO_PRESENCE) == 0) {
@@ -444,125 +307,10 @@ public final class RedditIsFun extends ListActivity
 //                    cache.photoView.setImageResource(R.drawable.ic_contact_list_picture);
 //                }
 //            }
-        }
 
-        @Override
-        public void changeCursor(Cursor cursor) {
-        	// XXX no starred items for Reddit, yet
-            // Get the split between starred and frequent items, if the mode is strequent
-//            mFrequentSeparatorPos = ListView.INVALID_POSITION;
-//            if (cursor != null && cursor.getCount() > 0 && mMode == MODE_STREQUENT) {
-//                cursor.move(-1);
-//                for (int i = 0; cursor.moveToNext(); i++) {
-//                    int starred = cursor.getInt(STARRED_COLUMN_INDEX);
-//                    if (starred == 0) {
-//                        if (i > 0) {
-//                            // Only add the separator when there are starred items present
-//                            mFrequentSeparatorPos = i;
-//                        }
-//                        break;
-//                    }
-//                }
-//            }
-
-            super.changeCursor(cursor);
-
-            // Update the indexer for the fast scroll widget
-            updateIndexer(cursor);
-
-            // Clear the photo bitmap cache, if there is one
-            if (mBitmapCache != null) {
-                mBitmapCache.clear();
-            }
+            return view;
         }
         
-        private void updateIndexer(Cursor cursor) {
-            if (mIndexer == null) {
-                mIndexer = getNewIndexer(cursor);
-            } else {
-                if (mIndexer instanceof AlphabetIndexer) {
-                    ((AlphabetIndexer)mIndexer).setCursor(cursor);
-                } else {
-                    mIndexer = getNewIndexer(cursor);
-                }
-            }
-        }
-        
-//        /**
-//         * Run the query on a helper thread. Beware that this code does not run
-//         * on the main UI thread!
-//         */
-//        @Override
-//        public Cursor runQueryOnBackgroundThread(CharSequence constraint) {
-//            return doFilter(constraint.toString());
-//        }
-        
-        public Object [] getSections() {
-            return mIndexer.getSections();
-        }
-
-        public int getPositionForSection(int sectionIndex) {
-            if (mIndexer == null) {
-                Cursor cursor = mAdapter.getCursor();
-                if (cursor == null) {
-                    // No cursor, the section doesn't exist so just return 0
-                    return 0;
-                }
-                mIndexer = getNewIndexer(cursor);
-            }
-
-            return mIndexer.getPositionForSection(sectionIndex);
-        }
-
-        public int getSectionForPosition(int position) {
-            // Note: JapaneseContactListIndexer depends on the fact
-            // this method always returns 0. If you change this,
-            // please care it too.
-            return 0;
-        }
-
-        @Override
-        public boolean areAllItemsEnabled() {
-            return true;
-        }
-
-        @Override
-        public boolean isEnabled(int position) {
-            return position != mFrequentSeparatorPos;
-        }
-
-        @Override
-        public int getCount() {
-            if (mFrequentSeparatorPos != ListView.INVALID_POSITION) {
-                return super.getCount() + 1;
-            } else {
-                return super.getCount();
-            }
-        }
-        
-        private int getRealPosition(int pos) {
-            if (mFrequentSeparatorPos == ListView.INVALID_POSITION) {
-                // No separator, identity map
-                return pos;
-            } else if (pos <= mFrequentSeparatorPos) {
-                // Before or at the separator, identity map
-                return pos;
-            } else {
-                // After the separator, remove 1 from the pos to get the real underlying pos
-                return pos - 1;
-            }
-            
-        }
-        
-        @Override
-        public Object getItem(int pos) {
-            return super.getItem(getRealPosition(pos));
-        }
-        
-        @Override
-        public long getItemId(int pos) {
-            return super.getItemId(getRealPosition(pos)); 
-        }
     }
 
 
@@ -572,7 +320,7 @@ public final class RedditIsFun extends ListActivity
      */
     @Override
     protected void onListItemClick(ListView l, View v, int position, long id) {
-        ThreadInfo item = (ThreadInfo) mAdapter.getItem(position);
+        ThreadInfo item = mAdapter.getItem(position);
         
         if ("self.reddit.com".equals(item.getLinkDomain())) {
             // TODO: new Intent aiming using CommentsListActivity specifically.
@@ -594,7 +342,7 @@ public final class RedditIsFun extends ListActivity
     public void resetUI() {
         // Reset the list to be empty.
         List<ThreadInfo> items = new ArrayList<ThreadInfo>();
-        mAdapter = new ThreadsListAdapter(this);
+        mAdapter = new ThreadsListAdapter(this, items);
         getListView().setAdapter(mAdapter);
 
         mStatusText.setText("");
@@ -651,7 +399,7 @@ public final class RedditIsFun extends ListActivity
         }
 
         public void run() {
-            mAdapter..add(mItem);
+            mAdapter.add(mItem);
         }
 
         // NOTE: Performance idea -- would be more efficient to have he option
@@ -702,71 +450,57 @@ public final class RedditIsFun extends ListActivity
         }
     }
 
-    /**
-     * Populates the menu.
-     */
-    @Override
-    public boolean onCreateOptionsMenu(Menu menu) {
-        super.onCreateOptionsMenu(menu);
-
-        // FIXME: login/logout, goto subreddit, 
-        menu.add(0, 0, 0, "Slashdot")
-            .setOnMenuItemClickListener(new RSSMenu("http://rss.slashdot.org/Slashdot/slashdot"));
-
-        menu.add(0, 0, 0, "Google News")
-            .setOnMenuItemClickListener(new RSSMenu("http://news.google.com/?output=rss"));
-        
-        menu.add(0, 0, 0, "News.com")
-            .setOnMenuItemClickListener(new RSSMenu("http://news.com.com/2547-1_3-0-20.xml"));
-
-        menu.add(0, 0, 0, "Bad Url")
-            .setOnMenuItemClickListener(new RSSMenu("http://nifty.stanford.edu:8080"));
-
-        menu.add(0, 0, 0, "Reset")
-                .setOnMenuItemClickListener(new MenuItem.OnMenuItemClickListener() {
-            public boolean onMenuItemClick(MenuItem item) {
-                resetUI();
-                return true;
-            }
-        });
-
-        return true;
-    }
-
-    /**
-     * Puts text in the url text field and gives it focus. Used to make a Runnable
-     * for each menu item. This way, one inner class works for all items vs. an
-     * anonymous inner class for each menu item.
-     */
-    private class RSSMenu implements MenuItem.OnMenuItemClickListener {
-        private CharSequence mUrl;
-
-        RSSMenu(CharSequence url) {
-            mUrl = url;
-        }
-
-        public boolean onMenuItemClick(MenuItem item) {
-            mUrlText.setText(mUrl);
-            mUrlText.requestFocus();
-            return true;
-        }
-    }
-
-    @Override
-    protected void onRestart() {
-        super.onRestart();
-
-        // The cursor was killed off in onStop(), so we need to get a new one here
-        // We do not perform the query if a filter is set on the list because the
-        // filter will cause the query to happen anyway
-        if (TextUtils.isEmpty(getListView().getTextFilter())) {
-        	// XXX
-//            startQuery();
-        } else {
-            // Run the filtered query on the adapter
-            ((ThreadsListAdapter) getListAdapter()).onContentChanged();
-        }
-    }
+    // TODO: Menu.
+    
+//    /**
+//     * Populates the menu.
+//     */
+//    @Override
+//    public boolean onCreateOptionsMenu(Menu menu) {
+//        super.onCreateOptionsMenu(menu);
+//
+//        // FIXME: login/logout, goto subreddit, 
+//        menu.add(0, 0, 0, "Slashdot")
+//            .setOnMenuItemClickListener(new RSSMenu("http://rss.slashdot.org/Slashdot/slashdot"));
+//
+//        menu.add(0, 0, 0, "Google News")
+//            .setOnMenuItemClickListener(new RSSMenu("http://news.google.com/?output=rss"));
+//        
+//        menu.add(0, 0, 0, "News.com")
+//            .setOnMenuItemClickListener(new RSSMenu("http://news.com.com/2547-1_3-0-20.xml"));
+//
+//        menu.add(0, 0, 0, "Bad Url")
+//            .setOnMenuItemClickListener(new RSSMenu("http://nifty.stanford.edu:8080"));
+//
+//        menu.add(0, 0, 0, "Reset")
+//                .setOnMenuItemClickListener(new MenuItem.OnMenuItemClickListener() {
+//            public boolean onMenuItemClick(MenuItem item) {
+//                resetUI();
+//                return true;
+//            }
+//        });
+//
+//        return true;
+//    }
+//
+//    /**
+//     * Puts text in the url text field and gives it focus. Used to make a Runnable
+//     * for each menu item. This way, one inner class works for all items vs. an
+//     * anonymous inner class for each menu item.
+//     */
+//    private class RSSMenu implements MenuItem.OnMenuItemClickListener {
+//        private CharSequence mUrl;
+//
+//        RSSMenu(CharSequence url) {
+//            mUrl = url;
+//        }
+//
+//        public boolean onMenuItemClick(MenuItem item) {
+//            mUrlText.setText(mUrl);
+//            mUrlText.requestFocus();
+//            return true;
+//        }
+//    }
 
     
     /**
@@ -933,7 +667,15 @@ public final class RedditIsFun extends ListActivity
 						String namefield = jp.getCurrentName();
 						jp.nextToken(); // move to value
 						// TODO: validate each field but I'm lazy
-						ti.put(namefield, jp.getText());
+						if ("media".equals(namefield) && jp.getCurrentToken() == JsonToken.START_OBJECT) {
+							while (jp.nextToken() != JsonToken.END_OBJECT) {
+								String mediaNamefield = jp.getCurrentName();
+								jp.nextToken(); // move to value
+								ti.put("_media_"+mediaNamefield, jp.getText());
+							}
+						} else {
+							ti.put(namefield, jp.getText());
+						}
 					}
 					mHandler.post(new ItemAdder(ti));
 				} else if ("kind".equals(fieldname)) {

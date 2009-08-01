@@ -35,12 +35,11 @@
 
     <ListView android:id="@android:id/list"
     	android:layout_width="fill_parent"
-	    android:layout_height="0dip"
+	    android:layout_height="wrap_content"
 	    android:layout_weight="1"
-	    android:drawSelectorOnTop="false"
     />
 
-    <ScrollView android:id="@id/android:empty"
+    <ScrollView android:id="@android:id/empty"
         android:layout_width="fill_parent"
         android:layout_height="fill_parent"
         android:fillViewport="true"
