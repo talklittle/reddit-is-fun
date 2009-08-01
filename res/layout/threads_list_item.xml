@@ -14,12 +14,27 @@
     android:paddingRight="5dip"
 >
 
-<!-- Left side -->
-    <ImageView android:id="@+id/thumbnail"
+<!-- Left section -->
+    <TextView android:id="@+id/votes"
         android:layout_width="32dip"
         android:layout_height="32dip"
         android:layout_alignParentLeft="true"
+        android:layout_centerVertical="true"
+        android:layout_marginBottom="8dip"
+        android:layout_marginTop="-8dip"
         android:layout_marginRight="5dip"
+        android:text="15"
+
+        android:singleLine="true"
+        android:ellipsize="marquee"
+        android:textAppearance="?android:attr/textAppearanceLarge"
+        android:textStyle="bold"
+    />
+    <ImageView android:id="@+id/thumbnail"
+        android:layout_width="0dip"
+        android:layout_height="0dip"
+        android:layout_toRightOf="@id/votes"
+        android:layout_marginLeft="5dip"
         android:layout_centerVertical="true"
 
         android:gravity="center"
@@ -34,6 +49,7 @@
         android:layout_alignParentBottom="true"
         android:layout_marginBottom="8dip"
         android:layout_marginTop="-8dip"
+        android:text="hi"
 
         android:singleLine="true"
         android:ellipsize="marquee"
@@ -49,6 +65,7 @@
         android:layout_alignBaseline="@id/numComments"
         android:layout_toLeftOf="@id/submitter"
         android:layout_alignWithParentIfMissing="true"
+		android:text="hi"
 
         android:singleLine="true"
         android:ellipsize="marquee"
@@ -62,6 +79,7 @@
         android:layout_toRightOf="@id/submissionTime"
         android:layout_alignBaseline="@id/numComments"
         android:layout_alignWithParentIfMissing="true"
+        android:text="hi"
 
         android:singleLine="true"
         android:ellipsize="marquee"
@@ -70,12 +88,14 @@
 
 <!-- Top row -->
     <TextView android:id="@+id/title"
-        android:layout_width="0dip"
-        android:layout_height="0dip"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
         android:layout_above="@id/numComments"
+        android:layout_toRightOf="@id/thumbnail"
         android:layout_alignWithParentIfMissing="true"
         android:layout_alignParentTop="true"
         android:layout_marginBottom="1dip"
+        android:text="hi"
 
         android:gravity="center_vertical|left"
         android:textAppearance="?android:attr/textAppearanceLarge"
@@ -93,6 +113,7 @@
         android:layout_alignBaseline="@id/title"
         android:layout_alignParentTop="true"
         android:layout_alignWithParentIfMissing="true"
+        android:text="hi"
 
         android:singleLine="true"
         android:ellipsize="marquee"
