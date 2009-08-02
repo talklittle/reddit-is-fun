@@ -3,12 +3,22 @@ package com.andrewshu.android.reddit;
 import java.io.IOException;
 import java.io.InputStream;
 import java.lang.ref.SoftReference;
-import java.net.URL;
-import java.net.URLConnection;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
+import org.apache.http.HttpEntity;
+import org.apache.http.HttpException;
+import org.apache.http.HttpResponse;
+import org.apache.http.NameValuePair;
+import org.apache.http.client.HttpClient;
+import org.apache.http.client.entity.UrlEncodedFormEntity;
+import org.apache.http.client.methods.HttpGet;
+import org.apache.http.client.methods.HttpPost;
+import org.apache.http.cookie.Cookie;
+import org.apache.http.impl.client.DefaultHttpClient;
+import org.apache.http.message.BasicNameValuePair;
+import org.apache.http.protocol.HTTP;
 import org.codehaus.jackson.JsonFactory;
 import org.codehaus.jackson.JsonParseException;
 import org.codehaus.jackson.JsonParser;
@@ -24,6 +34,7 @@ import android.net.Uri;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Parcelable;
+import android.util.Log;
 import android.util.SparseArray;
 import android.view.KeyEvent;
 import android.view.LayoutInflater;
@@ -40,7 +51,7 @@ import android.widget.ListView;
 import android.widget.TextView;
 
 /**
- * Class representing a Subreddit, i.e., a Thread List.
+ * Main Activity class representing a Subreddit, i.e., a ThreadsList.
  * 
  * @author TalkLittle
  *
@@ -48,27 +59,21 @@ import android.widget.TextView;
 public final class RedditIsFun extends ListActivity
 		implements View.OnCreateContextMenuListener {
 
+	private static final String TAG = "RedditIsFun";
 	
 	public final String THREAD_KIND = "t3";
 	public final String SERIALIZE_SEPARATOR = "\r";
 	
-    private static final String LIST_STATE_KEY = "liststate";
-    private static final String FOCUS_KEY = "focused";
-    
-	private final JsonFactory jsonFactory = new JsonFactory(); 
+    private final JsonFactory jsonFactory = new JsonFactory(); 
 	
     /** Custom list adapter that fits our rss data into the list. */
     private ThreadsListAdapter mAdapter;
-    /** Url edit text field. */
-    private EditText mUrlText;
-    /** Status text field. */
-    private TextView mStatusText;
     /** Handler used to post runnables to the UI thread. */
     private Handler mHandler;
     /** Currently running background network thread. */
     private ThreadsWorker mWorker;
-//    /** Take this many chars from the front of the description. */
-//    public static final int SNIPPET_LENGTH = 90;
+    
+    private Menu mMenu;
     
     private static final int QUERY_TOKEN = 42;
     
@@ -77,6 +82,7 @@ public final class RedditIsFun extends ListActivity
      */
     private Parcelable mListState = null;
     
+    private CharSequence mSubreddit;
     private Dialog mDialog = null;
     private boolean mLoggedIn;
     
@@ -86,6 +92,7 @@ public final class RedditIsFun extends ListActivity
     static final int DIALOG_LOGIN = 2;
     static final int DIALOG_LOGOUT = 3;
     static final int DIALOG_REFRESH = 4;
+    static final int DIALOG_POST_THREAD = 5;
 	
     // Keys used for data in the onSaveInstanceState() Map.
     public static final String STRINGS_KEY = "strings";
@@ -114,20 +121,12 @@ public final class RedditIsFun extends ListActivity
         mAdapter = new ThreadsListAdapter(this, items);
         getListView().setAdapter(mAdapter);
 
-        // TODO: get rid of these later
-        // Get pointers to the UI elements in the threads_list_content layout
-        mUrlText = (EditText)findViewById(R.id.urltext);
-        mStatusText = (TextView)findViewById(R.id.statustext);
-        
-        Button download = (Button)findViewById(R.id.download);
-        download.setOnClickListener(new OnClickListener() {
-            public void onClick(View v) {
-                doGetThreadsList(mUrlText.getText());
-            }
-        });
-
         // Need one of these to post things back to the UI thread.
         mHandler = new Handler();
+        
+        // Start at /r/reddit.com
+        mSubreddit = "reddit.com";
+        doGetThreadsList(mSubreddit);
         
         // NOTE: this could use the icicle as done in
         // onRestoreInstanceState().
@@ -287,16 +286,18 @@ public final class RedditIsFun extends ListActivity
     protected void onListItemClick(ListView l, View v, int position, long id) {
         ThreadInfo item = mAdapter.getItem(position);
         
-        if ("self.reddit.com".equals(item.getLinkDomain())) {
+        if (("self."+mSubreddit).toLowerCase().equals(item.getLinkDomain().toLowerCase())) {
+        	// It's a self post
             // TODO: new Intent aiming using CommentsListActivity specifically.
         } else {
+        	// It should have a web link associated with it
             // TODO: popup dialog: 2 buttons: LINK, COMMENTS. well, 2 big and 2 small buttons (small: user profile, report post)
         	if ("link".equals("true")) {
 	            // Creates and starts an intent to open the item.link url.
 	            Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse(item.getLink().toString()));
 	            startActivity(intent);
         	} else {
-                // TODO: new Intent aiming using CommentsListActivity specifically.
+                // TODO: new Intent aiming at CommentsListActivity specifically.
         	}
         }
     }
@@ -309,9 +310,6 @@ public final class RedditIsFun extends ListActivity
         List<ThreadInfo> items = new ArrayList<ThreadInfo>();
         mAdapter = new ThreadsListAdapter(this, items);
         getListView().setAdapter(mAdapter);
-
-        mStatusText.setText("");
-        mUrlText.requestFocus();
     }
 
     /**
@@ -342,12 +340,14 @@ public final class RedditIsFun extends ListActivity
      * @param subreddit The name of a subreddit ("reddit.com", "gaming", etc.) 
      */
     private void doGetThreadsList(CharSequence subreddit) {
+    	if (subreddit == null)
+    		subreddit = mSubreddit;
     	ThreadsWorker worker = new ThreadsWorker(subreddit);
     	setCurrentWorker(worker);
     	
     	resetUI();
     	// TODO: nice status screen, like Alien vs. Android had
-    	mStatusText.setText("Downloading\u2026");
+    	Log.d(TAG, "Downloading\u2026");
     	
     	setTitle("reddit is fun: /r/"+subreddit.toString().trim());
     	
@@ -387,34 +387,133 @@ public final class RedditIsFun extends ListActivity
 
         @Override
         public void run() {
-            String status = "";
             try {
-                // Standard code to make an HTTP connection.
-                URL url = new URL("http://www.reddit.com/r/" + mSubreddit.toString().trim() + "/.json");
-                URLConnection connection = url.openConnection();
-                connection.setConnectTimeout(10000);
+            	HttpClient client = new DefaultHttpClient();
+            	HttpGet request = new HttpGet(new StringBuilder("http://www.reddit.com/r/")
+            		.append(mSubreddit.toString().trim())
+            		.append("/.json").toString());
+            	HttpResponse response = client.execute(request);
 
-                connection.connect();
-                InputStream in = connection.getInputStream();
+            	InputStream in = response.getEntity().getContent();
                 
                 parseSubredditJSON(in, mAdapter);
-                status = "done";
             } catch (Exception e) {
-                status = "failed:" + e.getMessage();
-            }
-
-            // Send status to UI (unless a newer worker has started)
-            // To communicate back to the UI from a worker thread,
-            // pass a Runnable to handler.post().
-            final String temp = status;
-            if (isCurrentWorker(this)) {
-                mHandler.post(new Runnable() {
-                    public void run() {
-                        mStatusText.setText(temp);
-                    }
-                });
+                Log.e(TAG, "failed:" + e.getMessage());
             }
         }
+    }
+    
+    public boolean doLogin(CharSequence username, CharSequence password) {
+    	String status = "";
+    	try {
+    		// Construct data
+    		List<NameValuePair> nvps = new ArrayList<NameValuePair>();
+    		nvps.add(new BasicNameValuePair("user", username.toString()));
+    		nvps.add(new BasicNameValuePair("passwd", password.toString()));
+    		
+            DefaultHttpClient client = new DefaultHttpClient();
+            HttpPost httppost = new HttpPost("http://www.reddit.com/post/login");
+            httppost.setEntity(new UrlEncodedFormEntity(nvps, HTTP.UTF_8));
+            
+            // TODO: Loading screen
+            // Perform the HTTP POST request
+        	HttpResponse response = client.execute(httppost);
+        	HttpEntity entity = response.getEntity();
+        	
+        	status = response.getStatusLine().toString();
+        	if (entity != null)
+        		entity.consumeContent();
+        	
+        	List<Cookie> cookies = client.getCookieStore().getCookies();
+        	if (!status.contains("OK"))
+        		throw new HttpException(status);
+        	
+        	if (cookies.isEmpty()) {
+        		Log.d(TAG, "None");
+        	} else {
+        		for (int i = 0; i < cookies.size(); i++) {
+        			Log.d(TAG, "- " + cookies.get(i).toString());
+        		}
+        	}
+        	
+        	// TODO: fast Toast saying you logged in
+            status += "logged in";
+            mLoggedIn = true;
+            mMenu.findItem(DIALOG_LOGIN).setTitle("Logout")
+            	.setOnMenuItemClickListener(new ThreadsListMenu(DIALOG_LOGOUT));
+            doVote("t3_8hryo", -1, "test");
+        } catch (Exception e) {
+            status += "failed:" + e.getMessage();
+            mLoggedIn = false;
+        }
+        Log.d(TAG, status);
+        return mLoggedIn;
+    }
+    
+    public void doLogout() {
+    	String status;
+    	try {
+        	HttpClient client = new DefaultHttpClient();
+        	HttpGet request = new HttpGet("http://www.reddit.com/logout");
+        	HttpResponse response = client.execute(request);
+
+        	status = response.getStatusLine().toString();
+        } catch (Exception e) {
+            status = "failed:" + e.getMessage();
+        }
+        mLoggedIn = false;
+        mMenu.findItem(DIALOG_LOGIN).setTitle("Login")
+        	.setOnMenuItemClickListener(new ThreadsListMenu(DIALOG_LOGIN));;
+        Log.d(TAG, status);
+    }
+    
+    public void doVote(String thingId, int direction, String subreddit) {
+    	String status = "";
+    	if (!mLoggedIn) {
+    		// TODO: Error dialog saying you must be logged in.
+    		return;
+    	}
+    	if (direction < -1 || direction > 1) {
+    		// TODO: Error dialog saying invalid vote direction
+    		return;
+    	}
+    	
+    	try {
+	    	// Construct data
+			List<NameValuePair> nvps = new ArrayList<NameValuePair>();
+			nvps.add(new BasicNameValuePair("id", thingId));
+			nvps.add(new BasicNameValuePair("dir", String.valueOf(direction)));
+			nvps.add(new BasicNameValuePair("r", subreddit));
+			
+	        DefaultHttpClient client = new DefaultHttpClient();
+	        HttpPost httppost = new HttpPost("http://www.reddit.com/api/vote");
+	        httppost.setEntity(new UrlEncodedFormEntity(nvps, HTTP.UTF_8));
+
+            // TODO: Launch this in a background thread
+	        
+	        // Perform the HTTP POST request
+	    	HttpResponse response = client.execute(httppost);
+	    	HttpEntity entity = response.getEntity();
+	    	
+	    	status = response.getStatusLine().toString();
+	    	if (entity != null)
+	    		entity.consumeContent();
+	    	
+	    	List<Cookie> cookies = client.getCookieStore().getCookies();
+	    	if (!status.contains("OK"))
+	    		throw new HttpException(status);
+	    	
+	    	if (cookies.isEmpty()) {
+	    		Log.d(TAG, "None");
+	    	} else {
+	    		for (int i = 0; i < cookies.size(); i++) {
+	    			Log.d(TAG, "- " + cookies.get(i).toString());
+	    		}
+	    	}
+    	} catch (Exception e) {
+            status += "failed:" + e.getMessage();
+    	}
+    	Log.d(TAG, status);
     }
 
     /**
@@ -423,32 +522,28 @@ public final class RedditIsFun extends ListActivity
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
         super.onCreateOptionsMenu(menu);
+        mMenu = menu;
+        
+        menu.add(0, DIALOG_PICK_SUBREDDIT, 0, "Pick subreddit")
+            .setOnMenuItemClickListener(new ThreadsListMenu(DIALOG_PICK_SUBREDDIT));
 
-        menu.add(0, 0, 0, "Pick subreddit")
-            .setOnMenuItemClickListener(new SubredditMenu(DIALOG_PICK_SUBREDDIT));
+        menu.add(0, DIALOG_REDDIT_COM, 0, "reddit.com")
+            .setOnMenuItemClickListener(new ThreadsListMenu(DIALOG_REDDIT_COM));
 
-        menu.add(0, 0, 0, "reddit.com")
-            .setOnMenuItemClickListener(new SubredditMenu(DIALOG_REDDIT_COM));
-
-        menu.add(0, 0, 0, "Refresh")
-        	.setOnMenuItemClickListener(new SubredditMenu(DIALOG_REFRESH));
+        menu.add(0, DIALOG_REFRESH, 0, "Refresh")
+        	.setOnMenuItemClickListener(new ThreadsListMenu(DIALOG_REFRESH));
         
         if (mLoggedIn) {
-        	menu.add(0, 0, 0, "Logout")
-       			.setOnMenuItemClickListener(new SubredditMenu(DIALOG_LOGOUT));
+        	menu.add(0, DIALOG_LOGIN, 0, "Logout")
+       			.setOnMenuItemClickListener(new ThreadsListMenu(DIALOG_LOGOUT));
         } else {
-        	menu.add(0, 0, 0, "Login")
-       			.setOnMenuItemClickListener(new SubredditMenu(DIALOG_LOGIN));
+        	menu.add(0, DIALOG_LOGIN, 0, "Login")
+       			.setOnMenuItemClickListener(new ThreadsListMenu(DIALOG_LOGIN));
         }
         
-        menu.add(0, 0, 0, "Reset")
-        		.setOnMenuItemClickListener(new MenuItem.OnMenuItemClickListener() {
-            public boolean onMenuItemClick(MenuItem item) {
-                resetUI();
-                return true;
-            }
-        });
-
+        menu.add(0, DIALOG_POST_THREAD, 0, "Post Thread")
+        	.setOnMenuItemClickListener(new ThreadsListMenu(DIALOG_POST_THREAD));
+        
         return true;
     }
 
@@ -457,15 +552,33 @@ public final class RedditIsFun extends ListActivity
      * for each menu item. This way, one inner class works for all items vs. an
      * anonymous inner class for each menu item.
      */
-    private class SubredditMenu implements MenuItem.OnMenuItemClickListener {
+    private class ThreadsListMenu implements MenuItem.OnMenuItemClickListener {
         private int mAction;
 
-        SubredditMenu(int action) {
+        ThreadsListMenu(int action) {
             mAction = action;
         }
 
         public boolean onMenuItemClick(MenuItem item) {
-        	showDialog(mAction);
+        	switch (mAction) {
+        	case DIALOG_PICK_SUBREDDIT:
+        	case DIALOG_LOGIN:
+        	case DIALOG_POST_THREAD:
+        		showDialog(mAction);
+        		break;
+        	case DIALOG_REDDIT_COM:
+        		doGetThreadsList("reddit.com");
+        		break;
+        	case DIALOG_LOGOUT:
+        		doLogout();
+        		break;
+        	case DIALOG_REFRESH:
+        		doGetThreadsList(null);
+        		break;
+        	default:
+        		throw new IllegalArgumentException("Unexpected action value "+mAction);
+        	}
+        	
         	return true;
         }
     }
@@ -503,22 +616,62 @@ public final class RedditIsFun extends ListActivity
     		        }
     		    }
     		});
+    		break;
     		
+    	case DIALOG_LOGIN:
+    		mDialog = new Dialog(this);
+    		mDialog.setContentView(R.layout.login_dialog);
+    		mDialog.setTitle("Login to reddit.com");
+    		final EditText loginUsernameInput = (EditText) mDialog.findViewById(R.id.login_username_input);
+    		final EditText loginPasswordInput = (EditText) mDialog.findViewById(R.id.login_password_input);
+    		loginUsernameInput.setOnKeyListener(new OnKeyListener() {
+    			public boolean onKey(View v, int keyCode, KeyEvent event) {
+    		        if ((event.getAction() == KeyEvent.ACTION_DOWN) && (keyCode == KeyEvent.KEYCODE_ENTER)) {
+    		        	loginPasswordInput.requestFocus();
+    		        	return true;
+    		        }
+    		        return false;
+    		    }
+    		});
+    		loginPasswordInput.setOnKeyListener(new OnKeyListener() {
+    			public boolean onKey(View v, int keyCode, KeyEvent event) {
+    		        if ((event.getAction() == KeyEvent.ACTION_DOWN) && (keyCode == KeyEvent.KEYCODE_ENTER)) {
+    		        	doLogin(loginUsernameInput.getText(), loginPasswordInput.getText());
+    		            // Get rid of the Dialog
+    		        	if (mDialog != null) {
+    		        		mDialog.dismiss();
+    		        		mDialog = null;
+    		        	}
+    		        	return true;
+    		        }
+    		        return false;
+    		    }
+    		});
+    		final Button loginButton = (Button) mDialog.findViewById(R.id.login_button);
+    		loginButton.setOnClickListener(new OnClickListener() {
+    			public void onClick(View v) {
+    				doLogin(loginUsernameInput.getText(), loginPasswordInput.getText());
+    		        // Get rid of the Dialog
+    		        if (mDialog != null) {
+    		        	mDialog.dismiss();
+    		        	mDialog = null;
+    		        }
+    		    }
+    		});
     		break;
-//    	case DIALOG_REDDIT_COM:
-//    		
-//    		break;
-//    	case DIALOG_LOGIN:
-//    	
-//    		break;
-//    	case DIALOG_LOGOUT:
-//    		
-//    		break;
-//    	case DIALOG_REFRESH:
-//    		
-//    		break;
+
+    	case DIALOG_POST_THREAD:
+    		// TODO: a scrollable Dialog with Title, URL/Selftext, and subreddit.
+    		// Downvote:
+    		//POSTDATA=id=t3_7smc4&dir=-1&vh=0d4ab0ffd56ad0f66841c15609e9a45aeec6b015&r=test&uh=4z0mevzb8285f1ccdf2f289dce2a87a4e361b7a75b7fbd46c0
+    		// dir in [-1,0,1]
+    		// r is subreddit name
+    		// vh?
+    		// uh? user handle?
+//    		Cookie=reddit_first=%7B%22organic_pos%22%3A%201%2C%20%22firsttime%22%3A%20%22first%22%7D; _last_thing=; talklittle_reddit_counts=; talklittle_last_thing=; talklittle_recentclicks2=t3_96jf1%2Ct3_96pf4%2Ct3_96o76%2Ct3_96nm6%2Ct3_96l6g%2Ct3_7y43n%2Ct3_96f84%2Ct3_8wirs%2Ct3_8ecqd%2Ct3_96f84%2Ct3_8ecqd%2Ct3_96m5x%2Ct3_96o1p%2Ct3_96iwc%2Ct3_96dek%2Ct3_96dgw%2Ct3_96iok%2Ct3_96g6t%2Ct3_96cko%2Ct3_96dg0%2Ct3_96dpa%2Ct3_96gc9%2Ct3_96cdt%2Ct3_96eq9%2Ct3_96daz%2Ct3_95y8r%2Ct3_9682f%2Ct3_962ee%2Ct3_963xl%2Ct3_95vil%2Ct3_967b9%2Ct3_95zwm%2Ct3_96066%2Ct3_9614s%2Ct3_960jn%2Ct3_96140%2Ct3_961xe%2Ct3_95y1a%2Ct3_95zs4%2Ct3_96317%2Ct3_95uv7%2Ct3_963bj%2Ct3_965v7%2Ct3_961k1%2Ct3_962se%2Ct3_961k1%2Ct3_95uyy%2Ct3_95tn0%2Ct3_95uu1%2Ct3_95o82%2Ct3_95sgg%2Ct3_95sxx%2Ct3_95h0l%2Ct3_95kfa%2Ct3_7smc4%2Ct3_8w7js%2Ct3_8zayp%2Ct3_95h98%2Ct3_95il8%2Ct3_95krq%2Ct3_95g3n%2Ct3_95ino%2Ct3_7l0fx%2Ct3_8yvu7%2Ct3_956pf%2Ct3_95bf3%2Ct3_959u9%2Ct3_95c6d%2Ct3_959m8%2Ct3_8wirs%2Ct3_959y2%2Ct3_954yd%2Ct3_9579o%2Ct3_94z4i%2Ct3_94vyc%2Ct3_94zhk%2Ct3_94z5w%2Ct3_95462%2Ct3_9528k%2Ct3_94txt%2Ct3_94yh0%2Ct3_950um%2Ct3_94vzs%2Ct3_94v02%2Ct3_94pf2%2Ct3_94txl%2Ct3_94qj9%2Ct3_94qzm%2Ct3_94so6%2Ct3_94s5p%2Ct3_94ow8%2Ct3_94tww%2Ct3_94q6b%2Ct3_94qr0; _recentclicks2=t3_96lrd%2C; talklittle_test_recentclicks2=t3_96pf4%2Ct3_96nfp%2Ct3_96r6k%2Ct3_96i6j%2Ct3_96otl%2Ct3_96nnt%2Ct3_96ppa%2Ct3_96nvv%2C; talklittle_test_reddit_counts=; talklittle_test_last_thing=;
+//    			reddit_session=5488034%2C2009-08-01T22%3A52%3A43%2Cf6ddf116ab7bc6b53021fa94e1b070eaccbb80d9
     	default:
-    		break;
+    		throw new IllegalArgumentException("Unexpected dialog id "+id);
     	}
     	return mDialog;
     }
@@ -551,10 +704,10 @@ public final class RedditIsFun extends ListActivity
         ArrayList<CharSequence> strings = new ArrayList<CharSequence>();
         for (int i = 0; i < count; i++) {
             ThreadInfo item = mAdapter.getItem(i);
-            for (int j = 0; j < ThreadInfo._KEYS.length; j++) {
-            	if (item.mValues.containsKey(ThreadInfo._KEYS[i])) {
-            		strings.add(ThreadInfo._KEYS[i]);
-            		strings.add(item.mValues.get(ThreadInfo._KEYS[i]));
+            for (int k = 0; k < ThreadInfo._KEYS.length; k++) {
+            	if (item.mValues.containsKey(ThreadInfo._KEYS[k])) {
+            		strings.add(ThreadInfo._KEYS[k]);
+            		strings.add(item.mValues.get(ThreadInfo._KEYS[k]));
             	}
             }
             strings.add(SERIALIZE_SEPARATOR);
@@ -566,14 +719,7 @@ public final class RedditIsFun extends ListActivity
             outState.putInt(SELECTION_KEY, Integer.valueOf(getListView().getSelectedItemPosition()));
         }
 
-        // Save url
-        outState.putString(URL_KEY, mUrlText.getText().toString());
-        
-        // Save status
-        outState.putCharSequence(STATUS_KEY, mStatusText.getText());
     }
-    
-    
 
     /**
      * Called to "thaw" re-animate the app from a previous onSaveInstanceState().
@@ -617,12 +763,6 @@ public final class RedditIsFun extends ListActivity
             // todo: is above right? needed it to work
             getListView().setSelection(state.getInt(SELECTION_KEY));
         }
-        
-        // Restore url
-        mUrlText.setText(state.getCharSequence(URL_KEY));
-        
-        // Restore status
-        mStatusText.setText(state.getCharSequence(STATUS_KEY));
     }
 
 
@@ -682,7 +822,7 @@ public final class RedditIsFun extends ListActivity
 					while (jp.nextToken() != JsonToken.END_OBJECT) {
 						String namefield = jp.getCurrentName();
 						jp.nextToken(); // move to value
-						// TODO: validate each field but I'm lazy
+						// Should validate each field but I'm lazy
 						if ("media".equals(namefield) && jp.getCurrentToken() == JsonToken.START_OBJECT) {
 							while (jp.nextToken() != JsonToken.END_OBJECT) {
 								String mediaNamefield = jp.getCurrentName();

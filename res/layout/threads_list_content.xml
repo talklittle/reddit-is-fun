@@ -12,27 +12,6 @@
         android:layout_height="fill_parent"
         android:orientation="vertical">
 
-	<EditText android:id="@+id/urltext"
-	    android:layout_width="fill_parent"
-	    android:layout_height="wrap_content"
-	    android:textSize="12sp"
-	    android:autoText="false"
-	    android:capitalize="none"
-	    android:text="@string/subreddit_layout_srtext_text" />
-	
-	<Button android:id="@+id/download"
-	    android:layout_width="wrap_content"
-	    android:layout_height="wrap_content"
-		android:text="@string/subreddit_layout_download_text" />
-	
-	<TextView android:id="@+id/statustext"
-	    android:layout_width="fill_parent"
-	    android:layout_height="wrap_content"
-	    android:autoText="false"
-	    android:capitalize="none"
-	    android:textSize="12sp"
-	    android:text="@string/subreddit_layout_statustext_text" />
-
     <ListView android:id="@android:id/list"
     	android:layout_width="fill_parent"
 	    android:layout_height="wrap_content"

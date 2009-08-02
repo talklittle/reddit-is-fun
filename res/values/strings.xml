@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<resources>
+
+    <string name="app_name">reddit is fun</string>
+    
+    <string name="noThreads">This subreddit contains no threads.</string>
+    
+    <string name="pick_subreddit_label">Subreddit name:</string>
+    <string name="pick_subreddit_button">Go</string>
+    
+    <string name="subreddit_layout_srtext_text">Android</string>
+    <string name="subreddit_layout_statustext_text"></string>
+    <string name="subreddit_layout_download_text">Download</string>
+    
+	<string name="login_username_label">Username:</string>
+	<string name="login_password_label">Password:</string>
+	<string name="login_button">Login</string>
+</resources>
