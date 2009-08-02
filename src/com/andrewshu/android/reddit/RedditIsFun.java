@@ -1,9 +1,8 @@
-package talklittle.android.reddit;
+package com.andrewshu.android.reddit;
 
 import java.io.IOException;
 import java.io.InputStream;
 import java.lang.ref.SoftReference;
-import java.lang.ref.WeakReference;
 import java.net.URL;
 import java.net.URLConnection;
 import java.util.ArrayList;
@@ -16,8 +15,8 @@ import org.codehaus.jackson.JsonParser;
 import org.codehaus.jackson.JsonToken;
 
 import android.app.Activity;
+import android.app.Dialog;
 import android.app.ListActivity;
-import android.content.AsyncQueryHandler;
 import android.content.Context;
 import android.content.Intent;
 import android.graphics.Bitmap;
@@ -26,16 +25,19 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.os.Parcelable;
 import android.util.SparseArray;
+import android.view.KeyEvent;
 import android.view.LayoutInflater;
+import android.view.Menu;
+import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.View.OnClickListener;
+import android.view.View.OnKeyListener;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ListView;
 import android.widget.TextView;
-import android.widget.TwoLineListItem;
 
 /**
  * Class representing a Subreddit, i.e., a Thread List.
@@ -70,19 +72,26 @@ public final class RedditIsFun extends ListActivity
     
     private static final int QUERY_TOKEN = 42;
     
-    private QueryHandler mQueryHandler;
-    private String mQuery;
-    private Uri mGroupFilterUri;
-    private Uri mGroupUri;
-    private boolean mJustCreated;
-    private boolean mSyncEnabled;
-
     /**
      * Used to keep track of the scroll state of the list.
      */
     private Parcelable mListState = null;
-    private boolean mListHasFocus;
-
+    
+    private Dialog mDialog = null;
+    private boolean mLoggedIn;
+    
+    // Menu dialog actions
+    static final int DIALOG_PICK_SUBREDDIT = 0;
+    static final int DIALOG_REDDIT_COM = 1;
+    static final int DIALOG_LOGIN = 2;
+    static final int DIALOG_LOGOUT = 3;
+    static final int DIALOG_REFRESH = 4;
+	
+    // Keys used for data in the onSaveInstanceState() Map.
+    public static final String STRINGS_KEY = "strings";
+    public static final String SELECTION_KEY = "selection";
+    public static final String URL_KEY = "url";
+    public static final String STATUS_KEY = "status";
 
 
     /**
@@ -105,6 +114,7 @@ public final class RedditIsFun extends ListActivity
         mAdapter = new ThreadsListAdapter(this, items);
         getListView().setAdapter(mAdapter);
 
+        // TODO: get rid of these later
         // Get pointers to the UI elements in the threads_list_content layout
         mUrlText = (EditText)findViewById(R.id.urltext);
         mStatusText = (TextView)findViewById(R.id.statustext);
@@ -123,62 +133,17 @@ public final class RedditIsFun extends ListActivity
         // onRestoreInstanceState().
     }
 
-    private static final class QueryHandler extends AsyncQueryHandler {
-        private final WeakReference<RedditIsFun> mActivity;
-
-        public QueryHandler(Context context) {
-            super(context.getContentResolver());
-            mActivity = new WeakReference<RedditIsFun>((RedditIsFun) context);
-        }
-
-//        @Override
-//        protected void onQueryComplete(int token, Object cookie, Cursor cursor) {
-//            final RedditIsFun activity = mActivity.get();
-//            if (activity != null && !activity.isFinishing()) {
-//                activity.mAdapter.setLoading(false);
-//                activity.getListView().clearTextFilter();                
-//                activity.mAdapter.changeCursor(cursor);
-//                
-//                // Now that the cursor is populated again, it's possible to restore the list state
-//                if (activity.mListState != null) {
-//                    activity.mList.onRestoreInstanceState(activity.mListState);
-//                    if (activity.mListHasFocus) {
-//                        activity.mList.requestFocus();
-//                    }
-//                    activity.mListHasFocus = false;
-//                    activity.mListState = null;
-//                }
-//            } else {
-//                cursor.close();
-//            }
-//        }
-    }
-
     // TODO: do something like this when you select a new subreddit through Menu.
     void startQuery() {
         mAdapter.setLoading(true);
         
         // Cancel any pending queries
-        mQueryHandler.cancelOperation(QUERY_TOKEN);
+//        mQueryHandler.cancelOperation(QUERY_TOKEN);
 
         // Kick off the new query
 //        mQueryHandler.startQuery(QUERY_TOKEN, null, People.CONTENT_URI, CONTACTS_PROJECTION,
 //                null, null, getSortOrder(CONTACTS_PROJECTION));
     }
-
-
-//    /**
-//     * Called from a background thread to do the filter and return the resulting cursor.
-//     * 
-//     * @param filter the text that was entered to filter on
-//     * @return a cursor with the results of the filter
-//     */
-//    Cursor doFilter(String filter) {
-//        final ContentResolver resolver = getContentResolver();
-//
-//        return resolver.query(getPeopleFilterUri(filter), CONTACTS_PROJECTION, null, null,
-//        		getSortOrder(CONTACTS_PROJECTION));
-//    }
 
     private final class ThreadsListAdapter extends ArrayAdapter<ThreadInfo> {
     	private LayoutInflater mInflater;
@@ -246,8 +211,8 @@ public final class RedditIsFun extends ListActivity
             linkDomainView.setText("("+item.getLinkDomain()+")");
             numCommentsView.setText(item.getNumComments());
             submitterView.setText(item.getSubmitter());
-            Date submissionTimeDate = new Date((long) (Double.parseDouble(item.getSubmissionTime()) / 1000));
             // TODO: convert submission time to a displayable time
+            Date submissionTimeDate = new Date((long) (Double.parseDouble(item.getSubmissionTime()) / 1000));
             submissionTimeView.setText("XXX");
             linkView.setText(item.getLink());
             
@@ -384,6 +349,8 @@ public final class RedditIsFun extends ListActivity
     	// TODO: nice status screen, like Alien vs. Android had
     	mStatusText.setText("Downloading\u2026");
     	
+    	setTitle("reddit is fun: /r/"+subreddit.toString().trim());
+    	
     	worker.start();
     }
 
@@ -423,7 +390,7 @@ public final class RedditIsFun extends ListActivity
             String status = "";
             try {
                 // Standard code to make an HTTP connection.
-                URL url = new URL("http://www.reddit.com/r/" + mSubreddit.toString() + "/.json");
+                URL url = new URL("http://www.reddit.com/r/" + mSubreddit.toString().trim() + "/.json");
                 URLConnection connection = url.openConnection();
                 connection.setConnectTimeout(10000);
 
@@ -450,58 +417,111 @@ public final class RedditIsFun extends ListActivity
         }
     }
 
-    // TODO: Menu.
-    
-//    /**
-//     * Populates the menu.
-//     */
-//    @Override
-//    public boolean onCreateOptionsMenu(Menu menu) {
-//        super.onCreateOptionsMenu(menu);
-//
-//        // FIXME: login/logout, goto subreddit, 
-//        menu.add(0, 0, 0, "Slashdot")
-//            .setOnMenuItemClickListener(new RSSMenu("http://rss.slashdot.org/Slashdot/slashdot"));
-//
-//        menu.add(0, 0, 0, "Google News")
-//            .setOnMenuItemClickListener(new RSSMenu("http://news.google.com/?output=rss"));
-//        
-//        menu.add(0, 0, 0, "News.com")
-//            .setOnMenuItemClickListener(new RSSMenu("http://news.com.com/2547-1_3-0-20.xml"));
-//
-//        menu.add(0, 0, 0, "Bad Url")
-//            .setOnMenuItemClickListener(new RSSMenu("http://nifty.stanford.edu:8080"));
-//
-//        menu.add(0, 0, 0, "Reset")
-//                .setOnMenuItemClickListener(new MenuItem.OnMenuItemClickListener() {
-//            public boolean onMenuItemClick(MenuItem item) {
-//                resetUI();
-//                return true;
-//            }
-//        });
-//
-//        return true;
-//    }
-//
-//    /**
-//     * Puts text in the url text field and gives it focus. Used to make a Runnable
-//     * for each menu item. This way, one inner class works for all items vs. an
-//     * anonymous inner class for each menu item.
-//     */
-//    private class RSSMenu implements MenuItem.OnMenuItemClickListener {
-//        private CharSequence mUrl;
-//
-//        RSSMenu(CharSequence url) {
-//            mUrl = url;
-//        }
-//
-//        public boolean onMenuItemClick(MenuItem item) {
-//            mUrlText.setText(mUrl);
-//            mUrlText.requestFocus();
-//            return true;
-//        }
-//    }
+    /**
+     * Populates the menu.
+     */
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        super.onCreateOptionsMenu(menu);
 
+        menu.add(0, 0, 0, "Pick subreddit")
+            .setOnMenuItemClickListener(new SubredditMenu(DIALOG_PICK_SUBREDDIT));
+
+        menu.add(0, 0, 0, "reddit.com")
+            .setOnMenuItemClickListener(new SubredditMenu(DIALOG_REDDIT_COM));
+
+        menu.add(0, 0, 0, "Refresh")
+        	.setOnMenuItemClickListener(new SubredditMenu(DIALOG_REFRESH));
+        
+        if (mLoggedIn) {
+        	menu.add(0, 0, 0, "Logout")
+       			.setOnMenuItemClickListener(new SubredditMenu(DIALOG_LOGOUT));
+        } else {
+        	menu.add(0, 0, 0, "Login")
+       			.setOnMenuItemClickListener(new SubredditMenu(DIALOG_LOGIN));
+        }
+        
+        menu.add(0, 0, 0, "Reset")
+        		.setOnMenuItemClickListener(new MenuItem.OnMenuItemClickListener() {
+            public boolean onMenuItemClick(MenuItem item) {
+                resetUI();
+                return true;
+            }
+        });
+
+        return true;
+    }
+
+    /**
+     * Puts text in the url text field and gives it focus. Used to make a Runnable
+     * for each menu item. This way, one inner class works for all items vs. an
+     * anonymous inner class for each menu item.
+     */
+    private class SubredditMenu implements MenuItem.OnMenuItemClickListener {
+        private int mAction;
+
+        SubredditMenu(int action) {
+            mAction = action;
+        }
+
+        public boolean onMenuItemClick(MenuItem item) {
+        	showDialog(mAction);
+        	return true;
+        }
+    }
+
+    @Override
+    protected Dialog onCreateDialog(int id) {
+    	switch (id) {
+    	case DIALOG_PICK_SUBREDDIT:
+    		mDialog = new Dialog(this);
+    		mDialog.setContentView(R.layout.pick_subreddit_dialog);
+    		mDialog.setTitle("Pick a subreddit");
+    		final EditText pickSubredditInput = (EditText) mDialog.findViewById(R.id.pick_subreddit_input);
+    		pickSubredditInput.setOnKeyListener(new OnKeyListener() {
+    			public boolean onKey(View v, int keyCode, KeyEvent event) {
+    		        if ((event.getAction() == KeyEvent.ACTION_DOWN) && (keyCode == KeyEvent.KEYCODE_ENTER)) {
+    		        	doGetThreadsList(pickSubredditInput.getText());
+    		            // Get rid of the Dialog
+    		        	if (mDialog != null) {
+    		        		mDialog.dismiss();
+    		        		mDialog = null;
+    		        	}
+    		        	return true;
+    		        }
+    		        return false;
+    		    }
+    		});
+    		final Button pickSubredditButton = (Button) mDialog.findViewById(R.id.pick_subreddit_button);
+    		pickSubredditButton.setOnClickListener(new OnClickListener() {
+    			public void onClick(View v) {
+    		        doGetThreadsList(pickSubredditInput.getText());
+    		        // Get rid of the Dialog
+    		        if (mDialog != null) {
+    		        	mDialog.dismiss();
+    		        	mDialog = null;
+    		        }
+    		    }
+    		});
+    		
+    		break;
+//    	case DIALOG_REDDIT_COM:
+//    		
+//    		break;
+//    	case DIALOG_LOGIN:
+//    	
+//    		break;
+//    	case DIALOG_LOGOUT:
+//    		
+//    		break;
+//    	case DIALOG_REFRESH:
+//    		
+//    		break;
+    	default:
+    		break;
+    	}
+    	return mDialog;
+    }
     
     /**
      * Called for us to save out our current state before we are paused,
@@ -513,8 +533,6 @@ public final class RedditIsFun extends ListActivity
      * between aps) which item is currently selected, and the data for the text views.
      * In onRestoreInstanceState() we look at the map to reconstruct the run-state of the
      * application, so returning to the activity looks seamlessly correct.
-     * TODO: the Activity javadoc should give more detail about what sort of
-     * data can go in the outState map.
      * 
      * @see android.app.Activity#onSaveInstanceState
      */
@@ -523,37 +541,36 @@ public final class RedditIsFun extends ListActivity
     protected void onSaveInstanceState(Bundle outState) {
         super.onSaveInstanceState(outState);
 
-        // TODO: Save instance state
-//        // Make a List of all the ThreadItem data for saving
-//        // NOTE: there may be a way to save the ThreadItems directly,
-//        // rather than their string data.
-//        int count = mAdapter.getCount();
-//
-//        // Save out the items as a flat list of CharSequence objects --
-//        // title0, link0, descr0, title1, link1, ...
-//        ArrayList<CharSequence> strings = new ArrayList<CharSequence>();
-//        for (int i = 0; i < count; i++) {
-//            ThreadInfo item = mAdapter.getItem(i);
-//            for (int j = 0; j < ThreadInfo._KEYS.length; j++) {
-//            	if (item.mValues.containsKey(ThreadInfo._KEYS[i])) {
-//            		strings.add(ThreadInfo._KEYS[i]);
-//            		strings.add(item.mValues.get(ThreadInfo._KEYS[i]));
-//            	}
-//            }
-//            strings.add(SERIALIZE_SEPARATOR);
-//        }
-//        outState.putSerializable(STRINGS_KEY, strings);
-//
-//        // Save current selection index (if focussed)
-//        if (getListView().hasFocus()) {
-//            outState.putInt(SELECTION_KEY, Integer.valueOf(getListView().getSelectedItemPosition()));
-//        }
-//
-//        // Save url
-//        outState.putString(URL_KEY, mUrlText.getText().toString());
-//        
-//        // Save status
-//        outState.putCharSequence(STATUS_KEY, mStatusText.getText());
+        // Make a List of all the ThreadItem data for saving
+        // NOTE: there may be a way to save the ThreadItems directly,
+        // rather than their string data.
+        int count = mAdapter.getCount();
+
+        // Save out the items as a flat list of CharSequence objects --
+        // title0, link0, descr0, title1, link1, ...
+        ArrayList<CharSequence> strings = new ArrayList<CharSequence>();
+        for (int i = 0; i < count; i++) {
+            ThreadInfo item = mAdapter.getItem(i);
+            for (int j = 0; j < ThreadInfo._KEYS.length; j++) {
+            	if (item.mValues.containsKey(ThreadInfo._KEYS[i])) {
+            		strings.add(ThreadInfo._KEYS[i]);
+            		strings.add(item.mValues.get(ThreadInfo._KEYS[i]));
+            	}
+            }
+            strings.add(SERIALIZE_SEPARATOR);
+        }
+        outState.putSerializable(STRINGS_KEY, strings);
+
+        // Save current selection index (if focussed)
+        if (getListView().hasFocus()) {
+            outState.putInt(SELECTION_KEY, Integer.valueOf(getListView().getSelectedItemPosition()));
+        }
+
+        // Save url
+        outState.putString(URL_KEY, mUrlText.getText().toString());
+        
+        // Save status
+        outState.putCharSequence(STATUS_KEY, mStatusText.getText());
     }
     
     
@@ -568,45 +585,44 @@ public final class RedditIsFun extends ListActivity
     protected void onRestoreInstanceState(Bundle state) {
         super.onRestoreInstanceState(state);
 
-        // TODO: Restore instance state
-//        // Note: null is a legal value for onRestoreInstanceState.
-//        if (state == null) return;
-//
-//        // Restore items from the big list of CharSequence objects
-//        List<CharSequence> strings = (ArrayList<CharSequence>)state.getSerializable(STRINGS_KEY);
-//        List<ThreadInfo> items = new ArrayList<ThreadInfo>();
-//        for (int i = 0; i < strings.size(); i++) {
-//        	ThreadInfo ti = new ThreadInfo();
-//        	CharSequence key, value;
-//        	while (!SERIALIZE_SEPARATOR.equals(strings.get(i))) {
-//        		if (SERIALIZE_SEPARATOR.equals(strings.get(i+1))) {
-//        			// Well, just skip the value instead of throwing an exception.
-//        			break;
-//        		}
-//        		key = strings.get(i);
-//        		value = strings.get(i+1);
-//        		ti.put(key.toString(), value.toString());
-//        		i += 2;
-//        	}
-//            items.add(ti);
-//        }
-//
-//        // Reset the list view to show this data.
-//        mAdapter = new ThreadsListAdapter(this);
-//        getListView().setAdapter(mAdapter);
-//
-//        // Restore selection
-//        if (state.containsKey(SELECTION_KEY)) {
-//            getListView().requestFocus(View.FOCUS_FORWARD);
-//            // todo: is above right? needed it to work
-//            getListView().setSelection(state.getInt(SELECTION_KEY));
-//        }
-//        
-//        // Restore url
-//        mUrlText.setText(state.getCharSequence(URL_KEY));
-//        
-//        // Restore status
-//        mStatusText.setText(state.getCharSequence(STATUS_KEY));
+        // Note: null is a legal value for onRestoreInstanceState.
+        if (state == null) return;
+
+        // Restore items from the big list of CharSequence objects
+        List<CharSequence> strings = (ArrayList<CharSequence>)state.getSerializable(STRINGS_KEY);
+        List<ThreadInfo> items = new ArrayList<ThreadInfo>();
+        for (int i = 0; i < strings.size(); i++) {
+        	ThreadInfo ti = new ThreadInfo();
+        	CharSequence key, value;
+        	while (!SERIALIZE_SEPARATOR.equals(strings.get(i))) {
+        		if (SERIALIZE_SEPARATOR.equals(strings.get(i+1))) {
+        			// Well, just skip the value instead of throwing an exception.
+        			break;
+        		}
+        		key = strings.get(i);
+        		value = strings.get(i+1);
+        		ti.put(key.toString(), value.toString());
+        		i += 2;
+        	}
+            items.add(ti);
+        }
+
+        // Reset the list view to show this data.
+        mAdapter = new ThreadsListAdapter(this, items);
+        getListView().setAdapter(mAdapter);
+
+        // Restore selection
+        if (state.containsKey(SELECTION_KEY)) {
+            getListView().requestFocus(View.FOCUS_FORWARD);
+            // todo: is above right? needed it to work
+            getListView().setSelection(state.getInt(SELECTION_KEY));
+        }
+        
+        // Restore url
+        mUrlText.setText(state.getCharSequence(URL_KEY));
+        
+        // Restore status
+        mStatusText.setText(state.getCharSequence(STATUS_KEY));
     }
 
 

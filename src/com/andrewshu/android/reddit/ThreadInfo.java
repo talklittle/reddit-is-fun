@@ -1,4 +1,4 @@
-package talklittle.android.reddit;
+package com.andrewshu.android.reddit;
 
 import java.util.HashMap;
 
