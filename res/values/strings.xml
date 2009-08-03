@@ -16,4 +16,7 @@
 	<string name="login_username_label">Username:</string>
 	<string name="login_password_label">Password:</string>
 	<string name="login_button">Login</string>
+	
+	<string name="vote_up_button">Upvote</string>
+	<string name="vote_down_button">Downvote</string>
 </resources>

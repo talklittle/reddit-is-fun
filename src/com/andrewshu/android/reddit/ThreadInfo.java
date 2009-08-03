@@ -49,6 +49,18 @@ public class ThreadInfo {
 		mValues.put(key, value);
 	}
 
+	public String getThingFullname() {
+		return mValues.get(KIND) + "_" + mValues.get(ID);
+	}
+	
+	public String getKind() {
+		return mValues.get(KIND);
+	}
+	
+	public String getId() {
+		return mValues.get(ID);
+	}
+	
 	public String getLink() {
 		return mValues.get(URL);
 	}
