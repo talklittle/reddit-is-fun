@@ -44,9 +44,12 @@ public class ThreadInfo {
 	
 	public HashMap<String, String> mValues = new HashMap<String, String>();
 	
-	// TODO?: Make setters for everything instead... or not.
 	public void put(String key, String value) {
 		mValues.put(key, value);
+	}
+	
+	public void setLikes(String likes) {
+		mValues.put(LIKES, likes);
 	}
 
 	public String getThingFullname() {

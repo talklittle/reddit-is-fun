@@ -15,7 +15,6 @@ import org.apache.http.HttpEntity;
 import org.apache.http.HttpException;
 import org.apache.http.HttpResponse;
 import org.apache.http.NameValuePair;
-import org.apache.http.client.HttpClient;
 import org.apache.http.client.entity.UrlEncodedFormEntity;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPost;
@@ -105,7 +104,7 @@ public final class RedditIsFun extends ListActivity
     static final int DIALOG_REFRESH = 4;
     static final int DIALOG_POST_THREAD = 5;
     static final int DIALOG_THREAD_CLICK = 6;
-	
+    
     // Keys used for data in the onSaveInstanceState() Map.
     public static final String STRINGS_KEY = "strings";
     public static final String SELECTION_KEY = "selection";
@@ -222,8 +221,8 @@ public final class RedditIsFun extends ListActivity
             TextView submitterView = (TextView) view.findViewById(R.id.submitter);
             TextView submissionTimeView = (TextView) view.findViewById(R.id.submissionTime);
             TextView linkView = (TextView) view.findViewById(R.id.link);
-            ImageView voteUpImage = (ImageView) view.findViewById(R.id.vote_up_image);
-            ImageView voteDownImage = (ImageView) view.findViewById(R.id.vote_down_image);
+            ImageView voteUpView = (ImageView) view.findViewById(R.id.vote_up_image);
+            ImageView voteDownView = (ImageView) view.findViewById(R.id.vote_down_image);
             
             titleView.setText(item.getTitle());
             votesView.setText(item.getNumVotes());
@@ -234,13 +233,22 @@ public final class RedditIsFun extends ListActivity
             Date submissionTimeDate = new Date((long) (Double.parseDouble(item.getSubmissionTime()) / 1000));
             submissionTimeView.setText("XXX");
             linkView.setText(item.getLink());
+
             // Set the up and down arrow colors based on whether user likes
             if (mLoggedIn) {
             	if ("true".equals(item.getLikes())) {
-                	voteUpImage.setImageResource(R.drawable.vote_up_red);
+            		voteUpView.setImageResource(R.drawable.vote_up_red);
+            		voteDownView.setImageResource(R.drawable.vote_down_gray);
             	} else if ("false".equals(item.getLikes())) {
-            		voteDownImage.setImageResource(R.drawable.vote_down_blue);
+            		voteUpView.setImageResource(R.drawable.vote_up_gray);
+            		voteDownView.setImageResource(R.drawable.vote_down_blue);
+            	} else {
+            		voteUpView.setImageResource(R.drawable.vote_up_gray);
+            		voteDownView.setImageResource(R.drawable.vote_down_gray);
             	}
+            } else {
+        		voteUpView.setImageResource(R.drawable.vote_up_gray);
+        		voteDownView.setImageResource(R.drawable.vote_down_gray);
             }
             
             // TODO: Thumbnail
@@ -617,15 +625,7 @@ public final class RedditIsFun extends ListActivity
     public void doLogout() {
     	String status = "";
     	if (mClient != null) {
-	    	try {
-	        	HttpGet request = new HttpGet("http://www.reddit.com/logout");
-	        	HttpResponse response = mClient.execute(request);
-	        	mClient.getCookieStore().clear();
-	
-	        	status = response.getStatusLine().toString();
-	        } catch (Exception e) {
-	            status = "failed:" + e.getMessage();
-	        }
+        	mClient.getCookieStore().clear();
     	}
         
     	mUsername = null;
@@ -879,9 +879,10 @@ public final class RedditIsFun extends ListActivity
 		    			public void onClick(View v) {
 	    					if (doVote(mThingId, 0, mSubreddit)) {
 		    					ImageView ivUp = (ImageView) mVoteTargetView.findViewById(R.id.vote_up_image);
-		    					TextView voteCounter = (TextView) mVoteTargetView.findViewById(R.id.numComments);
+		    					TextView voteCounter = (TextView) mVoteTargetView.findViewById(R.id.votes);
 		    					ivUp.setImageResource(R.drawable.vote_up_gray);
 		    					voteCounter.setText(String.valueOf(Integer.valueOf(mVoteTargetThreadInfo.getNumVotes())-1));
+		    					mVoteTargetThreadInfo.setLikes("null");
 		    				}
 		    				mVoteTargetThreadInfo = null;
 		    				mVoteTargetView = null;
@@ -893,10 +894,11 @@ public final class RedditIsFun extends ListActivity
 	    					if (doVote(mThingId, -1, mSubreddit)) {
 		    					ImageView ivUp = (ImageView) mVoteTargetView.findViewById(R.id.vote_up_image);
 		    					ImageView ivDown = (ImageView) mVoteTargetView.findViewById(R.id.vote_down_image);
-		    					TextView voteCounter = (TextView) mVoteTargetView.findViewById(R.id.numComments);
+		    					TextView voteCounter = (TextView) mVoteTargetView.findViewById(R.id.votes);
 		    					ivUp.setImageResource(R.drawable.vote_up_red);
 		    					ivDown.setImageResource(R.drawable.vote_down_blue);
 		    					voteCounter.setText(String.valueOf(Integer.valueOf(mVoteTargetThreadInfo.getNumVotes())-2));
+		    					mVoteTargetThreadInfo.setLikes("false");
 		    				}
 		    				mVoteTargetThreadInfo = null;
 		    				mVoteTargetView = null;
@@ -912,10 +914,11 @@ public final class RedditIsFun extends ListActivity
 	    					if (doVote(mThingId, 1, mSubreddit)) {
 		    					ImageView ivUp = (ImageView) mVoteTargetView.findViewById(R.id.vote_up_image);
 		    					ImageView ivDown = (ImageView) mVoteTargetView.findViewById(R.id.vote_down_image);
-		    					TextView voteCounter = (TextView) mVoteTargetView.findViewById(R.id.numComments);
+		    					TextView voteCounter = (TextView) mVoteTargetView.findViewById(R.id.votes);
 		    					ivUp.setImageResource(R.drawable.vote_up_red);
 		    					ivDown.setImageResource(R.drawable.vote_down_gray);
 		    					voteCounter.setText(String.valueOf(Integer.valueOf(mVoteTargetThreadInfo.getNumVotes())+2));
+		    					mVoteTargetThreadInfo.setLikes("true");
 		    				}
 		    				mVoteTargetThreadInfo = null;
 		    				mVoteTargetView = null;
@@ -926,9 +929,10 @@ public final class RedditIsFun extends ListActivity
 		    			public void onClick(View v) {
 	    					if (doVote(mThingId, 0, mSubreddit)) {
 		    					ImageView ivDown = (ImageView) mVoteTargetView.findViewById(R.id.vote_down_image);
-		    					TextView voteCounter = (TextView) mVoteTargetView.findViewById(R.id.numComments);
+		    					TextView voteCounter = (TextView) mVoteTargetView.findViewById(R.id.votes);
 		    					ivDown.setImageResource(R.drawable.vote_down_gray);
 		    					voteCounter.setText(String.valueOf(Integer.valueOf(mVoteTargetThreadInfo.getNumVotes())+1));
+		    					mVoteTargetThreadInfo.setLikes("null");
 		    				}
 		    				mVoteTargetThreadInfo = null;
 		    				mVoteTargetView = null;
@@ -943,9 +947,10 @@ public final class RedditIsFun extends ListActivity
 		    			public void onClick(View v) {
 	    					if (doVote(mThingId, 1, mSubreddit)) {
 		    					ImageView ivUp = (ImageView) mVoteTargetView.findViewById(R.id.vote_up_image);
-		    					TextView voteCounter = (TextView) mVoteTargetView.findViewById(R.id.numComments);
+		    					TextView voteCounter = (TextView) mVoteTargetView.findViewById(R.id.votes);
 		    					ivUp.setImageResource(R.drawable.vote_up_red);
 		    					voteCounter.setText(String.valueOf(Integer.valueOf(mVoteTargetThreadInfo.getNumVotes())+1));
+		    					mVoteTargetThreadInfo.setLikes("true");
 		    				}
 		    				mVoteTargetThreadInfo = null;
 		    				mVoteTargetView = null;
@@ -956,9 +961,10 @@ public final class RedditIsFun extends ListActivity
 		    			public void onClick(View v) {
 	    					if (doVote(mThingId, -1, mSubreddit)) {
 		    					ImageView ivDown = (ImageView) mVoteTargetView.findViewById(R.id.vote_down_image);
-		    					TextView voteCounter = (TextView) mVoteTargetView.findViewById(R.id.numComments);
+		    					TextView voteCounter = (TextView) mVoteTargetView.findViewById(R.id.votes);
 		    					ivDown.setImageResource(R.drawable.vote_down_blue);
 		    					voteCounter.setText(String.valueOf(Integer.valueOf(mVoteTargetThreadInfo.getNumVotes())-1));
+		    					mVoteTargetThreadInfo.setLikes("false");
 		    				}
 		    				mVoteTargetThreadInfo = null;
 		    				mVoteTargetView = null;
