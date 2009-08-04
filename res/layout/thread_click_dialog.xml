@@ -8,18 +8,22 @@
               >
               
     <!-- TODO: Replace these with images -->
-    <Button android:id="@+id/thread_vote_up_button"
-    	android:layout_width="fill_parent"
-		android:layout_height="100dip"
-		android:text="@string/vote_up_button"
-		android:textAppearance="?android:attr/textAppearanceLarge"
+    <ImageButton android:id="@+id/thread_vote_up_button"
+    	android:layout_width="100dip"
+		android:layout_height="50dip"
+		android:layout_marginBottom="10dip"
+		android:scaleType="fitXY"
+		android:src="@drawable/vote_up_state_list"
+		android:background="#000"
 		/>
 		
-	<Button android:id="@+id/thread_vote_down_button"
-    	android:layout_width="fill_parent"
-		android:layout_height="100dip"
-		android:text="@string/vote_down_button"
-		android:textAppearance="?android:attr/textAppearanceLarge"
+	<ImageButton android:id="@+id/thread_vote_down_button"
+    	android:layout_width="100dip"
+		android:layout_height="50dip"
+		android:layout_marginTop="10dip"
+		android:scaleType="fitXY"
+		android:src="@drawable/vote_down_state_list"
+		android:background="#000"
 		/>
 	
 </LinearLayout>

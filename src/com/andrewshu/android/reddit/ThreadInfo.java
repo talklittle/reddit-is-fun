@@ -53,12 +53,16 @@ public class ThreadInfo {
 		return mValues.get(KIND) + "_" + mValues.get(ID);
 	}
 	
+	public String getId() {
+		return mValues.get(ID);
+	}
+	
 	public String getKind() {
 		return mValues.get(KIND);
 	}
 	
-	public String getId() {
-		return mValues.get(ID);
+	public String getLikes() {
+		return mValues.get(LIKES);
 	}
 	
 	public String getLink() {
