@@ -1,6 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-              android:theme="@style/Dialog_Light"
               android:id="@+id/layout_root"
               android:orientation="vertical"
               android:layout_width="250dip"
@@ -8,21 +7,19 @@
               android:padding="10dp"
               >
               
-    <!-- TODO: Replace these with images -->
-    <ImageButton android:id="@+id/thread_vote_up_button"
+    <CheckBox android:id="@+id/thread_vote_up_button"
+    	style="@style/VoteUpButton"
     	android:layout_width="100dip"
 		android:layout_height="50dip"
 		android:layout_marginBottom="10dip"
-		android:background="#00000000"
-		android:src="@drawable/vote_up_gray_big"
 		/>
 		
-	<ImageButton android:id="@+id/thread_vote_down_button"
+	<CheckBox android:id="@+id/thread_vote_down_button"
+		style="@style/VoteDownButton"
     	android:layout_width="100dip"
 		android:layout_height="50dip"
 		android:layout_marginTop="10dip"
-		android:background="#00000000"
-		android:src="@drawable/vote_down_gray_big"
+		android:drawable="@drawable/vote_down_big_statelist"
 		/>
 	
 </LinearLayout>

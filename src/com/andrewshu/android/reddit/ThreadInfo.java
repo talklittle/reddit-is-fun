@@ -2,9 +2,6 @@ package com.andrewshu.android.reddit;
 
 import java.util.HashMap;
 
-import org.json.JSONException;
-import org.json.JSONObject;
-
 /**
  * Class representing a thread posting in reddit API.
  * 

@@ -51,8 +51,9 @@ import android.view.View.OnClickListener;
 import android.view.View.OnKeyListener;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
+import android.widget.CheckBox;
+import android.widget.CompoundButton;
 import android.widget.EditText;
-import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.ListView;
 import android.widget.TextView;
@@ -79,7 +80,7 @@ public final class RedditIsFun extends ListActivity
     /** Handler used to post runnables to the UI thread. */
     private Handler mHandler;
     /** Currently running background network thread. */
-    private ThreadsWorker mWorker;
+    private Thread mWorker;
     
     private Menu mMenu;
 
@@ -90,6 +91,8 @@ public final class RedditIsFun extends ListActivity
     private CharSequence mSubreddit = null;
     private CharSequence mThingId = null;
     private Dialog mDialog = null;
+    // TODO: Fix Dialogs. See http://www.paxmodept.com/telesto/blogitem.htm?id=766
+    private Dialog mProgressDialog = null;
     private View mVoteTargetView = null;
     private ThreadInfo mVoteTargetThreadInfo = null;
     
@@ -107,12 +110,17 @@ public final class RedditIsFun extends ListActivity
     static final int DIALOG_POST_THREAD = 5;
     static final int DIALOG_THREAD_CLICK = 6;
     static final int DIALOG_LOGGING_IN = 7;
+    static final int DIALOG_LOADING_THREADS_LIST = 8;
     
     // Themes
     static final int THEME_LIGHT = 0;
     static final int THEME_DARK = 1;
     
     private int mTheme = 0;
+    
+    // States for StateListDrawables
+    static final int[] STATE_CHECKED = new int[]{android.R.attr.state_checked};
+    static final int[] STATE_NONE = new int[0];
     
     // Strings
     static final String TRUE_STRING = "true";
@@ -162,18 +170,27 @@ public final class RedditIsFun extends ListActivity
         // NOTE: this could use the icicle as done in
         // onRestoreInstanceState().
     }
-
-    // TODO: do something like this when you select a new subreddit through Menu.
-    void startQuery() {
-        mAdapter.setLoading(true);
-        
-        // Cancel any pending queries
-//        mQueryHandler.cancelOperation(QUERY_TOKEN);
-
-        // Kick off the new query
-//        mQueryHandler.startQuery(QUERY_TOKEN, null, People.CONTENT_URI, CONTACTS_PROJECTION,
-//                null, null, getSortOrder(CONTACTS_PROJECTION));
+    
+    public class VoteUpOnCheckedChangeListener implements CompoundButton.OnCheckedChangeListener {
+    	public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
+	    	dismissDialog();
+			if (isChecked)
+				doVote(mThingId, 1, mSubreddit);
+			else
+				doVote(mThingId, 0, mSubreddit);
+		}
     }
+    
+    public class VoteDownOnCheckedChangeListener implements CompoundButton.OnCheckedChangeListener {
+	    public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
+	    	dismissDialog();
+			if (isChecked)
+				doVote(mThingId, -1, mSubreddit);
+			else
+				doVote(mThingId, 0, mSubreddit);
+		}
+    }
+
 
     private final class ThreadsListAdapter extends ArrayAdapter<ThreadInfo> {
     	private LayoutInflater mInflater;
@@ -338,13 +355,32 @@ public final class RedditIsFun extends ListActivity
         
     }
     
-    public void dismissDialog() {
+    public synchronized void setDialog(Dialog dialog) {
+    	mDialog = dialog;
+    }
+    
+    public synchronized boolean dismissDialog() {
     	if (mDialog != null) {
     		mDialog.dismiss();
     		mDialog = null;
+    		return true;
     	}
+    	Log.d(TAG, "dismissDialog: false - mDialog was null");
+    	return false;
+    }
+    
+    public synchronized void setProgressDialog(Dialog progressDialog) {
+    	mProgressDialog = progressDialog;
     }
 
+    public synchronized boolean dismissProgressDialog() {
+    	if (mProgressDialog != null) {
+    		mProgressDialog.dismiss();
+    		mProgressDialog = null;
+    		return true;
+    	}
+    	return false;
+    }
 
     /**
      * Called when user clicks an item in the list. Starts an activity to
@@ -393,7 +429,7 @@ public final class RedditIsFun extends ListActivity
      * 
      * @param worker the new worker
      */
-    public synchronized void setCurrentWorker(ThreadsWorker worker) {
+    public synchronized void setCurrentWorker(Thread worker) {
         if (mWorker != null) mWorker.interrupt();
         mWorker = worker;
     }
@@ -406,6 +442,14 @@ public final class RedditIsFun extends ListActivity
      */
     public synchronized boolean isCurrentWorker(ThreadsWorker worker) {
         return (mWorker == worker);
+    }
+    
+    public synchronized void setModhash(CharSequence modhash) {
+    	mModhash = modhash;
+    }
+    
+    public synchronized void setClient(DefaultHttpClient client) {
+    	mClient = client;
     }
 
 
@@ -422,8 +466,8 @@ public final class RedditIsFun extends ListActivity
     	setCurrentWorker(worker);
     	
     	resetUI();
-    	// TODO: nice status screen, like Alien vs. Android had
-    	Log.d(TAG, "Downloading\u2026");
+    	// FIXME: Loading...
+//    	showDialog(DIALOG_LOADING_THREADS_LIST);
     	
     	setTitle("/r/"+subreddit.toString().trim());
     	
@@ -451,8 +495,8 @@ public final class RedditIsFun extends ListActivity
     }
 
     /**
-     * Worker thread takes in an rss url string, downloads its data, parses
-     * out the rss items, and communicates them back to the UI as they are read.
+     * Worker thread takes in a subreddit name string, downloads its data, parses
+     * out the threads, and communicates them back to the UI as they are read.
      */
     private class ThreadsWorker extends Thread {
         private CharSequence _mSubreddit;
@@ -465,12 +509,15 @@ public final class RedditIsFun extends ListActivity
         public void run() {
             try {
             	if (mClient == null)
-            		mClient = new DefaultHttpClient();
+            		setClient(new DefaultHttpClient());
             	
             	HttpGet request = new HttpGet(new StringBuilder("http://www.reddit.com/r/")
             		.append(_mSubreddit.toString().trim())
             		.append("/.json").toString());
             	HttpResponse response = mClient.execute(request);
+            	
+            	// OK to dismiss the progress dialog when threads start loading
+            	dismissProgressDialog();
 
             	InputStream in = response.getEntity().getContent();
                 
@@ -483,6 +530,121 @@ public final class RedditIsFun extends ListActivity
         }
     }
     
+    /**
+     * Worker thread that takes in a thingId, vote direction, and subreddit. Starts
+     * a new HTTP Client, copying the main one's cookies, and votes.
+     * @param username
+     * @param password
+     * @return
+     */
+    private class VoteWorker extends Thread{
+    	private CharSequence _mThingId, _mSubreddit;
+    	private int _mDirection;
+    	
+    	public VoteWorker(CharSequence thingId, int direction, CharSequence subreddit) {
+    		_mThingId = thingId;
+    		_mDirection = direction;
+    		_mSubreddit = subreddit;
+    	}
+    	
+    	@Override
+    	public void run() {
+	    	String status = "";
+	    	if (!mLoggedIn) {
+	    		// TODO: Error dialog saying you must be logged in.
+	    		return;
+	    	}
+	    	if (_mDirection < -1 || _mDirection > 1) {
+	    		throw new RuntimeException("How the hell did you vote something besides -1, 0, or 1?");
+	    	}
+	    	
+	    	// Update the modhash if necessary
+	    	if (mModhash == null) {
+	    		if (!doUpdateModhash()) {
+	    			// doUpdateModhash should have given an error about credentials
+	    			throw new RuntimeException("Vote failed because doUpdateModhash() failed");
+	    		}
+	    	}
+	    	
+	    	try {
+	    		// Create a new HttpClient and copy cookies over from the main one
+	    		DefaultHttpClient client = new DefaultHttpClient();
+	    		client.getParams().setParameter(HttpConnectionParams.SO_TIMEOUT, 30000);
+	    		List<Cookie> mainCookies = mClient.getCookieStore().getCookies();
+	    		for (Cookie c : mainCookies) {
+	    			client.getCookieStore().addCookie(c);
+	    		}
+	    		
+	    		// Construct data
+				List<NameValuePair> nvps = new ArrayList<NameValuePair>();
+				nvps.add(new BasicNameValuePair("id", _mThingId.toString()));
+				nvps.add(new BasicNameValuePair("dir", String.valueOf(_mDirection)));
+				nvps.add(new BasicNameValuePair("r", _mSubreddit.toString()));
+				nvps.add(new BasicNameValuePair("uh", mModhash.toString()));
+				// Votehash is currently unused by reddit 
+//    				nvps.add(new BasicNameValuePair("vh", "0d4ab0ffd56ad0f66841c15609e9a45aeec6b015"));
+				
+				HttpPost httppost = new HttpPost("http://www.reddit.com/api/vote");
+		        httppost.setEntity(new UrlEncodedFormEntity(nvps, HTTP.UTF_8));
+		        
+		        Log.d(TAG, nvps.toString());
+		        
+	            // Perform the HTTP POST request
+		    	HttpResponse response = mClient.execute(httppost);
+		    	status = response.getStatusLine().toString();
+	        	if (!status.contains("OK"))
+	        		throw new HttpException(status);
+	        	
+	        	HttpEntity entity = response.getEntity();
+
+	        	BufferedReader in = new BufferedReader(new InputStreamReader(entity.getContent()));
+	        	String line = in.readLine();
+	        	if (line == null) {
+	        		throw new HttpException("No content returned from vote POST");
+	        	}
+	        	if (line.contains("WRONG_PASSWORD")) {
+	        		throw new Exception("Wrong password");
+	        	}
+	        	if (line.contains("USER_REQUIRED")) {
+	        		// The modhash probably expired
+	        		setModhash(null);
+	        		// TODO: "Error voting. Try again."
+	        		return;
+	        	}
+	        	
+	        	Log.d(TAG, line);
+
+//    	        	// DEBUG
+//    	        	int c;
+//    	        	boolean done = false;
+//    	        	StringBuilder sb = new StringBuilder();
+//    	        	while ((c = in.read()) >= 0) {
+//    	        		sb.append((char) c);
+//    	        		for (int i = 0; i < 80; i++) {
+//    	        			c = in.read();
+//    	        			if (c < 0) {
+//    	        				done = true;
+//    	        				break;
+//    	        			}
+//    	        			sb.append((char) c);
+//    	        		}
+//    	        		Log.d(TAG, "doLogin response content: " + sb.toString());
+//    	        		sb = new StringBuilder();
+//    	        		if (done)
+//    	        			break;
+//    	        	}
+
+	        	in.close();
+	        	if (entity != null)
+	        		entity.consumeContent();
+	        	
+	    	} catch (Exception e) {
+	            Log.e(TAG, e.getMessage());
+	    	}
+	    	Log.d(TAG, status);
+	    }
+    }
+    
     public boolean doLogin(CharSequence username, CharSequence password) {
     	String status = "";
     	try {
@@ -491,7 +653,7 @@ public final class RedditIsFun extends ListActivity
     		nvps.add(new BasicNameValuePair("user", username.toString()));
     		nvps.add(new BasicNameValuePair("passwd", password.toString()));
     		
-            mClient = new DefaultHttpClient();
+            setClient(new DefaultHttpClient());
             mClient.getParams().setParameter(HttpConnectionParams.SO_TIMEOUT, 20000);
             HttpPost httppost = new HttpPost("http://www.reddit.com/api/login/"+username);
             httppost.setEntity(new UrlEncodedFormEntity(nvps, HTTP.UTF_8));
@@ -560,8 +722,7 @@ public final class RedditIsFun extends ListActivity
             // TODO: Login error message
         	mLoggedIn = false;
         }
-        // FIXME: Logging in...
-//        dismissDialog();
+        dismissProgressDialog();
         Log.d(TAG, status);
         return mLoggedIn;
     }
@@ -605,7 +766,7 @@ public final class RedditIsFun extends ListActivity
         	
         	Matcher modhashMatcher = MODHASH_PATTERN.matcher(line);
         	if (modhashMatcher.find()) {
-        		mModhash = modhashMatcher.group(1);
+        		setModhash(modhashMatcher.group(1));
         		if ("".equals(mModhash)) {
         			// Means user is not actually logged in.
         			doLogout();
@@ -656,7 +817,7 @@ public final class RedditIsFun extends ListActivity
     	}
         
     	mUsername = null;
-        mClient = null;
+        setClient(null);
         
         mLoggedIn = false;
         mMenu.findItem(DIALOG_LOGIN).setTitle("Login")
@@ -674,87 +835,72 @@ public final class RedditIsFun extends ListActivity
     		throw new RuntimeException("How the hell did you vote something besides -1, 0, or 1?");
     	}
     	
-    	// Update the modhash if necessary
-    	if (mModhash == null) {
-    		if (!doUpdateModhash()) {
-    			// doUpdateModhash should have given an error about credentials
-    			Log.e(TAG, "Vote failed because doUpdateModhash() failed");
+    	// Update UI: 6 cases (3 original directions, each with 2 possible changes)
+    	// UI is updated *before* the transaction actually happens. If the connection breaks for
+    	// some reason, then the vote will be lost.
+    	// Oh well, happens on reddit.com too, occasionally.
+    	final ImageView ivUp = (ImageView) mVoteTargetView.findViewById(R.id.vote_up_image);
+    	final ImageView ivDown = (ImageView) mVoteTargetView.findViewById(R.id.vote_down_image);
+    	final TextView voteCounter = (TextView) mVoteTargetView.findViewById(R.id.votes);
+		int newImageResourceUp, newImageResourceDown;
+    	String newScore;
+    	String newLikes;
+    	int previousScore = Integer.valueOf(mVoteTargetThreadInfo.getScore());
+    	if (TRUE_STRING.equals(mVoteTargetThreadInfo.getLikes())) {
+    		if (direction == 0) {
+    			newScore = String.valueOf(previousScore - 1);
+    			newImageResourceUp = R.drawable.vote_up_gray;
+    			newImageResourceDown = R.drawable.vote_down_gray;
+    			newLikes = NULL_STRING;
+    		} else if (direction == -1) {
+    			newScore = String.valueOf(previousScore - 2);
+    			newImageResourceUp = R.drawable.vote_up_gray;
+    			newImageResourceDown = R.drawable.vote_down_blue;
+    			newLikes = FALSE_STRING;
+    		} else {
+    			return false;
+    		}
+    	} else if (FALSE_STRING.equals(mVoteTargetThreadInfo.getLikes())) {
+    		if (direction == 1) {
+    			newScore = String.valueOf(previousScore + 2);
+    			newImageResourceUp = R.drawable.vote_up_red;
+    			newImageResourceDown = R.drawable.vote_down_gray;
+    			newLikes = TRUE_STRING;
+    		} else if (direction == 0) {
+    			newScore = String.valueOf(previousScore + 1);
+    			newImageResourceUp = R.drawable.vote_up_gray;
+    			newImageResourceDown = R.drawable.vote_down_gray;
+    			newLikes = NULL_STRING;
+    		} else {
+    			return false;
+    		}
+    	} else {
+    		if (direction == 1) {
+    			newScore = String.valueOf(previousScore + 1);
+    			newImageResourceUp = R.drawable.vote_up_red;
+    			newImageResourceDown = R.drawable.vote_down_gray;
+    			newLikes = TRUE_STRING;
+    		} else if (direction == -1) {
+    			newScore = String.valueOf(previousScore - 1);
+    			newImageResourceUp = R.drawable.vote_up_gray;
+    			newImageResourceDown = R.drawable.vote_down_blue;
+    			newLikes = FALSE_STRING;
+    		} else {
     			return false;
     		}
     	}
     	
-    	try {
-	    	// Construct data
-    		
-			List<NameValuePair> nvps = new ArrayList<NameValuePair>();
-			nvps.add(new BasicNameValuePair("id", thingId.toString()));
-			nvps.add(new BasicNameValuePair("dir", String.valueOf(direction)));
-			nvps.add(new BasicNameValuePair("r", subreddit.toString()));
-			nvps.add(new BasicNameValuePair("uh", mModhash.toString()));
-			// Votehash is currently unused by reddit 
-//			nvps.add(new BasicNameValuePair("vh", "0d4ab0ffd56ad0f66841c15609e9a45aeec6b015"));
-			
-			HttpPost httppost = new HttpPost("http://www.reddit.com/api/vote");
-	        httppost.setEntity(new UrlEncodedFormEntity(nvps, HTTP.UTF_8));
-	        
-	        Log.d(TAG, nvps.toString());
-	        
-            // TODO: Launch voting in a background thread. Need to lock client? Possible to use 2nd client, copy cookies?
-	        
-	        // Perform the HTTP POST request
-	    	HttpResponse response = mClient.execute(httppost);
-	    	status = response.getStatusLine().toString();
-        	if (!status.contains("OK"))
-        		throw new HttpException(status);
-        	
-        	HttpEntity entity = response.getEntity();
-
-        	BufferedReader in = new BufferedReader(new InputStreamReader(entity.getContent()));
-        	String line = in.readLine();
-        	if (line == null) {
-        		throw new HttpException("No content returned from vote POST");
-        	}
-        	if (line.contains("WRONG_PASSWORD")) {
-        		throw new Exception("Wrong password");
-        	}
-        	if (line.contains("USER_REQUIRED")) {
-        		// The modhash probably expired
-        		mModhash = null;
-        		// TODO: "Error voting. Try again."
-        		return false;
-        	}
-        	
-        	Log.d(TAG, line);
-
-//        	// DEBUG
-//        	int c;
-//        	boolean done = false;
-//        	StringBuilder sb = new StringBuilder();
-//        	while ((c = in.read()) >= 0) {
-//        		sb.append((char) c);
-//        		for (int i = 0; i < 80; i++) {
-//        			c = in.read();
-//        			if (c < 0) {
-//        				done = true;
-//        				break;
-//        			}
-//        			sb.append((char) c);
-//        		}
-//        		Log.d(TAG, "doLogin response content: " + sb.toString());
-//        		sb = new StringBuilder();
-//        		if (done)
-//        			break;
-//        	}
-
-        	in.close();
-        	if (entity != null)
-        		entity.consumeContent();
-        	
-    	} catch (Exception e) {
-            Log.e(TAG, e.getMessage());
-            return false;
-    	}
-    	Log.d(TAG, status);
+    	ivUp.setImageResource(newImageResourceUp);
+		ivDown.setImageResource(newImageResourceDown);
+		voteCounter.setText(newScore);
+		mVoteTargetThreadInfo.setLikes(newLikes);
+		mVoteTargetThreadInfo.setScore(newScore);
+		mAdapter.notifyDataSetChanged();
+    	
+    	VoteWorker worker = new VoteWorker(thingId, direction, subreddit);
+    	setCurrentWorker(worker);
+    	worker.start();
+    	
     	return true;
     }
 
@@ -813,6 +959,8 @@ public final class RedditIsFun extends ListActivity
         		break;
         	case DIALOG_LOGOUT:
         		doLogout();
+        		Toast.makeText(RedditIsFun.this, "You have been logged out.", Toast.LENGTH_SHORT).show();
+        		doGetThreadsList(mSubreddit);
         		break;
         	case DIALOG_REFRESH:
         		doGetThreadsList(mSubreddit);
@@ -829,7 +977,7 @@ public final class RedditIsFun extends ListActivity
     protected Dialog onCreateDialog(int id) {
     	switch (id) {
     	case DIALOG_PICK_SUBREDDIT:
-    		mDialog = new Dialog(this);
+    		setDialog(new Dialog(this));
     		mDialog.setContentView(R.layout.pick_subreddit_dialog);
     		mDialog.setTitle("Pick a subreddit");
     		final EditText pickSubredditInput = (EditText) mDialog.findViewById(R.id.pick_subreddit_input);
@@ -850,10 +998,10 @@ public final class RedditIsFun extends ListActivity
     		        dismissDialog();
     		    }
     		});
-    		break;
+    		return mDialog;
     		
     	case DIALOG_LOGIN:
-    		mDialog = new Dialog(this);
+    		setDialog(new Dialog(this));
     		mDialog.setContentView(R.layout.login_dialog);
     		mDialog.setTitle("Login to reddit.com");
     		final EditText loginUsernameInput = (EditText) mDialog.findViewById(R.id.login_username_input);
@@ -885,143 +1033,57 @@ public final class RedditIsFun extends ListActivity
     		        dismissDialog();
     		    }
     		});
-    		break;
+    		return mDialog;
     		
-    	// "Please wait"
-    	case DIALOG_LOGGING_IN:
-    		mDialog = ProgressDialog.show(this, "", "Logging in...", true);
-
     	case DIALOG_THREAD_CLICK:
-    		mDialog = new Dialog(this);
+    		setDialog(new Dialog(this));
     		mDialog.setContentView(R.layout.thread_click_dialog);
     		mDialog.setTitle("What?");
+    		final CheckBox voteUpButton = (CheckBox) mDialog.findViewById(R.id.thread_vote_up_button);
+    		final CheckBox voteDownButton = (CheckBox) mDialog.findViewById(R.id.thread_vote_down_button);
 
     		// Only show upvote/downvote if user is logged in
     		if (mLoggedIn) {
-    			// Set buttons based on what user has already done
-	    		final ImageButton voteUpButton = (ImageButton) mDialog.findViewById(R.id.thread_vote_up_button);
-	    		final ImageButton voteDownButton = (ImageButton) mDialog.findViewById(R.id.thread_vote_down_button);
-	    		
+    			voteUpButton.setVisibility(View.VISIBLE);
+    			voteDownButton.setVisibility(View.VISIBLE);
+    			// Set initial states of the vote buttons based on user's past actions
 	    		if (TRUE_STRING.equals(mVoteTargetThreadInfo.getLikes())) {
 	    			// User currenty likes it
-	    			voteUpButton.setImageResource(R.drawable.vote_up_red_big);
-	    			voteDownButton.setImageResource(R.drawable.vote_down_gray_big);
-		    		voteUpButton.setOnClickListener(new OnClickListener() {
-		    			public void onClick(View v) {
-		    				dismissDialog();
-	    					if (doVote(mThingId, 0, mSubreddit)) {
-	    						String newScore = String.valueOf(Integer.valueOf(mVoteTargetThreadInfo.getScore())-1);
-		    					ImageView ivUp = (ImageView) mVoteTargetView.findViewById(R.id.vote_up_image);
-		    					TextView voteCounter = (TextView) mVoteTargetView.findViewById(R.id.votes);
-		    					ivUp.setImageResource(R.drawable.vote_up_gray);
-		    					voteCounter.setText(newScore);
-		    					mVoteTargetThreadInfo.setLikes(NULL_STRING);
-		    					mVoteTargetThreadInfo.setScore(newScore);
-		    					mAdapter.notifyDataSetChanged();
-		    				}
-		    			}
-		    		});
-		    		voteDownButton.setOnClickListener(new OnClickListener() {
-		    			public void onClick(View v) {
-		    				dismissDialog();
-	    					if (doVote(mThingId, -1, mSubreddit)) {
-	    						String newScore = String.valueOf(Integer.valueOf(mVoteTargetThreadInfo.getScore())-2);
-		    					ImageView ivUp = (ImageView) mVoteTargetView.findViewById(R.id.vote_up_image);
-		    					ImageView ivDown = (ImageView) mVoteTargetView.findViewById(R.id.vote_down_image);
-		    					TextView voteCounter = (TextView) mVoteTargetView.findViewById(R.id.votes);
-		    					ivUp.setImageResource(R.drawable.vote_up_red);
-		    					ivDown.setImageResource(R.drawable.vote_down_blue);
-		    					voteCounter.setText(newScore);
-		    					mVoteTargetThreadInfo.setLikes(FALSE_STRING);
-		    					mVoteTargetThreadInfo.setScore(newScore);
-		    					mAdapter.notifyDataSetChanged();
-		    				}
-		    			}
-		    		});
+	    			voteUpButton.setChecked(true);
+	    			voteDownButton.setChecked(false);
 	    		} else if (FALSE_STRING.equals(mVoteTargetThreadInfo.getLikes())) {
 	    			// User currently dislikes it
-	    			voteUpButton.setImageResource(R.drawable.vote_up_gray_big);
-	    			voteDownButton.setImageResource(R.drawable.vote_down_blue_big);
-		    		voteUpButton.setOnClickListener(new OnClickListener() {
-		    			public void onClick(View v) {
-		    				dismissDialog();
-	    					if (doVote(mThingId, 1, mSubreddit)) {
-	    						String newScore = String.valueOf(Integer.valueOf(mVoteTargetThreadInfo.getScore())+2);
-		    					ImageView ivUp = (ImageView) mVoteTargetView.findViewById(R.id.vote_up_image);
-		    					ImageView ivDown = (ImageView) mVoteTargetView.findViewById(R.id.vote_down_image);
-		    					TextView voteCounter = (TextView) mVoteTargetView.findViewById(R.id.votes);
-		    					ivUp.setImageResource(R.drawable.vote_up_red);
-		    					ivDown.setImageResource(R.drawable.vote_down_gray);
-		    					voteCounter.setText(newScore);
-		    					mVoteTargetThreadInfo.setLikes(TRUE_STRING);
-		    					mVoteTargetThreadInfo.setScore(newScore);
-		    					mAdapter.notifyDataSetChanged();
-		    				}
-		    			}
-		    		});
-		    		voteDownButton.setOnClickListener(new OnClickListener() {
-		    			public void onClick(View v) {
-		    				dismissDialog();
-	    					if (doVote(mThingId, 0, mSubreddit)) {
-	    						String newScore = String.valueOf(Integer.valueOf(mVoteTargetThreadInfo.getScore())+1);
-		    					ImageView ivDown = (ImageView) mVoteTargetView.findViewById(R.id.vote_down_image);
-		    					TextView voteCounter = (TextView) mVoteTargetView.findViewById(R.id.votes);
-		    					ivDown.setImageResource(R.drawable.vote_down_gray);
-		    					voteCounter.setText(newScore);
-		    					mVoteTargetThreadInfo.setLikes(NULL_STRING);
-		    					mVoteTargetThreadInfo.setScore(newScore);
-		    					mAdapter.notifyDataSetChanged();
-		    				}
-		    			}
-		    		});
+	    			voteUpButton.setChecked(false);
+	    			voteDownButton.setChecked(true);
 	    		} else {
 	    			// User is currently neutral
-	    			voteUpButton.setImageResource(R.drawable.vote_up_gray_big);
-	    			voteDownButton.setImageResource(R.drawable.vote_down_gray_big);
-		    		voteUpButton.setOnClickListener(new OnClickListener() {
-		    			public void onClick(View v) {
-		    				dismissDialog();
-	    					if (doVote(mThingId, 1, mSubreddit)) {
-	    						String newScore = String.valueOf(Integer.valueOf(mVoteTargetThreadInfo.getScore())+1);
-		    					ImageView ivUp = (ImageView) mVoteTargetView.findViewById(R.id.vote_up_image);
-		    					TextView voteCounter = (TextView) mVoteTargetView.findViewById(R.id.votes);
-		    					ivUp.setImageResource(R.drawable.vote_up_red);
-		    					voteCounter.setText(newScore);
-		    					mVoteTargetThreadInfo.setLikes(TRUE_STRING);
-		    					mVoteTargetThreadInfo.setScore(newScore);
-		    					mAdapter.notifyDataSetChanged();
-		    				}
-		    			}
-		    		});
-		    		voteDownButton.setOnClickListener(new OnClickListener() {
-		    			public void onClick(View v) {
-		    				dismissDialog();
-	    					if (doVote(mThingId, -1, mSubreddit)) {
-	    						String newScore = String.valueOf(Integer.valueOf(mVoteTargetThreadInfo.getScore())-1);
-		    					ImageView ivDown = (ImageView) mVoteTargetView.findViewById(R.id.vote_down_image);
-		    					TextView voteCounter = (TextView) mVoteTargetView.findViewById(R.id.votes);
-		    					ivDown.setImageResource(R.drawable.vote_down_blue);
-		    					voteCounter.setText(newScore);
-		    					mVoteTargetThreadInfo.setLikes(FALSE_STRING);
-		    					mVoteTargetThreadInfo.setScore(newScore);
-		    					mAdapter.notifyDataSetChanged();
-		    				}
-		    			}
-		    		});
+	    			voteUpButton.setChecked(false);
+	    			voteDownButton.setChecked(false);
 	    		}
-	    		// FIXME: Why don't they change color in the Dialog?
-	    		voteUpButton.invalidate();
-	    		voteDownButton.invalidate();
+	    		voteUpButton.setOnCheckedChangeListener(new VoteUpOnCheckedChangeListener());
+	    		voteDownButton.setOnCheckedChangeListener(new VoteDownOnCheckedChangeListener());
+    		} else {
+    			voteUpButton.setVisibility(View.INVISIBLE);
+    			voteDownButton.setVisibility(View.INVISIBLE);
     		}
-    		break;
-    		
+    		return mDialog;
+
     	case DIALOG_POST_THREAD:
     		// TODO: a scrollable Dialog with Title, URL/Selftext, and subreddit.
+    		return mDialog;
+    		
+   		// "Please wait"
+    	case DIALOG_LOGGING_IN:
+    		setProgressDialog(ProgressDialog.show(this, "", "Logging in...", true));
+    		return mProgressDialog;
+    	case DIALOG_LOADING_THREADS_LIST:
+    		setProgressDialog(ProgressDialog.show(this, "", "Loading thread list...", true));
+    		return mProgressDialog;
+    	
     		
     	default:
     		throw new IllegalArgumentException("Unexpected dialog id "+id);
     	}
-    	return mDialog;
     }
     
     /**
