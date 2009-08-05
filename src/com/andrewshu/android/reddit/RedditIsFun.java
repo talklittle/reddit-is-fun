@@ -31,8 +31,10 @@ import org.codehaus.jackson.JsonToken;
 import android.app.Activity;
 import android.app.Dialog;
 import android.app.ListActivity;
+import android.app.ProgressDialog;
 import android.content.Context;
 import android.content.Intent;
+import android.content.res.Resources;
 import android.graphics.Bitmap;
 import android.net.Uri;
 import android.os.Bundle;
@@ -104,6 +106,18 @@ public final class RedditIsFun extends ListActivity
     static final int DIALOG_REFRESH = 4;
     static final int DIALOG_POST_THREAD = 5;
     static final int DIALOG_THREAD_CLICK = 6;
+    static final int DIALOG_LOGGING_IN = 7;
+    
+    // Themes
+    static final int THEME_LIGHT = 0;
+    static final int THEME_DARK = 1;
+    
+    private int mTheme = 0;
+    
+    // Strings
+    static final String TRUE_STRING = "true";
+    static final String FALSE_STRING = "false";
+    static final String NULL_STRING = "null";
     
     // Keys used for data in the onSaveInstanceState() Map.
     public static final String STRINGS_KEY = "strings";
@@ -202,6 +216,7 @@ public final class RedditIsFun extends ListActivity
         @Override
         public View getView(int position, View convertView, ViewGroup parent) {
             View view;
+            Resources res = getResources();
 
             // Here view may be passed in for re-use, or we make a new one.
             if (convertView == null) {
@@ -225,7 +240,13 @@ public final class RedditIsFun extends ListActivity
             ImageView voteDownView = (ImageView) view.findViewById(R.id.vote_down_image);
             
             titleView.setText(item.getTitle());
-            votesView.setText(item.getNumVotes());
+            if (mTheme == THEME_LIGHT) {
+	            if (TRUE_STRING.equals(item.getClicked()))
+	            	titleView.setTextColor(res.getColor(R.color.purple));
+	            else
+	            	titleView.setTextColor(res.getColor(R.color.blue));
+            }
+            votesView.setText(item.getScore());
             linkDomainView.setText("("+item.getLinkDomain()+")");
             numCommentsView.setText(item.getNumComments());
             submitterView.setText(item.getSubmitter());
@@ -236,19 +257,23 @@ public final class RedditIsFun extends ListActivity
 
             // Set the up and down arrow colors based on whether user likes
             if (mLoggedIn) {
-            	if ("true".equals(item.getLikes())) {
+            	if (TRUE_STRING.equals(item.getLikes())) {
             		voteUpView.setImageResource(R.drawable.vote_up_red);
             		voteDownView.setImageResource(R.drawable.vote_down_gray);
-            	} else if ("false".equals(item.getLikes())) {
+            		votesView.setTextColor(res.getColor(R.color.arrow_red));
+            	} else if (FALSE_STRING.equals(item.getLikes())) {
             		voteUpView.setImageResource(R.drawable.vote_up_gray);
             		voteDownView.setImageResource(R.drawable.vote_down_blue);
+            		votesView.setTextColor(res.getColor(R.color.arrow_blue));
             	} else {
             		voteUpView.setImageResource(R.drawable.vote_up_gray);
             		voteDownView.setImageResource(R.drawable.vote_down_gray);
+            		votesView.setTextColor(res.getColor(R.color.gray));
             	}
             } else {
         		voteUpView.setImageResource(R.drawable.vote_up_gray);
         		voteDownView.setImageResource(R.drawable.vote_down_gray);
+        		votesView.setTextColor(res.getColor(R.color.gray));
             }
             
             // TODO: Thumbnail
@@ -342,7 +367,7 @@ public final class RedditIsFun extends ListActivity
         	// It should have a web link associated with it
             // TODO: popup dialog: 2 buttons: LINK, COMMENTS. well, 2 big and 2 small buttons (small: user profile, report post)
         	showDialog(DIALOG_THREAD_CLICK);
-            if ("link".equals("true")) {
+            if ("link".equals(TRUE_STRING)) {
 	            // Creates and starts an intent to open the item.link url.
 	            Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse(item.getLink().toString()));
 	            startActivity(intent);
@@ -471,7 +496,9 @@ public final class RedditIsFun extends ListActivity
             HttpPost httppost = new HttpPost("http://www.reddit.com/api/login/"+username);
             httppost.setEntity(new UrlEncodedFormEntity(nvps, HTTP.UTF_8));
             
-            // TODO: Loading screen
+            // FIXME: Logging in...
+//            showDialog(DIALOG_LOGGING_IN);
+            
             // Perform the HTTP POST request
         	HttpResponse response = mClient.execute(httppost);
         	status = response.getStatusLine().toString();
@@ -515,9 +542,7 @@ public final class RedditIsFun extends ListActivity
         	
         	List<Cookie> cookies = mClient.getCookieStore().getCookies();
         	if (cookies.isEmpty()) {
-        		Log.d(TAG, "Failed to login: No cookies");
-        		mLoggedIn = false;
-        		return false;
+        		throw new HttpException("Failed to login: No cookies");
         	}
         	
         	// Getting here means you successfully logged in.
@@ -535,6 +560,8 @@ public final class RedditIsFun extends ListActivity
             // TODO: Login error message
         	mLoggedIn = false;
         }
+        // FIXME: Logging in...
+//        dismissDialog();
         Log.d(TAG, status);
         return mLoggedIn;
     }
@@ -859,6 +886,10 @@ public final class RedditIsFun extends ListActivity
     		    }
     		});
     		break;
+    		
+    	// "Please wait"
+    	case DIALOG_LOGGING_IN:
+    		mDialog = ProgressDialog.show(this, "", "Logging in...", true);
 
     	case DIALOG_THREAD_CLICK:
     		mDialog = new Dialog(this);
@@ -871,107 +902,116 @@ public final class RedditIsFun extends ListActivity
 	    		final ImageButton voteUpButton = (ImageButton) mDialog.findViewById(R.id.thread_vote_up_button);
 	    		final ImageButton voteDownButton = (ImageButton) mDialog.findViewById(R.id.thread_vote_down_button);
 	    		
-	    		if ("true".equals(mVoteTargetThreadInfo.getLikes())) {
+	    		if (TRUE_STRING.equals(mVoteTargetThreadInfo.getLikes())) {
 	    			// User currenty likes it
-	    			voteUpButton.setImageResource(R.drawable.vote_up_red);
-	    			voteDownButton.setImageResource(R.drawable.vote_down_gray);
+	    			voteUpButton.setImageResource(R.drawable.vote_up_red_big);
+	    			voteDownButton.setImageResource(R.drawable.vote_down_gray_big);
 		    		voteUpButton.setOnClickListener(new OnClickListener() {
 		    			public void onClick(View v) {
+		    				dismissDialog();
 	    					if (doVote(mThingId, 0, mSubreddit)) {
+	    						String newScore = String.valueOf(Integer.valueOf(mVoteTargetThreadInfo.getScore())-1);
 		    					ImageView ivUp = (ImageView) mVoteTargetView.findViewById(R.id.vote_up_image);
 		    					TextView voteCounter = (TextView) mVoteTargetView.findViewById(R.id.votes);
 		    					ivUp.setImageResource(R.drawable.vote_up_gray);
-		    					voteCounter.setText(String.valueOf(Integer.valueOf(mVoteTargetThreadInfo.getNumVotes())-1));
-		    					mVoteTargetThreadInfo.setLikes("null");
+		    					voteCounter.setText(newScore);
+		    					mVoteTargetThreadInfo.setLikes(NULL_STRING);
+		    					mVoteTargetThreadInfo.setScore(newScore);
+		    					mAdapter.notifyDataSetChanged();
 		    				}
-		    				mVoteTargetThreadInfo = null;
-		    				mVoteTargetView = null;
-		    				dismissDialog();
 		    			}
 		    		});
 		    		voteDownButton.setOnClickListener(new OnClickListener() {
 		    			public void onClick(View v) {
+		    				dismissDialog();
 	    					if (doVote(mThingId, -1, mSubreddit)) {
+	    						String newScore = String.valueOf(Integer.valueOf(mVoteTargetThreadInfo.getScore())-2);
 		    					ImageView ivUp = (ImageView) mVoteTargetView.findViewById(R.id.vote_up_image);
 		    					ImageView ivDown = (ImageView) mVoteTargetView.findViewById(R.id.vote_down_image);
 		    					TextView voteCounter = (TextView) mVoteTargetView.findViewById(R.id.votes);
 		    					ivUp.setImageResource(R.drawable.vote_up_red);
 		    					ivDown.setImageResource(R.drawable.vote_down_blue);
-		    					voteCounter.setText(String.valueOf(Integer.valueOf(mVoteTargetThreadInfo.getNumVotes())-2));
-		    					mVoteTargetThreadInfo.setLikes("false");
+		    					voteCounter.setText(newScore);
+		    					mVoteTargetThreadInfo.setLikes(FALSE_STRING);
+		    					mVoteTargetThreadInfo.setScore(newScore);
+		    					mAdapter.notifyDataSetChanged();
 		    				}
-		    				mVoteTargetThreadInfo = null;
-		    				mVoteTargetView = null;
-		    				dismissDialog();
 		    			}
 		    		});
-	    		} else if ("false".equals(mVoteTargetThreadInfo.getLikes())) {
+	    		} else if (FALSE_STRING.equals(mVoteTargetThreadInfo.getLikes())) {
 	    			// User currently dislikes it
-	    			voteUpButton.setImageResource(R.drawable.vote_up_gray);
-	    			voteDownButton.setImageResource(R.drawable.vote_down_blue);
+	    			voteUpButton.setImageResource(R.drawable.vote_up_gray_big);
+	    			voteDownButton.setImageResource(R.drawable.vote_down_blue_big);
 		    		voteUpButton.setOnClickListener(new OnClickListener() {
 		    			public void onClick(View v) {
+		    				dismissDialog();
 	    					if (doVote(mThingId, 1, mSubreddit)) {
+	    						String newScore = String.valueOf(Integer.valueOf(mVoteTargetThreadInfo.getScore())+2);
 		    					ImageView ivUp = (ImageView) mVoteTargetView.findViewById(R.id.vote_up_image);
 		    					ImageView ivDown = (ImageView) mVoteTargetView.findViewById(R.id.vote_down_image);
 		    					TextView voteCounter = (TextView) mVoteTargetView.findViewById(R.id.votes);
 		    					ivUp.setImageResource(R.drawable.vote_up_red);
 		    					ivDown.setImageResource(R.drawable.vote_down_gray);
-		    					voteCounter.setText(String.valueOf(Integer.valueOf(mVoteTargetThreadInfo.getNumVotes())+2));
-		    					mVoteTargetThreadInfo.setLikes("true");
+		    					voteCounter.setText(newScore);
+		    					mVoteTargetThreadInfo.setLikes(TRUE_STRING);
+		    					mVoteTargetThreadInfo.setScore(newScore);
+		    					mAdapter.notifyDataSetChanged();
 		    				}
-		    				mVoteTargetThreadInfo = null;
-		    				mVoteTargetView = null;
-		    				dismissDialog();
 		    			}
 		    		});
 		    		voteDownButton.setOnClickListener(new OnClickListener() {
 		    			public void onClick(View v) {
+		    				dismissDialog();
 	    					if (doVote(mThingId, 0, mSubreddit)) {
+	    						String newScore = String.valueOf(Integer.valueOf(mVoteTargetThreadInfo.getScore())+1);
 		    					ImageView ivDown = (ImageView) mVoteTargetView.findViewById(R.id.vote_down_image);
 		    					TextView voteCounter = (TextView) mVoteTargetView.findViewById(R.id.votes);
 		    					ivDown.setImageResource(R.drawable.vote_down_gray);
-		    					voteCounter.setText(String.valueOf(Integer.valueOf(mVoteTargetThreadInfo.getNumVotes())+1));
-		    					mVoteTargetThreadInfo.setLikes("null");
+		    					voteCounter.setText(newScore);
+		    					mVoteTargetThreadInfo.setLikes(NULL_STRING);
+		    					mVoteTargetThreadInfo.setScore(newScore);
+		    					mAdapter.notifyDataSetChanged();
 		    				}
-		    				mVoteTargetThreadInfo = null;
-		    				mVoteTargetView = null;
-		    				dismissDialog();
 		    			}
 		    		});
 	    		} else {
 	    			// User is currently neutral
-	    			voteUpButton.setImageResource(R.drawable.vote_up_gray);
-	    			voteDownButton.setImageResource(R.drawable.vote_down_gray);
+	    			voteUpButton.setImageResource(R.drawable.vote_up_gray_big);
+	    			voteDownButton.setImageResource(R.drawable.vote_down_gray_big);
 		    		voteUpButton.setOnClickListener(new OnClickListener() {
 		    			public void onClick(View v) {
+		    				dismissDialog();
 	    					if (doVote(mThingId, 1, mSubreddit)) {
+	    						String newScore = String.valueOf(Integer.valueOf(mVoteTargetThreadInfo.getScore())+1);
 		    					ImageView ivUp = (ImageView) mVoteTargetView.findViewById(R.id.vote_up_image);
 		    					TextView voteCounter = (TextView) mVoteTargetView.findViewById(R.id.votes);
 		    					ivUp.setImageResource(R.drawable.vote_up_red);
-		    					voteCounter.setText(String.valueOf(Integer.valueOf(mVoteTargetThreadInfo.getNumVotes())+1));
-		    					mVoteTargetThreadInfo.setLikes("true");
+		    					voteCounter.setText(newScore);
+		    					mVoteTargetThreadInfo.setLikes(TRUE_STRING);
+		    					mVoteTargetThreadInfo.setScore(newScore);
+		    					mAdapter.notifyDataSetChanged();
 		    				}
-		    				mVoteTargetThreadInfo = null;
-		    				mVoteTargetView = null;
-		    				dismissDialog();
 		    			}
 		    		});
 		    		voteDownButton.setOnClickListener(new OnClickListener() {
 		    			public void onClick(View v) {
+		    				dismissDialog();
 	    					if (doVote(mThingId, -1, mSubreddit)) {
+	    						String newScore = String.valueOf(Integer.valueOf(mVoteTargetThreadInfo.getScore())-1);
 		    					ImageView ivDown = (ImageView) mVoteTargetView.findViewById(R.id.vote_down_image);
 		    					TextView voteCounter = (TextView) mVoteTargetView.findViewById(R.id.votes);
 		    					ivDown.setImageResource(R.drawable.vote_down_blue);
-		    					voteCounter.setText(String.valueOf(Integer.valueOf(mVoteTargetThreadInfo.getNumVotes())-1));
-		    					mVoteTargetThreadInfo.setLikes("false");
+		    					voteCounter.setText(newScore);
+		    					mVoteTargetThreadInfo.setLikes(FALSE_STRING);
+		    					mVoteTargetThreadInfo.setScore(newScore);
+		    					mAdapter.notifyDataSetChanged();
 		    				}
-		    				mVoteTargetThreadInfo = null;
-		    				mVoteTargetView = null;
-		    				dismissDialog();
 		    			}
 		    		});
 	    		}
+	    		// FIXME: Why don't they change color in the Dialog?
+	    		voteUpButton.invalidate();
+	    		voteDownButton.invalidate();
     		}
     		break;
     		

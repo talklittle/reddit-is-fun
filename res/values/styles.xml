@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <style name="Reddit_Light" parent="@android:style/Theme.Light">
+        <item name="android:textSize">14sp</item>
+    </style>
+    
+    <style name="Dialog_Light" parent="@android:style/Theme.Dialog">
+    	<item name="android:textColor">#888</item>
+    	<item name="android:background">#fff</item>
+    	<item name="android:windowBackground">@color/white</item>
+        <item name="android:colorBackground">#FFFFFFFF</item>
+    </style>
+   	
+</resources>

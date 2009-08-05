@@ -51,9 +51,17 @@ public class ThreadInfo {
 	public void setLikes(String likes) {
 		mValues.put(LIKES, likes);
 	}
+	
+	public void setScore(String score) {
+		mValues.put(SCORE, score);
+	}
 
 	public String getThingFullname() {
 		return mValues.get(KIND) + "_" + mValues.get(ID);
+	}
+	
+	public String getClicked() {
+		return mValues.get(CLICKED);
 	}
 	
 	public String getId() {
@@ -80,7 +88,7 @@ public class ThreadInfo {
 		return mValues.get(NUM_COMMENTS);
 	}
 	
-	public String getNumVotes() {
+	public String getScore() {
 		return mValues.get(SCORE);
 	}
 	
