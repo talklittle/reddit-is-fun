@@ -83,10 +83,10 @@ public final class RedditIsFun extends ListActivity
     private Thread mWorker;
     
     private Menu mMenu;
-    private int mMode = MODE_THREADSLIST;
+    private int mMode = MODE_THREADS_LIST;
     
-    static final int MODE_THREADSLIST  = 0x00000001;
-    static final int MODE_COMMENTSLIST = 0x00000002;
+    static final int MODE_THREADS_LIST  = 0x00000001;
+    static final int MODE_COMMENTS_LIST = 0x00000002;
 
     // Current HttpClient
     private DefaultHttpClient mClient = null;
@@ -94,6 +94,7 @@ public final class RedditIsFun extends ListActivity
     // UI State
     private CharSequence mSubreddit = null;
     private CharSequence mThingId = null;
+    private CharSequence mTargetURL = null;
     private Dialog mDialog = null;
     // TODO: Fix Dialogs. See http://www.paxmodept.com/telesto/blogitem.htm?id=766
     private Dialog mProgressDialog = null;
@@ -398,22 +399,7 @@ public final class RedditIsFun extends ListActivity
         mVoteTargetThreadInfo = item;
         mVoteTargetView = v;
         
-        if (("self."+mSubreddit).toLowerCase().equals(item.getDomain().toLowerCase())) {
-        	// It's a self post
-        	showDialog(DIALOG_THREAD_CLICK);
-            // TODO: new Intent aiming using CommentsListActivity specifically.
-        } else {
-        	// It should have a web link associated with it
-            // TODO: popup dialog: 2 buttons: LINK, COMMENTS. well, 2 big and 2 small buttons (small: user profile, report post)
-        	showDialog(DIALOG_THREAD_CLICK);
-            if ("link".equals(TRUE_STRING)) {
-	            // Creates and starts an intent to open the item.link url.
-	            Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse(item.getURL().toString()));
-	            startActivity(intent);
-        	} else {
-                // TODO: new Intent aiming at CommentsListActivity specifically.
-        	}
-        }
+       	showDialog(DIALOG_THREAD_CLICK);
     }
 
     /**
@@ -1119,12 +1105,15 @@ public final class RedditIsFun extends ListActivity
     	case DIALOG_THREAD_CLICK:
     		setDialog(new Dialog(this));
     		mDialog.setContentView(R.layout.thread_click_dialog);
-    		mDialog.setTitle("What?");
+    		mDialog.setTitle("Thread:");
     		final CheckBox voteUpButton = (CheckBox) mDialog.findViewById(R.id.thread_vote_up_button);
     		final CheckBox voteDownButton = (CheckBox) mDialog.findViewById(R.id.thread_vote_down_button);
     		final TextView urlView = (TextView) mDialog.findViewById(R.id.url);
+    		final Button linkButton = (Button) mDialog.findViewById(R.id.thread_link_button);
+    		final Button commentsButton = (Button) mDialog.findViewById(R.id.thread_comments_button);
     		
-    		urlView.setText(mVoteTargetThreadInfo.getURL());
+    		mTargetURL = mVoteTargetThreadInfo.getURL();
+    		urlView.setText(mTargetURL);
 
     		// Only show upvote/downvote if user is logged in
     		if (mLoggedIn) {
@@ -1150,6 +1139,27 @@ public final class RedditIsFun extends ListActivity
     			voteUpButton.setVisibility(View.INVISIBLE);
     			voteDownButton.setVisibility(View.INVISIBLE);
     		}
+    		// The "link" and "comments" buttons
+    		OnClickListener commentsOnClickListener = new OnClickListener() {
+    			public void onClick(View v) {
+    				mMode = MODE_COMMENTS_LIST;
+    				// TODO: setContentView to comments mode
+        		}
+    		};
+    		commentsButton.setOnClickListener(commentsOnClickListener);
+            if (("self."+mSubreddit).toLowerCase().equals(mTargetURL.toString().toLowerCase())) {
+            	// It's a self post. Both buttons do the same thing.
+            	linkButton.setOnClickListener(commentsOnClickListener);
+            } else {
+            	linkButton.setOnClickListener(new OnClickListener() {
+            		public void onClick(View v) {
+            			dismissDialog();
+            			// Launch Intent to goto the URL
+            			RedditIsFun.this.startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse(mTargetURL.toString())));
+            		}
+            	});
+            }
+
     		return mDialog;
 
     	case DIALOG_POST_THREAD:
