@@ -20,4 +20,7 @@
 	
 	<string name="vote_up_button">Upvote</string>
 	<string name="vote_down_button">Downvote</string>
+	
+	<string name="thread_link_button">link</string>
+	<string name="thread_comments_button">comments</string>
 </resources>

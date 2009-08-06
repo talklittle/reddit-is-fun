@@ -6,11 +6,11 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.lang.ref.SoftReference;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import org.apache.commons.lang.StringEscapeUtils;
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpException;
 import org.apache.http.HttpResponse;
@@ -83,6 +83,10 @@ public final class RedditIsFun extends ListActivity
     private Thread mWorker;
     
     private Menu mMenu;
+    private int mMode = MODE_THREADSLIST;
+    
+    static final int MODE_THREADSLIST  = 0x00000001;
+    static final int MODE_COMMENTSLIST = 0x00000002;
 
     // Current HttpClient
     private DefaultHttpClient mClient = null;
@@ -250,9 +254,8 @@ public final class RedditIsFun extends ListActivity
             TextView votesView = (TextView) view.findViewById(R.id.votes);
             TextView linkDomainView = (TextView) view.findViewById(R.id.linkDomain);
             TextView numCommentsView = (TextView) view.findViewById(R.id.numComments);
-            TextView submitterView = (TextView) view.findViewById(R.id.submitter);
-            TextView submissionTimeView = (TextView) view.findViewById(R.id.submissionTime);
-            TextView linkView = (TextView) view.findViewById(R.id.link);
+//            TextView submitterView = (TextView) view.findViewById(R.id.submitter);
+//            TextView submissionTimeView = (TextView) view.findViewById(R.id.submissionTime);
             ImageView voteUpView = (ImageView) view.findViewById(R.id.vote_up_image);
             ImageView voteDownView = (ImageView) view.findViewById(R.id.vote_down_image);
             
@@ -264,13 +267,13 @@ public final class RedditIsFun extends ListActivity
 	            	titleView.setTextColor(res.getColor(R.color.blue));
             }
             votesView.setText(item.getScore());
-            linkDomainView.setText("("+item.getLinkDomain()+")");
+            linkDomainView.setText("("+item.getDomain()+")");
             numCommentsView.setText(item.getNumComments());
-            submitterView.setText(item.getSubmitter());
+//            submitterView.setText(item.getAuthor());
             // TODO: convert submission time to a displayable time
-            Date submissionTimeDate = new Date((long) (Double.parseDouble(item.getSubmissionTime()) / 1000));
-            submissionTimeView.setText("XXX");
-            linkView.setText(item.getLink());
+//            Date submissionTimeDate = new Date((long) (Double.parseDouble(item.getCreated()) / 1000));
+//            submissionTimeView.setText("XXX");
+            titleView.setTag(item.getURL());
 
             // Set the up and down arrow colors based on whether user likes
             if (mLoggedIn) {
@@ -391,11 +394,11 @@ public final class RedditIsFun extends ListActivity
         ThreadInfo item = mAdapter.getItem(position);
         
         // Mark the thread as selected
-        mThingId = item.getThingFullname();
+        mThingId = item.getName();
         mVoteTargetThreadInfo = item;
         mVoteTargetView = v;
         
-        if (("self."+mSubreddit).toLowerCase().equals(item.getLinkDomain().toLowerCase())) {
+        if (("self."+mSubreddit).toLowerCase().equals(item.getDomain().toLowerCase())) {
         	// It's a self post
         	showDialog(DIALOG_THREAD_CLICK);
             // TODO: new Intent aiming using CommentsListActivity specifically.
@@ -405,7 +408,7 @@ public final class RedditIsFun extends ListActivity
         	showDialog(DIALOG_THREAD_CLICK);
             if ("link".equals(TRUE_STRING)) {
 	            // Creates and starts an intent to open the item.link url.
-	            Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse(item.getLink().toString()));
+	            Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse(item.getURL().toString()));
 	            startActivity(intent);
         	} else {
                 // TODO: new Intent aiming at CommentsListActivity specifically.
@@ -826,7 +829,6 @@ public final class RedditIsFun extends ListActivity
     }
     
     public boolean doVote(CharSequence thingId, int direction, CharSequence subreddit) {
-    	String status = "";
     	if (!mLoggedIn) {
     		// TODO: Error dialog saying you must be logged in.
     		return false;
@@ -903,6 +905,84 @@ public final class RedditIsFun extends ListActivity
     	
     	return true;
     }
+    
+    public boolean doComment(CharSequence parentThingId, CharSequence subreddit) {
+//    	if (!mLoggedIn) {
+//    		// TODO: Error dialog saying you must be logged in.
+//    		return false;
+//    	}
+//    	if (direction < -1 || direction > 1) {
+//    		throw new RuntimeException("How the hell did you vote something besides -1, 0, or 1?");
+//    	}
+//    	
+//    	// Update UI: 6 cases (3 original directions, each with 2 possible changes)
+//    	// UI is updated *before* the transaction actually happens. If the connection breaks for
+//    	// some reason, then the vote will be lost.
+//    	// Oh well, happens on reddit.com too, occasionally.
+//    	final ImageView ivUp = (ImageView) mVoteTargetView.findViewById(R.id.vote_up_image);
+//    	final ImageView ivDown = (ImageView) mVoteTargetView.findViewById(R.id.vote_down_image);
+//    	final TextView voteCounter = (TextView) mVoteTargetView.findViewById(R.id.votes);
+//		int newImageResourceUp, newImageResourceDown;
+//    	String newScore;
+//    	String newLikes;
+//    	int previousScore = Integer.valueOf(mVoteTargetThreadInfo.getScore());
+//    	if (TRUE_STRING.equals(mVoteTargetThreadInfo.getLikes())) {
+//    		if (direction == 0) {
+//    			newScore = String.valueOf(previousScore - 1);
+//    			newImageResourceUp = R.drawable.vote_up_gray;
+//    			newImageResourceDown = R.drawable.vote_down_gray;
+//    			newLikes = NULL_STRING;
+//    		} else if (direction == -1) {
+//    			newScore = String.valueOf(previousScore - 2);
+//    			newImageResourceUp = R.drawable.vote_up_gray;
+//    			newImageResourceDown = R.drawable.vote_down_blue;
+//    			newLikes = FALSE_STRING;
+//    		} else {
+//    			return false;
+//    		}
+//    	} else if (FALSE_STRING.equals(mVoteTargetThreadInfo.getLikes())) {
+//    		if (direction == 1) {
+//    			newScore = String.valueOf(previousScore + 2);
+//    			newImageResourceUp = R.drawable.vote_up_red;
+//    			newImageResourceDown = R.drawable.vote_down_gray;
+//    			newLikes = TRUE_STRING;
+//    		} else if (direction == 0) {
+//    			newScore = String.valueOf(previousScore + 1);
+//    			newImageResourceUp = R.drawable.vote_up_gray;
+//    			newImageResourceDown = R.drawable.vote_down_gray;
+//    			newLikes = NULL_STRING;
+//    		} else {
+//    			return false;
+//    		}
+//    	} else {
+//    		if (direction == 1) {
+//    			newScore = String.valueOf(previousScore + 1);
+//    			newImageResourceUp = R.drawable.vote_up_red;
+//    			newImageResourceDown = R.drawable.vote_down_gray;
+//    			newLikes = TRUE_STRING;
+//    		} else if (direction == -1) {
+//    			newScore = String.valueOf(previousScore - 1);
+//    			newImageResourceUp = R.drawable.vote_up_gray;
+//    			newImageResourceDown = R.drawable.vote_down_blue;
+//    			newLikes = FALSE_STRING;
+//    		} else {
+//    			return false;
+//    		}
+//    	}
+//    	
+//    	ivUp.setImageResource(newImageResourceUp);
+//		ivDown.setImageResource(newImageResourceDown);
+//		voteCounter.setText(newScore);
+//		mVoteTargetThreadInfo.setLikes(newLikes);
+//		mVoteTargetThreadInfo.setScore(newScore);
+//		mAdapter.notifyDataSetChanged();
+//    	
+//    	VoteWorker worker = new VoteWorker(thingId, direction, subreddit);
+//    	setCurrentWorker(worker);
+//    	worker.start();
+//    	
+    	return true;
+    }
 
     /**
      * Populates the menu.
@@ -921,6 +1001,7 @@ public final class RedditIsFun extends ListActivity
         menu.add(0, DIALOG_REFRESH, 0, "Refresh")
         	.setOnMenuItemClickListener(new ThreadsListMenu(DIALOG_REFRESH));
         
+        // Login and Logout need to use the same ID for menu entry so they can be swapped
         if (mLoggedIn) {
         	menu.add(0, DIALOG_LOGIN, 0, "Logout")
        			.setOnMenuItemClickListener(new ThreadsListMenu(DIALOG_LOGOUT));
@@ -1041,6 +1122,9 @@ public final class RedditIsFun extends ListActivity
     		mDialog.setTitle("What?");
     		final CheckBox voteUpButton = (CheckBox) mDialog.findViewById(R.id.thread_vote_up_button);
     		final CheckBox voteDownButton = (CheckBox) mDialog.findViewById(R.id.thread_vote_down_button);
+    		final TextView urlView = (TextView) mDialog.findViewById(R.id.url);
+    		
+    		urlView.setText(mVoteTargetThreadInfo.getURL());
 
     		// Only show upvote/downvote if user is logged in
     		if (mLoggedIn) {
@@ -1257,7 +1341,7 @@ public final class RedditIsFun extends ListActivity
 								ti.put("_media_"+mediaNamefield, jp.getText());
 							}
 						} else {
-							ti.put(namefield, jp.getText());
+							ti.put(namefield, StringEscapeUtils.unescapeHtml(jp.getText()));
 						}
 					}
 				} else {

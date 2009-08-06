@@ -1,10 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <style name="Reddit_Light" parent="@android:style/Theme.Light">
-        <item name="android:textSize">14sp</item>
-    </style>
-
-	<style name="VoteUpButton">
+    <style name="VoteUpButton">
 		<item name="android:background">#00000000</item>
 		<item name="android:button">@drawable/vote_up_big_statelist</item>
 	</style>

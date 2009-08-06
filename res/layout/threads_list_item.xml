@@ -82,19 +82,6 @@
 		        android:textAppearance="?android:attr/textAppearanceMedium"
 		    />
 		    
-		    <!-- Hidden (size 0) element for URL -->
-		    <TextView android:id="@+id/link"
-		        android:layout_width="0dip"
-		        android:layout_height="0dip"
-		        android:layout_above="@id/title"
-		        android:layout_marginBottom="1dip"
-		        android:text="hi"
-		
-				android:visibility="invisible"
-		        android:gravity="center_vertical|left"
-		        android:textAppearance="?android:attr/textAppearanceSmall"
-		        />
-		        
 	    </RelativeLayout>
 	    
 	    <!-- Bottom row -->
@@ -128,13 +115,13 @@
 		        android:textAppearance="?android:attr/textAppearanceSmall"
 		    />
 
-			<!--  XXX invisible for now -->
+			<!--  XXX unused for now -->
+			<!--
 		    <TextView android:id="@+id/submissionTime"
 		        android:layout_width="wrap_content"
 		        android:layout_height="wrap_content"
 		        android:layout_toRightOf="@id/linkDomain"
 		        android:layout_alignBaseline="@id/numComments"
-		        android:layout_toLeftOf="@id/submitter"
 		        android:text="XXX"
 		        
 		        android:visibility="invisible"
@@ -142,8 +129,10 @@
 		        android:ellipsize="marquee"
 		        android:textAppearance="?android:attr/textAppearanceSmall"
 		    />
+		    -->
 		    
-		    <!-- XXX invisible for now -->
+		    <!-- XXX unused for now -->
+		    <!--
 		    <TextView android:id="@+id/submitter"
 		        android:layout_width="wrap_content"
 		        android:layout_height="wrap_content"
@@ -157,6 +146,7 @@
 		        android:ellipsize="marquee"
 		        android:textAppearance="?android:attr/textAppearanceSmall"
 		    />
+		    -->
 				    
 	    </RelativeLayout>
 	    

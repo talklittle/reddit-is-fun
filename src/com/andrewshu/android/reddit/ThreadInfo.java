@@ -53,12 +53,20 @@ public class ThreadInfo {
 		mValues.put(SCORE, score);
 	}
 
-	public String getThingFullname() {
-		return mValues.get(KIND) + "_" + mValues.get(ID);
+	public String getAuthor() {
+		return mValues.get(AUTHOR);
 	}
 	
 	public String getClicked() {
 		return mValues.get(CLICKED);
+	}
+	
+	public String getCreated() {
+		return mValues.get(CREATED);
+	}
+
+	public String getDomain() {
+		return mValues.get(DOMAIN);
 	}
 	
 	public String getId() {
@@ -73,12 +81,8 @@ public class ThreadInfo {
 		return mValues.get(LIKES);
 	}
 	
-	public String getLink() {
-		return mValues.get(URL);
-	}
-	
-	public String getLinkDomain() {
-		return mValues.get(DOMAIN);
+	public String getName() {
+		return mValues.get(NAME);
 	}
 	
 	public String getNumComments() {
@@ -89,20 +93,17 @@ public class ThreadInfo {
 		return mValues.get(SCORE);
 	}
 	
-	public String getSubmissionTime() {
-		return mValues.get(CREATED);
-	}
-
-	public String getSubmitter() {
-		return mValues.get(AUTHOR);
-	}
-	
 	public String getTitle() {
 		return mValues.get(TITLE);
 	}
 	
-	public String getThumbnailURL() {
+	public String getThumbnail() {
 		return mValues.get(THUMBNAIL);
 	}
 
+	public String getURL() {
+		return mValues.get(URL);
+	}
+	
+	
 }
