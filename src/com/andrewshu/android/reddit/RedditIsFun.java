@@ -95,9 +95,6 @@ public final class RedditIsFun extends ListActivity
     private CharSequence mSubreddit = null;
     private CharSequence mThingId = null;
     private CharSequence mTargetURL = null;
-    private Dialog mDialog = null;
-    // TODO: Fix Dialogs. See http://www.paxmodept.com/telesto/blogitem.htm?id=766
-    private Dialog mProgressDialog = null;
     private View mVoteTargetView = null;
     private ThreadInfo mVoteTargetThreadInfo = null;
     
@@ -178,7 +175,7 @@ public final class RedditIsFun extends ListActivity
     
     public class VoteUpOnCheckedChangeListener implements CompoundButton.OnCheckedChangeListener {
     	public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
-	    	dismissDialog();
+	    	dismissDialog(DIALOG_THREAD_CLICK);
 			if (isChecked)
 				doVote(mThingId, 1, mSubreddit);
 			else
@@ -188,7 +185,7 @@ public final class RedditIsFun extends ListActivity
     
     public class VoteDownOnCheckedChangeListener implements CompoundButton.OnCheckedChangeListener {
 	    public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
-	    	dismissDialog();
+	    	dismissDialog(DIALOG_THREAD_CLICK);
 			if (isChecked)
 				doVote(mThingId, -1, mSubreddit);
 			else
@@ -359,33 +356,6 @@ public final class RedditIsFun extends ListActivity
         
     }
     
-    public synchronized void setDialog(Dialog dialog) {
-    	mDialog = dialog;
-    }
-    
-    public synchronized boolean dismissDialog() {
-    	if (mDialog != null) {
-    		mDialog.dismiss();
-    		mDialog = null;
-    		return true;
-    	}
-    	Log.d(TAG, "dismissDialog: false - mDialog was null");
-    	return false;
-    }
-    
-    public synchronized void setProgressDialog(Dialog progressDialog) {
-    	mProgressDialog = progressDialog;
-    }
-
-    public synchronized boolean dismissProgressDialog() {
-    	if (mProgressDialog != null) {
-    		mProgressDialog.dismiss();
-    		mProgressDialog = null;
-    		return true;
-    	}
-    	return false;
-    }
-
     /**
      * Called when user clicks an item in the list. Starts an activity to
      * open the url for that item.
@@ -397,6 +367,7 @@ public final class RedditIsFun extends ListActivity
         // Mark the thread as selected
         mThingId = item.getName();
         mVoteTargetThreadInfo = item;
+        mTargetURL = item.getURL();
         mVoteTargetView = v;
         
        	showDialog(DIALOG_THREAD_CLICK);
@@ -455,8 +426,7 @@ public final class RedditIsFun extends ListActivity
     	setCurrentWorker(worker);
     	
     	resetUI();
-    	// FIXME: Loading...
-//    	showDialog(DIALOG_LOADING_THREADS_LIST);
+    	showDialog(DIALOG_LOADING_THREADS_LIST);
     	
     	setTitle("/r/"+subreddit.toString().trim());
     	
@@ -506,7 +476,7 @@ public final class RedditIsFun extends ListActivity
             	HttpResponse response = mClient.execute(request);
             	
             	// OK to dismiss the progress dialog when threads start loading
-            	dismissProgressDialog();
+            	dismissDialog(DIALOG_LOADING_THREADS_LIST);
 
             	InputStream in = response.getEntity().getContent();
                 
@@ -647,8 +617,7 @@ public final class RedditIsFun extends ListActivity
             HttpPost httppost = new HttpPost("http://www.reddit.com/api/login/"+username);
             httppost.setEntity(new UrlEncodedFormEntity(nvps, HTTP.UTF_8));
             
-            // FIXME: Logging in...
-//            showDialog(DIALOG_LOGGING_IN);
+            showDialog(DIALOG_LOGGING_IN);
             
             // Perform the HTTP POST request
         	HttpResponse response = mClient.execute(httppost);
@@ -711,7 +680,7 @@ public final class RedditIsFun extends ListActivity
             // TODO: Login error message
         	mLoggedIn = false;
         }
-        dismissProgressDialog();
+        dismissDialog(DIALOG_LOGGING_IN);
         Log.d(TAG, status);
         return mLoggedIn;
     }
@@ -1042,37 +1011,39 @@ public final class RedditIsFun extends ListActivity
 
     @Override
     protected Dialog onCreateDialog(int id) {
+    	Dialog dialog;
+    	ProgressDialog pdialog;
     	switch (id) {
     	case DIALOG_PICK_SUBREDDIT:
-    		setDialog(new Dialog(this));
-    		mDialog.setContentView(R.layout.pick_subreddit_dialog);
-    		mDialog.setTitle("Pick a subreddit");
-    		final EditText pickSubredditInput = (EditText) mDialog.findViewById(R.id.pick_subreddit_input);
+    		dialog = new Dialog(this);
+    		dialog.setContentView(R.layout.pick_subreddit_dialog);
+    		dialog.setTitle("Pick a subreddit");
+    		final EditText pickSubredditInput = (EditText) dialog.findViewById(R.id.pick_subreddit_input);
     		pickSubredditInput.setOnKeyListener(new OnKeyListener() {
     			public boolean onKey(View v, int keyCode, KeyEvent event) {
     		        if ((event.getAction() == KeyEvent.ACTION_DOWN) && (keyCode == KeyEvent.KEYCODE_ENTER)) {
     		        	doGetThreadsList(pickSubredditInput.getText());
-    		            dismissDialog();
+    		            dismissDialog(DIALOG_PICK_SUBREDDIT);
     		        	return true;
     		        }
     		        return false;
     		    }
     		});
-    		final Button pickSubredditButton = (Button) mDialog.findViewById(R.id.pick_subreddit_button);
+    		final Button pickSubredditButton = (Button) dialog.findViewById(R.id.pick_subreddit_button);
     		pickSubredditButton.setOnClickListener(new OnClickListener() {
     			public void onClick(View v) {
     		        doGetThreadsList(pickSubredditInput.getText());
-    		        dismissDialog();
+    		        dismissDialog(DIALOG_PICK_SUBREDDIT);
     		    }
     		});
-    		return mDialog;
+    		break;
     		
     	case DIALOG_LOGIN:
-    		setDialog(new Dialog(this));
-    		mDialog.setContentView(R.layout.login_dialog);
-    		mDialog.setTitle("Login to reddit.com");
-    		final EditText loginUsernameInput = (EditText) mDialog.findViewById(R.id.login_username_input);
-    		final EditText loginPasswordInput = (EditText) mDialog.findViewById(R.id.login_password_input);
+    		dialog = new Dialog(this);
+    		dialog.setContentView(R.layout.login_dialog);
+    		dialog.setTitle("Login to reddit.com");
+    		final EditText loginUsernameInput = (EditText) dialog.findViewById(R.id.login_username_input);
+    		final EditText loginPasswordInput = (EditText) dialog.findViewById(R.id.login_password_input);
     		loginUsernameInput.setOnKeyListener(new OnKeyListener() {
     			public boolean onKey(View v, int keyCode, KeyEvent event) {
     		        if ((event.getAction() == KeyEvent.ACTION_DOWN)
@@ -1087,32 +1058,68 @@ public final class RedditIsFun extends ListActivity
     			public boolean onKey(View v, int keyCode, KeyEvent event) {
     		        if ((event.getAction() == KeyEvent.ACTION_DOWN) && (keyCode == KeyEvent.KEYCODE_ENTER)) {
     		        	doLogin(loginUsernameInput.getText(), loginPasswordInput.getText());
-    		            dismissDialog();
+    		            dismissDialog(DIALOG_LOGIN);
     		        	return true;
     		        }
     		        return false;
     		    }
     		});
-    		final Button loginButton = (Button) mDialog.findViewById(R.id.login_button);
+    		final Button loginButton = (Button) dialog.findViewById(R.id.login_button);
     		loginButton.setOnClickListener(new OnClickListener() {
     			public void onClick(View v) {
     				doLogin(loginUsernameInput.getText(), loginPasswordInput.getText());
-    		        dismissDialog();
+    		        dismissDialog(DIALOG_LOGIN);
     		    }
     		});
-    		return mDialog;
+    		break;
     		
     	case DIALOG_THREAD_CLICK:
-    		setDialog(new Dialog(this));
-    		mDialog.setContentView(R.layout.thread_click_dialog);
-    		mDialog.setTitle("Thread:");
-    		final CheckBox voteUpButton = (CheckBox) mDialog.findViewById(R.id.thread_vote_up_button);
-    		final CheckBox voteDownButton = (CheckBox) mDialog.findViewById(R.id.thread_vote_down_button);
-    		final TextView urlView = (TextView) mDialog.findViewById(R.id.url);
-    		final Button linkButton = (Button) mDialog.findViewById(R.id.thread_link_button);
-    		final Button commentsButton = (Button) mDialog.findViewById(R.id.thread_comments_button);
+    		dialog = new Dialog(this);
+    		dialog.setContentView(R.layout.thread_click_dialog);
+    		dialog.setTitle("Thread:");
     		
-    		mTargetURL = mVoteTargetThreadInfo.getURL();
+    		break;
+
+    	case DIALOG_POST_THREAD:
+    		// TODO: a scrollable Dialog with Title, URL/Selftext, and subreddit.
+    		// Or one of those things that pops up at bottom of screen, like browser "Find on page"
+    		dialog = null;
+    		break;
+    		
+   		// "Please wait"
+    	case DIALOG_LOGGING_IN:
+    		pdialog = new ProgressDialog(this);
+    		pdialog.setMessage("Logging in...");
+    		pdialog.setIndeterminate(true);
+    		pdialog.setCancelable(true);
+    		dialog = pdialog;
+    		break;
+    	case DIALOG_LOADING_THREADS_LIST:
+    		pdialog = new ProgressDialog(this);
+    		pdialog.setMessage("Loading subreddit...");
+    		pdialog.setIndeterminate(true);
+    		pdialog.setCancelable(true);
+    		dialog = pdialog;
+    		break;
+    	
+    	default:
+    		throw new IllegalArgumentException("Unexpected dialog id "+id);
+    	}
+    	return dialog;
+    }
+    
+    @Override
+    protected void onPrepareDialog(int id, Dialog dialog) {
+    	super.onPrepareDialog(id, dialog);
+    	
+    	switch (id) {
+    	case DIALOG_THREAD_CLICK:
+    		final CheckBox voteUpButton = (CheckBox) dialog.findViewById(R.id.thread_vote_up_button);
+    		final CheckBox voteDownButton = (CheckBox) dialog.findViewById(R.id.thread_vote_down_button);
+    		final TextView urlView = (TextView) dialog.findViewById(R.id.url);
+    		final Button linkButton = (Button) dialog.findViewById(R.id.thread_link_button);
+    		final Button commentsButton = (Button) dialog.findViewById(R.id.thread_comments_button);
+    		
     		urlView.setText(mTargetURL);
 
     		// Only show upvote/downvote if user is logged in
@@ -1139,6 +1146,7 @@ public final class RedditIsFun extends ListActivity
     			voteUpButton.setVisibility(View.INVISIBLE);
     			voteDownButton.setVisibility(View.INVISIBLE);
     		}
+
     		// The "link" and "comments" buttons
     		OnClickListener commentsOnClickListener = new OnClickListener() {
     			public void onClick(View v) {
@@ -1153,30 +1161,17 @@ public final class RedditIsFun extends ListActivity
             } else {
             	linkButton.setOnClickListener(new OnClickListener() {
             		public void onClick(View v) {
-            			dismissDialog();
+            			dismissDialog(DIALOG_THREAD_CLICK);
             			// Launch Intent to goto the URL
             			RedditIsFun.this.startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse(mTargetURL.toString())));
             		}
             	});
             }
-
-    		return mDialog;
-
-    	case DIALOG_POST_THREAD:
-    		// TODO: a scrollable Dialog with Title, URL/Selftext, and subreddit.
-    		return mDialog;
+    		break;
     		
-   		// "Please wait"
-    	case DIALOG_LOGGING_IN:
-    		setProgressDialog(ProgressDialog.show(this, "", "Logging in...", true));
-    		return mProgressDialog;
-    	case DIALOG_LOADING_THREADS_LIST:
-    		setProgressDialog(ProgressDialog.show(this, "", "Loading thread list...", true));
-    		return mProgressDialog;
-    	
-    		
-    	default:
-    		throw new IllegalArgumentException("Unexpected dialog id "+id);
+		default:
+			// No preparation based on app state is required.
+			break;
     	}
     }
     
@@ -1267,6 +1262,9 @@ public final class RedditIsFun extends ListActivity
             // todo: is above right? needed it to work
             getListView().setSelection(state.getInt(SELECTION_KEY));
         }
+        
+        // Close any ProgressDialogs
+        dismissDialog(DIALOG_LOADING_THREADS_LIST);
     }
 
 

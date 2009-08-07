@@ -34,7 +34,6 @@
       	android:singleLine="true"
         android:ellipsize="marquee"
         android:gravity="center"
-        android:textAppearance="?android:attr/textAppearanceMedium"
         android:textStyle="bold"
     />
 
@@ -79,7 +78,7 @@
 		        android:text="A really cool title goes here yeah yeah reddit titles are always really long"
 		
 		        android:gravity="center_vertical|left"
-		        android:textAppearance="?android:attr/textAppearanceMedium"
+		        android:textSize="14dip"
 		    />
 		    
 	    </RelativeLayout>
@@ -100,7 +99,7 @@
 		
 		        android:singleLine="true"
 		        android:ellipsize="marquee"
-		        android:textAppearance="?android:attr/textAppearanceSmall"
+		        android:textSize="10dip"
 		        android:textStyle="bold"
 		    />
 		
@@ -111,8 +110,7 @@
 		        android:layout_toRightOf="@id/numComments"
 		        android:layout_alignBaseline="@id/numComments"
 		        android:text="(self.reddit.com)"
-		
-		        android:textAppearance="?android:attr/textAppearanceSmall"
+				android:textSize="10dip"
 		    />
 
 			<!--  XXX unused for now -->
