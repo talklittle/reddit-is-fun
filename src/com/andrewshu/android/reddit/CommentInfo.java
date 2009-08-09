@@ -32,6 +32,7 @@ public class CommentInfo {
 	public HashMap<String, String> mValues = new HashMap<String, String>();
 	public ThreadInfo mOpInfo = null;
 	public int mIndent = 0;
+	public Integer mListOrder = 0;
 
 	public void setOpInfo(ThreadInfo opInfo) {
 		mOpInfo = opInfo;
@@ -39,6 +40,10 @@ public class CommentInfo {
 	
 	public void setIndent(int indent) {
 		mIndent = indent;
+	}
+	
+	public void setListOrder(int listOrder) {
+		mListOrder = listOrder;
 	}
 	
 	// TODO?: Make setters for everything instead... or not.
@@ -76,6 +81,10 @@ public class CommentInfo {
 	
 	public String getLikes() {
 		return mValues.get(LIKES);
+	}
+	
+	public Integer getListOrder() {
+		return mListOrder;
 	}
 	
 	public String getName() {

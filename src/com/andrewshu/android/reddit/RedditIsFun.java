@@ -94,6 +94,7 @@ public final class RedditIsFun extends ListActivity
     
     // UI State
     private CharSequence mSubreddit = null;
+    private CharSequence mThingFullname = null;
     private CharSequence mThingId = null;
     private CharSequence mTargetURL = null;
     private View mVoteTargetView = null;
@@ -178,9 +179,9 @@ public final class RedditIsFun extends ListActivity
     	public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
 	    	dismissDialog(DIALOG_THREAD_CLICK);
 			if (isChecked)
-				doVote(mThingId, 1, mSubreddit);
+				doVote(mThingFullname, 1, mSubreddit);
 			else
-				doVote(mThingId, 0, mSubreddit);
+				doVote(mThingFullname, 0, mSubreddit);
 		}
     }
     
@@ -188,9 +189,9 @@ public final class RedditIsFun extends ListActivity
 	    public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
 	    	dismissDialog(DIALOG_THREAD_CLICK);
 			if (isChecked)
-				doVote(mThingId, -1, mSubreddit);
+				doVote(mThingFullname, -1, mSubreddit);
 			else
-				doVote(mThingId, 0, mSubreddit);
+				doVote(mThingFullname, 0, mSubreddit);
 		}
     }
 
@@ -365,7 +366,8 @@ public final class RedditIsFun extends ListActivity
         ThreadInfo item = mThreadsAdapter.getItem(position);
         
         // Mark the thread as selected
-        mThingId = item.getName();
+        mThingFullname = item.getName();
+        mThingId = item.getId();
         mVoteTargetThreadInfo = item;
         mTargetURL = item.getURL();
         mVoteTargetView = v;
@@ -483,8 +485,9 @@ public final class RedditIsFun extends ListActivity
                 parseSubredditJSON(in, mThreadsAdapter);
                 
                 mSubreddit = _mSubreddit;
-            } catch (Exception e) {
-                Log.e(TAG, "failed:" + e.getMessage());
+            } catch (IOException e) {
+            	dismissDialog(DIALOG_LOADING_THREADS_LIST);
+            	Log.e(TAG, "failed:" + e.getMessage());
             }
         }
     }
@@ -1150,11 +1153,16 @@ public final class RedditIsFun extends ListActivity
     		// The "link" and "comments" buttons
     		OnClickListener commentsOnClickListener = new OnClickListener() {
     			public void onClick(View v) {
-    				// TODO: Launch an Intent for RedditCommentsListActivity
-    				
+    				dismissDialog(DIALOG_THREAD_CLICK);
+    				// Launch an Intent for RedditCommentsListActivity
+    				Intent i = new Intent(RedditIsFun.this, RedditCommentsListActivity.class);
+    				i.putExtra(ThreadInfo.SUBREDDIT, mSubreddit);
+    				i.putExtra(ThreadInfo.ID, mThingId);
+    				startActivity(i);
         		}
     		};
     		commentsButton.setOnClickListener(commentsOnClickListener);
+    		// TODO: Handle bestof posts, which aren't self posts
             if (("self."+mSubreddit).toLowerCase().equals(mTargetURL.toString().toLowerCase())) {
             	// It's a self post. Both buttons do the same thing.
             	linkButton.setOnClickListener(commentsOnClickListener);

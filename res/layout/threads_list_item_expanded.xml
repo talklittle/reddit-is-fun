@@ -33,6 +33,7 @@
 		    android:layout_height="wrap_content"
 			android:text="by talklittle"
 	
+			android:gravity="center"
 	        android:singleLine="true"
 	        android:ellipsize="marquee"
 	        android:textSize="10dip"

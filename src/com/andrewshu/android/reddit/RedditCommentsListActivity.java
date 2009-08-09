@@ -7,6 +7,7 @@ import java.io.InputStreamReader;
 import java.lang.ref.SoftReference;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.TreeMap;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -50,6 +51,7 @@ import android.view.ViewGroup;
 import android.view.View.OnClickListener;
 import android.view.View.OnKeyListener;
 import android.webkit.WebView;
+import android.webkit.WebSettings.TextSize;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.CheckBox;
@@ -76,6 +78,7 @@ public final class RedditCommentsListActivity extends ListActivity
 	public final String SERIALIZE_SEPARATOR = "\r";
 	
     private final JsonFactory jsonFactory = new JsonFactory(); 
+    static int mNestedCommentsJSONOrder = 0;
 	
     /** Custom list adapter that fits our threads data into the list. */
     private CommentsListAdapter mCommentsAdapter;
@@ -83,6 +86,9 @@ public final class RedditCommentsListActivity extends ListActivity
     private Handler mHandler;
     /** Currently running background network thread. */
     private Thread mWorker;
+    
+    private ThreadInfo mOpThreadInfo;
+    private TreeMap<Integer, CommentInfo> mCommentsMap = new TreeMap<Integer, CommentInfo>();
     
     private Menu mMenu;
     private int mMode = MODE_THREADS_LIST;
@@ -94,7 +100,8 @@ public final class RedditCommentsListActivity extends ListActivity
     private DefaultHttpClient mClient = null;
     
     // UI State
-    private CharSequence mSubreddit = null;
+    private CharSequence mSubreddit = null;  // Should remain constant for the life of this instance
+    private CharSequence mThreadId = null;   // Should remain constant for the life of this instance
     private CharSequence mThingId = null;
     private CharSequence mTargetURL = null;
     private View mVoteTargetView = null;
@@ -131,6 +138,7 @@ public final class RedditCommentsListActivity extends ListActivity
     static final String TRUE_STRING = "true";
     static final String FALSE_STRING = "false";
     static final String NULL_STRING = "null";
+    static final String EMPTY_STRING = "";
     
     // Keys used for data in the onSaveInstanceState() Map.
     public static final String STRINGS_KEY = "strings";
@@ -155,13 +163,27 @@ public final class RedditCommentsListActivity extends ListActivity
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         
-        setContentView(R.layout.threads_list_content);
+        setContentView(R.layout.comments_list_content);
         // The above layout contains a list id "android:list"
         // which ListActivity adopts as its list -- we can
         // access it with getListView().
 
-        // TODO: pull current subreddit from savedInstanceState
-        
+        // Pull current subreddit and thread info from Intent
+        Bundle extras = getIntent().getExtras();
+        if (extras != null) {
+        	mThreadId = extras.getString(ThreadInfo.ID);
+        	mSubreddit = extras.getString(ThreadInfo.SUBREDDIT);
+        } else {
+        	// Quit, because the Comments List requires subreddit and thread id from Intent.
+        	Log.e(TAG, "Quitting because no subreddit and thread id data was passed into the Intent.");
+        	finish();
+        }
+    }
+    
+    @Override
+    protected void onStart() {
+    	super.onStart();
+    	
         List<CommentInfo> commentItems = new ArrayList<CommentInfo>();
         mCommentsAdapter = new CommentsListAdapter(this, commentItems);
         getListView().setAdapter(mCommentsAdapter);
@@ -169,11 +191,7 @@ public final class RedditCommentsListActivity extends ListActivity
         // Need one of these to post things back to the UI thread.
         mHandler = new Handler();
         
-        doGetCommentsList(mSubreddit, mThingId);
-
-        
-        // NOTE: this could use the icicle as done in
-        // onRestoreInstanceState().
+        doGetCommentsList(mSubreddit, mThreadId);
     }
     
     public class VoteUpOnCheckedChangeListener implements CompoundButton.OnCheckedChangeListener {
@@ -198,6 +216,9 @@ public final class RedditCommentsListActivity extends ListActivity
 
 
     private final class CommentsListAdapter extends ArrayAdapter<CommentInfo> {
+    	static final int OP_ITEM_VIEW_TYPE = 0;
+    	static final int COMMENT_ITEM_VIEW_TYPE = 1;
+    	
     	private LayoutInflater mInflater;
         private boolean mLoading = true;
         private boolean mDisplayThumbnails = false; // TODO: use this
@@ -227,11 +248,19 @@ public final class RedditCommentsListActivity extends ListActivity
 
         @Override
         public int getItemViewType(int position) {
+        	if (position == 0) {
+        		return OP_ITEM_VIEW_TYPE;
+        	}
             if (position == mFrequentSeparatorPos) {
                 // We don't want the separator view to be recycled.
                 return IGNORE_ITEM_VIEW_TYPE;
             }
-            return super.getItemViewType(position);
+            return COMMENT_ITEM_VIEW_TYPE;
+        }
+        
+        @Override
+        public int getViewTypeCount() {
+        	return 2;
         }
 
         
@@ -240,122 +269,131 @@ public final class RedditCommentsListActivity extends ListActivity
             View view;
             Resources res = getResources();
             
-            if (position == 0) {
-            	// The OP is rendered as a WebView
-            	if (convertView == null) {
-            		view = mInflater.inflate(R.layout.threads_list_item_expanded, null);
-            	} else {
-            		view = (WebView) convertView;
-            	}
-            	
-            	ThreadInfo opInfo = this.getItem(position).getOP();
-            	
-            	// --- Copied from ThreadsListAdapter ---
-
-                // Set the values of the Views for the CommentsListItem
-                
-                TextView titleView = (TextView) view.findViewById(R.id.title);
-                TextView votesView = (TextView) view.findViewById(R.id.votes);
-                TextView linkDomainView = (TextView) view.findViewById(R.id.linkDomain);
-                TextView numCommentsView = (TextView) view.findViewById(R.id.numComments);
-                TextView submitterView = (TextView) view.findViewById(R.id.submitter);
-//                TextView submissionTimeView = (TextView) view.findViewById(R.id.submissionTime);
-                ImageView voteUpView = (ImageView) view.findViewById(R.id.vote_up_image);
-                ImageView voteDownView = (ImageView) view.findViewById(R.id.vote_down_image);
-                WebView selftextView = (WebView) view.findViewById(R.id.op);
-                
-                titleView.setText(opInfo.getTitle());
-                if (mTheme == THEME_LIGHT) {
-    	            if (TRUE_STRING.equals(opInfo.getClicked()))
-    	            	titleView.setTextColor(res.getColor(R.color.purple));
-    	            else
-    	            	titleView.setTextColor(res.getColor(R.color.blue));
-                }
-                votesView.setText(opInfo.getScore());
-                linkDomainView.setText("("+opInfo.getDomain()+")");
-                numCommentsView.setText(opInfo.getNumComments());
-                submitterView.setText(opInfo.getAuthor());
-                // TODO: convert submission time to a displayable time
-//                Date submissionTimeDate = new Date((long) (Double.parseDouble(opInfo.getCreated()) / 1000));
-//                submissionTimeView.setText("XXX");
-                titleView.setTag(opInfo.getURL());
-
-                // Set the up and down arrow colors based on whether user likes
-                if (mLoggedIn) {
-                	if (TRUE_STRING.equals(opInfo.getLikes())) {
-                		voteUpView.setImageResource(R.drawable.vote_up_red);
-                		voteDownView.setImageResource(R.drawable.vote_down_gray);
-                		votesView.setTextColor(res.getColor(R.color.arrow_red));
-                	} else if (FALSE_STRING.equals(opInfo.getLikes())) {
-                		voteUpView.setImageResource(R.drawable.vote_up_gray);
-                		voteDownView.setImageResource(R.drawable.vote_down_blue);
-                		votesView.setTextColor(res.getColor(R.color.arrow_blue));
-                	} else {
-                		voteUpView.setImageResource(R.drawable.vote_up_gray);
-                		voteDownView.setImageResource(R.drawable.vote_down_gray);
-                		votesView.setTextColor(res.getColor(R.color.gray));
-                	}
-                } else {
-            		voteUpView.setImageResource(R.drawable.vote_up_gray);
-            		voteDownView.setImageResource(R.drawable.vote_down_gray);
-            		votesView.setTextColor(res.getColor(R.color.gray));
-                }
-                
-                // --- End part copied from ThreadsListAdapter ---
-                
-            	if (!NULL_STRING.equals(opInfo.getSelftext())) {
-            		selftextView.loadData(opInfo.getSelftext(), "text/html", "UTF-8");
-            	} else {
-            		selftextView.setVisibility(View.INVISIBLE);
-            	}
-            } else {
-	            // Here view may be passed in for re-use, or we make a new one.
-	            if (convertView == null) {
-	                view = mInflater.inflate(R.layout.comments_list_item, null);
-	            } else {
-	                view = convertView;
-	            }
-	            
-	            CommentInfo item = this.getItem(position);
-	            
-	            // Set the values of the Views for the ThreadsListItem
-	            
-	            TextView votesView = (TextView) view.findViewById(R.id.votes);
-	            TextView submitterView = (TextView) view.findViewById(R.id.submitter);
-	            TextView bodyView = (TextView) view.findViewById(R.id.body);
-	            
-//                TextView submissionTimeView = (TextView) view.findViewById(R.id.submissionTime);
-	            ImageView voteUpView = (ImageView) view.findViewById(R.id.vote_up_image);
-	            ImageView voteDownView = (ImageView) view.findViewById(R.id.vote_down_image);
-	            
-	            votesView.setText(String.valueOf(Integer.valueOf(item.getUps()) - Integer.valueOf(item.getDowns())));
-	            submitterView.setText(item.getAuthor());
-	            bodyView.setText(item.getBody());
-	            
-	//            submitterView.setText(item.getAuthor());
-	            // TODO: convert submission time to a displayable time
-	//            Date submissionTimeDate = new Date((long) (Double.parseDouble(item.getCreated()) / 1000));
-	//            submissionTimeView.setText("XXX");
-	            
-	            // Set the up and down arrow colors based on whether user likes
-	            if (mLoggedIn) {
-	            	if (TRUE_STRING.equals(item.getLikes())) {
-	            		voteUpView.setImageResource(R.drawable.vote_up_red);
-	            		voteDownView.setImageResource(R.drawable.vote_down_gray);
-	            		votesView.setTextColor(res.getColor(R.color.arrow_red));
-	            	} else if (FALSE_STRING.equals(item.getLikes())) {
-	            		voteUpView.setImageResource(R.drawable.vote_up_gray);
-	            		voteDownView.setImageResource(R.drawable.vote_down_blue);
-	            		votesView.setTextColor(res.getColor(R.color.arrow_blue));
+            CommentInfo item = this.getItem(position);
+            
+            // TODO?: replace this logic with ListView.addHeaderView()
+            try {
+	            if (position == 0) {
+	            	// The OP is rendered as a WebView
+	            	if (convertView == null) {
+	            		view = mInflater.inflate(R.layout.threads_list_item_expanded, null);
 	            	} else {
+	            		view = convertView;
+	            	}
+	            	
+	            	// --- Copied from ThreadsListAdapter ---
+	
+	                // Set the values of the Views for the CommentsListItem
+	                
+	                TextView titleView = (TextView) view.findViewById(R.id.title);
+	                TextView votesView = (TextView) view.findViewById(R.id.votes);
+	                TextView linkDomainView = (TextView) view.findViewById(R.id.linkDomain);
+	                TextView numCommentsView = (TextView) view.findViewById(R.id.numComments);
+	                TextView submitterView = (TextView) view.findViewById(R.id.submitter);
+	//                TextView submissionTimeView = (TextView) view.findViewById(R.id.submissionTime);
+	                ImageView voteUpView = (ImageView) view.findViewById(R.id.vote_up_image);
+	                ImageView voteDownView = (ImageView) view.findViewById(R.id.vote_down_image);
+	                WebView selftextView = (WebView) view.findViewById(R.id.selftext);
+	                
+	                titleView.setText(mOpThreadInfo.getTitle());
+	                if (mTheme == THEME_LIGHT) {
+	    	            if (TRUE_STRING.equals(mOpThreadInfo.getClicked()))
+	    	            	titleView.setTextColor(res.getColor(R.color.purple));
+	    	            else
+	    	            	titleView.setTextColor(res.getColor(R.color.blue));
+	                }
+	                votesView.setText(mOpThreadInfo.getScore());
+	                linkDomainView.setText("("+mOpThreadInfo.getDomain()+")");
+	                numCommentsView.setText(mOpThreadInfo.getNumComments());
+	                submitterView.setText("submitted by "+mOpThreadInfo.getAuthor());
+	                // TODO: convert submission time to a displayable time
+	//                Date submissionTimeDate = new Date((long) (Double.parseDouble(mOp.getCreated()) / 1000));
+	//                submissionTimeView.setText("XXX");
+	                titleView.setTag(mOpThreadInfo.getURL());
+	
+	                // Set the up and down arrow colors based on whether user likes
+	                if (mLoggedIn) {
+	                	if (TRUE_STRING.equals(mOpThreadInfo.getLikes())) {
+	                		voteUpView.setImageResource(R.drawable.vote_up_red);
+	                		voteDownView.setImageResource(R.drawable.vote_down_gray);
+	                		votesView.setTextColor(res.getColor(R.color.arrow_red));
+	                	} else if (FALSE_STRING.equals(mOpThreadInfo.getLikes())) {
+	                		voteUpView.setImageResource(R.drawable.vote_up_gray);
+	                		voteDownView.setImageResource(R.drawable.vote_down_blue);
+	                		votesView.setTextColor(res.getColor(R.color.arrow_blue));
+	                	} else {
+	                		voteUpView.setImageResource(R.drawable.vote_up_gray);
+	                		voteDownView.setImageResource(R.drawable.vote_down_gray);
+	                		votesView.setTextColor(res.getColor(R.color.gray));
+	                	}
+	                } else {
 	            		voteUpView.setImageResource(R.drawable.vote_up_gray);
 	            		voteDownView.setImageResource(R.drawable.vote_down_gray);
 	            		votesView.setTextColor(res.getColor(R.color.gray));
+	                }
+	                
+	                // --- End part copied from ThreadsListAdapter ---
+	                
+	            	if (!NULL_STRING.equals(mOpThreadInfo.getSelftext())) {
+	            		selftextView.getSettings().setTextSize(TextSize.SMALLER);
+	            		selftextView.loadData(StringEscapeUtils.unescapeHtml(mOpThreadInfo.getSelftext()), "text/html", "UTF-8");
+	            	} else {
+	            		selftextView.setVisibility(View.INVISIBLE);
 	            	}
 	            } else {
-	        		voteUpView.setImageResource(R.drawable.vote_up_gray);
-	        		voteDownView.setImageResource(R.drawable.vote_down_gray);
-	        		votesView.setTextColor(res.getColor(R.color.gray));
+		            // Here view may be passed in for re-use, or we make a new one.
+		            if (convertView == null) {
+		                view = mInflater.inflate(R.layout.comments_list_item, null);
+		            } else {
+		                view = convertView;
+		            }
+		            
+		            // Set the values of the Views for the CommentsListItem
+		            
+		            TextView votesView = (TextView) view.findViewById(R.id.votes);
+		            TextView submitterView = (TextView) view.findViewById(R.id.submitter);
+		            TextView bodyView = (TextView) view.findViewById(R.id.body);
+		            
+	//                TextView submissionTimeView = (TextView) view.findViewById(R.id.submissionTime);
+		            ImageView voteUpView = (ImageView) view.findViewById(R.id.vote_up_image);
+		            ImageView voteDownView = (ImageView) view.findViewById(R.id.vote_down_image);
+		            
+		            votesView.setText(String.valueOf(Integer.valueOf(item.getUps()) - Integer.valueOf(item.getDowns())) + " points");
+		            submitterView.setText(item.getAuthor());
+		            bodyView.setText(item.getBody());
+		            
+		//            submitterView.setText(item.getAuthor());
+		            // TODO: convert submission time to a displayable time
+		//            Date submissionTimeDate = new Date((long) (Double.parseDouble(item.getCreated()) / 1000));
+		//            submissionTimeView.setText("XXX");
+		            
+		            // Set the up and down arrow colors based on whether user likes
+		            if (mLoggedIn) {
+		            	if (TRUE_STRING.equals(item.getLikes())) {
+		            		voteUpView.setImageResource(R.drawable.vote_up_red);
+		            		voteDownView.setImageResource(R.drawable.vote_down_gray);
+		            		votesView.setTextColor(res.getColor(R.color.arrow_red));
+		            	} else if (FALSE_STRING.equals(item.getLikes())) {
+		            		voteUpView.setImageResource(R.drawable.vote_up_gray);
+		            		voteDownView.setImageResource(R.drawable.vote_down_blue);
+		            		votesView.setTextColor(res.getColor(R.color.arrow_blue));
+		            	} else {
+		            		voteUpView.setImageResource(R.drawable.vote_up_gray);
+		            		voteDownView.setImageResource(R.drawable.vote_down_gray);
+		            		votesView.setTextColor(res.getColor(R.color.gray));
+		            	}
+		            } else {
+		        		voteUpView.setImageResource(R.drawable.vote_up_gray);
+		        		voteDownView.setImageResource(R.drawable.vote_down_gray);
+		        		votesView.setTextColor(res.getColor(R.color.gray));
+		            }
+	            }
+            } catch (NullPointerException e) {
+            	// Probably means that the List is still being built, and OP probably got put in wrong position
+            	if (convertView == null) {
+	                view = mInflater.inflate(R.layout.comments_list_item, null);
+	            } else {
+	                view = convertView;
 	            }
             }
             return view;
@@ -589,9 +627,6 @@ public final class RedditCommentsListActivity extends ListActivity
             		.append("/.json").toString());
             	HttpResponse response = mClient.execute(request);
             	
-            	// OK to dismiss the progress dialog when threads start loading
-            	dismissDialog(DIALOG_LOADING_COMMENTS_LIST);
-
             	InputStream in = response.getEntity().getContent();
                 
                 parseCommentsJSON(in, mCommentsAdapter);
@@ -1126,6 +1161,7 @@ public final class RedditCommentsListActivity extends ListActivity
 	    		voteUpButton.setOnCheckedChangeListener(new VoteUpOnCheckedChangeListener());
 	    		voteDownButton.setOnCheckedChangeListener(new VoteDownOnCheckedChangeListener());
     		} else {
+    			// TODO: "login" button.
     			voteUpButton.setVisibility(View.INVISIBLE);
     			voteDownButton.setVisibility(View.INVISIBLE);
     		}
@@ -1290,7 +1326,6 @@ public final class RedditCommentsListActivity extends ListActivity
     	jp.nextToken();
     	if (jp.getCurrentToken() != JsonToken.START_ARRAY)
     		throw new IllegalStateException(genericListingError);
-		int opNested = 2; // Nesting of JSON objects for the OP thread item
 		
 		while (jp.nextToken() != JsonToken.END_ARRAY) {
 			if (jp.getCurrentToken() != JsonToken.START_OBJECT)
@@ -1339,42 +1374,49 @@ public final class RedditCommentsListActivity extends ListActivity
 				}
 			}
 			// For comments OP, should be only one
+			mOpThreadInfo = ti;
 			CommentInfo ci = new CommentInfo();
 			ci.setOpInfo(ti);
+			ci.setIndent(0);
+			ci.setListOrder(0);
 			mHandler.post(new CommentItemAdder(ci));
 		}
-		// Wind down the end of the OP post
-		for (;;) {
-			jp.nextToken();
-			if (jp.getCurrentToken() == JsonToken.END_OBJECT && opNested == 0)
-				break;
-			if (jp.getCurrentToken() == JsonToken.START_OBJECT)
-				opNested++;
-			if (jp.getCurrentToken() == JsonToken.END_OBJECT)
-				opNested--;
-		}
+		// Wind down the end of the "data" then outermost thread-json-object
+    	for (int i = 0; i < 2; i++)
+	    	while (jp.nextToken() != JsonToken.END_OBJECT)
+	    		;
 		
 		//
 		// --- Now, process the comments ---
 		//
+    	mNestedCommentsJSONOrder = 1;
 		processNestedCommentsJSON(jp, adapter, 0);
+		
+		// Add the comments after parsing to preserve correct order.
+		// OK to dismiss dialog when we start adding comments
+		dismissDialog(DIALOG_LOADING_COMMENTS_LIST);
+		
+		for (Integer key : mCommentsMap.keySet()) {
+			mHandler.post(new CommentItemAdder(mCommentsMap.get(key)));
+		}
 		
 		// Don't care about the remaining END_ARRAY
     }
     
     void processNestedCommentsJSON(JsonParser jp, CommentsListAdapter adapter, int commentsNested)
     		throws IOException, JsonParseException, IllegalStateException {
+    	String genericListingError = "Not a valid listing";
     	
     	boolean more = false;
     	
-    	// It's OK for replies to be null.
-    	if (jp.nextToken() == JsonToken.VALUE_NULL)
-    		return;
-    	
+    	if (jp.nextToken() != JsonToken.START_OBJECT) {
+        	// It's OK for replies to be empty.
+	    	if (EMPTY_STRING.equals(jp.getText()))
+	    		return;
+	    	else
+	    		throw new IllegalStateException(genericListingError);
+    	}
     	// Skip over to children
-    	String genericListingError = "Not a subreddit listing";
-    	if (jp.getCurrentToken() != JsonToken.START_OBJECT)
-    		throw new IllegalStateException(genericListingError); 
     	jp.nextToken();
     	if (!"kind".equals(jp.getCurrentName()))
     		throw new IllegalStateException(genericListingError);
@@ -1390,21 +1432,23 @@ public final class RedditCommentsListActivity extends ListActivity
 	    		throw new IllegalStateException(genericListingError);
 	    	jp.nextToken();
     		// TODO: handle "more" -- "name" and "id"
-    		while (jp.nextToken() != JsonToken.END_OBJECT)
-    			;
-    		while (jp.nextToken() != JsonToken.END_OBJECT)
-    			;
-    		return;
+    		// Skip to end of "children"
+	    	while (jp.nextToken() != JsonToken.END_ARRAY)
+	    		;
+	    	// Skip to end of "data", then "replies" object
+	    	for (int i = 0; i < 2; i++)
+		    	while (jp.nextToken() != JsonToken.END_OBJECT)
+		    		;
+	    	return;
     	} else if ("Listing".equals(jp.getText())) {
 	    	jp.nextToken();
 	    	if (!"data".equals(jp.getCurrentName()))
 	    		throw new IllegalStateException(genericListingError);
-	    	jp.nextToken();
-	    	if (JsonToken.START_OBJECT != jp.getCurrentToken())
+	    	if (jp.nextToken() != JsonToken.START_OBJECT)
 	    		throw new IllegalStateException(genericListingError);
 	    	jp.nextToken();
 	    	while (!"children".equals(jp.getCurrentName())) {
-	    		// Don't care
+	    		// Don't care about "after"
 	    		jp.nextToken();
 	    	}
 	    	jp.nextToken();
@@ -1418,8 +1462,11 @@ public final class RedditCommentsListActivity extends ListActivity
 			if (jp.getCurrentToken() != JsonToken.START_OBJECT)
 				throw new IllegalStateException("Unexpected non-JSON-object in the children array");
 			
-			// Process JSON representing one regular, non-OP comment
+			// --- Process JSON representing one regular, non-OP comment ---
 			CommentInfo ci = new CommentInfo();
+			ci.setIndent(commentsNested);
+			// Post the comments in prefix order.
+			ci.setListOrder(mNestedCommentsJSONOrder++);
 			while (jp.nextToken() != JsonToken.END_OBJECT) {
 				String fieldname = jp.getCurrentName();
 				jp.nextToken(); // move to value, or START_OBJECT/START_ARRAY
@@ -1458,9 +1505,12 @@ public final class RedditCommentsListActivity extends ListActivity
 					throw new IllegalStateException("Unrecognized field '"+fieldname+"'!");
 				}
 			}
-			ci.setIndent(commentsNested);
-			mHandler.post(new CommentItemAdder(ci));
+			mCommentsMap.put(ci.getListOrder(), ci);
 		}
+		// Wind down the end of the "data" then "replies" objects
+    	for (int i = 0; i < 2; i++)
+	    	while (jp.nextToken() != JsonToken.END_OBJECT)
+	    		;
 	}
 
 }
