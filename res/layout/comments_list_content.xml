@@ -13,18 +13,14 @@
         android:orientation="vertical">
     
     <!-- OP section -->
-    <!-- FIXME: comments_list_item goes here -->
-    
-    <WebView android:id="@+id/selftext"
+    <FrameLayout android:id="@+id/op"
     	android:layout_width="wrap_content"
     	android:layout_height="wrap_content"
-    	android:layout_weight="1"
     	/>
 
     <ListView android:id="@android:id/list"
     	android:layout_width="fill_parent"
 	    android:layout_height="wrap_content"
-	    android:layout_weight="1"
 	    android:listSelector="@drawable/thread_list_selector_solid_pale_blue"
     />
 

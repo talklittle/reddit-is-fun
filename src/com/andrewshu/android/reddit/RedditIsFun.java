@@ -49,6 +49,7 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.view.View.OnClickListener;
 import android.view.View.OnKeyListener;
+import android.webkit.WebView;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.CheckBox;
@@ -70,20 +71,20 @@ public final class RedditIsFun extends ListActivity
 
 	private static final String TAG = "RedditIsFun";
 	
+	public final String COMMENT_KIND = "t1";
 	public final String THREAD_KIND = "t3";
 	public final String SERIALIZE_SEPARATOR = "\r";
 	
     private final JsonFactory jsonFactory = new JsonFactory(); 
 	
-    /** Custom list adapter that fits our rss data into the list. */
-    private ThreadsListAdapter mAdapter;
+    /** Custom list adapter that fits our threads data into the list. */
+    private ThreadsListAdapter mThreadsAdapter;
     /** Handler used to post runnables to the UI thread. */
     private Handler mHandler;
     /** Currently running background network thread. */
     private Thread mWorker;
     
     private Menu mMenu;
-    private int mMode = MODE_THREADS_LIST;
     
     static final int MODE_THREADS_LIST  = 0x00000001;
     static final int MODE_COMMENTS_LIST = 0x00000002;
@@ -113,6 +114,7 @@ public final class RedditIsFun extends ListActivity
     static final int DIALOG_THREAD_CLICK = 6;
     static final int DIALOG_LOGGING_IN = 7;
     static final int DIALOG_LOADING_THREADS_LIST = 8;
+    static final int DIALOG_LOADING_COMMENTS_LIST = 9;
     
     // Themes
     static final int THEME_LIGHT = 0;
@@ -157,16 +159,15 @@ public final class RedditIsFun extends ListActivity
         // which ListActivity adopts as its list -- we can
         // access it with getListView().
 
-        // Install our custom RSSListAdapter.
+        // Start at /r/reddit.com
+        mSubreddit = "reddit.com";
         List<ThreadInfo> items = new ArrayList<ThreadInfo>();
-        mAdapter = new ThreadsListAdapter(this, items);
-        getListView().setAdapter(mAdapter);
+        mThreadsAdapter = new ThreadsListAdapter(this, items);
+        getListView().setAdapter(mThreadsAdapter);
 
         // Need one of these to post things back to the UI thread.
         mHandler = new Handler();
         
-        // Start at /r/reddit.com
-        mSubreddit = "reddit.com";
         doGetThreadsList(mSubreddit);
         
         // NOTE: this could use the icicle as done in
@@ -252,7 +253,6 @@ public final class RedditIsFun extends ListActivity
             TextView votesView = (TextView) view.findViewById(R.id.votes);
             TextView linkDomainView = (TextView) view.findViewById(R.id.linkDomain);
             TextView numCommentsView = (TextView) view.findViewById(R.id.numComments);
-//            TextView submitterView = (TextView) view.findViewById(R.id.submitter);
 //            TextView submissionTimeView = (TextView) view.findViewById(R.id.submissionTime);
             ImageView voteUpView = (ImageView) view.findViewById(R.id.vote_up_image);
             ImageView voteDownView = (ImageView) view.findViewById(R.id.vote_down_image);
@@ -294,7 +294,7 @@ public final class RedditIsFun extends ListActivity
         		votesView.setTextColor(res.getColor(R.color.gray));
             }
             
-            // TODO: Thumbnail
+            // TODO?: Thumbnail
 //            view.getThumbnail().
 
             // TODO: If thumbnail, download it and create ImageView
@@ -353,8 +353,8 @@ public final class RedditIsFun extends ListActivity
 
             return view;
         }
-        
     }
+    
     
     /**
      * Called when user clicks an item in the list. Starts an activity to
@@ -362,7 +362,7 @@ public final class RedditIsFun extends ListActivity
      */
     @Override
     protected void onListItemClick(ListView l, View v, int position, long id) {
-        ThreadInfo item = mAdapter.getItem(position);
+        ThreadInfo item = mThreadsAdapter.getItem(position);
         
         // Mark the thread as selected
         mThingId = item.getName();
@@ -378,9 +378,9 @@ public final class RedditIsFun extends ListActivity
      */
     public void resetUI() {
         // Reset the list to be empty.
-        List<ThreadInfo> items = new ArrayList<ThreadInfo>();
-        mAdapter = new ThreadsListAdapter(this, items);
-        getListView().setAdapter(mAdapter);
+	    List<ThreadInfo> items = new ArrayList<ThreadInfo>();
+        mThreadsAdapter = new ThreadsListAdapter(this, items);
+        getListView().setAdapter(mThreadsAdapter);
     }
 
     /**
@@ -432,20 +432,20 @@ public final class RedditIsFun extends ListActivity
     	
     	worker.start();
     }
-
+    
     /**
      * Runnable that the worker thread uses to post ThreadItems to the
      * UI via mHandler.post
      */
-    private class ItemAdder implements Runnable {
+    private class ThreadItemAdder implements Runnable {
         ThreadInfo mItem;
 
-        ItemAdder(ThreadInfo item) {
+        ThreadItemAdder(ThreadInfo item) {
             mItem = item;
         }
 
         public void run() {
-            mAdapter.add(mItem);
+            mThreadsAdapter.add(mItem);
         }
 
         // NOTE: Performance idea -- would be more efficient to have he option
@@ -480,7 +480,7 @@ public final class RedditIsFun extends ListActivity
 
             	InputStream in = response.getEntity().getContent();
                 
-                parseSubredditJSON(in, mAdapter);
+                parseSubredditJSON(in, mThreadsAdapter);
                 
                 mSubreddit = _mSubreddit;
             } catch (Exception e) {
@@ -852,7 +852,7 @@ public final class RedditIsFun extends ListActivity
 		voteCounter.setText(newScore);
 		mVoteTargetThreadInfo.setLikes(newLikes);
 		mVoteTargetThreadInfo.setScore(newScore);
-		mAdapter.notifyDataSetChanged();
+		mThreadsAdapter.notifyDataSetChanged();
     	
     	VoteWorker worker = new VoteWorker(thingId, direction, subreddit);
     	setCurrentWorker(worker);
@@ -1150,8 +1150,8 @@ public final class RedditIsFun extends ListActivity
     		// The "link" and "comments" buttons
     		OnClickListener commentsOnClickListener = new OnClickListener() {
     			public void onClick(View v) {
-    				mMode = MODE_COMMENTS_LIST;
-    				// TODO: setContentView to comments mode
+    				// TODO: Launch an Intent for RedditCommentsListActivity
+    				
         		}
     		};
     		commentsButton.setOnClickListener(commentsOnClickListener);
@@ -1196,13 +1196,13 @@ public final class RedditIsFun extends ListActivity
         // Make a List of all the ThreadItem data for saving
         // NOTE: there may be a way to save the ThreadItems directly,
         // rather than their string data.
-        int count = mAdapter.getCount();
+        int count = mThreadsAdapter.getCount();
 
         // Save out the items as a flat list of CharSequence objects --
         // title0, link0, descr0, title1, link1, ...
         ArrayList<CharSequence> strings = new ArrayList<CharSequence>();
         for (int i = 0; i < count; i++) {
-            ThreadInfo item = mAdapter.getItem(i);
+            ThreadInfo item = mThreadsAdapter.getItem(i);
             for (int k = 0; k < ThreadInfo._KEYS.length; k++) {
             	if (item.mValues.containsKey(ThreadInfo._KEYS[k])) {
             		strings.add(ThreadInfo._KEYS[k]);
@@ -1253,8 +1253,8 @@ public final class RedditIsFun extends ListActivity
         }
 
         // Reset the list view to show this data.
-        mAdapter = new ThreadsListAdapter(this, items);
-        getListView().setAdapter(mAdapter);
+        mThreadsAdapter = new ThreadsListAdapter(this, items);
+        getListView().setAdapter(mThreadsAdapter);
 
         // Restore selection
         if (state.containsKey(SELECTION_KEY)) {
@@ -1268,18 +1268,18 @@ public final class RedditIsFun extends ListActivity
     }
 
 
-    /**
-     * Skips ahead the JsonParser while validating.
-     * When the function returns normally, JsonParser.getCurrentToken() should return the
-     * JsonToken.START_ARRAY value corresponding to the beginning of the list of threads.
-     * @param jp
-     * @throws JsonParseException
-     * @throws IllegalStateException
-     */
-    void skipToThreadsJSON(JsonParser jp) throws IOException, JsonParseException, IllegalStateException {
+    void parseSubredditJSON(InputStream in, ThreadsListAdapter adapter) throws IOException,
+		    JsonParseException, IllegalStateException {
+		
+		JsonParser jp = jsonFactory.createJsonParser(in);
+		
+		if (jp.nextToken() == JsonToken.VALUE_NULL)
+			return;
+		
+		// --- Validate initial stuff, skip to the JSON List of threads ---
     	String genericListingError = "Not a subreddit listing";
-    	if (JsonToken.START_OBJECT != jp.nextToken()) // starts with "{"
-    		throw new IllegalStateException(genericListingError);
+//    	if (JsonToken.START_OBJECT != jp.nextToken()) // starts with "{"
+//    		throw new IllegalStateException(genericListingError);
     	jp.nextToken();
     	if (!"kind".equals(jp.getCurrentName()))
     		throw new IllegalStateException(genericListingError);
@@ -1300,20 +1300,12 @@ public final class RedditIsFun extends ListActivity
     	jp.nextToken();
     	if (jp.getCurrentToken() != JsonToken.START_ARRAY)
     		throw new IllegalStateException(genericListingError);
-    }
-    
-    void parseSubredditJSON(InputStream in, ThreadsListAdapter adapter) throws IOException,
-		    JsonParseException, IllegalStateException {
-		
-		JsonParser jp = jsonFactory.createJsonParser(in);
-		
-		// Validate initial stuff, skip to the JSON List of threads
-		skipToThreadsJSON(jp);
-
+    	
+		// --- Main parsing ---
 		while (jp.nextToken() != JsonToken.END_ARRAY) {
 			if (jp.getCurrentToken() != JsonToken.START_OBJECT)
 				throw new IllegalStateException("Unexpected non-JSON-object in the children array");
-			
+		
 			// Process JSON representing one thread
 			ThreadInfo ti = new ThreadInfo();
 			while (jp.nextToken() != JsonToken.END_OBJECT) {
@@ -1356,9 +1348,8 @@ public final class RedditIsFun extends ListActivity
 					throw new IllegalStateException("Unrecognized field '"+fieldname+"'!");
 				}
 			}
-			mHandler.post(new ItemAdder(ti));
+			mHandler.post(new ThreadItemAdder(ti));
 		}
 	}
-    
 
 }

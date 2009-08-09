@@ -13,6 +13,7 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
-    </application>
+    <activity android:name=".RedditCommentsListActivity"></activity>
+</application>
     <uses-sdk android:minSdkVersion="3" />
 </manifest> 

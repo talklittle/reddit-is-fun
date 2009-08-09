@@ -93,6 +93,10 @@ public class ThreadInfo {
 		return mValues.get(SCORE);
 	}
 	
+	public String getSelftext() {
+		return mValues.get(SELFTEXT);
+	}
+	
 	public String getTitle() {
 		return mValues.get(TITLE);
 	}

@@ -93,7 +93,6 @@
 	        <TextView android:id="@+id/numComments"
 		        android:layout_width="wrap_content"
 		        android:layout_height="wrap_content"
-		        android:layout_below="@id/title"
 		        android:layout_marginRight="5dip"
 		        android:text="0 cmts"
 		
@@ -113,41 +112,28 @@
 				android:textSize="10dip"
 		    />
 
-			<!--  XXX unused for now -->
-			<!--
-		    <TextView android:id="@+id/submissionTime"
-		        android:layout_width="wrap_content"
-		        android:layout_height="wrap_content"
-		        android:layout_toRightOf="@id/linkDomain"
-		        android:layout_alignBaseline="@id/numComments"
-		        android:text="XXX"
-		        
-		        android:visibility="invisible"
-		        android:singleLine="true"
-		        android:ellipsize="marquee"
-		        android:textAppearance="?android:attr/textAppearanceSmall"
-		    />
-		    -->
-		    
-		    <!-- XXX unused for now -->
-		    <!--
-		    <TextView android:id="@+id/submitter"
-		        android:layout_width="wrap_content"
-		        android:layout_height="wrap_content"
-		        android:layout_marginLeft="5dip"
-		        android:layout_toRightOf="@id/submissionTime"
-		        android:layout_alignBaseline="@id/numComments"
-		        android:text="talklittle"
+		</RelativeLayout>
 		
-		        android:visibility="invisible"
-		        android:singleLine="true"
-		        android:ellipsize="marquee"
-		        android:textAppearance="?android:attr/textAppearanceSmall"
-		    />
-		    -->
-				    
-	    </RelativeLayout>
-	    
+		<!-- ViewStubs, unused for now. Using threads_list_item_expanded.xml instead. -->
+		<!-- Extra bottom row for thread OP area -->
+		<!--
+		<ViewStub android:id="@+id/extraRowStub"
+			android:inflatedId="@+id/extraRowSubtree"
+			android:layout="@layout/threads_list_item_extra_row"
+			android:layout_width="wrap_content"
+			android:layout_height="wrap_content"
+			/>
+		-->
+
+    	<!-- OP post for comments view -->
+    	<!--
+	    <ViewStub android:id="@+id/selftextStub"
+	    	android:inflatedId="@+id/selftextSubtree"
+	    	android:layout="@layout/threads_list_item_selftext"
+	    	android:layout_width="fill_parent"
+	    	android:layout_height="wrap_content"
+	    	/>
+	    -->
     </LinearLayout>
 
 </RelativeLayout>
