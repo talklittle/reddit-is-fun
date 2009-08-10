@@ -6,6 +6,7 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.lang.ref.SoftReference;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -20,6 +21,7 @@ import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.cookie.Cookie;
 import org.apache.http.impl.client.DefaultHttpClient;
+import org.apache.http.impl.cookie.BasicClientCookie;
 import org.apache.http.message.BasicNameValuePair;
 import org.apache.http.params.HttpConnectionParams;
 import org.apache.http.protocol.HTTP;
@@ -34,6 +36,7 @@ import android.app.ListActivity;
 import android.app.ProgressDialog;
 import android.content.Context;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.content.res.Resources;
 import android.graphics.Bitmap;
 import android.net.Uri;
@@ -49,7 +52,6 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.view.View.OnClickListener;
 import android.view.View.OnKeyListener;
-import android.webkit.WebView;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.CheckBox;
@@ -88,9 +90,12 @@ public final class RedditIsFun extends ListActivity
     
     static final int MODE_THREADS_LIST  = 0x00000001;
     static final int MODE_COMMENTS_LIST = 0x00000002;
-
+    
+    static final String PREFS_SESSION = "RedditSession";
+    
     // Current HttpClient
     private DefaultHttpClient mClient = null;
+    private Cookie mRedditSessionCookie = null;
     
     // UI State
     private CharSequence mSubreddit = null;
@@ -159,6 +164,27 @@ public final class RedditIsFun extends ListActivity
         // The above layout contains a list id "android:list"
         // which ListActivity adopts as its list -- we can
         // access it with getListView().
+        
+        // Retrieve the stored session info
+        SharedPreferences sessionPrefs = getSharedPreferences(PREFS_SESSION, 0);
+        mUsername = sessionPrefs.getString("username", null);
+        String cookieValue = sessionPrefs.getString("reddit_sessionValue", null);
+        String cookieDomain = sessionPrefs.getString("reddit_sessionDomain", null);
+        String cookiePath = sessionPrefs.getString("reddit_sessionPath", null);
+        long cookieExpiryDate = sessionPrefs.getLong("reddit_sessionExpiryDate", -1);
+        if (cookieValue != null) {
+        	BasicClientCookie redditSessionCookie = new BasicClientCookie("reddit_session", cookieValue);
+        	redditSessionCookie.setDomain(cookieDomain);
+        	redditSessionCookie.setPath(cookiePath);
+        	if (cookieExpiryDate != -1)
+        		redditSessionCookie.setExpiryDate(new Date(cookieExpiryDate));
+        	else
+        		redditSessionCookie.setExpiryDate(null);
+        	mRedditSessionCookie = redditSessionCookie;
+        	setClient(new DefaultHttpClient());
+        	mClient.getCookieStore().addCookie(mRedditSessionCookie);
+        	mLoggedIn = true;
+        }
 
         // Start at /r/reddit.com
         mSubreddit = "reddit.com";
@@ -173,6 +199,28 @@ public final class RedditIsFun extends ListActivity
         
         // NOTE: this could use the icicle as done in
         // onRestoreInstanceState().
+    }
+    
+    @Override
+    protected void onStop() {
+    	super.onStop();
+    	
+    	// Save user preferences.
+    	SharedPreferences settings = getSharedPreferences(PREFS_SESSION, 0);
+    	SharedPreferences.Editor editor = settings.edit();
+    	editor.clear();
+    	if (mLoggedIn) {
+	    	if (mUsername != null)
+	    		editor.putString("username", mUsername.toString());
+	    	if (mRedditSessionCookie != null) {
+	    		editor.putString("reddit_sessionValue",      mRedditSessionCookie.getValue());
+	    		editor.putString("reddit_sessionDomain",     mRedditSessionCookie.getDomain());
+	    		editor.putString("reddit_sessionPath",       mRedditSessionCookie.getPath());
+	    		if (mRedditSessionCookie.getExpiryDate() != null)
+	    			editor.putLong("reddit_sessionExpiryDate", mRedditSessionCookie.getExpiryDate().getTime());
+	    	}
+    	}
+    	editor.commit();
     }
     
     public class VoteUpOnCheckedChangeListener implements CompoundButton.OnCheckedChangeListener {
@@ -524,7 +572,7 @@ public final class RedditIsFun extends ListActivity
 	    	if (mModhash == null) {
 	    		if (!doUpdateModhash()) {
 	    			// doUpdateModhash should have given an error about credentials
-	    			throw new RuntimeException("Vote failed because doUpdateModhash() failed");
+	    			return;
 	    		}
 	    	}
 	    	
@@ -666,6 +714,12 @@ public final class RedditIsFun extends ListActivity
         	List<Cookie> cookies = mClient.getCookieStore().getCookies();
         	if (cookies.isEmpty()) {
         		throw new HttpException("Failed to login: No cookies");
+        	}
+        	for (Cookie c : cookies) {
+        		if (c.getName().equals("reddit_session")) {
+        			mRedditSessionCookie = c;
+        			break;
+        		}
         	}
         	
         	// Getting here means you successfully logged in.
@@ -849,7 +903,6 @@ public final class RedditIsFun extends ListActivity
     			return false;
     		}
     	}
-    	
     	ivUp.setImageResource(newImageResourceUp);
 		ivDown.setImageResource(newImageResourceDown);
 		voteCounter.setText(newScore);
@@ -1116,6 +1169,13 @@ public final class RedditIsFun extends ListActivity
     	super.onPrepareDialog(id, dialog);
     	
     	switch (id) {
+    	case DIALOG_LOGIN:
+    		if (mUsername != null) {
+	    		final TextView loginUsernameInput = (TextView) dialog.findViewById(R.id.login_username_input);
+	    		loginUsernameInput.setText(mUsername);
+    		}
+    		break;
+    		
     	case DIALOG_THREAD_CLICK:
     		final CheckBox voteUpButton = (CheckBox) dialog.findViewById(R.id.thread_vote_up_button);
     		final CheckBox voteDownButton = (CheckBox) dialog.findViewById(R.id.thread_vote_down_button);
