@@ -50,6 +50,7 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.Window;
 import android.view.View.OnClickListener;
 import android.view.View.OnKeyListener;
 import android.widget.ArrayAdapter;
@@ -76,6 +77,7 @@ public final class RedditIsFun extends ListActivity
 	public final String COMMENT_KIND = "t1";
 	public final String THREAD_KIND = "t3";
 	public final String SERIALIZE_SEPARATOR = "\r";
+	public final String LOOK_OF_DISAPPROVAL = "\u0ca0\u005f\u0ca0";
 	
     private final JsonFactory jsonFactory = new JsonFactory(); 
 	
@@ -110,7 +112,10 @@ public final class RedditIsFun extends ListActivity
     private CharSequence mUsername = null;
     private CharSequence mModhash = null;
     
-    // Menu dialog actions
+    // startActivityForResult request codes
+    static final int ACTIVITY_PICK_SUBREDDIT = 0;
+    
+    // Menu and dialog actions
     static final int DIALOG_PICK_SUBREDDIT = 0;
     static final int DIALOG_REDDIT_COM = 1;
     static final int DIALOG_LOGIN = 2;
@@ -121,6 +126,7 @@ public final class RedditIsFun extends ListActivity
     static final int DIALOG_LOGGING_IN = 7;
     static final int DIALOG_LOADING_THREADS_LIST = 8;
     static final int DIALOG_LOADING_COMMENTS_LIST = 9;
+    static final int DIALOG_LOADING_LOOK_OF_DISAPPROVAL = 10;
     
     // Themes
     static final int THEME_LIGHT = 0;
@@ -148,8 +154,7 @@ public final class RedditIsFun extends ListActivity
     
     // The pattern to find modhash from HTML javascript area
     public static final Pattern MODHASH_PATTERN = Pattern.compile("modhash: '(.*?)'");
-
-
+    
     /**
      * Called when the activity starts up. Do activity initialization
      * here, not in a constructor.
@@ -221,6 +226,20 @@ public final class RedditIsFun extends ListActivity
 	    	}
     	}
     	editor.commit();
+    }
+    
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent intent) {
+    	super.onActivityResult(requestCode, resultCode, intent);
+    	Bundle extras = intent.getExtras();
+    	
+    	switch(requestCode) {
+    	case ACTIVITY_PICK_SUBREDDIT:
+    		mSubreddit = extras.getString(ThreadInfo.SUBREDDIT);
+    		doGetThreadsList(mSubreddit);
+    		break;
+    	}
     }
     
     public class VoteUpOnCheckedChangeListener implements CompoundButton.OnCheckedChangeListener {
@@ -471,6 +490,14 @@ public final class RedditIsFun extends ListActivity
     private void doGetThreadsList(CharSequence subreddit) {
     	if (subreddit == null)
     		return;
+    	
+    	if ("jailbait".equals(subreddit.toString())) {
+    		Toast lodToast = Toast.makeText(this, "", Toast.LENGTH_LONG);
+    		View lodView = ((LayoutInflater) getSystemService(Context.LAYOUT_INFLATER_SERVICE))
+    			.inflate(R.layout.look_of_disapproval_view, null);
+    		lodToast.setView(lodView);
+    		lodToast.show();
+    	}
     	
     	ThreadsWorker worker = new ThreadsWorker(subreddit);
     	setCurrentWorker(worker);
@@ -1041,12 +1068,14 @@ public final class RedditIsFun extends ListActivity
 
         public boolean onMenuItemClick(MenuItem item) {
         	switch (mAction) {
-        	case DIALOG_PICK_SUBREDDIT:
         	case DIALOG_LOGIN:
         	case DIALOG_POST_THREAD:
         		showDialog(mAction);
         		break;
-        	case DIALOG_REDDIT_COM:
+        	case DIALOG_PICK_SUBREDDIT:
+        		Intent pickSubredditIntent = new Intent(RedditIsFun.this, PickSubredditActivity.class);
+        		startActivityForResult(pickSubredditIntent, ACTIVITY_PICK_SUBREDDIT);
+            case DIALOG_REDDIT_COM:
         		doGetThreadsList("reddit.com");
         		break;
         	case DIALOG_LOGOUT:
@@ -1070,30 +1099,6 @@ public final class RedditIsFun extends ListActivity
     	Dialog dialog;
     	ProgressDialog pdialog;
     	switch (id) {
-    	case DIALOG_PICK_SUBREDDIT:
-    		dialog = new Dialog(this);
-    		dialog.setContentView(R.layout.pick_subreddit_dialog);
-    		dialog.setTitle("Pick a subreddit");
-    		final EditText pickSubredditInput = (EditText) dialog.findViewById(R.id.pick_subreddit_input);
-    		pickSubredditInput.setOnKeyListener(new OnKeyListener() {
-    			public boolean onKey(View v, int keyCode, KeyEvent event) {
-    		        if ((event.getAction() == KeyEvent.ACTION_DOWN) && (keyCode == KeyEvent.KEYCODE_ENTER)) {
-    		        	doGetThreadsList(pickSubredditInput.getText());
-    		            dismissDialog(DIALOG_PICK_SUBREDDIT);
-    		        	return true;
-    		        }
-    		        return false;
-    		    }
-    		});
-    		final Button pickSubredditButton = (Button) dialog.findViewById(R.id.pick_subreddit_button);
-    		pickSubredditButton.setOnClickListener(new OnClickListener() {
-    			public void onClick(View v) {
-    		        doGetThreadsList(pickSubredditInput.getText());
-    		        dismissDialog(DIALOG_PICK_SUBREDDIT);
-    		    }
-    		});
-    		break;
-    		
     	case DIALOG_LOGIN:
     		dialog = new Dialog(this);
     		dialog.setContentView(R.layout.login_dialog);
@@ -1155,6 +1160,14 @@ public final class RedditIsFun extends ListActivity
     		pdialog.setMessage("Loading subreddit...");
     		pdialog.setIndeterminate(true);
     		pdialog.setCancelable(true);
+    		dialog = pdialog;
+    		break;
+    	case DIALOG_LOADING_LOOK_OF_DISAPPROVAL:
+    		pdialog = new ProgressDialog(this);
+    		pdialog.setIndeterminate(true);
+    		pdialog.setCancelable(true);
+    		pdialog.requestWindowFeature(Window.FEATURE_INDETERMINATE_PROGRESS);
+    		pdialog.setFeatureDrawableResource(Window.FEATURE_INDETERMINATE_PROGRESS, R.drawable.look_of_disapproval);
     		dialog = pdialog;
     		break;
     	
