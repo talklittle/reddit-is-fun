@@ -207,10 +207,26 @@ public final class RedditIsFun extends ListActivity
     }
     
     @Override
-    protected void onStop() {
-    	super.onStop();
+    protected void onPause() {
+    	super.onPause();
+    	saveRedditPreferences();
+    }
+    
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent intent) {
+    	super.onActivityResult(requestCode, resultCode, intent);
+    	Bundle extras = intent.getExtras();
     	
-    	// Save user preferences.
+    	switch(requestCode) {
+    	case ACTIVITY_PICK_SUBREDDIT:
+    		mSubreddit = extras.getString(ThreadInfo.SUBREDDIT);
+    		doGetThreadsList(mSubreddit);
+    		break;
+    	}
+    }
+    
+    private void saveRedditPreferences() {
     	SharedPreferences settings = getSharedPreferences(PREFS_SESSION, 0);
     	SharedPreferences.Editor editor = settings.edit();
     	editor.clear();
@@ -226,20 +242,6 @@ public final class RedditIsFun extends ListActivity
 	    	}
     	}
     	editor.commit();
-    }
-    
-
-    @Override
-    protected void onActivityResult(int requestCode, int resultCode, Intent intent) {
-    	super.onActivityResult(requestCode, resultCode, intent);
-    	Bundle extras = intent.getExtras();
-    	
-    	switch(requestCode) {
-    	case ACTIVITY_PICK_SUBREDDIT:
-    		mSubreddit = extras.getString(ThreadInfo.SUBREDDIT);
-    		doGetThreadsList(mSubreddit);
-    		break;
-    	}
     }
     
     public class VoteUpOnCheckedChangeListener implements CompoundButton.OnCheckedChangeListener {

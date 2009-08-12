@@ -6,6 +6,7 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.lang.ref.SoftReference;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 import java.util.TreeMap;
 import java.util.regex.Matcher;
@@ -21,6 +22,7 @@ import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.cookie.Cookie;
 import org.apache.http.impl.client.DefaultHttpClient;
+import org.apache.http.impl.cookie.BasicClientCookie;
 import org.apache.http.message.BasicNameValuePair;
 import org.apache.http.params.HttpConnectionParams;
 import org.apache.http.protocol.HTTP;
@@ -35,6 +37,7 @@ import android.app.ListActivity;
 import android.app.ProgressDialog;
 import android.content.Context;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.content.res.Resources;
 import android.graphics.Bitmap;
 import android.net.Uri;
@@ -98,6 +101,7 @@ public final class RedditCommentsListActivity extends ListActivity
 
     // Current HttpClient
     private DefaultHttpClient mClient = null;
+    private Cookie mRedditSessionCookie = null;
     
     // UI State
     private CharSequence mSubreddit = null;  // Should remain constant for the life of this instance
@@ -113,13 +117,11 @@ public final class RedditCommentsListActivity extends ListActivity
     private CharSequence mModhash = null;
     
     // Menu dialog actions
-    static final int DIALOG_PICK_SUBREDDIT = 0;
-    static final int DIALOG_REDDIT_COM = 1;
+    static final int DIALOG_THING_CLICK = 0;
     static final int DIALOG_LOGIN = 2;
     static final int DIALOG_LOGOUT = 3;
     static final int DIALOG_REFRESH = 4;
     static final int DIALOG_POST_THREAD = 5;
-    static final int DIALOG_THREAD_CLICK = 6;
     static final int DIALOG_LOGGING_IN = 7;
     static final int DIALOG_LOADING_THREADS_LIST = 8;
     static final int DIALOG_LOADING_COMMENTS_LIST = 9;
@@ -167,6 +169,27 @@ public final class RedditCommentsListActivity extends ListActivity
         // The above layout contains a list id "android:list"
         // which ListActivity adopts as its list -- we can
         // access it with getListView().
+        
+        // Retrieve the stored session info
+        SharedPreferences sessionPrefs = getSharedPreferences(RedditIsFun.PREFS_SESSION, 0);
+        mUsername = sessionPrefs.getString("username", null);
+        String cookieValue = sessionPrefs.getString("reddit_sessionValue", null);
+        String cookieDomain = sessionPrefs.getString("reddit_sessionDomain", null);
+        String cookiePath = sessionPrefs.getString("reddit_sessionPath", null);
+        long cookieExpiryDate = sessionPrefs.getLong("reddit_sessionExpiryDate", -1);
+        if (cookieValue != null) {
+        	BasicClientCookie redditSessionCookie = new BasicClientCookie("reddit_session", cookieValue);
+        	redditSessionCookie.setDomain(cookieDomain);
+        	redditSessionCookie.setPath(cookiePath);
+        	if (cookieExpiryDate != -1)
+        		redditSessionCookie.setExpiryDate(new Date(cookieExpiryDate));
+        	else
+        		redditSessionCookie.setExpiryDate(null);
+        	mRedditSessionCookie = redditSessionCookie;
+        	setClient(new DefaultHttpClient());
+        	mClient.getCookieStore().addCookie(mRedditSessionCookie);
+        	mLoggedIn = true;
+        }
 
         // Pull current subreddit and thread info from Intent
         Bundle extras = getIntent().getExtras();
@@ -196,7 +219,7 @@ public final class RedditCommentsListActivity extends ListActivity
     
     public class VoteUpOnCheckedChangeListener implements CompoundButton.OnCheckedChangeListener {
     	public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
-	    	dismissDialog(DIALOG_THREAD_CLICK);
+	    	dismissDialog(DIALOG_THING_CLICK);
 			if (isChecked)
 				doVote(mThingId, 1, mSubreddit);
 			else
@@ -206,7 +229,7 @@ public final class RedditCommentsListActivity extends ListActivity
     
     public class VoteDownOnCheckedChangeListener implements CompoundButton.OnCheckedChangeListener {
 	    public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
-	    	dismissDialog(DIALOG_THREAD_CLICK);
+	    	dismissDialog(DIALOG_THING_CLICK);
 			if (isChecked)
 				doVote(mThingId, -1, mSubreddit);
 			else
@@ -353,14 +376,34 @@ public final class RedditCommentsListActivity extends ListActivity
 		            TextView votesView = (TextView) view.findViewById(R.id.votes);
 		            TextView submitterView = (TextView) view.findViewById(R.id.submitter);
 		            TextView bodyView = (TextView) view.findViewById(R.id.body);
+		            TextView leftIndent = (TextView) view.findViewById(R.id.left_indent);
 		            
 	//                TextView submissionTimeView = (TextView) view.findViewById(R.id.submissionTime);
 		            ImageView voteUpView = (ImageView) view.findViewById(R.id.vote_up_image);
 		            ImageView voteDownView = (ImageView) view.findViewById(R.id.vote_down_image);
 		            
-		            votesView.setText(String.valueOf(Integer.valueOf(item.getUps()) - Integer.valueOf(item.getDowns())) + " points");
+		            try {
+		            	votesView.setText(String.valueOf(
+		            			Integer.valueOf(item.getUps()) - Integer.valueOf(item.getDowns())
+		            			) + " points");
+		            } catch (NumberFormatException e) {
+		            	// This happens because "ups" comes after the potentially long "replies" object,
+		            	// so the ListView might try to display the View before "ups" in JSON has been parsed.
+		            	Log.e(TAG, e.getMessage());
+		            }
 		            submitterView.setText(item.getAuthor());
 		            bodyView.setText(item.getBody());
+		            switch (item.getIndent()) {
+		            case 0:  leftIndent.setText(""); break;
+		            case 1:  leftIndent.setText("w"); break;
+		            case 2:  leftIndent.setText("ww"); break;
+		            case 3:  leftIndent.setText("www"); break;
+		            case 4:  leftIndent.setText("wwww"); break;
+		            case 5:  leftIndent.setText("wwwww"); break;
+		            case 6:  leftIndent.setText("wwwwww"); break;
+		            case 7:  leftIndent.setText("wwwwwww"); break;
+		            default: leftIndent.setText("wwwwwww"); break;
+		            }
 		            
 		//            submitterView.setText(item.getAuthor());
 		            // TODO: convert submission time to a displayable time
@@ -372,20 +415,20 @@ public final class RedditCommentsListActivity extends ListActivity
 		            	if (TRUE_STRING.equals(item.getLikes())) {
 		            		voteUpView.setImageResource(R.drawable.vote_up_red);
 		            		voteDownView.setImageResource(R.drawable.vote_down_gray);
-		            		votesView.setTextColor(res.getColor(R.color.arrow_red));
+//		            		votesView.setTextColor(res.getColor(R.color.arrow_red));
 		            	} else if (FALSE_STRING.equals(item.getLikes())) {
 		            		voteUpView.setImageResource(R.drawable.vote_up_gray);
 		            		voteDownView.setImageResource(R.drawable.vote_down_blue);
-		            		votesView.setTextColor(res.getColor(R.color.arrow_blue));
+//		            		votesView.setTextColor(res.getColor(R.color.arrow_blue));
 		            	} else {
 		            		voteUpView.setImageResource(R.drawable.vote_up_gray);
 		            		voteDownView.setImageResource(R.drawable.vote_down_gray);
-		            		votesView.setTextColor(res.getColor(R.color.gray));
+//		            		votesView.setTextColor(res.getColor(R.color.gray));
 		            	}
 		            } else {
 		        		voteUpView.setImageResource(R.drawable.vote_up_gray);
 		        		voteDownView.setImageResource(R.drawable.vote_down_gray);
-		        		votesView.setTextColor(res.getColor(R.color.gray));
+//		        		votesView.setTextColor(res.getColor(R.color.gray));
 		            }
 	            }
             } catch (NullPointerException e) {
@@ -409,12 +452,15 @@ public final class RedditCommentsListActivity extends ListActivity
     protected void onListItemClick(ListView l, View v, int position, long id) {
         CommentInfo item = mCommentsAdapter.getItem(position);
         
-        // Mark the thread as selected
-        mThingId = item.getName();
+        // Mark the OP post/regular comment as selected
+        if (item.getOP() != null)
+        	mThingId = item.getOP().getName();
+        else
+        	mThingId = item.getName();
         mVoteTargetCommentInfo = item;
         mVoteTargetView = v;
         
-       	showDialog(DIALOG_THREAD_CLICK);
+       	showDialog(DIALOG_THING_CLICK);
     }
 
     /**
@@ -888,7 +934,7 @@ public final class RedditCommentsListActivity extends ListActivity
     	ivUp.setImageResource(newImageResourceUp);
 		ivDown.setImageResource(newImageResourceDown);
 		String newScore = String.valueOf(newUps - newDowns);
-		voteCounter.setText(newScore);
+		voteCounter.setText(newScore + " points");
 		mVoteTargetCommentInfo.setLikes(newLikes);
 		mVoteTargetCommentInfo.setUps(String.valueOf(newUps));
 		mVoteTargetCommentInfo.setDowns(String.valueOf(newDowns));
@@ -1091,10 +1137,9 @@ public final class RedditCommentsListActivity extends ListActivity
     		});
     		break;
     		
-    	case DIALOG_THREAD_CLICK:
+    	case DIALOG_THING_CLICK:
     		dialog = new Dialog(this);
-    		dialog.setContentView(R.layout.thread_click_dialog);
-    		dialog.setTitle("Thread:");
+    		dialog.setContentView(R.layout.comment_click_dialog);
     		
     		break;
 
@@ -1131,15 +1176,15 @@ public final class RedditCommentsListActivity extends ListActivity
     	super.onPrepareDialog(id, dialog);
     	
     	switch (id) {
-    	case DIALOG_THREAD_CLICK:
-    		final CheckBox voteUpButton = (CheckBox) dialog.findViewById(R.id.thread_vote_up_button);
-    		final CheckBox voteDownButton = (CheckBox) dialog.findViewById(R.id.thread_vote_down_button);
-    		final TextView urlView = (TextView) dialog.findViewById(R.id.url);
-    		final Button linkButton = (Button) dialog.findViewById(R.id.thread_link_button);
-    		final Button commentsButton = (Button) dialog.findViewById(R.id.thread_comments_button);
+    	case DIALOG_THING_CLICK:
+    		if (mVoteTargetCommentInfo.getOP() != null)
+    			dialog.setTitle("OP:");
+    		else
+    			dialog.setTitle("Comment:");
+    		final CheckBox voteUpButton = (CheckBox) dialog.findViewById(R.id.comment_vote_up_button);
+    		final CheckBox voteDownButton = (CheckBox) dialog.findViewById(R.id.comment_vote_down_button);
+    		final Button replyButton = (Button) dialog.findViewById(R.id.reply_button);
     		
-    		urlView.setText(mTargetURL);
-
     		// Only show upvote/downvote if user is logged in
     		if (mLoggedIn) {
     			voteUpButton.setVisibility(View.VISIBLE);
@@ -1160,32 +1205,19 @@ public final class RedditCommentsListActivity extends ListActivity
 	    		}
 	    		voteUpButton.setOnCheckedChangeListener(new VoteUpOnCheckedChangeListener());
 	    		voteDownButton.setOnCheckedChangeListener(new VoteDownOnCheckedChangeListener());
+
+	    		// The "reply" button
+	    		OnClickListener replyOnClickListener = new OnClickListener() {
+	    			public void onClick(View v) {
+	    				mMode = MODE_COMMENTS_LIST;
+	    				// TODO: Post comment reply
+	        		}
+	    		};
     		} else {
     			// TODO: "login" button.
     			voteUpButton.setVisibility(View.INVISIBLE);
     			voteDownButton.setVisibility(View.INVISIBLE);
     		}
-
-    		// The "link" and "comments" buttons
-    		OnClickListener commentsOnClickListener = new OnClickListener() {
-    			public void onClick(View v) {
-    				mMode = MODE_COMMENTS_LIST;
-    				// TODO: setContentView to comments mode
-        		}
-    		};
-    		commentsButton.setOnClickListener(commentsOnClickListener);
-            if (("self."+mSubreddit).toLowerCase().equals(mTargetURL.toString().toLowerCase())) {
-            	// It's a self post. Both buttons do the same thing.
-            	linkButton.setOnClickListener(commentsOnClickListener);
-            } else {
-            	linkButton.setOnClickListener(new OnClickListener() {
-            		public void onClick(View v) {
-            			dismissDialog(DIALOG_THREAD_CLICK);
-            			// Launch Intent to goto the URL
-            			RedditCommentsListActivity.this.startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse(mTargetURL.toString())));
-            		}
-            	});
-            }
     		break;
     		
 		default:
@@ -1498,7 +1530,10 @@ public final class RedditCommentsListActivity extends ListActivity
 							processNestedCommentsJSON(jp, adapter, commentsNested + 1);
 						} else {
 							jp.nextToken(); // move to value
-							ci.put(namefield, jp.getText());
+							if ("body".equals(namefield))
+								ci.put(namefield, StringEscapeUtils.unescapeHtml(jp.getText()));
+							else
+								ci.put(namefield, jp.getText());
 						}
 					}
 				} else {

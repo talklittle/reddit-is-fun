@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+              android:id="@+id/layout_root"
+              android:orientation="vertical"
+              android:layout_width="wrap_content"
+              android:layout_height="fill_parent"
+              android:padding="10dp"
+              >
+    
+    <!-- TODO: something like username you're replying to
+   	<TextView android:id="@+id/url"
+   		android:layout_width="wrap_content"
+   		android:layout_height="wrap_content"
+   		android:singleLine="true"
+   		android:ellipsize="marquee"
+   		android:textSize="9dip"
+   		/>
+   		-->
+	
+	<LinearLayout
+    	android:orientation="horizontal"
+    	android:layout_width="wrap_content"
+    	android:layout_height="wrap_content"
+    	android:padding="10dp"
+    	>
+    	<LinearLayout
+	    	android:orientation="vertical"
+	    	android:layout_width="wrap_content"
+	    	android:layout_height="wrap_content"
+	    	android:padding="10dp"
+	    	>
+		    <CheckBox android:id="@+id/comment_vote_up_button"
+		    	style="@style/VoteUpButton"
+		    	android:layout_width="100dip"
+				android:layout_height="50dip"
+				android:layout_marginBottom="10dip"
+				/>
+				
+			<CheckBox android:id="@+id/comment_vote_down_button"
+				style="@style/VoteDownButton"
+		    	android:layout_width="100dip"
+				android:layout_height="50dip"
+				android:layout_marginTop="10dip"
+				android:drawable="@drawable/vote_down_big_statelist"
+				/>
+		</LinearLayout>
+		
+		<LinearLayout
+		    android:orientation="vertical"
+	    	android:layout_width="wrap_content"
+	    	android:layout_height="wrap_content"
+	    	android:padding="10dp"
+	    	>
+	    	<Button android:id="@+id/reply_button"
+	    		android:layout_width="wrap_content"
+	    		android:layout_height="wrap_content"
+	    		android:layout_marginBottom="10dip"
+	    		android:singleLine="true"
+	    		android:text="@string/comment_reply_button"
+	    		/>
+	   	</LinearLayout>
+   	</LinearLayout>
+</LinearLayout>

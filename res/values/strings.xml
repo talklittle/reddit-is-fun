@@ -23,4 +23,7 @@
 	
 	<string name="thread_link_button">link</string>
 	<string name="thread_comments_button">comments</string>
+	
+	<string name="comment_reply_button">reply</string>
+	
 </resources>

@@ -79,6 +79,10 @@ public class CommentInfo {
 		return mValues.get(ID);
 	}
 	
+	public int getIndent() {
+		return mIndent;
+	}
+	
 	public String getLikes() {
 		return mValues.get(LIKES);
 	}
