@@ -45,12 +45,20 @@ public class ThreadInfo {
 		mValues.put(key, value);
 	}
 	
+	public void setDowns(String downs) {
+		mValues.put(DOWNS, downs);
+	}
+	
 	public void setLikes(String likes) {
 		mValues.put(LIKES, likes);
 	}
 	
 	public void setScore(String score) {
 		mValues.put(SCORE, score);
+	}
+	
+	public void setUps(String ups) {
+		mValues.put(UPS, ups);
 	}
 
 	public String getAuthor() {
@@ -67,6 +75,10 @@ public class ThreadInfo {
 
 	public String getDomain() {
 		return mValues.get(DOMAIN);
+	}
+	
+	public String getDowns() {
+		return mValues.get(DOWNS);
 	}
 	
 	public String getId() {
@@ -103,6 +115,10 @@ public class ThreadInfo {
 	
 	public String getThumbnail() {
 		return mValues.get(THUMBNAIL);
+	}
+	
+	public String getUps() {
+		return mValues.get(UPS);
 	}
 
 	public String getURL() {

@@ -880,12 +880,23 @@ public final class RedditCommentsListActivity extends ListActivity
     	final ImageView ivDown = (ImageView) mVoteTargetView.findViewById(R.id.vote_down_image);
     	final TextView voteCounter = (TextView) mVoteTargetView.findViewById(R.id.votes);
 		int newImageResourceUp, newImageResourceDown;
-    	String newLikes;
-    	int previousUps = Integer.valueOf(mVoteTargetCommentInfo.getUps());
-    	int previousDowns = Integer.valueOf(mVoteTargetCommentInfo.getDowns());
-    	int newUps = previousUps;
-    	int newDowns = previousDowns;
-    	if (TRUE_STRING.equals(mVoteTargetCommentInfo.getLikes())) {
+		int previousUps, previousDowns, newUps, newDowns;
+    	String previousLikes, newLikes;
+    	
+    	if (mVoteTargetCommentInfo.getOP() != null) {
+    		previousUps = Integer.valueOf(mVoteTargetCommentInfo.getOP().getUps());
+	    	previousDowns = Integer.valueOf(mVoteTargetCommentInfo.getOP().getDowns());
+	    	newUps = previousUps;
+	    	newDowns = previousDowns;
+	    	previousLikes = mVoteTargetCommentInfo.getOP().getLikes();
+    	} else {
+	    	previousUps = Integer.valueOf(mVoteTargetCommentInfo.getUps());
+	    	previousDowns = Integer.valueOf(mVoteTargetCommentInfo.getDowns());
+	    	newUps = previousUps;
+	    	newDowns = previousDowns;
+	    	previousLikes = mVoteTargetCommentInfo.getLikes();
+    	}
+    	if (TRUE_STRING.equals(previousLikes)) {
     		if (direction == 0) {
     			newUps = previousUps - 1;
     			newImageResourceUp = R.drawable.vote_up_gray;
@@ -900,7 +911,7 @@ public final class RedditCommentsListActivity extends ListActivity
     		} else {
     			return false;
     		}
-    	} else if (FALSE_STRING.equals(mVoteTargetCommentInfo.getLikes())) {
+    	} else if (FALSE_STRING.equals(previousLikes)) {
     		if (direction == 1) {
     			newUps = previousUps + 1;
     			newDowns = previousDowns - 1;
@@ -935,9 +946,16 @@ public final class RedditCommentsListActivity extends ListActivity
 		ivDown.setImageResource(newImageResourceDown);
 		String newScore = String.valueOf(newUps - newDowns);
 		voteCounter.setText(newScore + " points");
-		mVoteTargetCommentInfo.setLikes(newLikes);
-		mVoteTargetCommentInfo.setUps(String.valueOf(newUps));
-		mVoteTargetCommentInfo.setDowns(String.valueOf(newDowns));
+		if (mVoteTargetCommentInfo.getOP() != null) {
+			mVoteTargetCommentInfo.getOP().setLikes(newLikes);
+			mVoteTargetCommentInfo.getOP().setUps(String.valueOf(newUps));
+			mVoteTargetCommentInfo.getOP().setDowns(String.valueOf(newDowns));
+			mVoteTargetCommentInfo.getOP().setScore(String.valueOf(newUps - newDowns));
+		} else{
+			mVoteTargetCommentInfo.setLikes(newLikes);
+			mVoteTargetCommentInfo.setUps(String.valueOf(newUps));
+			mVoteTargetCommentInfo.setDowns(String.valueOf(newDowns));
+		}
 		mCommentsAdapter.notifyDataSetChanged();
     	
     	VoteWorker worker = new VoteWorker(thingId, direction, subreddit);
@@ -1140,7 +1158,6 @@ public final class RedditCommentsListActivity extends ListActivity
     	case DIALOG_THING_CLICK:
     		dialog = new Dialog(this);
     		dialog.setContentView(R.layout.comment_click_dialog);
-    		
     		break;
 
     	case DIALOG_POST_THREAD:
@@ -1177,10 +1194,14 @@ public final class RedditCommentsListActivity extends ListActivity
     	
     	switch (id) {
     	case DIALOG_THING_CLICK:
-    		if (mVoteTargetCommentInfo.getOP() != null)
+    		String likes;
+    		if (mVoteTargetCommentInfo.getOP() != null) {
     			dialog.setTitle("OP:");
-    		else
+    			likes = mVoteTargetCommentInfo.getOP().getLikes();
+    		} else {
     			dialog.setTitle("Comment:");
+    			likes = mVoteTargetCommentInfo.getLikes();
+    		}
     		final CheckBox voteUpButton = (CheckBox) dialog.findViewById(R.id.comment_vote_up_button);
     		final CheckBox voteDownButton = (CheckBox) dialog.findViewById(R.id.comment_vote_down_button);
     		final Button replyButton = (Button) dialog.findViewById(R.id.reply_button);
@@ -1189,12 +1210,17 @@ public final class RedditCommentsListActivity extends ListActivity
     		if (mLoggedIn) {
     			voteUpButton.setVisibility(View.VISIBLE);
     			voteDownButton.setVisibility(View.VISIBLE);
+    			
+    			// Make sure the setChecked() actions don't actually vote just yet.
+    			voteUpButton.setOnCheckedChangeListener(null);
+    			voteDownButton.setOnCheckedChangeListener(null);
+    			
     			// Set initial states of the vote buttons based on user's past actions
-	    		if (TRUE_STRING.equals(mVoteTargetCommentInfo.getLikes())) {
+	    		if (TRUE_STRING.equals(likes)) {
 	    			// User currenty likes it
 	    			voteUpButton.setChecked(true);
 	    			voteDownButton.setChecked(false);
-	    		} else if (FALSE_STRING.equals(mVoteTargetCommentInfo.getLikes())) {
+	    		} else if (FALSE_STRING.equals(likes)) {
 	    			// User currently dislikes it
 	    			voteUpButton.setChecked(false);
 	    			voteDownButton.setChecked(true);
@@ -1203,6 +1229,7 @@ public final class RedditCommentsListActivity extends ListActivity
 	    			voteUpButton.setChecked(false);
 	    			voteDownButton.setChecked(false);
 	    		}
+	    		// Now we want the user to be able to vote.
 	    		voteUpButton.setOnCheckedChangeListener(new VoteUpOnCheckedChangeListener());
 	    		voteDownButton.setOnCheckedChangeListener(new VoteDownOnCheckedChangeListener());
 
