@@ -36,11 +36,9 @@ import android.app.Dialog;
 import android.app.ListActivity;
 import android.app.ProgressDialog;
 import android.content.Context;
-import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.res.Resources;
 import android.graphics.Bitmap;
-import android.net.Uri;
 import android.os.Bundle;
 import android.os.Handler;
 import android.util.Log;
@@ -78,6 +76,7 @@ public final class RedditCommentsListActivity extends ListActivity
 	
 	public final String COMMENT_KIND = "t1";
 	public final String THREAD_KIND = "t3";
+	public final String MORE_KIND = "more";
 	public final String SERIALIZE_SEPARATOR = "\r";
 	
     private final JsonFactory jsonFactory = new JsonFactory(); 
@@ -125,6 +124,8 @@ public final class RedditCommentsListActivity extends ListActivity
     static final int DIALOG_LOGGING_IN = 7;
     static final int DIALOG_LOADING_THREADS_LIST = 8;
     static final int DIALOG_LOADING_COMMENTS_LIST = 9;
+    
+    static boolean mIsProgressDialogShowing = false;
     
     // Themes
     static final int THEME_LIGHT = 0;
@@ -505,6 +506,7 @@ public final class RedditCommentsListActivity extends ListActivity
     	
     	resetUI();
     	showDialog(DIALOG_LOADING_COMMENTS_LIST);
+    	mIsProgressDialogShowing = true;
     	
     	setTitle("/r/"+subreddit.toString().trim());
     	
@@ -1281,10 +1283,10 @@ public final class RedditCommentsListActivity extends ListActivity
         ArrayList<CharSequence> strings = new ArrayList<CharSequence>();
         for (int i = 0; i < count; i++) {
             CommentInfo item = mCommentsAdapter.getItem(i);
-            for (int k = 0; k < ThreadInfo._KEYS.length; k++) {
-            	if (item.mValues.containsKey(ThreadInfo._KEYS[k])) {
-            		strings.add(ThreadInfo._KEYS[k]);
-            		strings.add(item.mValues.get(ThreadInfo._KEYS[k]));
+            for (int k = 0; k < CommentInfo._KEYS.length; k++) {
+            	if (item.mValues.containsKey(CommentInfo._KEYS[k])) {
+            		strings.add(CommentInfo._KEYS[k]);
+            		strings.add(item.mValues.get(CommentInfo._KEYS[k]));
             	}
             }
             strings.add(SERIALIZE_SEPARATOR);
@@ -1341,8 +1343,10 @@ public final class RedditCommentsListActivity extends ListActivity
             getListView().setSelection(state.getInt(SELECTION_KEY));
         }
         
-        // Close any ProgressDialogs
-        dismissDialog(DIALOG_LOADING_THREADS_LIST);
+        if (mIsProgressDialogShowing) {
+        	dismissDialog(DIALOG_LOADING_COMMENTS_LIST);
+        	mIsProgressDialogShowing = false;
+        }
     }
 
 
@@ -1454,6 +1458,7 @@ public final class RedditCommentsListActivity extends ListActivity
 		// Add the comments after parsing to preserve correct order.
 		// OK to dismiss dialog when we start adding comments
 		dismissDialog(DIALOG_LOADING_COMMENTS_LIST);
+		mIsProgressDialogShowing = false;
 		
 		for (Integer key : mCommentsMap.keySet()) {
 			mHandler.post(new CommentItemAdder(mCommentsMap.get(key)));
@@ -1481,7 +1486,7 @@ public final class RedditCommentsListActivity extends ListActivity
     		throw new IllegalStateException(genericListingError);
     	jp.nextToken();
     	// Handle "more" link
-    	if ("more".equals(jp.getText())) {
+    	if (MORE_KIND.equals(jp.getText())) {
     		more = true;
 	    	jp.nextToken();
 	    	if (!"data".equals(jp.getCurrentName()))
@@ -1527,10 +1532,15 @@ public final class RedditCommentsListActivity extends ListActivity
 			// Post the comments in prefix order.
 			ci.setListOrder(mNestedCommentsJSONOrder++);
 			while (jp.nextToken() != JsonToken.END_OBJECT) {
+				more = false;
 				String fieldname = jp.getCurrentName();
 				jp.nextToken(); // move to value, or START_OBJECT/START_ARRAY
 			
 				if ("kind".equals(fieldname)) {
+					// TODO: Handle "more" correctly
+					if (MORE_KIND.equals(jp.getText())) {
+						more = true;
+					}
 					if (!COMMENT_KIND.equals(jp.getText())) {
 						// Skip this JSON Object since it doesn't represent a comment.
 						// May encounter nested objects too.
@@ -1567,7 +1577,9 @@ public final class RedditCommentsListActivity extends ListActivity
 					throw new IllegalStateException("Unrecognized field '"+fieldname+"'!");
 				}
 			}
-			mCommentsMap.put(ci.getListOrder(), ci);
+			// TODO: Handle "more" correctly
+			if (!more)
+				mCommentsMap.put(ci.getListOrder(), ci);
 		}
 		// Wind down the end of the "data" then "replies" objects
     	for (int i = 0; i < 2; i++)

@@ -10,7 +10,6 @@
 <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="fill_parent"
     android:layout_height="wrap_content"
-    android:minHeight="?android:attr/listPreferredItemHeight"
     android:paddingTop="2dip"
     android:paddingBottom="2dip"
     >
@@ -67,7 +66,7 @@
 		
 		        android:singleLine="true"
 		        android:ellipsize="marquee"
-		        android:textSize="11dip"
+		        android:textSize="10dip"
 		        android:textColor="#888"
 		        android:textStyle="bold"
 		    />
@@ -79,7 +78,7 @@
 		        
 		      	android:singleLine="true"
 		        android:ellipsize="marquee"
-		        android:textSize="11dip"
+		        android:textSize="10dip"
 		        android:text="188 points"
 			    />
 			
@@ -96,7 +95,7 @@
 		        android:layout_marginRight="5dip"
 		        android:text="Lalala this is like a comment. What do you think of this? Yeah"
 		
-		        android:textSize="11dip"
+		        android:textSize="12dip"
 		    />
 		    
 	    </RelativeLayout>

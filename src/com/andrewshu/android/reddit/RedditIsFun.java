@@ -104,6 +104,7 @@ public final class RedditIsFun extends ListActivity
     private CharSequence mThingFullname = null;
     private CharSequence mThingId = null;
     private CharSequence mTargetURL = null;
+    private CharSequence mTargetDomain = null;
     private View mVoteTargetView = null;
     private ThreadInfo mVoteTargetThreadInfo = null;
     
@@ -127,6 +128,8 @@ public final class RedditIsFun extends ListActivity
     static final int DIALOG_LOADING_THREADS_LIST = 8;
     static final int DIALOG_LOADING_COMMENTS_LIST = 9;
     static final int DIALOG_LOADING_LOOK_OF_DISAPPROVAL = 10;
+    
+    static boolean mIsProgressDialogShowing = false;
     
     // Themes
     static final int THEME_LIGHT = 0;
@@ -439,9 +442,10 @@ public final class RedditIsFun extends ListActivity
         mThingId = item.getId();
         mVoteTargetThreadInfo = item;
         mTargetURL = item.getURL();
+        mTargetDomain = item.getDomain();
         mVoteTargetView = v;
         
-       	showDialog(DIALOG_THREAD_CLICK);
+        showDialog(DIALOG_THREAD_CLICK);
     }
 
     /**
@@ -506,6 +510,7 @@ public final class RedditIsFun extends ListActivity
     	
     	resetUI();
     	showDialog(DIALOG_LOADING_THREADS_LIST);
+    	mIsProgressDialogShowing = true;
     	
     	setTitle("/r/"+subreddit.toString().trim());
     	
@@ -556,6 +561,7 @@ public final class RedditIsFun extends ListActivity
             	
             	// OK to dismiss the progress dialog when threads start loading
             	dismissDialog(DIALOG_LOADING_THREADS_LIST);
+            	mIsProgressDialogShowing = false;
 
             	InputStream in = response.getEntity().getContent();
                 
@@ -564,6 +570,7 @@ public final class RedditIsFun extends ListActivity
                 mSubreddit = _mSubreddit;
             } catch (IOException e) {
             	dismissDialog(DIALOG_LOADING_THREADS_LIST);
+            	mIsProgressDialogShowing = false;
             	Log.e(TAG, "failed:" + e.getMessage());
             }
         }
@@ -1238,7 +1245,7 @@ public final class RedditIsFun extends ListActivity
     		};
     		commentsButton.setOnClickListener(commentsOnClickListener);
     		// TODO: Handle bestof posts, which aren't self posts
-            if (("self."+mSubreddit).toLowerCase().equals(mTargetURL.toString().toLowerCase())) {
+            if (("self."+mSubreddit).toLowerCase().equals(mTargetDomain.toString().toLowerCase())) {
             	// It's a self post. Both buttons do the same thing.
             	linkButton.setOnClickListener(commentsOnClickListener);
             } else {
@@ -1346,8 +1353,10 @@ public final class RedditIsFun extends ListActivity
             getListView().setSelection(state.getInt(SELECTION_KEY));
         }
         
-        // Close any ProgressDialogs
-        dismissDialog(DIALOG_LOADING_THREADS_LIST);
+        if (mIsProgressDialogShowing) {
+        	dismissDialog(DIALOG_LOADING_THREADS_LIST);
+        	mIsProgressDialogShowing = false;
+        }
     }
 
 

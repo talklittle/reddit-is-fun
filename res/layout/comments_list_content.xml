@@ -17,6 +17,7 @@
     	android:layout_width="fill_parent"
 	    android:layout_height="wrap_content"
 	    android:listSelector="@drawable/thread_list_selector_solid_pale_blue"
+	    android:divider="@null"
     />
 
     <ScrollView android:id="@android:id/empty"
