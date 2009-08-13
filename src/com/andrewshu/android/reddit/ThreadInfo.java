@@ -2,6 +2,8 @@ package com.andrewshu.android.reddit;
 
 import java.util.HashMap;
 
+import org.codehaus.jackson.JsonNode;
+
 /**
  * Class representing a thread posting in reddit API.
  * 
@@ -20,6 +22,7 @@ public class ThreadInfo {
 	public static final String KIND         = "kind";
 	public static final String LIKES        = "likes";
 	public static final String MEDIA        = "media";
+	public static final String MEDIA_EMBED  = "media_embed";
 	public static final String NAME         = "name";
 	public static final String NUM_COMMENTS = "num_comments";
 	public static final String SAVED        = "saved";
@@ -38,8 +41,14 @@ public class ThreadInfo {
 		ID, KIND, LIKES, MEDIA, NAME, NUM_COMMENTS, SAVED, SCORE, SELFTEXT,
 		SUBREDDIT, SUBREDDIT_ID, THEN, THUMBNAIL, TITLE, UPS, URL
 	};
+	// Only save the keys we actually use.
+	public static final String[] SAVE_KEYS = {
+		AUTHOR, CLICKED, DOMAIN, DOWNS, HIDDEN, ID, KIND, LIKES, NAME, NUM_COMMENTS,
+		SAVED, SCORE, SELFTEXT, SUBREDDIT, TITLE, UPS, URL
+	};
 	
 	public HashMap<String, String> mValues = new HashMap<String, String>();
+	public JsonNode mMediaEmbed; // Unused.
 	
 	public void put(String key, String value) {
 		mValues.put(key, value);

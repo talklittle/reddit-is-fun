@@ -1293,10 +1293,10 @@ public final class RedditIsFun extends ListActivity
         ArrayList<CharSequence> strings = new ArrayList<CharSequence>();
         for (int i = 0; i < count; i++) {
             ThreadInfo item = mThreadsAdapter.getItem(i);
-            for (int k = 0; k < ThreadInfo._KEYS.length; k++) {
-            	if (item.mValues.containsKey(ThreadInfo._KEYS[k])) {
-            		strings.add(ThreadInfo._KEYS[k]);
-            		strings.add(item.mValues.get(ThreadInfo._KEYS[k]));
+            for (int k = 0; k < ThreadInfo.SAVE_KEYS.length; k++) {
+            	if (item.mValues.containsKey(ThreadInfo.SAVE_KEYS[k])) {
+            		strings.add(ThreadInfo.SAVE_KEYS[k]);
+            		strings.add(item.mValues.get(ThreadInfo.SAVE_KEYS[k]));
             	}
             }
             strings.add(SERIALIZE_SEPARATOR);
@@ -1431,6 +1431,12 @@ public final class RedditIsFun extends ListActivity
 								String mediaNamefield = jp.getCurrentName();
 								jp.nextToken(); // move to value
 								ti.put("_media_"+mediaNamefield, jp.getText());
+							}
+						} else if ("media_embed".equals(namefield) && jp.getCurrentToken() == JsonToken.START_OBJECT) {
+							while (jp.nextToken() != JsonToken.END_OBJECT) {
+								String mediaNamefield = jp.getCurrentName();
+								jp.nextToken(); // move to value
+								ti.put("_media_embed_"+mediaNamefield, jp.getText());
 							}
 						} else {
 							ti.put(namefield, StringEscapeUtils.unescapeHtml(jp.getText()));

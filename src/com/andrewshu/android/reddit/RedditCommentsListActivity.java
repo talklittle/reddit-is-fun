@@ -121,6 +121,7 @@ public final class RedditCommentsListActivity extends ListActivity
     static final int DIALOG_LOGOUT = 3;
     static final int DIALOG_REFRESH = 4;
     static final int DIALOG_POST_THREAD = 5;
+    static final int DIALOG_REPLY = 6;
     static final int DIALOG_LOGGING_IN = 7;
     static final int DIALOG_LOADING_THREADS_LIST = 8;
     static final int DIALOG_LOADING_COMMENTS_LIST = 9;
@@ -298,7 +299,7 @@ public final class RedditCommentsListActivity extends ListActivity
             // TODO?: replace this logic with ListView.addHeaderView()
             try {
 	            if (position == 0) {
-	            	// The OP is rendered as a WebView
+	            	// The OP
 	            	if (convertView == null) {
 	            		view = mInflater.inflate(R.layout.threads_list_item_expanded, null);
 	            	} else {
@@ -358,6 +359,7 @@ public final class RedditCommentsListActivity extends ListActivity
 	                
 	                // --- End part copied from ThreadsListAdapter ---
 	                
+	                // Selftext is rendered in a WebView
 	            	if (!NULL_STRING.equals(mOpThreadInfo.getSelftext())) {
 	            		selftextView.getSettings().setTextSize(TextSize.SMALLER);
 	            		selftextView.loadData(StringEscapeUtils.unescapeHtml(mOpThreadInfo.getSelftext()), "text/html", "UTF-8");
@@ -650,6 +652,7 @@ public final class RedditCommentsListActivity extends ListActivity
 	    }
     }
     
+
     /**
      * Worker thread takes in a subreddit name string and thread id, downloads its data, parses
      * out the comments, and communicates them back to the UI as they are read.
@@ -967,82 +970,135 @@ public final class RedditCommentsListActivity extends ListActivity
     	return true;
     }
     
-    public boolean doComment(CharSequence parentThingId, CharSequence subreddit) {
-//    	if (!mLoggedIn) {
-//    		// TODO: Error dialog saying you must be logged in.
-//    		return false;
-//    	}
-//    	if (direction < -1 || direction > 1) {
-//    		throw new RuntimeException("How the hell did you vote something besides -1, 0, or 1?");
-//    	}
-//    	
-//    	// Update UI: 6 cases (3 original directions, each with 2 possible changes)
-//    	// UI is updated *before* the transaction actually happens. If the connection breaks for
-//    	// some reason, then the vote will be lost.
-//    	// Oh well, happens on reddit.com too, occasionally.
-//    	final ImageView ivUp = (ImageView) mVoteTargetView.findViewById(R.id.vote_up_image);
-//    	final ImageView ivDown = (ImageView) mVoteTargetView.findViewById(R.id.vote_down_image);
-//    	final TextView voteCounter = (TextView) mVoteTargetView.findViewById(R.id.votes);
-//		int newImageResourceUp, newImageResourceDown;
-//    	String newScore;
-//    	String newLikes;
-//    	int previousScore = Integer.valueOf(mVoteTargetThreadInfo.getScore());
-//    	if (TRUE_STRING.equals(mVoteTargetThreadInfo.getLikes())) {
-//    		if (direction == 0) {
-//    			newScore = String.valueOf(previousScore - 1);
-//    			newImageResourceUp = R.drawable.vote_up_gray;
-//    			newImageResourceDown = R.drawable.vote_down_gray;
-//    			newLikes = NULL_STRING;
-//    		} else if (direction == -1) {
-//    			newScore = String.valueOf(previousScore - 2);
-//    			newImageResourceUp = R.drawable.vote_up_gray;
-//    			newImageResourceDown = R.drawable.vote_down_blue;
-//    			newLikes = FALSE_STRING;
-//    		} else {
-//    			return false;
-//    		}
-//    	} else if (FALSE_STRING.equals(mVoteTargetThreadInfo.getLikes())) {
-//    		if (direction == 1) {
-//    			newScore = String.valueOf(previousScore + 2);
-//    			newImageResourceUp = R.drawable.vote_up_red;
-//    			newImageResourceDown = R.drawable.vote_down_gray;
-//    			newLikes = TRUE_STRING;
-//    		} else if (direction == 0) {
-//    			newScore = String.valueOf(previousScore + 1);
-//    			newImageResourceUp = R.drawable.vote_up_gray;
-//    			newImageResourceDown = R.drawable.vote_down_gray;
-//    			newLikes = NULL_STRING;
-//    		} else {
-//    			return false;
-//    		}
-//    	} else {
-//    		if (direction == 1) {
-//    			newScore = String.valueOf(previousScore + 1);
-//    			newImageResourceUp = R.drawable.vote_up_red;
-//    			newImageResourceDown = R.drawable.vote_down_gray;
-//    			newLikes = TRUE_STRING;
-//    		} else if (direction == -1) {
-//    			newScore = String.valueOf(previousScore - 1);
-//    			newImageResourceUp = R.drawable.vote_up_gray;
-//    			newImageResourceDown = R.drawable.vote_down_blue;
-//    			newLikes = FALSE_STRING;
-//    		} else {
-//    			return false;
-//    		}
-//    	}
-//    	
-//    	ivUp.setImageResource(newImageResourceUp);
-//		ivDown.setImageResource(newImageResourceDown);
-//		voteCounter.setText(newScore);
-//		mVoteTargetThreadInfo.setLikes(newLikes);
-//		mVoteTargetThreadInfo.setScore(newScore);
-//		mAdapter.notifyDataSetChanged();
-//    	
-//    	VoteWorker worker = new VoteWorker(thingId, direction, subreddit);
-//    	setCurrentWorker(worker);
-//    	worker.start();
-//    	
-    	return true;
+
+    /**
+     * Synchronously do a reply POST HTTP request.
+     * On success, return a new CommentInfo representing the reply.
+     * @param parentThingId
+     * @param text
+     * @param subreddit
+     * @return
+     */
+    public CommentInfo doReply(CharSequence parentThingId, CharSequence text, CharSequence subreddit) {
+    	CommentInfo newlyCreatedComment = null;
+    	
+    	if (!mLoggedIn) {
+    		// TODO: Error dialog saying you must be logged in.
+    		return null;
+    	}
+    	
+    	// Reply synchronously.
+    	String status = "";
+    	if (!mLoggedIn) {
+    		// TODO: Error dialog saying you must be logged in.
+    		return null;
+    	}
+    	// Update the modhash if necessary
+    	if (mModhash == null) {
+    		if (!doUpdateModhash()) {
+    			// doUpdateModhash should have given an error about credentials
+    			throw new RuntimeException("Reply failed because doUpdateModhash() failed");
+    		}
+    	}
+    	
+    	try {
+    		// Create a new HttpClient and copy cookies over from the main one
+    		DefaultHttpClient client = new DefaultHttpClient();
+    		client.getParams().setParameter(HttpConnectionParams.SO_TIMEOUT, 30000);
+    		List<Cookie> mainCookies = mClient.getCookieStore().getCookies();
+    		for (Cookie c : mainCookies) {
+    			client.getCookieStore().addCookie(c);
+    		}
+    		
+    		// Construct data
+			List<NameValuePair> nvps = new ArrayList<NameValuePair>();
+			nvps.add(new BasicNameValuePair("thing_id", parentThingId.toString()));
+			nvps.add(new BasicNameValuePair("text", text.toString()));
+			nvps.add(new BasicNameValuePair("r", subreddit.toString()));
+			nvps.add(new BasicNameValuePair("uh", mModhash.toString()));
+			// Votehash is currently unused by reddit 
+//				nvps.add(new BasicNameValuePair("vh", "0d4ab0ffd56ad0f66841c15609e9a45aeec6b015"));
+			
+			HttpPost httppost = new HttpPost("http://www.reddit.com/api/comment");
+	        httppost.setEntity(new UrlEncodedFormEntity(nvps, HTTP.UTF_8));
+	        
+	        Log.d(TAG, nvps.toString());
+	        
+            // Perform the HTTP POST request
+	    	HttpResponse response = mClient.execute(httppost);
+	    	status = response.getStatusLine().toString();
+        	if (!status.contains("OK"))
+        		throw new HttpException(status);
+        	
+        	HttpEntity entity = response.getEntity();
+
+        	BufferedReader in = new BufferedReader(new InputStreamReader(entity.getContent()));
+        	String line = in.readLine();
+        	if (line == null) {
+        		throw new HttpException("No content returned from reply POST");
+        	}
+        	if (line.contains("WRONG_PASSWORD")) {
+        		throw new Exception("Wrong password");
+        	}
+        	if (line.contains("USER_REQUIRED")) {
+        		// The modhash probably expired
+        		setModhash(null);
+        		// TODO: "Error voting. Try again."
+        		return null;
+        	}
+        	
+        	Log.d(TAG, line);
+
+//	        	// DEBUG
+//	        	int c;
+//	        	boolean done = false;
+//	        	StringBuilder sb = new StringBuilder();
+//	        	while ((c = in.read()) >= 0) {
+//	        		sb.append((char) c);
+//	        		for (int i = 0; i < 80; i++) {
+//	        			c = in.read();
+//	        			if (c < 0) {
+//	        				done = true;
+//	        				break;
+//	        			}
+//	        			sb.append((char) c);
+//	        		}
+//	        		Log.d(TAG, "doLogin response content: " + sb.toString());
+//	        		sb = new StringBuilder();
+//	        		if (done)
+//	        			break;
+//	        	}
+
+        	in.close();
+        	if (entity != null)
+        		entity.consumeContent();
+        	
+        	// Getting here means success. Create a new CommentInfo.
+        	// XXX XXX XXX
+//        	newlyCreatedComment = new CommentInfo(mUsername, text.toString(), /* body_html */null,
+//        			/*created*/null, /*created_utc*/null, "0", id, TRUE_STRING, /*link_id*/ null,
+//        			name, parentThingId.toString(), "1");
+//        	newlyCreatedComment.setListOrder(mVoteTargetCommentInfo.getListOrder()+1);
+//        	newlyCreatedComment.setIndent(mVoteTargetCommentInfo.getIndent()+1);
+        	
+    	} catch (Exception e) {
+            Log.e(TAG, e.getMessage());
+    	}
+    	Log.d(TAG, status);
+    	
+    	// Update UI
+    	if (newlyCreatedComment != null) {
+			// Bump the list order of everything starting from where new comment will go.
+			int count = mCommentsAdapter.getCount();
+			for (int i = newlyCreatedComment.getListOrder(); i < count; i++) {
+				mCommentsAdapter.getItem(i).setListOrder(i+1);
+			}
+			// Finally, insert the new comment where it should go.
+			mCommentsAdapter.insert(newlyCreatedComment, newlyCreatedComment.getListOrder());
+			mCommentsAdapter.notifyDataSetChanged();
+    	}
+    	
+    	return newlyCreatedComment;
     }
 
     /**
@@ -1168,6 +1224,32 @@ public final class RedditCommentsListActivity extends ListActivity
     		dialog = null;
     		break;
     		
+    	case DIALOG_REPLY:
+    		dialog = new Dialog(this);
+    		dialog.setContentView(R.layout.compose_reply_dialog);
+    		final EditText replyBody = (EditText) dialog.findViewById(R.id.body);
+    		final Button replySaveButton = (Button) dialog.findViewById(R.id.reply_save_button);
+    		final Button replyCancelButton = (Button) dialog.findViewById(R.id.reply_cancel_button);
+    		replySaveButton.setOnClickListener(new OnClickListener() {
+    			public void onClick(View v) {
+    				CommentInfo newlySubmittedComment;
+    				if (mVoteTargetCommentInfo.getOP() != null) {
+    					newlySubmittedComment = doReply(mVoteTargetCommentInfo.getOP().getName(), replyBody.getText(), mSubreddit);
+    				} else {
+    					newlySubmittedComment = doReply(mVoteTargetCommentInfo.getName(), replyBody.getText(), mSubreddit);
+    				}
+    				if (newlySubmittedComment != null) {
+    					mVoteTargetCommentInfo.setReplyDraft("");
+    				}
+    			}
+    		});
+    		replyCancelButton.setOnClickListener(new OnClickListener() {
+    			public void onClick(View v) {
+    				mVoteTargetCommentInfo.setReplyDraft(replyBody.getText().toString());
+    			}
+    		});
+    		break;
+    		
    		// "Please wait"
     	case DIALOG_LOGGING_IN:
     		pdialog = new ProgressDialog(this);
@@ -1236,16 +1318,23 @@ public final class RedditCommentsListActivity extends ListActivity
 	    		voteDownButton.setOnCheckedChangeListener(new VoteDownOnCheckedChangeListener());
 
 	    		// The "reply" button
-	    		OnClickListener replyOnClickListener = new OnClickListener() {
+	    		replyButton.setOnClickListener(new OnClickListener() {
 	    			public void onClick(View v) {
-	    				mMode = MODE_COMMENTS_LIST;
-	    				// TODO: Post comment reply
+	    				dismissDialog(DIALOG_THING_CLICK);
+	    				showDialog(DIALOG_REPLY);
 	        		}
-	    		};
+	    		});
     		} else {
     			// TODO: "login" button.
     			voteUpButton.setVisibility(View.INVISIBLE);
     			voteDownButton.setVisibility(View.INVISIBLE);
+    		}
+    		break;
+    		
+    	case DIALOG_REPLY:
+    		if (mVoteTargetCommentInfo.getReplyDraft() != null) {
+    			EditText replyBodyView = (EditText) dialog.findViewById(R.id.body); 
+    			replyBodyView.setText(mVoteTargetCommentInfo.getReplyDraft());
     		}
     		break;
     		
@@ -1283,10 +1372,10 @@ public final class RedditCommentsListActivity extends ListActivity
         ArrayList<CharSequence> strings = new ArrayList<CharSequence>();
         for (int i = 0; i < count; i++) {
             CommentInfo item = mCommentsAdapter.getItem(i);
-            for (int k = 0; k < CommentInfo._KEYS.length; k++) {
-            	if (item.mValues.containsKey(CommentInfo._KEYS[k])) {
-            		strings.add(CommentInfo._KEYS[k]);
-            		strings.add(item.mValues.get(CommentInfo._KEYS[k]));
+            for (int k = 0; k < CommentInfo.SAVE_KEYS.length; k++) {
+            	if (item.mValues.containsKey(CommentInfo.SAVE_KEYS[k])) {
+            		strings.add(CommentInfo.SAVE_KEYS[k]);
+            		strings.add(item.mValues.get(CommentInfo.SAVE_KEYS[k]));
             	}
             }
             strings.add(SERIALIZE_SEPARATOR);
@@ -1427,6 +1516,12 @@ public final class RedditCommentsListActivity extends ListActivity
 								String mediaNamefield = jp.getCurrentName();
 								jp.nextToken(); // move to value
 								ti.put("_media_"+mediaNamefield, jp.getText());
+							}
+						} else if ("media_embed".equals(namefield) && jp.getCurrentToken() == JsonToken.START_OBJECT) {
+							while (jp.nextToken() != JsonToken.END_OBJECT) {
+								String mediaNamefield = jp.getCurrentName();
+								jp.nextToken(); // move to value
+								ti.put("_media_embed_"+mediaNamefield, jp.getText());
 							}
 						} else {
 							ti.put(namefield, StringEscapeUtils.unescapeHtml(jp.getText()));

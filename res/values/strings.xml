@@ -26,4 +26,7 @@
 	
 	<string name="comment_reply_button">reply</string>
 	
+	<string name="reply_save_button">save</string>
+	<string name="reply_cancel_button">cancel</string>
+	
 </resources>
