@@ -7,6 +7,7 @@ import java.io.InputStreamReader;
 import java.lang.ref.SoftReference;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.HashSet;
 import java.util.List;
 import java.util.TreeMap;
 import java.util.regex.Matcher;
@@ -85,7 +86,8 @@ public final class RedditCommentsListActivity extends ListActivity
 	public final String METADATA_SERIALIZE_SEPARATOR = "\r\r";
 	
     private final JsonFactory jsonFactory = new JsonFactory(); 
-    static int mNestedCommentsJSONOrder = 0;
+    private int mNestedCommentsJSONOrder = 0;
+    private HashSet<Integer> mMorePositions = new HashSet<Integer>(); 
 	
     /** Custom list adapter that fits our threads data into the list. */
     private CommentsListAdapter mCommentsAdapter;
@@ -95,6 +97,8 @@ public final class RedditCommentsListActivity extends ListActivity
     private Thread mWorker;
     
     private ThreadInfo mOpThreadInfo;
+    // Comments map, only used during parsing.
+    // When manipulating stuff already in list, use mCommentsAdapter.
     private TreeMap<Integer, CommentInfo> mCommentsMap = new TreeMap<Integer, CommentInfo>();
     
     private int mMode = MODE_THREADS_LIST;
@@ -295,6 +299,9 @@ public final class RedditCommentsListActivity extends ListActivity
     private final class CommentsListAdapter extends ArrayAdapter<CommentInfo> {
     	static final int OP_ITEM_VIEW_TYPE = 0;
     	static final int COMMENT_ITEM_VIEW_TYPE = 1;
+    	static final int MORE_ITEM_VIEW_TYPE = 2;
+    	// The number of view types
+    	static final int VIEW_TYPE_COUNT = 3;
     	
     	private LayoutInflater mInflater;
         private boolean mLoading = true;
@@ -331,13 +338,15 @@ public final class RedditCommentsListActivity extends ListActivity
             if (position == mFrequentSeparatorPos) {
                 // We don't want the separator view to be recycled.
                 return IGNORE_ITEM_VIEW_TYPE;
+            } else if (mMorePositions.contains(position)) {
+            	return MORE_ITEM_VIEW_TYPE;
             }
             return COMMENT_ITEM_VIEW_TYPE;
         }
         
         @Override
         public int getViewTypeCount() {
-        	return 2;
+        	return VIEW_TYPE_COUNT;
         }
 
         
@@ -418,6 +427,27 @@ public final class RedditCommentsListActivity extends ListActivity
 	            	} else {
 	            		selftextView.setVisibility(View.INVISIBLE);
 	            	}
+	            } else if (mMorePositions.contains(position)) {
+	            	// "load more comments"
+	            	if (convertView == null) {
+	            		view = mInflater.inflate(R.layout.more_comments_view, null);
+	            	} else {
+	            		view = convertView;
+	            	}
+	            	TextView leftIndent = (TextView) view.findViewById(R.id.left_indent);
+	            	switch (item.getIndent()) {
+		            case 0:  leftIndent.setText(""); break;
+		            case 1:  leftIndent.setText("w"); break;
+		            case 2:  leftIndent.setText("ww"); break;
+		            case 3:  leftIndent.setText("www"); break;
+		            case 4:  leftIndent.setText("wwww"); break;
+		            case 5:  leftIndent.setText("wwwww"); break;
+		            case 6:  leftIndent.setText("wwwwww"); break;
+		            case 7:  leftIndent.setText("wwwwwww"); break;
+		            default: leftIndent.setText("wwwwwww"); break;
+		            }
+	            	// TODO: Show number of replies, if possible
+	            	
 	            } else {
 		            // Here view may be passed in for re-use, or we make a new one.
 		            if (convertView == null) {
@@ -515,7 +545,10 @@ public final class RedditCommentsListActivity extends ListActivity
         mVoteTargetCommentInfo = item;
         mVoteTargetView = v;
         
-       	showDialog(DIALOG_THING_CLICK);
+        if (mMorePositions.contains(position))
+        	doLoadMoreComments(); // TODO: doLoadMoreComments
+        else
+        	showDialog(DIALOG_THING_CLICK);
     }
 
     /**
@@ -1670,13 +1703,13 @@ public final class RedditCommentsListActivity extends ListActivity
 							while (jp.nextToken() != JsonToken.END_OBJECT) {
 								String mediaNamefield = jp.getCurrentName();
 								jp.nextToken(); // move to value
-								ti.put("_media_"+mediaNamefield, jp.getText());
+								ti.put("media/"+mediaNamefield, jp.getText());
 							}
 						} else if ("media_embed".equals(namefield) && jp.getCurrentToken() == JsonToken.START_OBJECT) {
 							while (jp.nextToken() != JsonToken.END_OBJECT) {
 								String mediaNamefield = jp.getCurrentName();
 								jp.nextToken(); // move to value
-								ti.put("_media_embed_"+mediaNamefield, jp.getText());
+								ti.put("media_embed/"+mediaNamefield, jp.getText());
 							}
 						} else {
 							ti.put(namefield, StringEscapeUtils.unescapeHtml(jp.getText()));
@@ -1735,24 +1768,35 @@ public final class RedditCommentsListActivity extends ListActivity
     	if (!"kind".equals(jp.getCurrentName()))
     		throw new IllegalStateException(genericListingError);
     	jp.nextToken();
-    	// Handle "more" link
+    	// Handle "more" link (child)
     	if (MORE_KIND.equals(jp.getText())) {
     		more = true;
+    		CommentInfo moreCi = new CommentInfo();
+    		moreCi.setListOrder(mNestedCommentsJSONOrder);
+    		moreCi.setIndent(commentsNested);
+	    	mMorePositions.add(mNestedCommentsJSONOrder);
+	    	mNestedCommentsJSONOrder++;
+    		
 	    	jp.nextToken();
 	    	if (!"data".equals(jp.getCurrentName()))
 	    		throw new IllegalStateException(genericListingError);
 	    	jp.nextToken();
 	    	if (JsonToken.START_OBJECT != jp.getCurrentToken())
 	    		throw new IllegalStateException(genericListingError);
-	    	jp.nextToken();
-    		// TODO: handle "more" -- "name" and "id"
-    		// Skip to end of "children"
+	    	// handle "more" -- "name" and "id"
+	    	while (jp.nextToken() != JsonToken.END_OBJECT) {
+	    		String fieldname = jp.getCurrentName();
+	    		jp.nextToken();
+	    		moreCi.put(fieldname, jp.getText());
+	    	}
+	    	// Skip to the end of children array ("more" is first and only child)
 	    	while (jp.nextToken() != JsonToken.END_ARRAY)
 	    		;
 	    	// Skip to end of "data", then "replies" object
 	    	for (int i = 0; i < 2; i++)
 		    	while (jp.nextToken() != JsonToken.END_OBJECT)
 		    		;
+	    	mCommentsMap.put(moreCi.getListOrder(), moreCi);
 	    	return;
     	} else if ("Listing".equals(jp.getText())) {
 	    	jp.nextToken();
@@ -1787,11 +1831,26 @@ public final class RedditCommentsListActivity extends ListActivity
 				jp.nextToken(); // move to value, or START_OBJECT/START_ARRAY
 			
 				if ("kind".equals(fieldname)) {
-					// TODO: Handle "more" correctly
+					// Handle "more" link (sibling)
 					if (MORE_KIND.equals(jp.getText())) {
 						more = true;
+			    		ci.put("kind", MORE_KIND);
+				    	mMorePositions.add(ci.getListOrder());
+			    		
+				    	jp.nextToken();
+				    	if (!"data".equals(jp.getCurrentName()))
+				    		throw new IllegalStateException(genericListingError);
+				    	jp.nextToken();
+				    	if (JsonToken.START_OBJECT != jp.getCurrentToken())
+				    		throw new IllegalStateException(genericListingError);
+				    	// handle "more" -- "name" and "id"
+				    	while (jp.nextToken() != JsonToken.END_OBJECT) {
+				    		String moreFieldname = jp.getCurrentName();
+				    		jp.nextToken();
+				    		ci.put(moreFieldname, jp.getText());
+				    	}
 					}
-					if (!COMMENT_KIND.equals(jp.getText())) {
+					else if (!COMMENT_KIND.equals(jp.getText())) {
 						// Skip this JSON Object since it doesn't represent a comment.
 						// May encounter nested objects too.
 						int nested = 0;
@@ -1805,8 +1864,9 @@ public final class RedditCommentsListActivity extends ListActivity
 								nested--;
 						}
 						break;  // Go on to the next thread (JSON Object) in the JSON Array.
+					} else {
+						ci.put("kind", COMMENT_KIND);
 					}
-					ci.put("kind", COMMENT_KIND);
 				} else if ("data".equals(fieldname)) { // contains an object
 					while (jp.nextToken() != JsonToken.END_OBJECT) {
 						String namefield = jp.getCurrentName();
@@ -1827,9 +1887,8 @@ public final class RedditCommentsListActivity extends ListActivity
 					throw new IllegalStateException("Unrecognized field '"+fieldname+"'!");
 				}
 			}
-			// TODO: Handle "more" correctly
-			if (!more)
-				mCommentsMap.put(ci.getListOrder(), ci);
+			// Finished parsing one of the children
+			mCommentsMap.put(ci.getListOrder(), ci);
 		}
 		// Wind down the end of the "data" then "replies" objects
     	for (int i = 0; i < 2; i++)
