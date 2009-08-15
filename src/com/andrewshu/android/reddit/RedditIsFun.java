@@ -88,8 +88,6 @@ public final class RedditIsFun extends ListActivity
     /** Currently running background network thread. */
     private Thread mWorker;
     
-    private Menu mMenu;
-    
     static final int MODE_THREADS_LIST  = 0x00000001;
     static final int MODE_COMMENTS_LIST = 0x00000002;
     
@@ -128,6 +126,8 @@ public final class RedditIsFun extends ListActivity
     static final int DIALOG_LOADING_THREADS_LIST = 8;
     static final int DIALOG_LOADING_COMMENTS_LIST = 9;
     static final int DIALOG_LOADING_LOOK_OF_DISAPPROVAL = 10;
+    static final int DIALOG_OPEN_BROWSER = 11;
+    static final int DIALOG_THEME = 12;
     
     static boolean mIsProgressDialogShowing = false;
     
@@ -135,7 +135,8 @@ public final class RedditIsFun extends ListActivity
     static final int THEME_LIGHT = 0;
     static final int THEME_DARK = 1;
     
-    private int mTheme = 0;
+    private int mTheme = THEME_LIGHT;
+    private int mThemeResId = android.R.style.Theme_Light;
     
     // States for StateListDrawables
     static final int[] STATE_CHECKED = new int[]{android.R.attr.state_checked};
@@ -168,31 +169,13 @@ public final class RedditIsFun extends ListActivity
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         
+        loadRedditPreferences();
+        setTheme(mThemeResId);
+        
         setContentView(R.layout.threads_list_content);
         // The above layout contains a list id "android:list"
         // which ListActivity adopts as its list -- we can
         // access it with getListView().
-        
-        // Retrieve the stored session info
-        SharedPreferences sessionPrefs = getSharedPreferences(PREFS_SESSION, 0);
-        mUsername = sessionPrefs.getString("username", null);
-        String cookieValue = sessionPrefs.getString("reddit_sessionValue", null);
-        String cookieDomain = sessionPrefs.getString("reddit_sessionDomain", null);
-        String cookiePath = sessionPrefs.getString("reddit_sessionPath", null);
-        long cookieExpiryDate = sessionPrefs.getLong("reddit_sessionExpiryDate", -1);
-        if (cookieValue != null) {
-        	BasicClientCookie redditSessionCookie = new BasicClientCookie("reddit_session", cookieValue);
-        	redditSessionCookie.setDomain(cookieDomain);
-        	redditSessionCookie.setPath(cookiePath);
-        	if (cookieExpiryDate != -1)
-        		redditSessionCookie.setExpiryDate(new Date(cookieExpiryDate));
-        	else
-        		redditSessionCookie.setExpiryDate(null);
-        	mRedditSessionCookie = redditSessionCookie;
-        	setClient(new DefaultHttpClient());
-        	mClient.getCookieStore().addCookie(mRedditSessionCookie);
-        	mLoggedIn = true;
-        }
 
         // Start at /r/reddit.com
         mSubreddit = "reddit.com";
@@ -207,6 +190,12 @@ public final class RedditIsFun extends ListActivity
         
         // NOTE: this could use the icicle as done in
         // onRestoreInstanceState().
+    }
+    
+    @Override
+    protected void onResume() {
+    	super.onResume();
+    	loadRedditPreferences();
     }
     
     @Override
@@ -244,7 +233,41 @@ public final class RedditIsFun extends ListActivity
 	    			editor.putLong("reddit_sessionExpiryDate", mRedditSessionCookie.getExpiryDate().getTime());
 	    	}
     	}
+    	switch (mTheme) {
+    	case THEME_DARK:
+    		editor.putInt("theme", THEME_DARK);
+    		editor.putInt("theme_resid", android.R.style.Theme);
+    		break;
+    	default:
+    		editor.putInt("theme", THEME_LIGHT);
+    		editor.putInt("theme_resid", android.R.style.Theme_Light);
+    	}
     	editor.commit();
+    }
+    
+    private void loadRedditPreferences() {
+        // Retrieve the stored session info
+        SharedPreferences sessionPrefs = getSharedPreferences(PREFS_SESSION, 0);
+        mUsername = sessionPrefs.getString("username", null);
+        String cookieValue = sessionPrefs.getString("reddit_sessionValue", null);
+        String cookieDomain = sessionPrefs.getString("reddit_sessionDomain", null);
+        String cookiePath = sessionPrefs.getString("reddit_sessionPath", null);
+        long cookieExpiryDate = sessionPrefs.getLong("reddit_sessionExpiryDate", -1);
+        if (cookieValue != null) {
+        	BasicClientCookie redditSessionCookie = new BasicClientCookie("reddit_session", cookieValue);
+        	redditSessionCookie.setDomain(cookieDomain);
+        	redditSessionCookie.setPath(cookiePath);
+        	if (cookieExpiryDate != -1)
+        		redditSessionCookie.setExpiryDate(new Date(cookieExpiryDate));
+        	else
+        		redditSessionCookie.setExpiryDate(null);
+        	mRedditSessionCookie = redditSessionCookie;
+        	setClient(new DefaultHttpClient());
+        	mClient.getCookieStore().addCookie(mRedditSessionCookie);
+        	mLoggedIn = true;
+        }
+        mTheme = sessionPrefs.getInt("theme", THEME_LIGHT);
+        mThemeResId = sessionPrefs.getInt("theme_resid", android.R.style.Theme_Light);
     }
     
     public class VoteUpOnCheckedChangeListener implements CompoundButton.OnCheckedChangeListener {
@@ -597,7 +620,6 @@ public final class RedditIsFun extends ListActivity
     	public void run() {
 	    	String status = "";
 	    	if (!mLoggedIn) {
-	    		// TODO: Error dialog saying you must be logged in.
 	    		return;
 	    	}
 	    	if (_mDirection < -1 || _mDirection > 1) {
@@ -766,9 +788,6 @@ public final class RedditIsFun extends ListActivity
         	
         	mLoggedIn = true;
         	Toast.makeText(this, "Logged in as "+username, Toast.LENGTH_SHORT).show();
-        	
-            mMenu.findItem(DIALOG_LOGIN).setTitle("Logout")
-            	.setOnMenuItemClickListener(new ThreadsListMenu(DIALOG_LOGOUT));
         } catch (Exception e) {
             // TODO: Login error message
         	mLoggedIn = false;
@@ -871,8 +890,6 @@ public final class RedditIsFun extends ListActivity
         setClient(null);
         
         mLoggedIn = false;
-        mMenu.findItem(DIALOG_LOGIN).setTitle("Login")
-        	.setOnMenuItemClickListener(new ThreadsListMenu(DIALOG_LOGIN));;
         Log.d(TAG, status);
     }
     
@@ -1037,28 +1054,62 @@ public final class RedditIsFun extends ListActivity
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
         super.onCreateOptionsMenu(menu);
-        mMenu = menu;
         
         menu.add(0, DIALOG_PICK_SUBREDDIT, 0, "Pick subreddit")
             .setOnMenuItemClickListener(new ThreadsListMenu(DIALOG_PICK_SUBREDDIT));
 
-        menu.add(0, DIALOG_REDDIT_COM, 0, "reddit.com")
-            .setOnMenuItemClickListener(new ThreadsListMenu(DIALOG_REDDIT_COM));
-
-        menu.add(0, DIALOG_REFRESH, 0, "Refresh")
-        	.setOnMenuItemClickListener(new ThreadsListMenu(DIALOG_REFRESH));
-        
         // Login and Logout need to use the same ID for menu entry so they can be swapped
         if (mLoggedIn) {
-        	menu.add(0, DIALOG_LOGIN, 0, "Logout")
+        	menu.add(0, DIALOG_LOGIN, 1, "Logout")
        			.setOnMenuItemClickListener(new ThreadsListMenu(DIALOG_LOGOUT));
         } else {
-        	menu.add(0, DIALOG_LOGIN, 0, "Login")
+        	menu.add(0, DIALOG_LOGIN, 1, "Login")
        			.setOnMenuItemClickListener(new ThreadsListMenu(DIALOG_LOGIN));
         }
         
-        menu.add(0, DIALOG_POST_THREAD, 0, "Post Thread")
+        menu.add(0, DIALOG_REFRESH, 2, "Refresh")
+        	.setOnMenuItemClickListener(new ThreadsListMenu(DIALOG_REFRESH));
+        
+        menu.add(0, DIALOG_POST_THREAD, 3, "Post Thread")
         	.setOnMenuItemClickListener(new ThreadsListMenu(DIALOG_POST_THREAD));
+        
+        if (mTheme == THEME_LIGHT) {
+        	menu.add(0, DIALOG_THEME, 4, "Dark")
+//        		.setIcon(R.drawable.dark_circle_menu_icon)
+        		.setOnMenuItemClickListener(new ThreadsListMenu(DIALOG_THEME));
+        } else {
+        	menu.add(0, DIALOG_THEME, 4, "Light")
+//	    		.setIcon(R.drawable.light_circle_menu_icon)
+	    		.setOnMenuItemClickListener(new ThreadsListMenu(DIALOG_THEME));
+        }
+        
+        menu.add(0, DIALOG_OPEN_BROWSER, 5, "Open in browser")
+        	.setOnMenuItemClickListener(new ThreadsListMenu(DIALOG_OPEN_BROWSER));
+        
+        return true;
+    }
+    
+    @Override
+    public boolean onPrepareOptionsMenu(Menu menu) {
+    	super.onPrepareOptionsMenu(menu);
+    	
+    	// Login/Logout
+    	if (mLoggedIn) {
+	        menu.findItem(DIALOG_LOGIN).setTitle("Logout")
+	        	.setOnMenuItemClickListener(new ThreadsListMenu(DIALOG_LOGOUT));
+    	} else {
+            menu.findItem(DIALOG_LOGIN).setTitle("Login")
+            	.setOnMenuItemClickListener(new ThreadsListMenu(DIALOG_LOGIN));
+    	}
+    	
+    	// Theme: Light/Dark
+    	if (mTheme == THEME_LIGHT) {
+    		menu.findItem(DIALOG_THEME).setTitle("Dark");
+//    			.setIcon(R.drawable.dark_circle_menu_icon);
+    	} else {
+    		menu.findItem(DIALOG_THEME).setTitle("Light");
+//    			.setIcon(R.drawable.light_circle_menu_icon);
+    	}
         
         return true;
     }
@@ -1084,16 +1135,31 @@ public final class RedditIsFun extends ListActivity
         	case DIALOG_PICK_SUBREDDIT:
         		Intent pickSubredditIntent = new Intent(RedditIsFun.this, PickSubredditActivity.class);
         		startActivityForResult(pickSubredditIntent, ACTIVITY_PICK_SUBREDDIT);
-            case DIALOG_REDDIT_COM:
-        		doGetThreadsList("reddit.com");
         		break;
-        	case DIALOG_LOGOUT:
+        	case DIALOG_OPEN_BROWSER:
+        		String url = new StringBuilder("http://www.reddit.com/r/")
+        			.append(mSubreddit).toString();
+        		RedditIsFun.this.startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse(url)));
+        		break;
+            case DIALOG_LOGOUT:
         		doLogout();
         		Toast.makeText(RedditIsFun.this, "You have been logged out.", Toast.LENGTH_SHORT).show();
         		doGetThreadsList(mSubreddit);
         		break;
         	case DIALOG_REFRESH:
         		doGetThreadsList(mSubreddit);
+        		break;
+        	case DIALOG_THEME:
+        		if (mTheme == THEME_LIGHT) {
+        			mTheme = THEME_DARK;
+        			mThemeResId = android.R.style.Theme;
+        		} else {
+        			mTheme = THEME_LIGHT;
+        			mThemeResId = android.R.style.Theme_Light;
+        		}
+        		RedditIsFun.this.setTheme(mThemeResId);
+        		RedditIsFun.this.setContentView(R.layout.comments_list_content);
+        		RedditIsFun.this.getListView().setAdapter(mThreadsAdapter);
         		break;
         	default:
         		throw new IllegalArgumentException("Unexpected action value "+mAction);
@@ -1146,6 +1212,8 @@ public final class RedditIsFun extends ListActivity
     	case DIALOG_THREAD_CLICK:
     		dialog = new Dialog(this);
     		dialog.setContentView(R.layout.thread_click_dialog);
+    		dialog.findViewById(R.id.thread_vote_up_button);
+    		dialog.findViewById(R.id.thread_vote_down_button);
     		dialog.setTitle("Thread:");
     		
     		break;

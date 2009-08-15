@@ -46,7 +46,7 @@ public class CommentInfo {
 	}
 	
 	public CommentInfo(String author, String body, String bodyHtml, String created, String createdUtc,
-			String downs, String id, String likes, String linkId, String name, String parentId, String ups) {
+			String downs, String id, String likes, String linkId, String name, String parentId, String srId, String ups) {
 		if (author != null)
 			put(AUTHOR, author);
 		if (body != null)
@@ -69,6 +69,8 @@ public class CommentInfo {
 			put(NAME, name);
 		if (parentId != null)
 			put(PARENT_ID, parentId);
+		if (srId != null)
+			put(SR_ID, srId);
 		if (ups != null)
 			put(UPS, ups);
 	}

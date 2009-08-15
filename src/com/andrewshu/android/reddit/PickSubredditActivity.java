@@ -62,6 +62,7 @@ public final class PickSubredditActivity extends ListActivity {
 			public boolean onKey(View v, int keyCode, KeyEvent event) {
 		        if ((event.getAction() == KeyEvent.ACTION_DOWN) && (keyCode == KeyEvent.KEYCODE_ENTER)) {
 		        	returnSubreddit(mEt.getText().toString());
+		        	return true;
 		        }
 		        return false;
 		    }

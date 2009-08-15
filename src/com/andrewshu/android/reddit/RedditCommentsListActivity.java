@@ -36,9 +36,11 @@ import android.app.Dialog;
 import android.app.ListActivity;
 import android.app.ProgressDialog;
 import android.content.Context;
+import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.res.Resources;
 import android.graphics.Bitmap;
+import android.net.Uri;
 import android.os.Bundle;
 import android.os.Handler;
 import android.util.Log;
@@ -74,10 +76,13 @@ public final class RedditCommentsListActivity extends ListActivity
 
 	private static final String TAG = "RedditCommentsListActivity";
 	
+	static final String PREFS_SESSION = "RedditSession";
+	
 	public final String COMMENT_KIND = "t1";
 	public final String THREAD_KIND = "t3";
 	public final String MORE_KIND = "more";
 	public final String SERIALIZE_SEPARATOR = "\r";
+	public final String METADATA_SERIALIZE_SEPARATOR = "\r\r";
 	
     private final JsonFactory jsonFactory = new JsonFactory(); 
     static int mNestedCommentsJSONOrder = 0;
@@ -92,7 +97,6 @@ public final class RedditCommentsListActivity extends ListActivity
     private ThreadInfo mOpThreadInfo;
     private TreeMap<Integer, CommentInfo> mCommentsMap = new TreeMap<Integer, CommentInfo>();
     
-    private Menu mMenu;
     private int mMode = MODE_THREADS_LIST;
     
     static final int MODE_THREADS_LIST  = 0x00000001;
@@ -105,7 +109,7 @@ public final class RedditCommentsListActivity extends ListActivity
     // UI State
     private CharSequence mSubreddit = null;  // Should remain constant for the life of this instance
     private CharSequence mThreadId = null;   // Should remain constant for the life of this instance
-    private CharSequence mThingId = null;
+    private CharSequence mThingFullname = null;
     private CharSequence mTargetURL = null;
     private View mVoteTargetView = null;
     private CommentInfo mVoteTargetCommentInfo = null;
@@ -117,6 +121,7 @@ public final class RedditCommentsListActivity extends ListActivity
     
     // Menu dialog actions
     static final int DIALOG_THING_CLICK = 0;
+    static final int DIALOG_OP = 1;
     static final int DIALOG_LOGIN = 2;
     static final int DIALOG_LOGOUT = 3;
     static final int DIALOG_REFRESH = 4;
@@ -125,6 +130,8 @@ public final class RedditCommentsListActivity extends ListActivity
     static final int DIALOG_LOGGING_IN = 7;
     static final int DIALOG_LOADING_THREADS_LIST = 8;
     static final int DIALOG_LOADING_COMMENTS_LIST = 9;
+    static final int DIALOG_OPEN_BROWSER = 10;
+    static final int DIALOG_THEME = 11;
     
     static boolean mIsProgressDialogShowing = false;
     
@@ -132,7 +139,8 @@ public final class RedditCommentsListActivity extends ListActivity
     static final int THEME_LIGHT = 0;
     static final int THEME_DARK = 1;
     
-    private int mTheme = 0;
+    private int mTheme = THEME_LIGHT;
+    private int mThemeResId = android.R.style.Theme_Light;
     
     // States for StateListDrawables
     static final int[] STATE_CHECKED = new int[]{android.R.attr.state_checked};
@@ -155,6 +163,9 @@ public final class RedditCommentsListActivity extends ListActivity
     
     // The pattern to find modhash from HTML javascript area
     public static final Pattern MODHASH_PATTERN = Pattern.compile("modhash: '(.*?)'");
+    // Group 1: fullname. Group 2: kind. Group 3: id36.
+    public static final Pattern NEW_ID_PATTERN = Pattern.compile("\"id\": \"((.+?)_(.+?))\"");
+    public static final Pattern RATELIMIT_RETRY_PATTERN = Pattern.compile("(you are trying to submit too fast. try again in (.+?)\\.)");
 
 
     /**
@@ -167,13 +178,77 @@ public final class RedditCommentsListActivity extends ListActivity
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         
+        loadRedditPreferences();
+        setTheme(mThemeResId);
+        
         setContentView(R.layout.comments_list_content);
         // The above layout contains a list id "android:list"
         // which ListActivity adopts as its list -- we can
         // access it with getListView().
         
+        // Pull current subreddit and thread info from Intent
+        Bundle extras = getIntent().getExtras();
+        if (extras != null) {
+        	mThreadId = extras.getString(ThreadInfo.ID);
+        	mSubreddit = extras.getString(ThreadInfo.SUBREDDIT);
+        } else {
+        	// Quit, because the Comments List requires subreddit and thread id from Intent.
+        	Log.e(TAG, "Quitting because no subreddit and thread id data was passed into the Intent.");
+        	finish();
+        }
+        
+        List<CommentInfo> commentItems = new ArrayList<CommentInfo>();
+        mCommentsAdapter = new CommentsListAdapter(this, commentItems);
+        getListView().setAdapter(mCommentsAdapter);
+
+        // Need one of these to post things back to the UI thread.
+        mHandler = new Handler();
+        
+        doGetCommentsList(mSubreddit, mThreadId);
+    }
+    
+    @Override
+    protected void onResume() {
+    	super.onResume();
+    	loadRedditPreferences();
+    }
+    
+    @Override
+    protected void onPause() {
+    	super.onPause();
+    	saveRedditPreferences();
+    }
+    
+    private void saveRedditPreferences() {
+    	SharedPreferences settings = getSharedPreferences(PREFS_SESSION, 0);
+    	SharedPreferences.Editor editor = settings.edit();
+    	editor.clear();
+    	if (mLoggedIn) {
+	    	if (mUsername != null)
+	    		editor.putString("username", mUsername.toString());
+	    	if (mRedditSessionCookie != null) {
+	    		editor.putString("reddit_sessionValue",      mRedditSessionCookie.getValue());
+	    		editor.putString("reddit_sessionDomain",     mRedditSessionCookie.getDomain());
+	    		editor.putString("reddit_sessionPath",       mRedditSessionCookie.getPath());
+	    		if (mRedditSessionCookie.getExpiryDate() != null)
+	    			editor.putLong("reddit_sessionExpiryDate", mRedditSessionCookie.getExpiryDate().getTime());
+	    	}
+    	}
+    	switch (mTheme) {
+    	case THEME_DARK:
+    		editor.putInt("theme", THEME_DARK);
+    		editor.putInt("theme_resid", android.R.style.Theme);
+    		break;
+    	default:
+    		editor.putInt("theme", THEME_LIGHT);
+    		editor.putInt("theme_resid", android.R.style.Theme_Light);
+    	}
+    	editor.commit();
+    }
+    
+    private void loadRedditPreferences() {
         // Retrieve the stored session info
-        SharedPreferences sessionPrefs = getSharedPreferences(RedditIsFun.PREFS_SESSION, 0);
+        SharedPreferences sessionPrefs = getSharedPreferences(PREFS_SESSION, 0);
         mUsername = sessionPrefs.getString("username", null);
         String cookieValue = sessionPrefs.getString("reddit_sessionValue", null);
         String cookieDomain = sessionPrefs.getString("reddit_sessionDomain", null);
@@ -192,40 +267,17 @@ public final class RedditCommentsListActivity extends ListActivity
         	mClient.getCookieStore().addCookie(mRedditSessionCookie);
         	mLoggedIn = true;
         }
-
-        // Pull current subreddit and thread info from Intent
-        Bundle extras = getIntent().getExtras();
-        if (extras != null) {
-        	mThreadId = extras.getString(ThreadInfo.ID);
-        	mSubreddit = extras.getString(ThreadInfo.SUBREDDIT);
-        } else {
-        	// Quit, because the Comments List requires subreddit and thread id from Intent.
-        	Log.e(TAG, "Quitting because no subreddit and thread id data was passed into the Intent.");
-        	finish();
-        }
-    }
-    
-    @Override
-    protected void onStart() {
-    	super.onStart();
-    	
-        List<CommentInfo> commentItems = new ArrayList<CommentInfo>();
-        mCommentsAdapter = new CommentsListAdapter(this, commentItems);
-        getListView().setAdapter(mCommentsAdapter);
-
-        // Need one of these to post things back to the UI thread.
-        mHandler = new Handler();
-        
-        doGetCommentsList(mSubreddit, mThreadId);
+        mTheme = sessionPrefs.getInt("theme", THEME_LIGHT);
+        mThemeResId = sessionPrefs.getInt("theme_resid", android.R.style.Theme_Light);
     }
     
     public class VoteUpOnCheckedChangeListener implements CompoundButton.OnCheckedChangeListener {
     	public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
 	    	dismissDialog(DIALOG_THING_CLICK);
 			if (isChecked)
-				doVote(mThingId, 1, mSubreddit);
+				doVote(mThingFullname, 1, mSubreddit);
 			else
-				doVote(mThingId, 0, mSubreddit);
+				doVote(mThingFullname, 0, mSubreddit);
 		}
     }
     
@@ -233,9 +285,9 @@ public final class RedditCommentsListActivity extends ListActivity
 	    public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
 	    	dismissDialog(DIALOG_THING_CLICK);
 			if (isChecked)
-				doVote(mThingId, -1, mSubreddit);
+				doVote(mThingFullname, -1, mSubreddit);
 			else
-				doVote(mThingId, 0, mSubreddit);
+				doVote(mThingFullname, 0, mSubreddit);
 		}
     }
 
@@ -457,9 +509,9 @@ public final class RedditCommentsListActivity extends ListActivity
         
         // Mark the OP post/regular comment as selected
         if (item.getOP() != null)
-        	mThingId = item.getOP().getName();
+        	mThingFullname = item.getOP().getName();
         else
-        	mThingId = item.getName();
+        	mThingFullname = item.getName();
         mVoteTargetCommentInfo = item;
         mVoteTargetView = v;
         
@@ -759,8 +811,6 @@ public final class RedditCommentsListActivity extends ListActivity
         	mLoggedIn = true;
         	Toast.makeText(this, "Logged in as "+username, Toast.LENGTH_SHORT).show();
         	
-            mMenu.findItem(DIALOG_LOGIN).setTitle("Logout")
-            	.setOnMenuItemClickListener(new CommentsListMenu(DIALOG_LOGOUT));
         } catch (Exception e) {
             // TODO: Login error message
         	mLoggedIn = false;
@@ -863,8 +913,6 @@ public final class RedditCommentsListActivity extends ListActivity
         setClient(null);
         
         mLoggedIn = false;
-        mMenu.findItem(DIALOG_LOGIN).setTitle("Login")
-        	.setOnMenuItemClickListener(new CommentsListMenu(DIALOG_LOGIN));;
         Log.d(TAG, status);
     }
     
@@ -1046,40 +1094,59 @@ public final class RedditCommentsListActivity extends ListActivity
         		// TODO: "Error voting. Try again."
         		return null;
         	}
+        	if (line.contains("RATELIMIT")) {
+        		// TODO: find the # of minutes using regex
+            	Matcher idMatcher = RATELIMIT_RETRY_PATTERN.matcher(line);
+            	if (idMatcher.find()) {
+            		throw new Exception(idMatcher.group(1));
+            	} else {
+            		throw new Exception("you are trying to submit too fast. try again in a few minutes.");
+            	}
+        	}
         	
         	Log.d(TAG, line);
 
-//	        	// DEBUG
-//	        	int c;
-//	        	boolean done = false;
-//	        	StringBuilder sb = new StringBuilder();
-//	        	while ((c = in.read()) >= 0) {
-//	        		sb.append((char) c);
-//	        		for (int i = 0; i < 80; i++) {
-//	        			c = in.read();
-//	        			if (c < 0) {
-//	        				done = true;
-//	        				break;
-//	        			}
-//	        			sb.append((char) c);
-//	        		}
-//	        		Log.d(TAG, "doLogin response content: " + sb.toString());
-//	        		sb = new StringBuilder();
-//	        		if (done)
-//	        			break;
-//	        	}
+//        	// DEBUG
+//        	int c;
+//        	boolean done = false;
+//        	StringBuilder sb = new StringBuilder();
+//        	for (int k = 0; k < line.length(); k += 80) {
+//        		for (int i = 0; i < 80; i++) {
+//        			if (k + i >= line.length()) {
+//        				done = true;
+//        				break;
+//        			}
+//        			c = line.charAt(k + i);
+//        			sb.append((char) c);
+//        		}
+//        		Log.d(TAG, "doReply response content: " + sb.toString());
+//        		sb = new StringBuilder();
+//        		if (done)
+//        			break;
+//        	}
+//	        	
 
+        	String newId, newFullname;
+        	Matcher idMatcher = NEW_ID_PATTERN.matcher(line);
+        	if (idMatcher.find()) {
+        		newFullname = idMatcher.group(1);
+        		newId = idMatcher.group(3);
+        	} else {
+        		throw new Exception("No id returned by reply POST.");
+        	}
+        	
         	in.close();
         	if (entity != null)
         		entity.consumeContent();
         	
         	// Getting here means success. Create a new CommentInfo.
-        	// XXX XXX XXX
-//        	newlyCreatedComment = new CommentInfo(mUsername, text.toString(), /* body_html */null,
-//        			/*created*/null, /*created_utc*/null, "0", id, TRUE_STRING, /*link_id*/ null,
-//        			name, parentThingId.toString(), "1");
-//        	newlyCreatedComment.setListOrder(mVoteTargetCommentInfo.getListOrder()+1);
-//        	newlyCreatedComment.setIndent(mVoteTargetCommentInfo.getIndent()+1);
+        	newlyCreatedComment =
+        		new CommentInfo(mUsername.toString(), text.toString(), /*body_html*/null,
+        			/*created*/null, /*created_utc*/null, "0",
+        			newId, TRUE_STRING, /*link_id*/null,
+        			newFullname, parentThingId.toString(), /*sr_id*/null, "1");
+        	newlyCreatedComment.setListOrder(mVoteTargetCommentInfo.getListOrder()+1);
+        	newlyCreatedComment.setIndent(mVoteTargetCommentInfo.getIndent()+1);
         	
     	} catch (Exception e) {
             Log.e(TAG, e.getMessage());
@@ -1107,29 +1174,62 @@ public final class RedditCommentsListActivity extends ListActivity
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
         super.onCreateOptionsMenu(menu);
-        mMenu = menu;
         
-        // TODO: Menu
-//        menu.add(0, DIALOG_PICK_SUBREDDIT, 0, "Pick subreddit")
-//            .setOnMenuItemClickListener(new ThreadsListMenu(DIALOG_PICK_SUBREDDIT));
-//
-//        menu.add(0, DIALOG_REDDIT_COM, 0, "reddit.com")
-//            .setOnMenuItemClickListener(new ThreadsListMenu(DIALOG_REDDIT_COM));
-//
-//        menu.add(0, DIALOG_REFRESH, 0, "Refresh")
-//        	.setOnMenuItemClickListener(new ThreadsListMenu(DIALOG_REFRESH));
-//        
-//        // Login and Logout need to use the same ID for menu entry so they can be swapped
-//        if (mLoggedIn) {
-//        	menu.add(0, DIALOG_LOGIN, 0, "Logout")
-//       			.setOnMenuItemClickListener(new ThreadsListMenu(DIALOG_LOGOUT));
-//        } else {
-//        	menu.add(0, DIALOG_LOGIN, 0, "Login")
-//       			.setOnMenuItemClickListener(new ThreadsListMenu(DIALOG_LOGIN));
-//        }
-//        
-//        menu.add(0, DIALOG_POST_THREAD, 0, "Post Thread")
-//        	.setOnMenuItemClickListener(new ThreadsListMenu(DIALOG_POST_THREAD));
+        menu.add(0, DIALOG_OP, 0, "OP")
+        	.setOnMenuItemClickListener(new CommentsListMenu(DIALOG_OP));
+        
+        // Login and Logout need to use the same ID for menu entry so they can be swapped
+        if (mLoggedIn) {
+        	menu.add(0, DIALOG_LOGIN, 1, "Logout")
+       			.setOnMenuItemClickListener(new CommentsListMenu(DIALOG_LOGOUT));
+        } else {
+        	menu.add(0, DIALOG_LOGIN, 1, "Login")
+       			.setOnMenuItemClickListener(new CommentsListMenu(DIALOG_LOGIN));
+        }
+        
+        menu.add(0, DIALOG_REFRESH, 2, "Refresh")
+        	.setOnMenuItemClickListener(new CommentsListMenu(DIALOG_REFRESH));
+        
+        menu.add(0, DIALOG_POST_THREAD, 3, "Reply to thread")
+    		.setOnMenuItemClickListener(new CommentsListMenu(DIALOG_REPLY));
+        
+        if (mTheme == THEME_LIGHT) {
+        	menu.add(0, DIALOG_THEME, 4, "Dark")
+//        		.setIcon(R.drawable.dark_circle_menu_icon)
+        		.setOnMenuItemClickListener(new CommentsListMenu(DIALOG_THEME));
+        } else {
+        	menu.add(0, DIALOG_THEME, 4, "Light")
+//	    		.setIcon(R.drawable.light_circle_menu_icon)
+	    		.setOnMenuItemClickListener(new CommentsListMenu(DIALOG_THEME));
+        }
+        
+        menu.add(0, DIALOG_OPEN_BROWSER, 5, "Open in browser")
+    		.setOnMenuItemClickListener(new CommentsListMenu(DIALOG_OPEN_BROWSER));
+        
+        return true;
+    }
+    
+    @Override
+    public boolean onPrepareOptionsMenu(Menu menu) {
+    	super.onPrepareOptionsMenu(menu);
+    	
+    	// Login/Logout
+    	if (mLoggedIn) {
+	        menu.findItem(DIALOG_LOGIN).setTitle("Logout")
+	        	.setOnMenuItemClickListener(new CommentsListMenu(DIALOG_LOGOUT));
+    	} else {
+            menu.findItem(DIALOG_LOGIN).setTitle("Login")
+            	.setOnMenuItemClickListener(new CommentsListMenu(DIALOG_LOGIN));
+    	}
+    	
+    	// Theme: Light/Dark
+    	if (mTheme == THEME_LIGHT) {
+    		menu.findItem(DIALOG_THEME).setTitle("Dark");
+//    			.setIcon(R.drawable.dark_circle_menu_icon);
+    	} else {
+    		menu.findItem(DIALOG_THEME).setTitle("Light");
+//    			.setIcon(R.drawable.light_circle_menu_icon);
+    	}
         
         return true;
     }
@@ -1147,27 +1247,45 @@ public final class RedditCommentsListActivity extends ListActivity
         }
 
         public boolean onMenuItemClick(MenuItem item) {
-        	// TODO: Menu
-//        	switch (mAction) {
-//        	case DIALOG_PICK_SUBREDDIT:
-//        	case DIALOG_LOGIN:
-//        	case DIALOG_POST_THREAD:
-//        		showDialog(mAction);
-//        		break;
-//        	case DIALOG_REDDIT_COM:
-//        		doGetThreadsList("reddit.com");
-//        		break;
-//        	case DIALOG_LOGOUT:
-//        		doLogout();
-//        		Toast.makeText(RedditCommentsListActivity.this, "You have been logged out.", Toast.LENGTH_SHORT).show();
-//        		doGetThreadsList(mSubreddit);
-//        		break;
-//        	case DIALOG_REFRESH:
-//        		doGetThreadsList(mSubreddit);
-//        		break;
-//        	default:
-//        		throw new IllegalArgumentException("Unexpected action value "+mAction);
-//        	}
+        	switch (mAction) {
+        	case DIALOG_OP:
+        	case DIALOG_REPLY:
+        		// From the menu, only used for the OP, which is a thread.
+            	mThingFullname = THREAD_KIND + "_" + mThreadId;
+                mVoteTargetCommentInfo = mCommentsAdapter.getItem(0);
+                showDialog(mAction);
+                break;
+        	case DIALOG_LOGIN:
+        		showDialog(mAction);
+        		break;
+        	case DIALOG_LOGOUT:
+        		doLogout();
+        		Toast.makeText(RedditCommentsListActivity.this, "You have been logged out.", Toast.LENGTH_SHORT).show();
+        		doGetCommentsList(mSubreddit, mThreadId);
+        		break;
+        	case DIALOG_REFRESH:
+        		doGetCommentsList(mSubreddit, mThreadId);
+        		break;
+        	case DIALOG_OPEN_BROWSER:
+        		String url = new StringBuilder("http://www.reddit.com/r/")
+        			.append(mSubreddit).append("/comments/").append(mThreadId).toString();
+        		RedditCommentsListActivity.this.startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse(url)));
+        		break;
+        	case DIALOG_THEME:
+        		if (mTheme == THEME_LIGHT) {
+        			mTheme = THEME_DARK;
+        			mThemeResId = android.R.style.Theme;
+        		} else {
+        			mTheme = THEME_LIGHT;
+        			mThemeResId = android.R.style.Theme_Light;
+        		}
+        		RedditCommentsListActivity.this.setTheme(mThemeResId);
+        		RedditCommentsListActivity.this.setContentView(R.layout.comments_list_content);
+                RedditCommentsListActivity.this.getListView().setAdapter(mCommentsAdapter);
+        		break;
+        	default:
+        		throw new IllegalArgumentException("Unexpected action value "+mAction);
+        	}
         	
         	return true;
         }
@@ -1213,6 +1331,7 @@ public final class RedditCommentsListActivity extends ListActivity
     		});
     		break;
     		
+    	case DIALOG_OP:
     	case DIALOG_THING_CLICK:
     		dialog = new Dialog(this);
     		dialog.setContentView(R.layout.comment_click_dialog);
@@ -1232,6 +1351,7 @@ public final class RedditCommentsListActivity extends ListActivity
     		final Button replyCancelButton = (Button) dialog.findViewById(R.id.reply_cancel_button);
     		replySaveButton.setOnClickListener(new OnClickListener() {
     			public void onClick(View v) {
+    				dismissDialog(DIALOG_REPLY);
     				CommentInfo newlySubmittedComment;
     				if (mVoteTargetCommentInfo.getOP() != null) {
     					newlySubmittedComment = doReply(mVoteTargetCommentInfo.getOP().getName(), replyBody.getText(), mSubreddit);
@@ -1245,6 +1365,7 @@ public final class RedditCommentsListActivity extends ListActivity
     		});
     		replyCancelButton.setOnClickListener(new OnClickListener() {
     			public void onClick(View v) {
+    				dismissDialog(DIALOG_REPLY);
     				mVoteTargetCommentInfo.setReplyDraft(replyBody.getText().toString());
     			}
     		});
@@ -1277,6 +1398,7 @@ public final class RedditCommentsListActivity extends ListActivity
     	super.onPrepareDialog(id, dialog);
     	
     	switch (id) {
+    	case DIALOG_OP:
     	case DIALOG_THING_CLICK:
     		String likes;
     		if (mVoteTargetCommentInfo.getOP() != null) {
@@ -1366,11 +1488,21 @@ public final class RedditCommentsListActivity extends ListActivity
         // NOTE: there may be a way to save the ThreadItems directly,
         // rather than their string data.
         int count = mCommentsAdapter.getCount();
+        
+        ArrayList<CharSequence> strings = new ArrayList<CharSequence>();
+        
+        // Save the OP
+        for (int k = 0; k < ThreadInfo.SAVE_KEYS.length; k++) {
+        	if (mOpThreadInfo.mValues.containsKey(ThreadInfo.SAVE_KEYS[k])) {
+        		strings.add(ThreadInfo.SAVE_KEYS[k]);
+        		strings.add(mOpThreadInfo.mValues.get(ThreadInfo.SAVE_KEYS[k]));
+        	}
+        }
+        strings.add(SERIALIZE_SEPARATOR);
 
         // Save out the items as a flat list of CharSequence objects --
         // title0, link0, descr0, title1, link1, ...
-        ArrayList<CharSequence> strings = new ArrayList<CharSequence>();
-        for (int i = 0; i < count; i++) {
+        for (int i = 1; i < count; i++) {
             CommentInfo item = mCommentsAdapter.getItem(i);
             for (int k = 0; k < CommentInfo.SAVE_KEYS.length; k++) {
             	if (item.mValues.containsKey(CommentInfo.SAVE_KEYS[k])) {
@@ -1378,6 +1510,8 @@ public final class RedditCommentsListActivity extends ListActivity
             		strings.add(item.mValues.get(CommentInfo.SAVE_KEYS[k]));
             	}
             }
+            strings.add(METADATA_SERIALIZE_SEPARATOR);
+            strings.add(String.valueOf(item.getIndent()));
             strings.add(SERIALIZE_SEPARATOR);
         }
         outState.putSerializable(STRINGS_KEY, strings);
@@ -1401,14 +1535,31 @@ public final class RedditCommentsListActivity extends ListActivity
 
         // Note: null is a legal value for onRestoreInstanceState.
         if (state == null) return;
-
-        // Restore items from the big list of CharSequence objects
+        
         List<CharSequence> strings = (ArrayList<CharSequence>)state.getSerializable(STRINGS_KEY);
         List<CommentInfo> items = new ArrayList<CommentInfo>();
-        for (int i = 0; i < strings.size(); i++) {
+        int i;
+        
+        // Restore the OP
+        CommentInfo opCi = new CommentInfo();
+        ThreadInfo opTi = new ThreadInfo();
+        i = 0;
+    	while (!SERIALIZE_SEPARATOR.equals(strings.get(i))) {
+    		if (SERIALIZE_SEPARATOR.equals(strings.get(i+1))) {
+    			// Well, just skip the value instead of throwing an exception.
+    			break;
+    		}
+    		opTi.put(strings.get(i).toString(), strings.get(i+1).toString());
+    		i += 2;
+    	}
+    	opCi.setOpInfo(opTi);
+    	items.add(opCi);
+        
+        // Restore items from the big list of CharSequence objects
+        for ( ; i < strings.size(); i++) {
         	CommentInfo ci = new CommentInfo();
         	CharSequence key, value;
-        	while (!SERIALIZE_SEPARATOR.equals(strings.get(i))) {
+        	while (!METADATA_SERIALIZE_SEPARATOR.equals(strings.get(i))) {
         		if (SERIALIZE_SEPARATOR.equals(strings.get(i+1))) {
         			// Well, just skip the value instead of throwing an exception.
         			break;
@@ -1418,6 +1569,10 @@ public final class RedditCommentsListActivity extends ListActivity
         		ci.put(key.toString(), value.toString());
         		i += 2;
         	}
+        	ci.setIndent(Integer.valueOf(strings.get(i).toString()));
+        	do {
+        		i++;
+        	} while (!SERIALIZE_SEPARATOR.equals(strings.get(i)));
             items.add(ci);
         }
 
