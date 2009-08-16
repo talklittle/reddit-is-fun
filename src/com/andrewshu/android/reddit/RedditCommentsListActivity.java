@@ -37,7 +37,6 @@ import android.content.Intent;
 import android.content.res.Resources;
 import android.net.Uri;
 import android.os.Bundle;
-import android.os.Handler;
 import android.view.KeyEvent;
 import android.view.LayoutInflater;
 import android.view.Menu;
@@ -83,21 +82,16 @@ public final class RedditCommentsListActivity extends ListActivity
 	
     /** Custom list adapter that fits our threads data into the list. */
     private CommentsListAdapter mCommentsAdapter;
-    /** Handler used to post runnables to the UI thread. */
-    private Handler mHandler;
     /** Currently running background network thread. */
     private Thread mWorker;
     
     // Common settings are stored here
-    private RedditSettings mSettings = new RedditSettings();
+    private RedditSettings mSettings = new RedditSettings(this);
     
     private ThreadInfo mOpThreadInfo;
     // Comments map, only used during parsing.
     // When manipulating stuff already in list, use mCommentsAdapter.
     private TreeMap<Integer, CommentInfo> mCommentsMap = new TreeMap<Integer, CommentInfo>();
-    
-    // Current HttpClient
-    private DefaultHttpClient mClient = new DefaultHttpClient();
     
     // UI State
     private CharSequence mSubreddit = null;  // Should remain constant for the life of this instance
@@ -106,9 +100,6 @@ public final class RedditCommentsListActivity extends ListActivity
     private CharSequence mTargetURL = null;
     private View mVoteTargetView = null;
     private CommentInfo mVoteTargetCommentInfo = null;
-    
-    // Login status
-    private CharSequence mModhash = null;
     
     static boolean mIsProgressDialogShowing = false;
     
@@ -122,7 +113,7 @@ public final class RedditCommentsListActivity extends ListActivity
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         
-        Common.loadRedditPreferences(this, mSettings, mClient);
+        Common.loadRedditPreferences(this, mSettings);
         setTheme(mSettings.themeResId);
         
         setContentView(R.layout.comments_list_content);
@@ -145,22 +136,21 @@ public final class RedditCommentsListActivity extends ListActivity
         mCommentsAdapter = new CommentsListAdapter(this, commentItems);
         getListView().setAdapter(mCommentsAdapter);
 
-        // Need one of these to post things back to the UI thread.
-        mHandler = new Handler();
-        
         doGetCommentsList(mSubreddit, mThreadId);
     }
     
     @Override
     protected void onResume() {
     	super.onResume();
-    	Common.loadRedditPreferences(this, mSettings, mClient);
+    	Common.loadRedditPreferences(this, mSettings);
     }
     
     @Override
     protected void onPause() {
     	super.onPause();
     	Common.saveRedditPreferences(this, mSettings);
+    	if (isFinishing())
+    		mSettings.setIsAlive(false);
     }
     
     public class VoteUpOnCheckedChangeListener implements CompoundButton.OnCheckedChangeListener {
@@ -193,14 +183,10 @@ public final class RedditCommentsListActivity extends ListActivity
     	
     	private LayoutInflater mInflater;
         private boolean mLoading = true;
-//        private boolean mDisplayThumbnails = false; // TODO: use this
-//        private SparseArray<SoftReference<Bitmap>> mBitmapCache = null; // TODO?: use this?
         private int mFrequentSeparatorPos = ListView.INVALID_POSITION;
-
         
         public CommentsListAdapter(Context context, List<CommentInfo> objects) {
             super(context, 0, objects);
-            
             mInflater = (LayoutInflater)context.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
         }
 
@@ -458,10 +444,6 @@ public final class RedditCommentsListActivity extends ListActivity
         mWorker = worker;
     }
 
-    public synchronized void setModhash(CharSequence modhash) {
-    	mModhash = modhash;
-    }
-    
     /**
      * Given a subreddit name string and thread id36, starts the commentslist-download-thread going.
      */
@@ -502,28 +484,6 @@ public final class RedditCommentsListActivity extends ListActivity
     }
     
     
-    private class ErrorToaster implements Runnable {
-    	CharSequence _mError;
-    	int _mDuration;
-    	private LayoutInflater mInflater;
-    	
-    	ErrorToaster(CharSequence error, int duration) {
-    		_mError = error;
-    		_mDuration = duration;
-    		mInflater = (LayoutInflater)RedditCommentsListActivity.this.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
-    	}
-    	
-    	public void run() {
-    		Toast t = new Toast(RedditCommentsListActivity.this);
-    		t.setDuration(_mDuration);
-    		View v = mInflater.inflate(R.layout.error_toast, null);
-    		TextView errorMessage = (TextView) v.findViewById(R.id.errorMessage);
-    		errorMessage.setText(_mError);
-    		t.setView(v);
-    		t.show();
-    	}
-    }
-    
     private class CommentInserter implements Runnable {
     	CommentInfo _mComment;
     	
@@ -546,121 +506,6 @@ public final class RedditCommentsListActivity extends ListActivity
     
     
     /**
-     * Worker thread that takes in a thingId, vote direction, and subreddit. Starts
-     * a new HTTP Client, copying the main one's cookies, and votes.
-     * @param username
-     * @param password
-     * @return
-     */
-    private class VoteWorker extends Thread{
-    	private CharSequence _mThingId, _mSubreddit;
-    	private int _mDirection;
-    	
-    	public VoteWorker(CharSequence thingId, int direction, CharSequence subreddit) {
-    		_mThingId = thingId;
-    		_mDirection = direction;
-    		_mSubreddit = subreddit;
-    	}
-    	
-    	@Override
-    	public void run() {
-	    	String status = "";
-	    	if (!mSettings.loggedIn) {
-	    		return;
-	    	}
-	    	if (_mDirection < -1 || _mDirection > 1) {
-	    		throw new RuntimeException("How the hell did you vote something besides -1, 0, or 1?");
-	    	}
-	    	
-	    	// Update the modhash if necessary
-	    	if (mModhash == null) {
-	    		if (!doUpdateModhash()) {
-	    			// doUpdateModhash should have given an error about credentials
-	    			throw new RuntimeException("Vote failed because doUpdateModhash() failed");
-	    		}
-	    	}
-	    	
-	    	try {
-	    		// Create a new HttpClient and copy cookies over from the main one
-	    		DefaultHttpClient client = new DefaultHttpClient();
-	    		client.getParams().setParameter(HttpConnectionParams.SO_TIMEOUT, 30000);
-	    		List<Cookie> mainCookies = mClient.getCookieStore().getCookies();
-	    		for (Cookie c : mainCookies) {
-	    			client.getCookieStore().addCookie(c);
-	    		}
-	    		
-	    		// Construct data
-				List<NameValuePair> nvps = new ArrayList<NameValuePair>();
-				nvps.add(new BasicNameValuePair("id", _mThingId.toString()));
-				nvps.add(new BasicNameValuePair("dir", String.valueOf(_mDirection)));
-				nvps.add(new BasicNameValuePair("r", _mSubreddit.toString()));
-				nvps.add(new BasicNameValuePair("uh", mModhash.toString()));
-				// Votehash is currently unused by reddit 
-//    				nvps.add(new BasicNameValuePair("vh", "0d4ab0ffd56ad0f66841c15609e9a45aeec6b015"));
-				
-				HttpPost httppost = new HttpPost("http://www.reddit.com/api/vote");
-		        httppost.setEntity(new UrlEncodedFormEntity(nvps, HTTP.UTF_8));
-		        
-		        Log.d(TAG, nvps.toString());
-		        
-	            // Perform the HTTP POST request
-		    	HttpResponse response = mClient.execute(httppost);
-		    	status = response.getStatusLine().toString();
-	        	if (!status.contains("OK"))
-	        		throw new HttpException(status);
-	        	
-	        	HttpEntity entity = response.getEntity();
-
-	        	BufferedReader in = new BufferedReader(new InputStreamReader(entity.getContent()));
-	        	String line = in.readLine();
-	        	if (line == null) {
-	        		throw new HttpException("No content returned from vote POST");
-	        	}
-	        	if (line.contains("WRONG_PASSWORD")) {
-	        		throw new Exception("Wrong password");
-	        	}
-	        	if (line.contains("USER_REQUIRED")) {
-	        		// The modhash probably expired
-	        		setModhash(null);
-	        		mHandler.post(new ErrorToaster("Error voting. Please try again.", Toast.LENGTH_LONG));
-	        		return;
-	        	}
-	        	
-	        	Log.d(TAG, line);
-
-//    	        	// DEBUG
-//    	        	int c;
-//    	        	boolean done = false;
-//    	        	StringBuilder sb = new StringBuilder();
-//    	        	while ((c = in.read()) >= 0) {
-//    	        		sb.append((char) c);
-//    	        		for (int i = 0; i < 80; i++) {
-//    	        			c = in.read();
-//    	        			if (c < 0) {
-//    	        				done = true;
-//    	        				break;
-//    	        			}
-//    	        			sb.append((char) c);
-//    	        		}
-//    	        		Log.d(TAG, "doLogin response content: " + sb.toString());
-//    	        		sb = new StringBuilder();
-//    	        		if (done)
-//    	        			break;
-//    	        	}
-
-	        	in.close();
-	        	if (entity != null)
-	        		entity.consumeContent();
-	        	
-	    	} catch (Exception e) {
-	            Log.e(TAG, e.getMessage());
-	    	}
-	    	Log.d(TAG, status);
-	    }
-    }
-    
-
-    /**
      * Worker thread takes in a subreddit name string and thread id, downloads its data, parses
      * out the comments, and communicates them back to the UI as they are read.
      */
@@ -680,7 +525,7 @@ public final class RedditCommentsListActivity extends ListActivity
             		.append("/comments/")
             		.append(_mId36)
             		.append("/.json").toString());
-            	HttpResponse response = mClient.execute(request);
+            	HttpResponse response = mSettings.client.execute(request);
             	
             	InputStream in = response.getEntity().getContent();
                 
@@ -708,25 +553,27 @@ public final class RedditCommentsListActivity extends ListActivity
     	
         public void run() {
         	CommentInfo newlyCreatedComment = null;
+        	String userError = "Error replying. Please try again.";
         	
         	String status = "";
         	if (!mSettings.loggedIn) {
-        		mHandler.post(new ErrorToaster("You must be logged in to reply.", Toast.LENGTH_LONG));
+        		mSettings.handler.post(new ErrorToaster("You must be logged in to reply.", Toast.LENGTH_LONG, mSettings));
         		return;
         	}
         	// Update the modhash if necessary
-        	if (mModhash == null) {
-        		if (!doUpdateModhash()) {
+        	if (mSettings.modhash == null) {
+        		mSettings.setModhash(Common.doUpdateModhash(mSettings));
+        		if (mSettings.modhash == null) {
         			// doUpdateModhash should have given an error about credentials
         			throw new RuntimeException("Reply failed because doUpdateModhash() failed");
         		}
         	}
         	
         	try {
-        		// Create a new HttpClient and copy cookies over from the main one
+        		// Create a new HttpClient with new timeout, and copy cookies over from the main one
         		DefaultHttpClient client = new DefaultHttpClient();
         		client.getParams().setParameter(HttpConnectionParams.SO_TIMEOUT, 30000);
-        		List<Cookie> mainCookies = mClient.getCookieStore().getCookies();
+        		List<Cookie> mainCookies = mSettings.client.getCookieStore().getCookies();
         		for (Cookie c : mainCookies) {
         			client.getCookieStore().addCookie(c);
         		}
@@ -736,7 +583,7 @@ public final class RedditCommentsListActivity extends ListActivity
     			nvps.add(new BasicNameValuePair("thing_id", _mParentThingId.toString()));
     			nvps.add(new BasicNameValuePair("text", _mText.toString()));
     			nvps.add(new BasicNameValuePair("r", _mSubreddit.toString()));
-    			nvps.add(new BasicNameValuePair("uh", mModhash.toString()));
+    			nvps.add(new BasicNameValuePair("uh", mSettings.modhash.toString()));
     			// Votehash is currently unused by reddit 
 //    				nvps.add(new BasicNameValuePair("vh", "0d4ab0ffd56ad0f66841c15609e9a45aeec6b015"));
     			
@@ -746,7 +593,7 @@ public final class RedditCommentsListActivity extends ListActivity
     	        Log.d(TAG, nvps.toString());
     	        
                 // Perform the HTTP POST request
-    	    	HttpResponse response = mClient.execute(httppost);
+    	    	HttpResponse response = mSettings.client.execute(httppost);
     	    	status = response.getStatusLine().toString();
             	if (!status.contains("OK"))
             		throw new HttpException(status);
@@ -763,8 +610,8 @@ public final class RedditCommentsListActivity extends ListActivity
             	}
             	if (line.contains("USER_REQUIRED")) {
             		// The modhash probably expired
-            		setModhash(null);
-            		mHandler.post(new ErrorToaster("Error submitting reply. Please try again.", Toast.LENGTH_LONG));
+            		mSettings.setModhash(null);
+            		mSettings.handler.post(new ErrorToaster("Error submitting reply. Please try again.", Toast.LENGTH_LONG, mSettings));
             		return;
             	}
             	
@@ -799,13 +646,11 @@ public final class RedditCommentsListActivity extends ListActivity
             		if (line.contains("RATELIMIT")) {
                 		// Try to find the # of minutes using regex
                     	Matcher rateMatcher = Constants.RATELIMIT_RETRY_PATTERN.matcher(line);
-                    	if (rateMatcher.find()) {
-                    		mHandler.post(new ErrorToaster(rateMatcher.group(1), Toast.LENGTH_LONG));
-                    		throw new Exception(rateMatcher.group(1));
-                    	} else {
-                    		mHandler.post(new ErrorToaster("you are trying to submit too fast. try again in a few minutes.", Toast.LENGTH_LONG));
-                    		throw new Exception("you are trying to submit too fast. try again in a few minutes.");
-                    	}
+                    	if (rateMatcher.find())
+                    		userError = rateMatcher.group(1);
+                    	else
+                    		userError = "you are trying to submit too fast. try again in a few minutes.";
+                		throw new Exception(userError);
                 	}
                 	throw new Exception("No id returned by reply POST.");
             	}
@@ -838,201 +683,23 @@ public final class RedditCommentsListActivity extends ListActivity
             	
         	} catch (Exception e) {
                 Log.e(TAG, e.getMessage());
+                mSettings.handler.post(new ErrorToaster(userError, Toast.LENGTH_LONG, mSettings));
         	}
         	Log.d(TAG, status);
         	
         	// Update UI
         	if (newlyCreatedComment != null) {
         		_mTargetCommentInfo.setReplyDraft("");
-        		mHandler.post(new CommentInserter(newlyCreatedComment));
+        		mSettings.handler.post(new CommentInserter(newlyCreatedComment));
         	}
         }
     }
     
 
-    
-    /**
-     * Login. Runs in UI thread (synchronous).
-     * FIXME: Make asynchronous
-     * @param username
-     * @param password
-     * @return
-     */
-    public boolean doLogin(CharSequence username, CharSequence password) {
-    	String status = "";
-    	try {
-    		// Construct data
-    		List<NameValuePair> nvps = new ArrayList<NameValuePair>();
-    		nvps.add(new BasicNameValuePair("user", username.toString()));
-    		nvps.add(new BasicNameValuePair("passwd", password.toString()));
-    		
-            mClient.getParams().setParameter(HttpConnectionParams.SO_TIMEOUT, 20000);
-            HttpPost httppost = new HttpPost("http://www.reddit.com/api/login/"+username);
-            httppost.setEntity(new UrlEncodedFormEntity(nvps, HTTP.UTF_8));
-            
-            showDialog(Constants.DIALOG_LOGGING_IN);
-            
-            // Perform the HTTP POST request
-        	HttpResponse response = mClient.execute(httppost);
-        	status = response.getStatusLine().toString();
-        	if (!status.contains("OK"))
-        		throw new HttpException(status);
-        	
-        	HttpEntity entity = response.getEntity();
-        	
-        	BufferedReader in = new BufferedReader(new InputStreamReader(entity.getContent()));
-        	String line = in.readLine();
-        	if (line == null) {
-        		throw new HttpException("No content returned from login POST");
-        	}
-        	if (line.contains("WRONG_PASSWORD")) {
-        		throw new Exception("Wrong password");
-        	}
-
-        	// DEBUG
-//        	int c;
-//        	boolean done = false;
-//        	StringBuilder sb = new StringBuilder();
-//        	while ((c = in.read()) >= 0) {
-//        		sb.append((char) c);
-//        		for (int i = 0; i < 80; i++) {
-//        			c = in.read();
-//        			if (c < 0) {
-//        				done = true;
-//        				break;
-//        			}
-//        			sb.append((char) c);
-//        		}
-//        		Log.d(TAG, "doLogin response content: " + sb.toString());
-//        		sb = new StringBuilder();
-//        		if (done)
-//        			break;
-//        	}
-        	
-        	in.close();
-        	if (entity != null)
-        		entity.consumeContent();
-        	
-        	List<Cookie> cookies = mClient.getCookieStore().getCookies();
-        	if (cookies.isEmpty()) {
-        		throw new HttpException("Failed to login: No cookies");
-        	}
-        	
-        	// Getting here means you successfully logged in.
-        	// Congratulations!
-        	// You are a true reddit master!
-        
-        	mSettings.username = username;
-        	
-        	mSettings.loggedIn = true;
-        	Toast.makeText(this, "Logged in as "+username, Toast.LENGTH_SHORT).show();
-        	// Refresh the comments list
-        	doGetCommentsList(mSubreddit, mThreadId);
-        } catch (Exception e) {
-            mHandler.post(new ErrorToaster("Error logging in. Please try again.", Toast.LENGTH_LONG));
-        	mSettings.loggedIn = false;
-        }
-        dismissDialog(Constants.DIALOG_LOGGING_IN);
-        Log.d(TAG, status);
-        return mSettings.loggedIn;
-    }
-    
-    public boolean doUpdateModhash() {
-    	if (!mSettings.loggedIn) {
-    		return false;
-    	}
-    	
-    	// If logged in, client should exist. Otherwise logout and display error.
-    	if (mClient == null) {
-    		doLogout();
-    		mHandler.post(new ErrorToaster("You have been logged out. Please login again.", Toast.LENGTH_LONG));
-    		return false;
-    	}
-    	
-    	try {
-    		String status;
-    		
-    		HttpGet httpget = new HttpGet(Constants.MODHASH_URL);
-    		HttpResponse response = mClient.execute(httpget);
-    		
-    		status = response.getStatusLine().toString();
-        	if (!status.contains("OK"))
-        		throw new HttpException(status);
-        	
-        	HttpEntity entity = response.getEntity();
-
-        	BufferedReader in = new BufferedReader(new InputStreamReader(entity.getContent()));
-        	// modhash should appear within first 1200 chars
-        	char[] buffer = new char[2048];
-        	in.read(buffer, 0, 2048);
-        	String line = String.valueOf(buffer);
-        	if (line == null) {
-        		throw new HttpException("No content returned from doUpdateModhash GET to "+Constants.MODHASH_URL);
-        	}
-        	if (line.contains("USER_REQUIRED")) {
-        		throw new Exception("User session error: USER_REQUIRED");
-        	}
-        	
-        	Matcher modhashMatcher = Constants.MODHASH_PATTERN.matcher(line);
-        	if (modhashMatcher.find()) {
-        		setModhash(modhashMatcher.group(1));
-        		if (Constants.EMPTY_STRING.equals(mModhash)) {
-        			// Means user is not actually logged in.
-        			doLogout();
-        			mHandler.post(new ErrorToaster("You have been logged out. Please login again.", Toast.LENGTH_LONG));
-        			return false;
-        		}
-        	} else {
-        		throw new Exception("No modhash found at URL "+Constants.MODHASH_URL);
-        	}
-
-//        	// DEBUG
-//        	int c;
-//        	boolean done = false;
-//        	StringBuilder sb = new StringBuilder();
-//        	while ((c = in.read()) >= 0) {
-//        		sb.append((char) c);
-//        		for (int i = 0; i < 80; i++) {
-//        			c = in.read();
-//        			if (c < 0) {
-//        				done = true;
-//        				break;
-//        			}
-//        			sb.append((char) c);
-//        		}
-//        		Log.d(TAG, "doLogin response content: " + sb.toString());
-//        		sb = new StringBuilder();
-//        		if (done)
-//        			break;
-//        	}
-
-        	in.close();
-        	if (entity != null)
-        		entity.consumeContent();
-        	
-    	} catch (Exception e) {
-    		Log.e(TAG, e.getMessage());
-    		mHandler.post(new ErrorToaster("Error performing action. Please try again.", Toast.LENGTH_LONG));
-    		return false;
-    	}
-    	Log.d(TAG, "modhash: "+mModhash);
-    	return true;
-    }
-    
-    public void doLogout() {
-    	String status = "";
-    	if (mClient != null) {
-        	mClient.getCookieStore().clear();
-    	}
-        
-    	mSettings.username = null;
-        mSettings.loggedIn = false;
-        Log.d(TAG, status);
-    }
     
     public boolean doVote(CharSequence thingFullname, int direction, CharSequence subreddit) {
     	if (!mSettings.loggedIn) {
-    		mHandler.post(new ErrorToaster("You must be logged in to vote.", Toast.LENGTH_LONG));
+    		mSettings.handler.post(new ErrorToaster("You must be logged in to vote.", Toast.LENGTH_LONG, mSettings));
     		return false;
     	}
     	if (direction < -1 || direction > 1) {
@@ -1125,7 +792,7 @@ public final class RedditCommentsListActivity extends ListActivity
 		}
 		mCommentsAdapter.notifyDataSetChanged();
     	
-    	VoteWorker worker = new VoteWorker(thingFullname, direction, subreddit);
+    	VoteWorker worker = new VoteWorker(thingFullname, direction, subreddit, mSettings);
     	setCurrentWorker(worker);
     	worker.start();
     	
@@ -1143,7 +810,7 @@ public final class RedditCommentsListActivity extends ListActivity
      */
     public boolean doReply(CharSequence parentThingId, CharSequence text, CharSequence subreddit) {
     	if (!mSettings.loggedIn) {
-    		mHandler.post(new ErrorToaster("You must be logged in to reply.", Toast.LENGTH_LONG));
+    		mSettings.handler.post(new ErrorToaster("You must be logged in to reply.", Toast.LENGTH_LONG, mSettings));
     		return false;
     	}
     	
@@ -1253,7 +920,7 @@ public final class RedditCommentsListActivity extends ListActivity
         		showDialog(mAction);
         		break;
         	case Constants.DIALOG_LOGOUT:
-        		doLogout();
+        		Common.doLogout(mSettings);
         		Toast.makeText(RedditCommentsListActivity.this, "You have been logged out.", Toast.LENGTH_SHORT).show();
         		doGetCommentsList(mSubreddit, mThreadId);
         		break;
@@ -1267,11 +934,11 @@ public final class RedditCommentsListActivity extends ListActivity
         		break;
         	case Constants.DIALOG_THEME:
         		if (mSettings.theme == Constants.THEME_LIGHT) {
-        			mSettings.theme = Constants.THEME_DARK;
-        			mSettings.themeResId = android.R.style.Theme;
+        			mSettings.setTheme(Constants.THEME_DARK);
+        			mSettings.setThemeResId(android.R.style.Theme);
         		} else {
-        			mSettings.theme = Constants.THEME_LIGHT;
-        			mSettings.themeResId = android.R.style.Theme_Light;
+        			mSettings.setTheme(Constants.THEME_LIGHT);
+        			mSettings.setThemeResId(android.R.style.Theme_Light);
         		}
         		RedditCommentsListActivity.this.setTheme(mSettings.themeResId);
         		RedditCommentsListActivity.this.setContentView(R.layout.comments_list_content);
@@ -1310,9 +977,11 @@ public final class RedditCommentsListActivity extends ListActivity
     		loginPasswordInput.setOnKeyListener(new OnKeyListener() {
     			public boolean onKey(View v, int keyCode, KeyEvent event) {
     		        if ((event.getAction() == KeyEvent.ACTION_DOWN) && (keyCode == KeyEvent.KEYCODE_ENTER)) {
-    		        	doLogin(loginUsernameInput.getText(), loginPasswordInput.getText());
-    		            dismissDialog(Constants.DIALOG_LOGIN);
-    		        	return true;
+    		        	dismissDialog(Constants.DIALOG_LOGIN);
+        				showDialog(Constants.DIALOG_LOGGING_IN);
+        				Common.doLogin(loginUsernameInput.getText(), loginPasswordInput.getText(), mSettings);
+        		        dismissDialog(Constants.DIALOG_LOGGING_IN);
+        		        return true;
     		        }
     		        return false;
     		    }
@@ -1320,8 +989,10 @@ public final class RedditCommentsListActivity extends ListActivity
     		final Button loginButton = (Button) dialog.findViewById(R.id.login_button);
     		loginButton.setOnClickListener(new OnClickListener() {
     			public void onClick(View v) {
-    				doLogin(loginUsernameInput.getText(), loginPasswordInput.getText());
-    		        dismissDialog(Constants.DIALOG_LOGIN);
+    				dismissDialog(Constants.DIALOG_LOGIN);
+    				showDialog(Constants.DIALOG_LOGGING_IN);
+    				Common.doLogin(loginUsernameInput.getText(), loginPasswordInput.getText(), mSettings);
+    		        dismissDialog(Constants.DIALOG_LOGGING_IN);
     		    }
     		});
     		break;
@@ -1677,7 +1348,7 @@ public final class RedditCommentsListActivity extends ListActivity
 			ci.setOpInfo(ti);
 			ci.setIndent(0);
 			ci.setListOrder(0);
-			mHandler.post(new CommentItemAdder(ci));
+			mSettings.handler.post(new CommentItemAdder(ci));
 		}
 		// Wind down the end of the "data" then outermost thread-json-object
     	for (int i = 0; i < 2; i++)
@@ -1696,7 +1367,7 @@ public final class RedditCommentsListActivity extends ListActivity
 		mIsProgressDialogShowing = false;
 		
 		for (Integer key : mCommentsMap.keySet()) {
-			mHandler.post(new CommentItemAdder(mCommentsMap.get(key)));
+			mSettings.handler.post(new CommentItemAdder(mCommentsMap.get(key)));
 		}
 		
 		// Don't care about the remaining END_ARRAY
