@@ -62,8 +62,7 @@
 		        android:layout_width="wrap_content"
 		        android:layout_height="wrap_content"
 		        android:layout_marginRight="5dip"
-		        android:text="talklittle"
-		
+		        
 		        android:singleLine="true"
 		        android:ellipsize="marquee"
 		        android:textSize="10dip"
@@ -80,15 +79,13 @@
 		      	android:singleLine="true"
 		        android:ellipsize="marquee"
 		        android:textSize="10dip"
-		        android:text="188 points"
-			    />
+		        />
 			
 			<TextView android:id="@+id/submissionTime"
 		        android:layout_width="wrap_content"
 		        android:layout_height="wrap_content"
 		        android:layout_toRightOf="@id/votes"
 		        android:layout_alignBaseline="@id/submitter"
-		        android:text="13 hours ago"
 		        
 		        android:singleLine="true"
 		        android:ellipsize="marquee"
@@ -104,7 +101,7 @@
 		        android:layout_below="@id/submitter"
 		        android:layout_alignLeft="@id/submitter"
 		        android:layout_marginRight="5dip"
-		        android:text="Lalala this is like a comment. What do you think of this? Yeah"
+		        android:text="Loading..."
 		
 		        android:textSize="12dip"
 		    />

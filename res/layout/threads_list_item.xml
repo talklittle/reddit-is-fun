@@ -75,8 +75,7 @@
 		        android:layout_width="wrap_content"
 		        android:layout_height="wrap_content"
 		        android:layout_marginBottom="1dip"
-		        android:text="A really cool title goes here yeah yeah reddit titles are always really long"
-		
+		        
 		        android:gravity="center_vertical|left"
 		        android:textSize="14dip"
 		    />
