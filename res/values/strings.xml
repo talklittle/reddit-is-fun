@@ -31,4 +31,6 @@
 	
 	<string name="more_comments">load more comments</string>
 	
+	<string name="error_voting_toast">Error voting. Please try again.</string>
+	
 </resources>

@@ -366,7 +366,7 @@ public final class RedditIsFun extends ListActivity
 //            submitterView.setText(item.getAuthor());
             // TODO: convert submission time to a displayable time
 //            Date submissionTimeDate = new Date((long) (Double.parseDouble(item.getCreated()) / 1000));
-//            submissionTimeView.setText("XXX");
+//            submissionTimeView.setText("5 hours ago");
             titleView.setTag(item.getURL());
 
             // Set the up and down arrow colors based on whether user likes
@@ -599,6 +599,31 @@ public final class RedditIsFun extends ListActivity
         }
     }
     
+    
+    private class ErrorToaster implements Runnable {
+    	CharSequence _mError;
+    	int _mDuration;
+    	private LayoutInflater mInflater;
+    	
+    	ErrorToaster(CharSequence error, int duration) {
+    		_mError = error;
+    		_mDuration = duration;
+    		mInflater = (LayoutInflater)RedditIsFun.this.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
+    	}
+    	
+    	public void run() {
+    		Toast t = new Toast(RedditIsFun.this);
+    		t.setDuration(_mDuration);
+    		View v = mInflater.inflate(R.layout.error_toast, null);
+    		TextView errorMessage = (TextView) v.findViewById(R.id.errorMessage);
+    		errorMessage.setText(_mError);
+    		t.setView(v);
+    		t.show();
+    	}
+    }
+
+
+    
     /**
      * Worker thread that takes in a thingId, vote direction, and subreddit. Starts
      * a new HTTP Client, copying the main one's cookies, and votes.
@@ -676,7 +701,7 @@ public final class RedditIsFun extends ListActivity
 	        	if (line.contains("USER_REQUIRED")) {
 	        		// The modhash probably expired
 	        		setModhash(null);
-	        		// TODO: "Error voting. Try again."
+	        		mHandler.post(new ErrorToaster("Error voting. Please try again.", Toast.LENGTH_LONG));
 	        		return;
 	        	}
 	        	
@@ -789,7 +814,7 @@ public final class RedditIsFun extends ListActivity
         	mLoggedIn = true;
         	Toast.makeText(this, "Logged in as "+username, Toast.LENGTH_SHORT).show();
         } catch (Exception e) {
-            // TODO: Login error message
+            mHandler.post(new ErrorToaster("Error logging in. Please try again.", Toast.LENGTH_LONG));
         	mLoggedIn = false;
         }
         dismissDialog(DIALOG_LOGGING_IN);
@@ -805,7 +830,7 @@ public final class RedditIsFun extends ListActivity
     	// If logged in, client should exist. Otherwise logout and display error.
     	if (mClient == null) {
     		doLogout();
-    		// TODO: "Error: You have been logged out. Please login again."
+    		mHandler.post(new ErrorToaster("You have been logged out. Please login again.", Toast.LENGTH_LONG));
     		return false;
     	}
     	
@@ -813,7 +838,6 @@ public final class RedditIsFun extends ListActivity
     		String status;
     		
     		HttpGet httpget = new HttpGet(MODHASH_URL);
-    		// TODO: Decide: background thread or loading screen? 
     		HttpResponse response = mClient.execute(httpget);
     		
     		status = response.getStatusLine().toString();
@@ -840,7 +864,7 @@ public final class RedditIsFun extends ListActivity
         		if ("".equals(mModhash)) {
         			// Means user is not actually logged in.
         			doLogout();
-        			// TODO: "Error: You have been logged out."
+        			mHandler.post(new ErrorToaster("You have been logged out. Please login again.", Toast.LENGTH_LONG));
         			return false;
         		}
         	} else {
@@ -873,7 +897,7 @@ public final class RedditIsFun extends ListActivity
         	
     	} catch (Exception e) {
     		Log.e(TAG, e.getMessage());
-    		// TODO: "Error getting credentials. Please try again."
+    		mHandler.post(new ErrorToaster("Error performing action. Please try again.", Toast.LENGTH_LONG));
     		return false;
     	}
     	Log.d(TAG, "modhash: "+mModhash);
@@ -895,7 +919,7 @@ public final class RedditIsFun extends ListActivity
     
     public boolean doVote(CharSequence thingId, int direction, CharSequence subreddit) {
     	if (!mLoggedIn) {
-    		// TODO: Error dialog saying you must be logged in.
+    		mHandler.post(new ErrorToaster("You must be logged in to vote.", Toast.LENGTH_LONG));
     		return false;
     	}
     	if (direction < -1 || direction > 1) {
@@ -970,83 +994,6 @@ public final class RedditIsFun extends ListActivity
     	return true;
     }
     
-    public boolean doComment(CharSequence parentThingId, CharSequence subreddit) {
-//    	if (!mLoggedIn) {
-//    		// TODO: Error dialog saying you must be logged in.
-//    		return false;
-//    	}
-//    	if (direction < -1 || direction > 1) {
-//    		throw new RuntimeException("How the hell did you vote something besides -1, 0, or 1?");
-//    	}
-//    	
-//    	// Update UI: 6 cases (3 original directions, each with 2 possible changes)
-//    	// UI is updated *before* the transaction actually happens. If the connection breaks for
-//    	// some reason, then the vote will be lost.
-//    	// Oh well, happens on reddit.com too, occasionally.
-//    	final ImageView ivUp = (ImageView) mVoteTargetView.findViewById(R.id.vote_up_image);
-//    	final ImageView ivDown = (ImageView) mVoteTargetView.findViewById(R.id.vote_down_image);
-//    	final TextView voteCounter = (TextView) mVoteTargetView.findViewById(R.id.votes);
-//		int newImageResourceUp, newImageResourceDown;
-//    	String newScore;
-//    	String newLikes;
-//    	int previousScore = Integer.valueOf(mVoteTargetThreadInfo.getScore());
-//    	if (TRUE_STRING.equals(mVoteTargetThreadInfo.getLikes())) {
-//    		if (direction == 0) {
-//    			newScore = String.valueOf(previousScore - 1);
-//    			newImageResourceUp = R.drawable.vote_up_gray;
-//    			newImageResourceDown = R.drawable.vote_down_gray;
-//    			newLikes = NULL_STRING;
-//    		} else if (direction == -1) {
-//    			newScore = String.valueOf(previousScore - 2);
-//    			newImageResourceUp = R.drawable.vote_up_gray;
-//    			newImageResourceDown = R.drawable.vote_down_blue;
-//    			newLikes = FALSE_STRING;
-//    		} else {
-//    			return false;
-//    		}
-//    	} else if (FALSE_STRING.equals(mVoteTargetThreadInfo.getLikes())) {
-//    		if (direction == 1) {
-//    			newScore = String.valueOf(previousScore + 2);
-//    			newImageResourceUp = R.drawable.vote_up_red;
-//    			newImageResourceDown = R.drawable.vote_down_gray;
-//    			newLikes = TRUE_STRING;
-//    		} else if (direction == 0) {
-//    			newScore = String.valueOf(previousScore + 1);
-//    			newImageResourceUp = R.drawable.vote_up_gray;
-//    			newImageResourceDown = R.drawable.vote_down_gray;
-//    			newLikes = NULL_STRING;
-//    		} else {
-//    			return false;
-//    		}
-//    	} else {
-//    		if (direction == 1) {
-//    			newScore = String.valueOf(previousScore + 1);
-//    			newImageResourceUp = R.drawable.vote_up_red;
-//    			newImageResourceDown = R.drawable.vote_down_gray;
-//    			newLikes = TRUE_STRING;
-//    		} else if (direction == -1) {
-//    			newScore = String.valueOf(previousScore - 1);
-//    			newImageResourceUp = R.drawable.vote_up_gray;
-//    			newImageResourceDown = R.drawable.vote_down_blue;
-//    			newLikes = FALSE_STRING;
-//    		} else {
-//    			return false;
-//    		}
-//    	}
-//    	
-//    	ivUp.setImageResource(newImageResourceUp);
-//		ivDown.setImageResource(newImageResourceDown);
-//		voteCounter.setText(newScore);
-//		mVoteTargetThreadInfo.setLikes(newLikes);
-//		mVoteTargetThreadInfo.setScore(newScore);
-//		mAdapter.notifyDataSetChanged();
-//    	
-//    	VoteWorker worker = new VoteWorker(thingId, direction, subreddit);
-//    	setCurrentWorker(worker);
-//    	worker.start();
-//    	
-    	return true;
-    }
 
     /**
      * Populates the menu.
@@ -1517,5 +1464,4 @@ public final class RedditIsFun extends ListActivity
 			mHandler.post(new ThreadItemAdder(ti));
 		}
 	}
-
 }

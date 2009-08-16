@@ -9,6 +9,8 @@
     <color name="ssl_text_label">#ffffffff</color>
     <color name="ssl_text_value">#ffffffff</color>
     
+    <color name="error_toast_background">#ECCC</color>
+    
     <color name="white">#ffffffff</color>
     <color name="black">#ff000000</color>
     <color name="gray">#ffbbbbbb</color>

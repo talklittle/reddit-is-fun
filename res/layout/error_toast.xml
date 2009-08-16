@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+              android:layout_width="fill_parent"
+              android:layout_height="fill_parent"
+              android:orientation="horizontal"
+              android:padding="10dp"
+              android:background="@color/error_toast_background"
+              >
+              
+    <TextView android:id="@+id/errorMessage"
+        android:layout_width="wrap_content"
+        android:layout_height="fill_parent"
+        android:textColor="@color/red"
+        android:text="@string/error_voting_toast"
+        />
+    
+</FrameLayout>

@@ -33,6 +33,7 @@ import org.codehaus.jackson.JsonParser;
 import org.codehaus.jackson.JsonToken;
 
 import android.app.Activity;
+import android.app.AlertDialog;
 import android.app.Dialog;
 import android.app.ListActivity;
 import android.app.ProgressDialog;
@@ -357,7 +358,6 @@ public final class RedditCommentsListActivity extends ListActivity
             
             CommentInfo item = this.getItem(position);
             
-            // TODO?: replace this logic with ListView.addHeaderView()
             try {
 	            if (position == 0) {
 	            	// The OP
@@ -493,7 +493,7 @@ public final class RedditCommentsListActivity extends ListActivity
 		//            submitterView.setText(item.getAuthor());
 		            // TODO: convert submission time to a displayable time
 		//            Date submissionTimeDate = new Date((long) (Double.parseDouble(item.getCreated()) / 1000));
-		//            submissionTimeView.setText("XXX");
+		//            submissionTimeView.setText("5 hours ago");
 		            
 		            // Set the up and down arrow colors based on whether user likes
 		            if (mLoggedIn) {
@@ -546,7 +546,7 @@ public final class RedditCommentsListActivity extends ListActivity
         mVoteTargetView = v;
         
         if (mMorePositions.contains(position))
-        	doLoadMoreComments(); // TODO: doLoadMoreComments
+        	doLoadMoreComments(position, mThingFullname, mSubreddit);
         else
         	showDialog(DIALOG_THING_CLICK);
     }
@@ -605,19 +605,42 @@ public final class RedditCommentsListActivity extends ListActivity
      * UI via mHandler.post
      */
     private class CommentItemAdder implements Runnable {
-        CommentInfo mItem;
+        CommentInfo _mItem;
 
         CommentItemAdder(CommentInfo item) {
-            mItem = item;
+            _mItem = item;
         }
 
         public void run() {
-            mCommentsAdapter.add(mItem);
+            mCommentsAdapter.add(_mItem);
         }
 
         // NOTE: Performance idea -- would be more efficient to have he option
         // to add multiple items at once, so you get less "update storm" in the UI
         // compared to adding things one at a time.
+    }
+    
+    
+    private class ErrorToaster implements Runnable {
+    	CharSequence _mError;
+    	int _mDuration;
+    	private LayoutInflater mInflater;
+    	
+    	ErrorToaster(CharSequence error, int duration) {
+    		_mError = error;
+    		_mDuration = duration;
+    		mInflater = (LayoutInflater)RedditCommentsListActivity.this.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
+    	}
+    	
+    	public void run() {
+    		Toast t = new Toast(RedditCommentsListActivity.this);
+    		t.setDuration(_mDuration);
+    		View v = mInflater.inflate(R.layout.error_toast, null);
+    		TextView errorMessage = (TextView) v.findViewById(R.id.errorMessage);
+    		errorMessage.setText(_mError);
+    		t.setView(v);
+    		t.show();
+    	}
     }
 
     
@@ -643,7 +666,6 @@ public final class RedditCommentsListActivity extends ListActivity
     	public void run() {
 	    	String status = "";
 	    	if (!mLoggedIn) {
-	    		// TODO: Error dialog saying you must be logged in.
 	    		return;
 	    	}
 	    	if (_mDirection < -1 || _mDirection > 1) {
@@ -700,7 +722,7 @@ public final class RedditCommentsListActivity extends ListActivity
 	        	if (line.contains("USER_REQUIRED")) {
 	        		// The modhash probably expired
 	        		setModhash(null);
-	        		// TODO: "Error voting. Try again."
+	        		mHandler.post(new ErrorToaster("Error voting. Please try again.", Toast.LENGTH_LONG));
 	        		return;
 	        	}
 	        	
@@ -845,7 +867,7 @@ public final class RedditCommentsListActivity extends ListActivity
         	Toast.makeText(this, "Logged in as "+username, Toast.LENGTH_SHORT).show();
         	
         } catch (Exception e) {
-            // TODO: Login error message
+            mHandler.post(new ErrorToaster("Error logging in. Please try again.", Toast.LENGTH_LONG));
         	mLoggedIn = false;
         }
         dismissDialog(DIALOG_LOGGING_IN);
@@ -861,7 +883,7 @@ public final class RedditCommentsListActivity extends ListActivity
     	// If logged in, client should exist. Otherwise logout and display error.
     	if (mClient == null) {
     		doLogout();
-    		// TODO: "Error: You have been logged out. Please login again."
+    		mHandler.post(new ErrorToaster("You have been logged out. Please login again.", Toast.LENGTH_LONG));
     		return false;
     	}
     	
@@ -869,7 +891,6 @@ public final class RedditCommentsListActivity extends ListActivity
     		String status;
     		
     		HttpGet httpget = new HttpGet(MODHASH_URL);
-    		// TODO: Decide: background thread or loading screen? 
     		HttpResponse response = mClient.execute(httpget);
     		
     		status = response.getStatusLine().toString();
@@ -896,7 +917,7 @@ public final class RedditCommentsListActivity extends ListActivity
         		if ("".equals(mModhash)) {
         			// Means user is not actually logged in.
         			doLogout();
-        			// TODO: "Error: You have been logged out."
+        			mHandler.post(new ErrorToaster("You have been logged out. Please login again.", Toast.LENGTH_LONG));
         			return false;
         		}
         	} else {
@@ -929,7 +950,7 @@ public final class RedditCommentsListActivity extends ListActivity
         	
     	} catch (Exception e) {
     		Log.e(TAG, e.getMessage());
-    		// TODO: "Error getting credentials. Please try again."
+    		mHandler.post(new ErrorToaster("Error performing action. Please try again.", Toast.LENGTH_LONG));
     		return false;
     	}
     	Log.d(TAG, "modhash: "+mModhash);
@@ -949,9 +970,9 @@ public final class RedditCommentsListActivity extends ListActivity
         Log.d(TAG, status);
     }
     
-    public boolean doVote(CharSequence thingId, int direction, CharSequence subreddit) {
+    public boolean doVote(CharSequence thingFullname, int direction, CharSequence subreddit) {
     	if (!mLoggedIn) {
-    		// TODO: Error dialog saying you must be logged in.
+    		mHandler.post(new ErrorToaster("You must be logged in to vote.", Toast.LENGTH_LONG));
     		return false;
     	}
     	if (direction < -1 || direction > 1) {
@@ -1044,7 +1065,7 @@ public final class RedditCommentsListActivity extends ListActivity
 		}
 		mCommentsAdapter.notifyDataSetChanged();
     	
-    	VoteWorker worker = new VoteWorker(thingId, direction, subreddit);
+    	VoteWorker worker = new VoteWorker(thingFullname, direction, subreddit);
     	setCurrentWorker(worker);
     	worker.start();
     	
@@ -1063,15 +1084,10 @@ public final class RedditCommentsListActivity extends ListActivity
     public CommentInfo doReply(CharSequence parentThingId, CharSequence text, CharSequence subreddit) {
     	CommentInfo newlyCreatedComment = null;
     	
-    	if (!mLoggedIn) {
-    		// TODO: Error dialog saying you must be logged in.
-    		return null;
-    	}
-    	
     	// Reply synchronously.
     	String status = "";
     	if (!mLoggedIn) {
-    		// TODO: Error dialog saying you must be logged in.
+    		mHandler.post(new ErrorToaster("You must be logged in to reply.", Toast.LENGTH_LONG));
     		return null;
     	}
     	// Update the modhash if necessary
@@ -1199,6 +1215,12 @@ public final class RedditCommentsListActivity extends ListActivity
     	}
     	
     	return newlyCreatedComment;
+    }
+    
+    public boolean doLoadMoreComments(int position, CharSequence thingId, CharSequence subreddit) {
+    	// TODO: download, parse, insert the results. use Tamper Data Firefox extension (view source)
+    	Toast.makeText(this, "Sorry, load more comments not implemented yet. Open in browser for now.", Toast.LENGTH_LONG).show();
+    	return false;
     }
 
     /**
@@ -1328,6 +1350,8 @@ public final class RedditCommentsListActivity extends ListActivity
     protected Dialog onCreateDialog(int id) {
     	Dialog dialog;
     	ProgressDialog pdialog;
+    	AlertDialog.Builder alertBuilder;
+    	
     	switch (id) {
     	case DIALOG_LOGIN:
     		dialog = new Dialog(this);
@@ -1373,7 +1397,11 @@ public final class RedditCommentsListActivity extends ListActivity
     	case DIALOG_POST_THREAD:
     		// TODO: a scrollable Dialog with Title, URL/Selftext, and subreddit.
     		// Or one of those things that pops up at bottom of screen, like browser "Find on page"
-    		dialog = null;
+    		alertBuilder = new AlertDialog.Builder(this);
+    		alertBuilder.setMessage("Sorry, this feature isn't implemented yet. Open in browser instead.")
+    				.setCancelable(true)
+    				.setPositiveButton("OK", null);
+    		dialog = alertBuilder.create();
     		break;
     		
     	case DIALOG_REPLY:
