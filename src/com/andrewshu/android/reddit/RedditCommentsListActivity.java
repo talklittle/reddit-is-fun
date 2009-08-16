@@ -1299,7 +1299,7 @@ public final class RedditCommentsListActivity extends ListActivity
         
         // Login and Logout need to use the same ID for menu entry so they can be swapped
         if (mLoggedIn) {
-        	menu.add(0, DIALOG_LOGIN, 1, "Logout")
+        	menu.add(0, DIALOG_LOGIN, 1, "Logout: " + mUsername)
        			.setOnMenuItemClickListener(new CommentsListMenu(DIALOG_LOGOUT));
         } else {
         	menu.add(0, DIALOG_LOGIN, 1, "Login")
@@ -1334,7 +1334,7 @@ public final class RedditCommentsListActivity extends ListActivity
     	
     	// Login/Logout
     	if (mLoggedIn) {
-	        menu.findItem(DIALOG_LOGIN).setTitle("Logout")
+	        menu.findItem(DIALOG_LOGIN).setTitle("Logout: " + mUsername)
 	        	.setOnMenuItemClickListener(new CommentsListMenu(DIALOG_LOGOUT));
     	} else {
             menu.findItem(DIALOG_LOGIN).setTitle("Login")
@@ -1656,7 +1656,7 @@ public final class RedditCommentsListActivity extends ListActivity
         i = 0;
     	while (!SERIALIZE_SEPARATOR.equals(strings.get(i))) {
     		if (SERIALIZE_SEPARATOR.equals(strings.get(i+1))) {
-    			// Well, just skip the value instead of throwing an exception.
+    			// XXX: Should throw an exception
     			break;
     		}
     		opTi.put(strings.get(i).toString(), strings.get(i+1).toString());
@@ -1666,7 +1666,7 @@ public final class RedditCommentsListActivity extends ListActivity
     	items.add(opCi);
         
         // Restore items from the big list of CharSequence objects
-        for ( ; i < strings.size(); i++) {
+        for (i++; i < strings.size(); i++) {
         	CommentInfo ci = new CommentInfo();
         	CharSequence key, value;
         	while (!METADATA_SERIALIZE_SEPARATOR.equals(strings.get(i))) {
@@ -1679,6 +1679,7 @@ public final class RedditCommentsListActivity extends ListActivity
         		ci.put(key.toString(), value.toString());
         		i += 2;
         	}
+        	i++;
         	ci.setIndent(Integer.valueOf(strings.get(i).toString()));
         	do {
         		i++;

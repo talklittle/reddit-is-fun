@@ -1026,7 +1026,7 @@ public final class RedditIsFun extends ListActivity
 
         // Login and Logout need to use the same ID for menu entry so they can be swapped
         if (mLoggedIn) {
-        	menu.add(0, DIALOG_LOGIN, 1, "Logout")
+        	menu.add(0, DIALOG_LOGIN, 1, "Logout: " + mUsername)
        			.setOnMenuItemClickListener(new ThreadsListMenu(DIALOG_LOGOUT));
         } else {
         	menu.add(0, DIALOG_LOGIN, 1, "Login")
@@ -1061,7 +1061,7 @@ public final class RedditIsFun extends ListActivity
     	
     	// Login/Logout
     	if (mLoggedIn) {
-	        menu.findItem(DIALOG_LOGIN).setTitle("Logout")
+	        menu.findItem(DIALOG_LOGIN).setTitle("Logout: " + mUsername)
 	        	.setOnMenuItemClickListener(new ThreadsListMenu(DIALOG_LOGOUT));
     	} else {
             menu.findItem(DIALOG_LOGIN).setTitle("Login")
