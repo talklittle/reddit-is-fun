@@ -10,30 +10,27 @@
 	<RelativeLayout
 	    android:layout_width="fill_parent"
 	    android:layout_height="wrap_content"
+	    android:gravity="center"
 	    >
 	
-		<!--  XXX unused for now -->
-		<!--
+	    <TextView android:id="@+id/submitter"
+	    	android:layout_width="wrap_content"
+		    android:layout_height="wrap_content"
+		    android:layout_marginRight="4dip"
+			android:text="by talklittle"
+	
+			android:singleLine="true"
+	        android:ellipsize="marquee"
+	        android:textSize="10dip"
+	    />
+	    
 	    <TextView android:id="@+id/submissionTime"
 	        android:layout_width="wrap_content"
 	        android:layout_height="wrap_content"
-	        android:layout_toRightOf="@id/linkDomain"
-	        android:layout_alignBaseline="@id/numComments"
-	        android:text="XXX"
+	        android:layout_toRightOf="@id/submitter"
+	        android:layout_alignBaseline="@id/submitter"
+	        android:text="very recently"
 	        
-	        android:visibility="invisible"
-	        android:singleLine="true"
-	        android:ellipsize="marquee"
-	        android:textAppearance="?android:attr/textAppearanceSmall"
-	    />
-	    -->
-	    
-	    <TextView android:id="@+id/submitter"
-	    	android:layout_width="fill_parent"
-		    android:layout_height="wrap_content"
-			android:text="by talklittle"
-	
-			android:gravity="center"
 	        android:singleLine="true"
 	        android:ellipsize="marquee"
 	        android:textSize="10dip"

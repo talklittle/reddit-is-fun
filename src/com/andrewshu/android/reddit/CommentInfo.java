@@ -116,6 +116,10 @@ public class CommentInfo {
 		return mValues.get(BODY);
 	}
 	
+	public String getCreatedUtc() {
+		return mValues.get(CREATED_UTC);
+	}
+	
 	public String getDowns() {
 		return mValues.get(DOWNS);
 	}

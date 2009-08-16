@@ -75,6 +75,7 @@
 		        android:layout_width="wrap_content"
 		        android:layout_height="wrap_content"
 		        android:layout_toRightOf="@id/submitter"
+		        android:layout_marginRight="4dip"
 		        
 		      	android:singleLine="true"
 		        android:ellipsize="marquee"
@@ -82,7 +83,17 @@
 		        android:text="188 points"
 			    />
 			
-			<!-- submissionDate would go here when I figure out how to format it to readable time "x hours ago" -->
+			<TextView android:id="@+id/submissionTime"
+		        android:layout_width="wrap_content"
+		        android:layout_height="wrap_content"
+		        android:layout_toRightOf="@id/votes"
+		        android:layout_alignBaseline="@id/submitter"
+		        android:text="13 hours ago"
+		        
+		        android:singleLine="true"
+		        android:ellipsize="marquee"
+		        android:textSize="10dip"
+		    	/>
 		            
 	    
 	    <!-- Bottom row -->

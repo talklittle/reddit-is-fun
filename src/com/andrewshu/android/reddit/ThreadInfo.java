@@ -81,6 +81,10 @@ public class ThreadInfo {
 	public String getCreated() {
 		return mValues.get(CREATED);
 	}
+	
+	public String getCreatedUtc() {
+		return mValues.get(CREATED_UTC);
+	}
 
 	public String getDomain() {
 		return mValues.get(DOMAIN);

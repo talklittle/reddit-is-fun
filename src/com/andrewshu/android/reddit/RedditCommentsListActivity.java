@@ -376,7 +376,7 @@ public final class RedditCommentsListActivity extends ListActivity
 	                TextView linkDomainView = (TextView) view.findViewById(R.id.linkDomain);
 	                TextView numCommentsView = (TextView) view.findViewById(R.id.numComments);
 	                TextView submitterView = (TextView) view.findViewById(R.id.submitter);
-	//                TextView submissionTimeView = (TextView) view.findViewById(R.id.submissionTime);
+	                TextView submissionTimeView = (TextView) view.findViewById(R.id.submissionTime);
 	                ImageView voteUpView = (ImageView) view.findViewById(R.id.vote_up_image);
 	                ImageView voteDownView = (ImageView) view.findViewById(R.id.vote_down_image);
 	                WebView selftextView = (WebView) view.findViewById(R.id.selftext);
@@ -392,9 +392,7 @@ public final class RedditCommentsListActivity extends ListActivity
 	                linkDomainView.setText("("+mOpThreadInfo.getDomain()+")");
 	                numCommentsView.setText(mOpThreadInfo.getNumComments());
 	                submitterView.setText("submitted by "+mOpThreadInfo.getAuthor());
-	                // TODO: convert submission time to a displayable time
-	//                Date submissionTimeDate = new Date((long) (Double.parseDouble(mOp.getCreated()) / 1000));
-	//                submissionTimeView.setText("XXX");
+	                submissionTimeView.setText(Util.getTimeAgo(Double.valueOf(mOpThreadInfo.getCreatedUtc())));
 	                titleView.setTag(mOpThreadInfo.getURL());
 	
 	                // Set the up and down arrow colors based on whether user likes
@@ -463,7 +461,7 @@ public final class RedditCommentsListActivity extends ListActivity
 		            TextView bodyView = (TextView) view.findViewById(R.id.body);
 		            TextView leftIndent = (TextView) view.findViewById(R.id.left_indent);
 		            
-	//                TextView submissionTimeView = (TextView) view.findViewById(R.id.submissionTime);
+	                TextView submissionTimeView = (TextView) view.findViewById(R.id.submissionTime);
 		            ImageView voteUpView = (ImageView) view.findViewById(R.id.vote_up_image);
 		            ImageView voteDownView = (ImageView) view.findViewById(R.id.vote_down_image);
 		            
@@ -491,9 +489,7 @@ public final class RedditCommentsListActivity extends ListActivity
 		            }
 		            
 		//            submitterView.setText(item.getAuthor());
-		            // TODO: convert submission time to a displayable time
-		//            Date submissionTimeDate = new Date((long) (Double.parseDouble(item.getCreated()) / 1000));
-		//            submissionTimeView.setText("5 hours ago");
+		            submissionTimeView.setText(Util.getTimeAgo(Double.valueOf(item.getCreatedUtc())));
 		            
 		            // Set the up and down arrow colors based on whether user likes
 		            if (mLoggedIn) {
