@@ -425,7 +425,10 @@ public final class RedditCommentsListActivity extends ListActivity
 	                // Selftext is rendered in a WebView
 	            	if (!NULL_STRING.equals(mOpThreadInfo.getSelftext())) {
 	            		selftextView.getSettings().setTextSize(TextSize.SMALLER);
-	            		selftextView.loadData(StringEscapeUtils.unescapeHtml(mOpThreadInfo.getSelftext()), "text/html", "UTF-8");
+	            		String baseURL = new StringBuilder("http://www.reddit.com/r/")
+	            				.append(mSubreddit).append("/comments/").append(item.getId()).toString();
+	            		selftextView.loadDataWithBaseURL(baseURL,
+	            				StringEscapeUtils.unescapeHtml(mOpThreadInfo.getSelftext()), "text/html", "UTF-8", null);
 	            	} else {
 	            		selftextView.setVisibility(View.INVISIBLE);
 	            	}
