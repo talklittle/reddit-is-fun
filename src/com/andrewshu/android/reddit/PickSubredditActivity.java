@@ -6,6 +6,7 @@ import java.util.List;
 import android.app.ListActivity;
 import android.content.Context;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.view.KeyEvent;
 import android.view.LayoutInflater;
@@ -19,6 +20,15 @@ import android.widget.TextView;
 
 public final class PickSubredditActivity extends ListActivity {
 
+    // Themes
+    static final int THEME_LIGHT = 0;
+    static final int THEME_DARK = 1;
+    
+//    private int mTheme = THEME_LIGHT;
+    private int mThemeResId = android.R.style.Theme_Light;
+    
+    static final String PREFS_SESSION = "RedditSession";
+    
 	private PickSubredditAdapter mAdapter;
 	private EditText mEt;
 	
@@ -48,12 +58,17 @@ public final class PickSubredditActivity extends ListActivity {
     	"linux",
     	"android"
     };
+    
+    
 
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
     	super.onCreate(savedInstanceState);
         
+    	loadRedditPreferences();
+    	setTheme(mThemeResId);
+    	
         setContentView(R.layout.pick_subreddit_view);
         
         // Set the EditText to do same thing as onListItemClick
@@ -73,8 +88,18 @@ public final class PickSubredditActivity extends ListActivity {
         // to populate the list.
         // For now, use a predefined list.
         
+        List<String> items = Arrays.asList(SUBREDDITS);
+        mAdapter = new PickSubredditAdapter(this, items);
+        getListView().setAdapter(mAdapter);
+
+//        // Need one of these to post things back to the UI thread.
+//        mHandler = new Handler();
+        
+    }
+    
+    private void loadRedditPreferences() {
         // Retrieve the stored session info
-//        SharedPreferences sessionPrefs = getSharedPreferences(PREFS_SESSION, 0);
+        SharedPreferences sessionPrefs = getSharedPreferences(PREFS_SESSION, 0);
 //        mUsername = sessionPrefs.getString("username", null);
 //        String cookieValue = sessionPrefs.getString("reddit_sessionValue", null);
 //        String cookieDomain = sessionPrefs.getString("reddit_sessionDomain", null);
@@ -93,14 +118,8 @@ public final class PickSubredditActivity extends ListActivity {
 //        	mClient.getCookieStore().addCookie(mRedditSessionCookie);
 //        	mLoggedIn = true;
 //        }
-
-        List<String> items = Arrays.asList(SUBREDDITS);
-        mAdapter = new PickSubredditAdapter(this, items);
-        getListView().setAdapter(mAdapter);
-
-//        // Need one of these to post things back to the UI thread.
-//        mHandler = new Handler();
-        
+//        mTheme = sessionPrefs.getInt("theme", THEME_LIGHT);
+        mThemeResId = sessionPrefs.getInt("theme_resid", android.R.style.Theme_Light);
     }
 
     

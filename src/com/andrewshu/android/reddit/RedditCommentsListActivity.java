@@ -4,7 +4,6 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.lang.ref.SoftReference;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashSet;
@@ -41,12 +40,10 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.res.Resources;
-import android.graphics.Bitmap;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.Handler;
 import android.util.Log;
-import android.util.SparseArray;
 import android.view.KeyEvent;
 import android.view.LayoutInflater;
 import android.view.Menu;
@@ -102,11 +99,6 @@ public final class RedditCommentsListActivity extends ListActivity
     // When manipulating stuff already in list, use mCommentsAdapter.
     private TreeMap<Integer, CommentInfo> mCommentsMap = new TreeMap<Integer, CommentInfo>();
     
-    private int mMode = MODE_THREADS_LIST;
-    
-    static final int MODE_THREADS_LIST  = 0x00000001;
-    static final int MODE_COMMENTS_LIST = 0x00000002;
-
     // Current HttpClient
     private DefaultHttpClient mClient = null;
     private Cookie mRedditSessionCookie = null;
@@ -130,7 +122,6 @@ public final class RedditCommentsListActivity extends ListActivity
     static final int DIALOG_LOGIN = 2;
     static final int DIALOG_LOGOUT = 3;
     static final int DIALOG_REFRESH = 4;
-    static final int DIALOG_POST_THREAD = 5;
     static final int DIALOG_REPLY = 6;
     static final int DIALOG_LOGGING_IN = 7;
     static final int DIALOG_LOADING_THREADS_LIST = 8;
@@ -172,6 +163,19 @@ public final class RedditCommentsListActivity extends ListActivity
     public static final Pattern NEW_ID_PATTERN = Pattern.compile("\"id\": \"((.+?)_(.+?))\"");
     public static final Pattern RATELIMIT_RETRY_PATTERN = Pattern.compile("(you are trying to submit too fast. try again in (.+?)\\.)");
 
+    /**
+     * Disable this when releasing!
+     */
+    private static void log_d(String tag, String msg) {
+    	Log.d(tag, msg);
+    }
+    
+    /**
+     * Disable this when releasing!
+     */
+    private static void log_e(String tag, String msg) {
+    	Log.e(tag, msg);
+    }
 
     /**
      * Called when the activity starts up. Do activity initialization
@@ -198,7 +202,7 @@ public final class RedditCommentsListActivity extends ListActivity
         	mSubreddit = extras.getString(ThreadInfo.SUBREDDIT);
         } else {
         	// Quit, because the Comments List requires subreddit and thread id from Intent.
-        	Log.e(TAG, "Quitting because no subreddit and thread id data was passed into the Intent.");
+        	log_e(TAG, "Quitting because no subreddit and thread id data was passed into the Intent.");
         	finish();
         }
         
@@ -306,8 +310,8 @@ public final class RedditCommentsListActivity extends ListActivity
     	
     	private LayoutInflater mInflater;
         private boolean mLoading = true;
-        private boolean mDisplayThumbnails = false; // TODO: use this
-        private SparseArray<SoftReference<Bitmap>> mBitmapCache = null; // TODO?: use this?
+//        private boolean mDisplayThumbnails = false; // TODO: use this
+//        private SparseArray<SoftReference<Bitmap>> mBitmapCache = null; // TODO?: use this?
         private int mFrequentSeparatorPos = ListView.INVALID_POSITION;
 
         
@@ -472,7 +476,7 @@ public final class RedditCommentsListActivity extends ListActivity
 		            } catch (NumberFormatException e) {
 		            	// This happens because "ups" comes after the potentially long "replies" object,
 		            	// so the ListView might try to display the View before "ups" in JSON has been parsed.
-		            	Log.e(TAG, e.getMessage());
+		            	log_e(TAG, e.getMessage());
 		            }
 		            submitterView.setText(item.getAuthor());
 		            bodyView.setText(item.getBody());
@@ -638,6 +642,25 @@ public final class RedditCommentsListActivity extends ListActivity
     		t.show();
     	}
     }
+    
+    private class CommentInserter implements Runnable {
+    	CommentInfo _mComment;
+    	
+    	CommentInserter(CommentInfo comment) {
+    		_mComment = comment;
+    	}
+    	
+    	public void run() {
+			// Bump the list order of everything starting from where new comment will go.
+			int count = mCommentsAdapter.getCount();
+			for (int i = _mComment.getListOrder(); i < count; i++) {
+				mCommentsAdapter.getItem(i).setListOrder(i+1);
+			}
+			// Finally, insert the new comment where it should go.
+			mCommentsAdapter.insert(_mComment, _mComment.getListOrder());
+			mCommentsAdapter.notifyDataSetChanged();
+    	}
+    }
 
     
     
@@ -697,7 +720,7 @@ public final class RedditCommentsListActivity extends ListActivity
 				HttpPost httppost = new HttpPost("http://www.reddit.com/api/vote");
 		        httppost.setEntity(new UrlEncodedFormEntity(nvps, HTTP.UTF_8));
 		        
-		        Log.d(TAG, nvps.toString());
+		        log_d(TAG, nvps.toString());
 		        
 	            // Perform the HTTP POST request
 		    	HttpResponse response = mClient.execute(httppost);
@@ -722,7 +745,7 @@ public final class RedditCommentsListActivity extends ListActivity
 	        		return;
 	        	}
 	        	
-	        	Log.d(TAG, line);
+	        	log_d(TAG, line);
 
 //    	        	// DEBUG
 //    	        	int c;
@@ -738,7 +761,7 @@ public final class RedditCommentsListActivity extends ListActivity
 //    	        			}
 //    	        			sb.append((char) c);
 //    	        		}
-//    	        		Log.d(TAG, "doLogin response content: " + sb.toString());
+//    	        		log_d(TAG, "doLogin response content: " + sb.toString());
 //    	        		sb = new StringBuilder();
 //    	        		if (done)
 //    	        			break;
@@ -749,9 +772,9 @@ public final class RedditCommentsListActivity extends ListActivity
 	        		entity.consumeContent();
 	        	
 	    	} catch (Exception e) {
-	            Log.e(TAG, e.getMessage());
+	            log_e(TAG, e.getMessage());
 	    	}
-	    	Log.d(TAG, status);
+	    	log_d(TAG, status);
 	    }
     }
     
@@ -787,11 +810,176 @@ public final class RedditCommentsListActivity extends ListActivity
                 
                 mSubreddit = _mSubreddit;
             } catch (Exception e) {
-                Log.e(TAG, "failed:" + e.getMessage());
+                log_e(TAG, "failed:" + e.getMessage());
             }
         }
     }
     
+    
+    private class ReplyWorker extends Thread{
+    	private CharSequence _mParentThingId, _mText, _mSubreddit;
+    	CommentInfo _mTargetCommentInfo;
+    	
+    	public ReplyWorker(CharSequence parentThingId, CharSequence text, CharSequence subreddit,
+    			CommentInfo targetCommentInfo) {
+    		_mParentThingId = parentThingId;
+    		_mText = text;
+    		_mSubreddit = subreddit;
+    		_mTargetCommentInfo = targetCommentInfo;
+    	}
+    	
+        public void run() {
+        	CommentInfo newlyCreatedComment = null;
+        	
+        	String status = "";
+        	if (!mLoggedIn) {
+        		mHandler.post(new ErrorToaster("You must be logged in to reply.", Toast.LENGTH_LONG));
+        		return;
+        	}
+        	// Update the modhash if necessary
+        	if (mModhash == null) {
+        		if (!doUpdateModhash()) {
+        			// doUpdateModhash should have given an error about credentials
+        			throw new RuntimeException("Reply failed because doUpdateModhash() failed");
+        		}
+        	}
+        	
+        	try {
+        		// Create a new HttpClient and copy cookies over from the main one
+        		DefaultHttpClient client = new DefaultHttpClient();
+        		client.getParams().setParameter(HttpConnectionParams.SO_TIMEOUT, 30000);
+        		List<Cookie> mainCookies = mClient.getCookieStore().getCookies();
+        		for (Cookie c : mainCookies) {
+        			client.getCookieStore().addCookie(c);
+        		}
+        		
+        		// Construct data
+    			List<NameValuePair> nvps = new ArrayList<NameValuePair>();
+    			nvps.add(new BasicNameValuePair("thing_id", _mParentThingId.toString()));
+    			nvps.add(new BasicNameValuePair("text", _mText.toString()));
+    			nvps.add(new BasicNameValuePair("r", _mSubreddit.toString()));
+    			nvps.add(new BasicNameValuePair("uh", mModhash.toString()));
+    			// Votehash is currently unused by reddit 
+//    				nvps.add(new BasicNameValuePair("vh", "0d4ab0ffd56ad0f66841c15609e9a45aeec6b015"));
+    			
+    			HttpPost httppost = new HttpPost("http://www.reddit.com/api/comment");
+    	        httppost.setEntity(new UrlEncodedFormEntity(nvps, HTTP.UTF_8));
+    	        
+    	        log_d(TAG, nvps.toString());
+    	        
+                // Perform the HTTP POST request
+    	    	HttpResponse response = mClient.execute(httppost);
+    	    	status = response.getStatusLine().toString();
+            	if (!status.contains("OK"))
+            		throw new HttpException(status);
+            	
+            	HttpEntity entity = response.getEntity();
+
+            	BufferedReader in = new BufferedReader(new InputStreamReader(entity.getContent()));
+            	String line = in.readLine();
+            	if (line == null) {
+            		throw new HttpException("No content returned from reply POST");
+            	}
+            	if (line.contains("WRONG_PASSWORD")) {
+            		throw new Exception("Wrong password");
+            	}
+            	if (line.contains("USER_REQUIRED")) {
+            		// The modhash probably expired
+            		setModhash(null);
+            		mHandler.post(new ErrorToaster("Error submitting reply. Please try again.", Toast.LENGTH_LONG));
+            		return;
+            	}
+            	
+            	log_d(TAG, line);
+
+//            	// DEBUG
+//            	int c;
+//            	boolean done = false;
+//            	StringBuilder sb = new StringBuilder();
+//            	for (int k = 0; k < line.length(); k += 80) {
+//            		for (int i = 0; i < 80; i++) {
+//            			if (k + i >= line.length()) {
+//            				done = true;
+//            				break;
+//            			}
+//            			c = line.charAt(k + i);
+//            			sb.append((char) c);
+//            		}
+//            		log_d(TAG, "doReply response content: " + sb.toString());
+//            		sb = new StringBuilder();
+//            		if (done)
+//            			break;
+//            	}
+//    	        	
+
+            	String newId, newFullname;
+            	Matcher idMatcher = NEW_ID_PATTERN.matcher(line);
+            	if (idMatcher.find()) {
+            		newFullname = idMatcher.group(1);
+            		newId = idMatcher.group(3);
+            	} else {
+            		if (line.contains("RATELIMIT")) {
+                		// Try to find the # of minutes using regex
+                    	Matcher rateMatcher = RATELIMIT_RETRY_PATTERN.matcher(line);
+                    	if (rateMatcher.find()) {
+                    		mHandler.post(new ErrorToaster(rateMatcher.group(1), Toast.LENGTH_LONG));
+                    		throw new Exception(rateMatcher.group(1));
+                    	} else {
+                    		mHandler.post(new ErrorToaster("you are trying to submit too fast. try again in a few minutes.", Toast.LENGTH_LONG));
+                    		throw new Exception("you are trying to submit too fast. try again in a few minutes.");
+                    	}
+                	}
+                	throw new Exception("No id returned by reply POST.");
+            	}
+            	
+            	in.close();
+            	if (entity != null)
+            		entity.consumeContent();
+            	
+            	// Getting here means success. Create a new CommentInfo.
+            	newlyCreatedComment = new CommentInfo(
+            			mUsername.toString(),     /* author */
+            			_mText.toString(),          /* body */
+            			null,                     /* body_html */
+            			null,                     /* created */
+            			String.valueOf(System.currentTimeMillis()), /* created_utc */
+            			"0",                      /* downs */
+            			newId,                    /* id */
+            			TRUE_STRING,              /* likes */
+            			null,                     /* link_id */
+            			newFullname,              /* name */
+            			_mParentThingId.toString(), /* parent_id */
+            			null,                     /* sr_id */
+            			"1"                       /* ups */
+            			);
+            	newlyCreatedComment.setListOrder(_mTargetCommentInfo.getListOrder()+1);
+            	if (_mTargetCommentInfo.getListOrder() == 0)
+            		newlyCreatedComment.setIndent(0);
+            	else
+            		newlyCreatedComment.setIndent(_mTargetCommentInfo.getIndent()+1);
+            	
+        	} catch (Exception e) {
+                log_e(TAG, e.getMessage());
+        	}
+        	log_d(TAG, status);
+        	
+        	// Update UI
+        	if (newlyCreatedComment != null) {
+        		_mTargetCommentInfo.setReplyDraft("");
+        		mHandler.post(new CommentInserter(newlyCreatedComment));
+        	}
+        }
+    }
+    
+
+    
+    /**
+     * Login. Runs in UI thread (synchronous).
+     * FIXME: Make asynchronous
+     * @param username
+     * @param password
+     * @return
+     */
     public boolean doLogin(CharSequence username, CharSequence password) {
     	String status = "";
     	try {
@@ -838,7 +1026,7 @@ public final class RedditCommentsListActivity extends ListActivity
 //        			}
 //        			sb.append((char) c);
 //        		}
-//        		Log.d(TAG, "doLogin response content: " + sb.toString());
+//        		log_d(TAG, "doLogin response content: " + sb.toString());
 //        		sb = new StringBuilder();
 //        		if (done)
 //        			break;
@@ -861,13 +1049,14 @@ public final class RedditCommentsListActivity extends ListActivity
         	
         	mLoggedIn = true;
         	Toast.makeText(this, "Logged in as "+username, Toast.LENGTH_SHORT).show();
-        	
+        	// Refresh the comments list
+        	doGetCommentsList(mSubreddit, mThreadId);
         } catch (Exception e) {
             mHandler.post(new ErrorToaster("Error logging in. Please try again.", Toast.LENGTH_LONG));
         	mLoggedIn = false;
         }
         dismissDialog(DIALOG_LOGGING_IN);
-        Log.d(TAG, status);
+        log_d(TAG, status);
         return mLoggedIn;
     }
     
@@ -934,7 +1123,7 @@ public final class RedditCommentsListActivity extends ListActivity
 //        			}
 //        			sb.append((char) c);
 //        		}
-//        		Log.d(TAG, "doLogin response content: " + sb.toString());
+//        		log_d(TAG, "doLogin response content: " + sb.toString());
 //        		sb = new StringBuilder();
 //        		if (done)
 //        			break;
@@ -945,11 +1134,11 @@ public final class RedditCommentsListActivity extends ListActivity
         		entity.consumeContent();
         	
     	} catch (Exception e) {
-    		Log.e(TAG, e.getMessage());
+    		log_e(TAG, e.getMessage());
     		mHandler.post(new ErrorToaster("Error performing action. Please try again.", Toast.LENGTH_LONG));
     		return false;
     	}
-    	Log.d(TAG, "modhash: "+mModhash);
+    	log_d(TAG, "modhash: "+mModhash);
     	return true;
     }
     
@@ -963,7 +1152,7 @@ public final class RedditCommentsListActivity extends ListActivity
         setClient(null);
         
         mLoggedIn = false;
-        Log.d(TAG, status);
+        log_d(TAG, status);
     }
     
     public boolean doVote(CharSequence thingFullname, int direction, CharSequence subreddit) {
@@ -1077,140 +1266,19 @@ public final class RedditCommentsListActivity extends ListActivity
      * @param subreddit
      * @return
      */
-    public CommentInfo doReply(CharSequence parentThingId, CharSequence text, CharSequence subreddit) {
-    	CommentInfo newlyCreatedComment = null;
-    	
-    	// Reply synchronously.
-    	String status = "";
+    public boolean doReply(CharSequence parentThingId, CharSequence text, CharSequence subreddit) {
     	if (!mLoggedIn) {
     		mHandler.post(new ErrorToaster("You must be logged in to reply.", Toast.LENGTH_LONG));
-    		return null;
-    	}
-    	// Update the modhash if necessary
-    	if (mModhash == null) {
-    		if (!doUpdateModhash()) {
-    			// doUpdateModhash should have given an error about credentials
-    			throw new RuntimeException("Reply failed because doUpdateModhash() failed");
-    		}
+    		return false;
     	}
     	
-    	try {
-    		// Create a new HttpClient and copy cookies over from the main one
-    		DefaultHttpClient client = new DefaultHttpClient();
-    		client.getParams().setParameter(HttpConnectionParams.SO_TIMEOUT, 30000);
-    		List<Cookie> mainCookies = mClient.getCookieStore().getCookies();
-    		for (Cookie c : mainCookies) {
-    			client.getCookieStore().addCookie(c);
-    		}
-    		
-    		// Construct data
-			List<NameValuePair> nvps = new ArrayList<NameValuePair>();
-			nvps.add(new BasicNameValuePair("thing_id", parentThingId.toString()));
-			nvps.add(new BasicNameValuePair("text", text.toString()));
-			nvps.add(new BasicNameValuePair("r", subreddit.toString()));
-			nvps.add(new BasicNameValuePair("uh", mModhash.toString()));
-			// Votehash is currently unused by reddit 
-//				nvps.add(new BasicNameValuePair("vh", "0d4ab0ffd56ad0f66841c15609e9a45aeec6b015"));
-			
-			HttpPost httppost = new HttpPost("http://www.reddit.com/api/comment");
-	        httppost.setEntity(new UrlEncodedFormEntity(nvps, HTTP.UTF_8));
-	        
-	        Log.d(TAG, nvps.toString());
-	        
-            // Perform the HTTP POST request
-	    	HttpResponse response = mClient.execute(httppost);
-	    	status = response.getStatusLine().toString();
-        	if (!status.contains("OK"))
-        		throw new HttpException(status);
-        	
-        	HttpEntity entity = response.getEntity();
-
-        	BufferedReader in = new BufferedReader(new InputStreamReader(entity.getContent()));
-        	String line = in.readLine();
-        	if (line == null) {
-        		throw new HttpException("No content returned from reply POST");
-        	}
-        	if (line.contains("WRONG_PASSWORD")) {
-        		throw new Exception("Wrong password");
-        	}
-        	if (line.contains("USER_REQUIRED")) {
-        		// The modhash probably expired
-        		setModhash(null);
-        		// TODO: "Error voting. Try again."
-        		return null;
-        	}
-        	if (line.contains("RATELIMIT")) {
-        		// TODO: find the # of minutes using regex
-            	Matcher idMatcher = RATELIMIT_RETRY_PATTERN.matcher(line);
-            	if (idMatcher.find()) {
-            		throw new Exception(idMatcher.group(1));
-            	} else {
-            		throw new Exception("you are trying to submit too fast. try again in a few minutes.");
-            	}
-        	}
-        	
-        	Log.d(TAG, line);
-
-//        	// DEBUG
-//        	int c;
-//        	boolean done = false;
-//        	StringBuilder sb = new StringBuilder();
-//        	for (int k = 0; k < line.length(); k += 80) {
-//        		for (int i = 0; i < 80; i++) {
-//        			if (k + i >= line.length()) {
-//        				done = true;
-//        				break;
-//        			}
-//        			c = line.charAt(k + i);
-//        			sb.append((char) c);
-//        		}
-//        		Log.d(TAG, "doReply response content: " + sb.toString());
-//        		sb = new StringBuilder();
-//        		if (done)
-//        			break;
-//        	}
-//	        	
-
-        	String newId, newFullname;
-        	Matcher idMatcher = NEW_ID_PATTERN.matcher(line);
-        	if (idMatcher.find()) {
-        		newFullname = idMatcher.group(1);
-        		newId = idMatcher.group(3);
-        	} else {
-        		throw new Exception("No id returned by reply POST.");
-        	}
-        	
-        	in.close();
-        	if (entity != null)
-        		entity.consumeContent();
-        	
-        	// Getting here means success. Create a new CommentInfo.
-        	newlyCreatedComment =
-        		new CommentInfo(mUsername.toString(), text.toString(), /*body_html*/null,
-        			/*created*/null, /*created_utc*/null, "0",
-        			newId, TRUE_STRING, /*link_id*/null,
-        			newFullname, parentThingId.toString(), /*sr_id*/null, "1");
-        	newlyCreatedComment.setListOrder(mVoteTargetCommentInfo.getListOrder()+1);
-        	newlyCreatedComment.setIndent(mVoteTargetCommentInfo.getIndent()+1);
-        	
-    	} catch (Exception e) {
-            Log.e(TAG, e.getMessage());
-    	}
-    	Log.d(TAG, status);
+    	ReplyWorker worker = new ReplyWorker(parentThingId, text, subreddit, mVoteTargetCommentInfo);
+    	setCurrentWorker(worker);
+    	worker.start();
     	
-    	// Update UI
-    	if (newlyCreatedComment != null) {
-			// Bump the list order of everything starting from where new comment will go.
-			int count = mCommentsAdapter.getCount();
-			for (int i = newlyCreatedComment.getListOrder(); i < count; i++) {
-				mCommentsAdapter.getItem(i).setListOrder(i+1);
-			}
-			// Finally, insert the new comment where it should go.
-			mCommentsAdapter.insert(newlyCreatedComment, newlyCreatedComment.getListOrder());
-			mCommentsAdapter.notifyDataSetChanged();
-    	}
-    	
-    	return newlyCreatedComment;
+    	// Even though it returns success (true), it may fail due to rate limiting or something.
+    	// The ReplyWorker thread will display an error.
+    	return true;
     }
     
     public boolean doLoadMoreComments(int position, CharSequence thingId, CharSequence subreddit) {
@@ -1241,7 +1309,7 @@ public final class RedditCommentsListActivity extends ListActivity
         menu.add(0, DIALOG_REFRESH, 2, "Refresh")
         	.setOnMenuItemClickListener(new CommentsListMenu(DIALOG_REFRESH));
         
-        menu.add(0, DIALOG_POST_THREAD, 3, "Reply to thread")
+        menu.add(0, DIALOG_REPLY, 3, "Reply to thread")
     		.setOnMenuItemClickListener(new CommentsListMenu(DIALOG_REPLY));
         
         if (mTheme == THEME_LIGHT) {
@@ -1390,16 +1458,6 @@ public final class RedditCommentsListActivity extends ListActivity
     		dialog.setContentView(R.layout.comment_click_dialog);
     		break;
 
-    	case DIALOG_POST_THREAD:
-    		// TODO: a scrollable Dialog with Title, URL/Selftext, and subreddit.
-    		// Or one of those things that pops up at bottom of screen, like browser "Find on page"
-    		alertBuilder = new AlertDialog.Builder(this);
-    		alertBuilder.setMessage("Sorry, this feature isn't implemented yet. Open in browser instead.")
-    				.setCancelable(true)
-    				.setPositiveButton("OK", null);
-    		dialog = alertBuilder.create();
-    		break;
-    		
     	case DIALOG_REPLY:
     		dialog = new Dialog(this);
     		dialog.setContentView(R.layout.compose_reply_dialog);
@@ -1409,14 +1467,10 @@ public final class RedditCommentsListActivity extends ListActivity
     		replySaveButton.setOnClickListener(new OnClickListener() {
     			public void onClick(View v) {
     				dismissDialog(DIALOG_REPLY);
-    				CommentInfo newlySubmittedComment;
     				if (mVoteTargetCommentInfo.getOP() != null) {
-    					newlySubmittedComment = doReply(mVoteTargetCommentInfo.getOP().getName(), replyBody.getText(), mSubreddit);
+    					doReply(mVoteTargetCommentInfo.getOP().getName(), replyBody.getText(), mSubreddit);
     				} else {
-    					newlySubmittedComment = doReply(mVoteTargetCommentInfo.getName(), replyBody.getText(), mSubreddit);
-    				}
-    				if (newlySubmittedComment != null) {
-    					mVoteTargetCommentInfo.setReplyDraft("");
+    					doReply(mVoteTargetCommentInfo.getName(), replyBody.getText(), mSubreddit);
     				}
     			}
     		});
@@ -1536,7 +1590,6 @@ public final class RedditCommentsListActivity extends ListActivity
      * 
      * @see android.app.Activity#onSaveInstanceState
      */
-    @SuppressWarnings("unchecked")
     @Override
     protected void onSaveInstanceState(Bundle outState) {
         super.onSaveInstanceState(outState);
@@ -1778,7 +1831,7 @@ public final class RedditCommentsListActivity extends ListActivity
     		throws IOException, JsonParseException, IllegalStateException {
     	String genericListingError = "Not a valid listing";
     	
-    	boolean more = false;
+//    	boolean more = false;
     	
     	if (jp.nextToken() != JsonToken.START_OBJECT) {
         	// It's OK for replies to be empty.
@@ -1794,7 +1847,7 @@ public final class RedditCommentsListActivity extends ListActivity
     	jp.nextToken();
     	// Handle "more" link (child)
     	if (MORE_KIND.equals(jp.getText())) {
-    		more = true;
+//    		more = true;
     		CommentInfo moreCi = new CommentInfo();
     		moreCi.setListOrder(mNestedCommentsJSONOrder);
     		moreCi.setIndent(commentsNested);
@@ -1850,14 +1903,14 @@ public final class RedditCommentsListActivity extends ListActivity
 			// Post the comments in prefix order.
 			ci.setListOrder(mNestedCommentsJSONOrder++);
 			while (jp.nextToken() != JsonToken.END_OBJECT) {
-				more = false;
+//				more = false;
 				String fieldname = jp.getCurrentName();
 				jp.nextToken(); // move to value, or START_OBJECT/START_ARRAY
 			
 				if ("kind".equals(fieldname)) {
 					// Handle "more" link (sibling)
 					if (MORE_KIND.equals(jp.getText())) {
-						more = true;
+//						more = true;
 			    		ci.put("kind", MORE_KIND);
 				    	mMorePositions.add(ci.getListOrder());
 			    		

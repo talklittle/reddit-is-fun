@@ -4,7 +4,6 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.lang.ref.SoftReference;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
@@ -31,6 +30,7 @@ import org.codehaus.jackson.JsonParser;
 import org.codehaus.jackson.JsonToken;
 
 import android.app.Activity;
+import android.app.AlertDialog;
 import android.app.Dialog;
 import android.app.ListActivity;
 import android.app.ProgressDialog;
@@ -38,12 +38,10 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.res.Resources;
-import android.graphics.Bitmap;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.Handler;
 import android.util.Log;
-import android.util.SparseArray;
 import android.view.KeyEvent;
 import android.view.LayoutInflater;
 import android.view.Menu;
@@ -87,9 +85,6 @@ public final class RedditIsFun extends ListActivity
     private Handler mHandler;
     /** Currently running background network thread. */
     private Thread mWorker;
-    
-    static final int MODE_THREADS_LIST  = 0x00000001;
-    static final int MODE_COMMENTS_LIST = 0x00000002;
     
     static final String PREFS_SESSION = "RedditSession";
     
@@ -158,6 +153,21 @@ public final class RedditIsFun extends ListActivity
     
     // The pattern to find modhash from HTML javascript area
     public static final Pattern MODHASH_PATTERN = Pattern.compile("modhash: '(.*?)'");
+    
+    /**
+     * Disable this when releasing!
+     */
+    private static void log_d(String tag, String msg) {
+    	Log.d(tag, msg);
+    }
+    
+    /**
+     * Disable this when releasing!
+     */
+    private static void log_e(String tag, String msg) {
+    	Log.e(tag, msg);
+    }
+    
     
     /**
      * Called when the activity starts up. Do activity initialization
@@ -294,8 +304,8 @@ public final class RedditIsFun extends ListActivity
     private final class ThreadsListAdapter extends ArrayAdapter<ThreadInfo> {
     	private LayoutInflater mInflater;
         private boolean mLoading = true;
-        private boolean mDisplayThumbnails = false; // TODO: use this
-        private SparseArray<SoftReference<Bitmap>> mBitmapCache = null; // TODO?: use this?
+//        private boolean mDisplayThumbnails = false; // TODO: use this
+//        private SparseArray<SoftReference<Bitmap>> mBitmapCache = null; // TODO?: use this?
         private int mFrequentSeparatorPos = ListView.INVALID_POSITION;
 
         
@@ -594,7 +604,7 @@ public final class RedditIsFun extends ListActivity
             } catch (IOException e) {
             	dismissDialog(DIALOG_LOADING_THREADS_LIST);
             	mIsProgressDialogShowing = false;
-            	Log.e(TAG, "failed:" + e.getMessage());
+            	log_e(TAG, "failed:" + e.getMessage());
             }
         }
     }
@@ -680,7 +690,7 @@ public final class RedditIsFun extends ListActivity
 				HttpPost httppost = new HttpPost("http://www.reddit.com/api/vote");
 		        httppost.setEntity(new UrlEncodedFormEntity(nvps, HTTP.UTF_8));
 		        
-		        Log.d(TAG, nvps.toString());
+		        log_d(TAG, nvps.toString());
 		        
 	            // Perform the HTTP POST request
 		    	HttpResponse response = mClient.execute(httppost);
@@ -705,7 +715,7 @@ public final class RedditIsFun extends ListActivity
 	        		return;
 	        	}
 	        	
-	        	Log.d(TAG, line);
+	        	log_d(TAG, line);
 
 //    	        	// DEBUG
 //    	        	int c;
@@ -721,7 +731,7 @@ public final class RedditIsFun extends ListActivity
 //    	        			}
 //    	        			sb.append((char) c);
 //    	        		}
-//    	        		Log.d(TAG, "doLogin response content: " + sb.toString());
+//    	        		log_d(TAG, "doLogin response content: " + sb.toString());
 //    	        		sb = new StringBuilder();
 //    	        		if (done)
 //    	        			break;
@@ -732,12 +742,19 @@ public final class RedditIsFun extends ListActivity
 	        		entity.consumeContent();
 	        	
 	    	} catch (Exception e) {
-	            Log.e(TAG, e.getMessage());
+	            log_e(TAG, e.getMessage());
 	    	}
-	    	Log.d(TAG, status);
+	    	log_d(TAG, status);
 	    }
     }
     
+    /**
+     * Login. Runs in the UI thread (synchronous).
+     * FIXME: Make asynchronous
+     * @param username
+     * @param password
+     * @return
+     */
     public boolean doLogin(CharSequence username, CharSequence password) {
     	String status = "";
     	try {
@@ -784,7 +801,7 @@ public final class RedditIsFun extends ListActivity
 //        			}
 //        			sb.append((char) c);
 //        		}
-//        		Log.d(TAG, "doLogin response content: " + sb.toString());
+//        		log_d(TAG, "doLogin response content: " + sb.toString());
 //        		sb = new StringBuilder();
 //        		if (done)
 //        			break;
@@ -813,12 +830,14 @@ public final class RedditIsFun extends ListActivity
         	
         	mLoggedIn = true;
         	Toast.makeText(this, "Logged in as "+username, Toast.LENGTH_SHORT).show();
+        	// Refresh the threads list
+        	doGetThreadsList(mSubreddit);
         } catch (Exception e) {
             mHandler.post(new ErrorToaster("Error logging in. Please try again.", Toast.LENGTH_LONG));
         	mLoggedIn = false;
         }
         dismissDialog(DIALOG_LOGGING_IN);
-        Log.d(TAG, status);
+        log_d(TAG, status);
         return mLoggedIn;
     }
     
@@ -885,7 +904,7 @@ public final class RedditIsFun extends ListActivity
 //        			}
 //        			sb.append((char) c);
 //        		}
-//        		Log.d(TAG, "doLogin response content: " + sb.toString());
+//        		log_d(TAG, "doLogin response content: " + sb.toString());
 //        		sb = new StringBuilder();
 //        		if (done)
 //        			break;
@@ -896,11 +915,11 @@ public final class RedditIsFun extends ListActivity
         		entity.consumeContent();
         	
     	} catch (Exception e) {
-    		Log.e(TAG, e.getMessage());
+    		log_e(TAG, e.getMessage());
     		mHandler.post(new ErrorToaster("Error performing action. Please try again.", Toast.LENGTH_LONG));
     		return false;
     	}
-    	Log.d(TAG, "modhash: "+mModhash);
+    	log_d(TAG, "modhash: "+mModhash);
     	return true;
     }
     
@@ -914,7 +933,7 @@ public final class RedditIsFun extends ListActivity
         setClient(null);
         
         mLoggedIn = false;
-        Log.d(TAG, status);
+        log_d(TAG, status);
     }
     
     public boolean doVote(CharSequence thingId, int direction, CharSequence subreddit) {
@@ -1120,6 +1139,8 @@ public final class RedditIsFun extends ListActivity
     protected Dialog onCreateDialog(int id) {
     	Dialog dialog;
     	ProgressDialog pdialog;
+    	AlertDialog.Builder alertBuilder;
+    	
     	switch (id) {
     	case DIALOG_LOGIN:
     		dialog = new Dialog(this);
@@ -1168,7 +1189,11 @@ public final class RedditIsFun extends ListActivity
     	case DIALOG_POST_THREAD:
     		// TODO: a scrollable Dialog with Title, URL/Selftext, and subreddit.
     		// Or one of those things that pops up at bottom of screen, like browser "Find on page"
-    		dialog = null;
+    		alertBuilder = new AlertDialog.Builder(this);
+    		alertBuilder.setMessage("Sorry, this feature isn't implemented yet. Open in browser instead.")
+    				.setCancelable(true)
+    				.setPositiveButton("OK", null);
+    		dialog = alertBuilder.create();
     		break;
     		
    		// "Please wait"
@@ -1293,7 +1318,6 @@ public final class RedditIsFun extends ListActivity
      * 
      * @see android.app.Activity#onSaveInstanceState
      */
-    @SuppressWarnings("unchecked")
     @Override
     protected void onSaveInstanceState(Bundle outState) {
         super.onSaveInstanceState(outState);
