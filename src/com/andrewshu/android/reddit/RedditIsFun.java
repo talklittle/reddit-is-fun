@@ -5,10 +5,8 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.List;
 import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 import org.apache.commons.lang.StringEscapeUtils;
 import org.apache.http.HttpEntity;
@@ -20,7 +18,6 @@ import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.cookie.Cookie;
 import org.apache.http.impl.client.DefaultHttpClient;
-import org.apache.http.impl.cookie.BasicClientCookie;
 import org.apache.http.message.BasicNameValuePair;
 import org.apache.http.params.HttpConnectionParams;
 import org.apache.http.protocol.HTTP;
@@ -36,12 +33,10 @@ import android.app.ListActivity;
 import android.app.ProgressDialog;
 import android.content.Context;
 import android.content.Intent;
-import android.content.SharedPreferences;
 import android.content.res.Resources;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.Handler;
-import android.util.Log;
 import android.view.KeyEvent;
 import android.view.LayoutInflater;
 import android.view.Menu;
@@ -72,12 +67,7 @@ public final class RedditIsFun extends ListActivity
 
 	private static final String TAG = "RedditIsFun";
 	
-	public final String COMMENT_KIND = "t1";
-	public final String THREAD_KIND = "t3";
-	public final String SERIALIZE_SEPARATOR = "\r";
-	public final String LOOK_OF_DISAPPROVAL = "\u0ca0\u005f\u0ca0";
-	
-    private final JsonFactory jsonFactory = new JsonFactory(); 
+	private final JsonFactory jsonFactory = new JsonFactory(); 
 	
     /** Custom list adapter that fits our threads data into the list. */
     private ThreadsListAdapter mThreadsAdapter;
@@ -86,11 +76,10 @@ public final class RedditIsFun extends ListActivity
     /** Currently running background network thread. */
     private Thread mWorker;
     
-    static final String PREFS_SESSION = "RedditSession";
+    private RedditSettings mSettings = new RedditSettings();
     
     // Current HttpClient
     private DefaultHttpClient mClient = null;
-    private Cookie mRedditSessionCookie = null;
     
     // UI State
     private CharSequence mSubreddit = null;
@@ -100,74 +89,10 @@ public final class RedditIsFun extends ListActivity
     private CharSequence mTargetDomain = null;
     private View mVoteTargetView = null;
     private ThreadInfo mVoteTargetThreadInfo = null;
-    
-    // Login status
-    private boolean mLoggedIn = false;
-    private CharSequence mUsername = null;
-    private CharSequence mModhash = null;
-    
-    // startActivityForResult request codes
-    static final int ACTIVITY_PICK_SUBREDDIT = 0;
-    
-    // Menu and dialog actions
-    static final int DIALOG_PICK_SUBREDDIT = 0;
-    static final int DIALOG_REDDIT_COM = 1;
-    static final int DIALOG_LOGIN = 2;
-    static final int DIALOG_LOGOUT = 3;
-    static final int DIALOG_REFRESH = 4;
-    static final int DIALOG_POST_THREAD = 5;
-    static final int DIALOG_THREAD_CLICK = 6;
-    static final int DIALOG_LOGGING_IN = 7;
-    static final int DIALOG_LOADING_THREADS_LIST = 8;
-    static final int DIALOG_LOADING_COMMENTS_LIST = 9;
-    static final int DIALOG_LOADING_LOOK_OF_DISAPPROVAL = 10;
-    static final int DIALOG_OPEN_BROWSER = 11;
-    static final int DIALOG_THEME = 12;
-    
     static boolean mIsProgressDialogShowing = false;
     
-    // Themes
-    static final int THEME_LIGHT = 0;
-    static final int THEME_DARK = 1;
-    
-    private int mTheme = THEME_LIGHT;
-    private int mThemeResId = android.R.style.Theme_Light;
-    
-    // States for StateListDrawables
-    static final int[] STATE_CHECKED = new int[]{android.R.attr.state_checked};
-    static final int[] STATE_NONE = new int[0];
-    
-    // Strings
-    static final String TRUE_STRING = "true";
-    static final String FALSE_STRING = "false";
-    static final String NULL_STRING = "null";
-    
-    // Keys used for data in the onSaveInstanceState() Map.
-    public static final String STRINGS_KEY = "strings";
-    public static final String SELECTION_KEY = "selection";
-    public static final String URL_KEY = "url";
-    public static final String STATUS_KEY = "status";
-    
-    // A short HTML file returned by reddit, so we can get the modhash
-    public static final String MODHASH_URL = "http://www.reddit.com/stats";
-    
-    // The pattern to find modhash from HTML javascript area
-    public static final Pattern MODHASH_PATTERN = Pattern.compile("modhash: '(.*?)'");
-    
-    /**
-     * Disable this when releasing!
-     */
-    private static void log_d(String tag, String msg) {
-    	Log.d(tag, msg);
-    }
-    
-    /**
-     * Disable this when releasing!
-     */
-    private static void log_e(String tag, String msg) {
-    	Log.e(tag, msg);
-    }
-    
+    // Login status
+    private CharSequence mModhash = null;
     
     /**
      * Called when the activity starts up. Do activity initialization
@@ -179,8 +104,8 @@ public final class RedditIsFun extends ListActivity
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         
-        loadRedditPreferences();
-        setTheme(mThemeResId);
+        Common.loadRedditPreferences(this, mSettings, mClient);
+        setTheme(mSettings.themeResId);
         
         setContentView(R.layout.threads_list_content);
         // The above layout contains a list id "android:list"
@@ -205,13 +130,19 @@ public final class RedditIsFun extends ListActivity
     @Override
     protected void onResume() {
     	super.onResume();
-    	loadRedditPreferences();
+    	int previousTheme = mSettings.theme;
+    	Common.loadRedditPreferences(this, mSettings, mClient);
+    	if (mSettings.theme != previousTheme) {
+    		setTheme(mSettings.themeResId);
+    		setContentView(R.layout.threads_list_content);
+    		getListView().setAdapter(mThreadsAdapter);
+    	}
     }
     
     @Override
     protected void onPause() {
     	super.onPause();
-    	saveRedditPreferences();
+    	Common.saveRedditPreferences(this, mSettings);
     }
     
 
@@ -221,68 +152,17 @@ public final class RedditIsFun extends ListActivity
     	Bundle extras = intent.getExtras();
     	
     	switch(requestCode) {
-    	case ACTIVITY_PICK_SUBREDDIT:
+    	case Constants.ACTIVITY_PICK_SUBREDDIT:
     		mSubreddit = extras.getString(ThreadInfo.SUBREDDIT);
     		doGetThreadsList(mSubreddit);
     		break;
     	}
     }
     
-    private void saveRedditPreferences() {
-    	SharedPreferences settings = getSharedPreferences(PREFS_SESSION, 0);
-    	SharedPreferences.Editor editor = settings.edit();
-    	editor.clear();
-    	if (mLoggedIn) {
-	    	if (mUsername != null)
-	    		editor.putString("username", mUsername.toString());
-	    	if (mRedditSessionCookie != null) {
-	    		editor.putString("reddit_sessionValue",      mRedditSessionCookie.getValue());
-	    		editor.putString("reddit_sessionDomain",     mRedditSessionCookie.getDomain());
-	    		editor.putString("reddit_sessionPath",       mRedditSessionCookie.getPath());
-	    		if (mRedditSessionCookie.getExpiryDate() != null)
-	    			editor.putLong("reddit_sessionExpiryDate", mRedditSessionCookie.getExpiryDate().getTime());
-	    	}
-    	}
-    	switch (mTheme) {
-    	case THEME_DARK:
-    		editor.putInt("theme", THEME_DARK);
-    		editor.putInt("theme_resid", android.R.style.Theme);
-    		break;
-    	default:
-    		editor.putInt("theme", THEME_LIGHT);
-    		editor.putInt("theme_resid", android.R.style.Theme_Light);
-    	}
-    	editor.commit();
-    }
-    
-    private void loadRedditPreferences() {
-        // Retrieve the stored session info
-        SharedPreferences sessionPrefs = getSharedPreferences(PREFS_SESSION, 0);
-        mUsername = sessionPrefs.getString("username", null);
-        String cookieValue = sessionPrefs.getString("reddit_sessionValue", null);
-        String cookieDomain = sessionPrefs.getString("reddit_sessionDomain", null);
-        String cookiePath = sessionPrefs.getString("reddit_sessionPath", null);
-        long cookieExpiryDate = sessionPrefs.getLong("reddit_sessionExpiryDate", -1);
-        if (cookieValue != null) {
-        	BasicClientCookie redditSessionCookie = new BasicClientCookie("reddit_session", cookieValue);
-        	redditSessionCookie.setDomain(cookieDomain);
-        	redditSessionCookie.setPath(cookiePath);
-        	if (cookieExpiryDate != -1)
-        		redditSessionCookie.setExpiryDate(new Date(cookieExpiryDate));
-        	else
-        		redditSessionCookie.setExpiryDate(null);
-        	mRedditSessionCookie = redditSessionCookie;
-        	setClient(new DefaultHttpClient());
-        	mClient.getCookieStore().addCookie(mRedditSessionCookie);
-        	mLoggedIn = true;
-        }
-        mTheme = sessionPrefs.getInt("theme", THEME_LIGHT);
-        mThemeResId = sessionPrefs.getInt("theme_resid", android.R.style.Theme_Light);
-    }
     
     public class VoteUpOnCheckedChangeListener implements CompoundButton.OnCheckedChangeListener {
     	public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
-	    	dismissDialog(DIALOG_THREAD_CLICK);
+	    	dismissDialog(Constants.DIALOG_THING_CLICK);
 			if (isChecked)
 				doVote(mThingFullname, 1, mSubreddit);
 			else
@@ -292,7 +172,7 @@ public final class RedditIsFun extends ListActivity
     
     public class VoteDownOnCheckedChangeListener implements CompoundButton.OnCheckedChangeListener {
 	    public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
-	    	dismissDialog(DIALOG_THREAD_CLICK);
+	    	dismissDialog(Constants.DIALOG_THING_CLICK);
 			if (isChecked)
 				doVote(mThingFullname, -1, mSubreddit);
 			else
@@ -364,8 +244,8 @@ public final class RedditIsFun extends ListActivity
             ImageView voteDownView = (ImageView) view.findViewById(R.id.vote_down_image);
             
             titleView.setText(item.getTitle());
-            if (mTheme == THEME_LIGHT) {
-	            if (TRUE_STRING.equals(item.getClicked()))
+            if (mSettings.theme == Constants.THEME_LIGHT) {
+	            if (Constants.TRUE_STRING.equals(item.getClicked()))
 	            	titleView.setTextColor(res.getColor(R.color.purple));
 	            else
 	            	titleView.setTextColor(res.getColor(R.color.blue));
@@ -380,12 +260,12 @@ public final class RedditIsFun extends ListActivity
             titleView.setTag(item.getURL());
 
             // Set the up and down arrow colors based on whether user likes
-            if (mLoggedIn) {
-            	if (TRUE_STRING.equals(item.getLikes())) {
+            if (mSettings.loggedIn) {
+            	if (Constants.TRUE_STRING.equals(item.getLikes())) {
             		voteUpView.setImageResource(R.drawable.vote_up_red);
             		voteDownView.setImageResource(R.drawable.vote_down_gray);
             		votesView.setTextColor(res.getColor(R.color.arrow_red));
-            	} else if (FALSE_STRING.equals(item.getLikes())) {
+            	} else if (Constants.FALSE_STRING.equals(item.getLikes())) {
             		voteUpView.setImageResource(R.drawable.vote_up_gray);
             		voteDownView.setImageResource(R.drawable.vote_down_blue);
             		votesView.setTextColor(res.getColor(R.color.arrow_blue));
@@ -478,7 +358,7 @@ public final class RedditIsFun extends ListActivity
         mTargetDomain = item.getDomain();
         mVoteTargetView = v;
         
-        showDialog(DIALOG_THREAD_CLICK);
+        showDialog(Constants.DIALOG_THING_CLICK);
     }
 
     /**
@@ -542,7 +422,7 @@ public final class RedditIsFun extends ListActivity
     	setCurrentWorker(worker);
     	
     	resetUI();
-    	showDialog(DIALOG_LOADING_THREADS_LIST);
+    	showDialog(Constants.DIALOG_LOADING_THREADS_LIST);
     	mIsProgressDialogShowing = true;
     	
     	setTitle("/r/"+subreddit.toString().trim());
@@ -593,7 +473,7 @@ public final class RedditIsFun extends ListActivity
             	HttpResponse response = mClient.execute(request);
             	
             	// OK to dismiss the progress dialog when threads start loading
-            	dismissDialog(DIALOG_LOADING_THREADS_LIST);
+            	dismissDialog(Constants.DIALOG_LOADING_THREADS_LIST);
             	mIsProgressDialogShowing = false;
 
             	InputStream in = response.getEntity().getContent();
@@ -602,9 +482,9 @@ public final class RedditIsFun extends ListActivity
                 
                 mSubreddit = _mSubreddit;
             } catch (IOException e) {
-            	dismissDialog(DIALOG_LOADING_THREADS_LIST);
+            	dismissDialog(Constants.DIALOG_LOADING_THREADS_LIST);
             	mIsProgressDialogShowing = false;
-            	log_e(TAG, "failed:" + e.getMessage());
+            	Log.e(TAG, "failed:" + e.getMessage());
             }
         }
     }
@@ -654,7 +534,7 @@ public final class RedditIsFun extends ListActivity
     	@Override
     	public void run() {
 	    	String status = "";
-	    	if (!mLoggedIn) {
+	    	if (!mSettings.loggedIn) {
 	    		return;
 	    	}
 	    	if (_mDirection < -1 || _mDirection > 1) {
@@ -690,7 +570,7 @@ public final class RedditIsFun extends ListActivity
 				HttpPost httppost = new HttpPost("http://www.reddit.com/api/vote");
 		        httppost.setEntity(new UrlEncodedFormEntity(nvps, HTTP.UTF_8));
 		        
-		        log_d(TAG, nvps.toString());
+		        Log.d(TAG, nvps.toString());
 		        
 	            // Perform the HTTP POST request
 		    	HttpResponse response = mClient.execute(httppost);
@@ -715,7 +595,7 @@ public final class RedditIsFun extends ListActivity
 	        		return;
 	        	}
 	        	
-	        	log_d(TAG, line);
+	        	Log.d(TAG, line);
 
 //    	        	// DEBUG
 //    	        	int c;
@@ -731,7 +611,7 @@ public final class RedditIsFun extends ListActivity
 //    	        			}
 //    	        			sb.append((char) c);
 //    	        		}
-//    	        		log_d(TAG, "doLogin response content: " + sb.toString());
+//    	        		Log.d(TAG, "doLogin response content: " + sb.toString());
 //    	        		sb = new StringBuilder();
 //    	        		if (done)
 //    	        			break;
@@ -742,9 +622,9 @@ public final class RedditIsFun extends ListActivity
 	        		entity.consumeContent();
 	        	
 	    	} catch (Exception e) {
-	            log_e(TAG, e.getMessage());
+	            Log.e(TAG, e.getMessage());
 	    	}
-	    	log_d(TAG, status);
+	    	Log.d(TAG, status);
 	    }
     }
     
@@ -768,7 +648,7 @@ public final class RedditIsFun extends ListActivity
             HttpPost httppost = new HttpPost("http://www.reddit.com/api/login/"+username);
             httppost.setEntity(new UrlEncodedFormEntity(nvps, HTTP.UTF_8));
             
-            showDialog(DIALOG_LOGGING_IN);
+            showDialog(Constants.DIALOG_LOGGING_IN);
             
             // Perform the HTTP POST request
         	HttpResponse response = mClient.execute(httppost);
@@ -801,7 +681,7 @@ public final class RedditIsFun extends ListActivity
 //        			}
 //        			sb.append((char) c);
 //        		}
-//        		log_d(TAG, "doLogin response content: " + sb.toString());
+//        		Log.d(TAG, "doLogin response content: " + sb.toString());
 //        		sb = new StringBuilder();
 //        		if (done)
 //        			break;
@@ -817,7 +697,7 @@ public final class RedditIsFun extends ListActivity
         	}
         	for (Cookie c : cookies) {
         		if (c.getName().equals("reddit_session")) {
-        			mRedditSessionCookie = c;
+        			mSettings.redditSessionCookie = c;
         			break;
         		}
         	}
@@ -826,23 +706,23 @@ public final class RedditIsFun extends ListActivity
         	// Congratulations!
         	// You are a true reddit master!
         
-        	mUsername = username;
+        	mSettings.username = username;
         	
-        	mLoggedIn = true;
+        	mSettings.loggedIn = true;
         	Toast.makeText(this, "Logged in as "+username, Toast.LENGTH_SHORT).show();
         	// Refresh the threads list
         	doGetThreadsList(mSubreddit);
         } catch (Exception e) {
             mHandler.post(new ErrorToaster("Error logging in. Please try again.", Toast.LENGTH_LONG));
-        	mLoggedIn = false;
+        	mSettings.loggedIn = false;
         }
-        dismissDialog(DIALOG_LOGGING_IN);
-        log_d(TAG, status);
-        return mLoggedIn;
+        dismissDialog(Constants.DIALOG_LOGGING_IN);
+        Log.d(TAG, status);
+        return mSettings.loggedIn;
     }
     
     public boolean doUpdateModhash() {
-    	if (!mLoggedIn) {
+    	if (!mSettings.loggedIn) {
     		return false;
     	}
     	
@@ -856,7 +736,7 @@ public final class RedditIsFun extends ListActivity
     	try {
     		String status;
     		
-    		HttpGet httpget = new HttpGet(MODHASH_URL);
+    		HttpGet httpget = new HttpGet(Constants.MODHASH_URL);
     		HttpResponse response = mClient.execute(httpget);
     		
     		status = response.getStatusLine().toString();
@@ -871,23 +751,23 @@ public final class RedditIsFun extends ListActivity
         	in.read(buffer, 0, 2048);
         	String line = String.valueOf(buffer);
         	if (line == null) {
-        		throw new HttpException("No content returned from doUpdateModhash GET to "+MODHASH_URL);
+        		throw new HttpException("No content returned from doUpdateModhash GET to "+Constants.MODHASH_URL);
         	}
         	if (line.contains("USER_REQUIRED")) {
         		throw new Exception("User session error: USER_REQUIRED");
         	}
         	
-        	Matcher modhashMatcher = MODHASH_PATTERN.matcher(line);
+        	Matcher modhashMatcher = Constants.MODHASH_PATTERN.matcher(line);
         	if (modhashMatcher.find()) {
         		setModhash(modhashMatcher.group(1));
-        		if ("".equals(mModhash)) {
+        		if (Constants.EMPTY_STRING.equals(mModhash)) {
         			// Means user is not actually logged in.
         			doLogout();
         			mHandler.post(new ErrorToaster("You have been logged out. Please login again.", Toast.LENGTH_LONG));
         			return false;
         		}
         	} else {
-        		throw new Exception("No modhash found at URL "+MODHASH_URL);
+        		throw new Exception("No modhash found at URL "+Constants.MODHASH_URL);
         	}
 
 //        	// DEBUG
@@ -904,7 +784,7 @@ public final class RedditIsFun extends ListActivity
 //        			}
 //        			sb.append((char) c);
 //        		}
-//        		log_d(TAG, "doLogin response content: " + sb.toString());
+//        		Log.d(TAG, "doLogin response content: " + sb.toString());
 //        		sb = new StringBuilder();
 //        		if (done)
 //        			break;
@@ -915,11 +795,11 @@ public final class RedditIsFun extends ListActivity
         		entity.consumeContent();
         	
     	} catch (Exception e) {
-    		log_e(TAG, e.getMessage());
+    		Log.e(TAG, e.getMessage());
     		mHandler.post(new ErrorToaster("Error performing action. Please try again.", Toast.LENGTH_LONG));
     		return false;
     	}
-    	log_d(TAG, "modhash: "+mModhash);
+    	Log.d(TAG, "modhash: "+mModhash);
     	return true;
     }
     
@@ -929,15 +809,15 @@ public final class RedditIsFun extends ListActivity
         	mClient.getCookieStore().clear();
     	}
         
-    	mUsername = null;
+    	mSettings.username = null;
         setClient(null);
         
-        mLoggedIn = false;
-        log_d(TAG, status);
+        mSettings.loggedIn = false;
+        Log.d(TAG, status);
     }
     
     public boolean doVote(CharSequence thingId, int direction, CharSequence subreddit) {
-    	if (!mLoggedIn) {
+    	if (!mSettings.loggedIn) {
     		mHandler.post(new ErrorToaster("You must be logged in to vote.", Toast.LENGTH_LONG));
     		return false;
     	}
@@ -956,31 +836,31 @@ public final class RedditIsFun extends ListActivity
     	String newScore;
     	String newLikes;
     	int previousScore = Integer.valueOf(mVoteTargetThreadInfo.getScore());
-    	if (TRUE_STRING.equals(mVoteTargetThreadInfo.getLikes())) {
+    	if (Constants.TRUE_STRING.equals(mVoteTargetThreadInfo.getLikes())) {
     		if (direction == 0) {
     			newScore = String.valueOf(previousScore - 1);
     			newImageResourceUp = R.drawable.vote_up_gray;
     			newImageResourceDown = R.drawable.vote_down_gray;
-    			newLikes = NULL_STRING;
+    			newLikes = Constants.NULL_STRING;
     		} else if (direction == -1) {
     			newScore = String.valueOf(previousScore - 2);
     			newImageResourceUp = R.drawable.vote_up_gray;
     			newImageResourceDown = R.drawable.vote_down_blue;
-    			newLikes = FALSE_STRING;
+    			newLikes = Constants.FALSE_STRING;
     		} else {
     			return false;
     		}
-    	} else if (FALSE_STRING.equals(mVoteTargetThreadInfo.getLikes())) {
+    	} else if (Constants.FALSE_STRING.equals(mVoteTargetThreadInfo.getLikes())) {
     		if (direction == 1) {
     			newScore = String.valueOf(previousScore + 2);
     			newImageResourceUp = R.drawable.vote_up_red;
     			newImageResourceDown = R.drawable.vote_down_gray;
-    			newLikes = TRUE_STRING;
+    			newLikes = Constants.TRUE_STRING;
     		} else if (direction == 0) {
     			newScore = String.valueOf(previousScore + 1);
     			newImageResourceUp = R.drawable.vote_up_gray;
     			newImageResourceDown = R.drawable.vote_down_gray;
-    			newLikes = NULL_STRING;
+    			newLikes = Constants.NULL_STRING;
     		} else {
     			return false;
     		}
@@ -989,12 +869,12 @@ public final class RedditIsFun extends ListActivity
     			newScore = String.valueOf(previousScore + 1);
     			newImageResourceUp = R.drawable.vote_up_red;
     			newImageResourceDown = R.drawable.vote_down_gray;
-    			newLikes = TRUE_STRING;
+    			newLikes = Constants.TRUE_STRING;
     		} else if (direction == -1) {
     			newScore = String.valueOf(previousScore - 1);
     			newImageResourceUp = R.drawable.vote_up_gray;
     			newImageResourceDown = R.drawable.vote_down_blue;
-    			newLikes = FALSE_STRING;
+    			newLikes = Constants.FALSE_STRING;
     		} else {
     			return false;
     		}
@@ -1021,36 +901,36 @@ public final class RedditIsFun extends ListActivity
     public boolean onCreateOptionsMenu(Menu menu) {
         super.onCreateOptionsMenu(menu);
         
-        menu.add(0, DIALOG_PICK_SUBREDDIT, 0, "Pick subreddit")
-            .setOnMenuItemClickListener(new ThreadsListMenu(DIALOG_PICK_SUBREDDIT));
+        menu.add(0, Constants.DIALOG_PICK_SUBREDDIT, 0, "Pick subreddit")
+            .setOnMenuItemClickListener(new ThreadsListMenu(Constants.DIALOG_PICK_SUBREDDIT));
 
         // Login and Logout need to use the same ID for menu entry so they can be swapped
-        if (mLoggedIn) {
-        	menu.add(0, DIALOG_LOGIN, 1, "Logout: " + mUsername)
-       			.setOnMenuItemClickListener(new ThreadsListMenu(DIALOG_LOGOUT));
+        if (mSettings.loggedIn) {
+        	menu.add(0, Constants.DIALOG_LOGIN, 1, "Logout: " + mSettings.username)
+       			.setOnMenuItemClickListener(new ThreadsListMenu(Constants.DIALOG_LOGOUT));
         } else {
-        	menu.add(0, DIALOG_LOGIN, 1, "Login")
-       			.setOnMenuItemClickListener(new ThreadsListMenu(DIALOG_LOGIN));
+        	menu.add(0, Constants.DIALOG_LOGIN, 1, "Login")
+       			.setOnMenuItemClickListener(new ThreadsListMenu(Constants.DIALOG_LOGIN));
         }
         
-        menu.add(0, DIALOG_REFRESH, 2, "Refresh")
-        	.setOnMenuItemClickListener(new ThreadsListMenu(DIALOG_REFRESH));
+        menu.add(0, Constants.DIALOG_REFRESH, 2, "Refresh")
+        	.setOnMenuItemClickListener(new ThreadsListMenu(Constants.DIALOG_REFRESH));
         
-        menu.add(0, DIALOG_POST_THREAD, 3, "Post Thread")
-        	.setOnMenuItemClickListener(new ThreadsListMenu(DIALOG_POST_THREAD));
+        menu.add(0, Constants.DIALOG_POST_THREAD, 3, "Post Thread")
+        	.setOnMenuItemClickListener(new ThreadsListMenu(Constants.DIALOG_POST_THREAD));
         
-        if (mTheme == THEME_LIGHT) {
-        	menu.add(0, DIALOG_THEME, 4, "Dark")
+        if (mSettings.theme == Constants.THEME_LIGHT) {
+        	menu.add(0, Constants.DIALOG_THEME, 4, "Dark")
 //        		.setIcon(R.drawable.dark_circle_menu_icon)
-        		.setOnMenuItemClickListener(new ThreadsListMenu(DIALOG_THEME));
+        		.setOnMenuItemClickListener(new ThreadsListMenu(Constants.DIALOG_THEME));
         } else {
-        	menu.add(0, DIALOG_THEME, 4, "Light")
+        	menu.add(0, Constants.DIALOG_THEME, 4, "Light")
 //	    		.setIcon(R.drawable.light_circle_menu_icon)
-	    		.setOnMenuItemClickListener(new ThreadsListMenu(DIALOG_THEME));
+	    		.setOnMenuItemClickListener(new ThreadsListMenu(Constants.DIALOG_THEME));
         }
         
-        menu.add(0, DIALOG_OPEN_BROWSER, 5, "Open in browser")
-        	.setOnMenuItemClickListener(new ThreadsListMenu(DIALOG_OPEN_BROWSER));
+        menu.add(0, Constants.DIALOG_OPEN_BROWSER, 5, "Open in browser")
+        	.setOnMenuItemClickListener(new ThreadsListMenu(Constants.DIALOG_OPEN_BROWSER));
         
         return true;
     }
@@ -1060,20 +940,20 @@ public final class RedditIsFun extends ListActivity
     	super.onPrepareOptionsMenu(menu);
     	
     	// Login/Logout
-    	if (mLoggedIn) {
-	        menu.findItem(DIALOG_LOGIN).setTitle("Logout: " + mUsername)
-	        	.setOnMenuItemClickListener(new ThreadsListMenu(DIALOG_LOGOUT));
+    	if (mSettings.loggedIn) {
+	        menu.findItem(Constants.DIALOG_LOGIN).setTitle("Logout: " + mSettings.username)
+	        	.setOnMenuItemClickListener(new ThreadsListMenu(Constants.DIALOG_LOGOUT));
     	} else {
-            menu.findItem(DIALOG_LOGIN).setTitle("Login")
-            	.setOnMenuItemClickListener(new ThreadsListMenu(DIALOG_LOGIN));
+            menu.findItem(Constants.DIALOG_LOGIN).setTitle("Login")
+            	.setOnMenuItemClickListener(new ThreadsListMenu(Constants.DIALOG_LOGIN));
     	}
     	
     	// Theme: Light/Dark
-    	if (mTheme == THEME_LIGHT) {
-    		menu.findItem(DIALOG_THEME).setTitle("Dark");
+    	if (mSettings.theme == Constants.THEME_LIGHT) {
+    		menu.findItem(Constants.DIALOG_THEME).setTitle("Dark");
 //    			.setIcon(R.drawable.dark_circle_menu_icon);
     	} else {
-    		menu.findItem(DIALOG_THEME).setTitle("Light");
+    		menu.findItem(Constants.DIALOG_THEME).setTitle("Light");
 //    			.setIcon(R.drawable.light_circle_menu_icon);
     	}
         
@@ -1094,37 +974,37 @@ public final class RedditIsFun extends ListActivity
 
         public boolean onMenuItemClick(MenuItem item) {
         	switch (mAction) {
-        	case DIALOG_LOGIN:
-        	case DIALOG_POST_THREAD:
+        	case Constants.DIALOG_LOGIN:
+        	case Constants.DIALOG_POST_THREAD:
         		showDialog(mAction);
         		break;
-        	case DIALOG_PICK_SUBREDDIT:
+        	case Constants.DIALOG_PICK_SUBREDDIT:
         		Intent pickSubredditIntent = new Intent(RedditIsFun.this, PickSubredditActivity.class);
-        		startActivityForResult(pickSubredditIntent, ACTIVITY_PICK_SUBREDDIT);
+        		startActivityForResult(pickSubredditIntent, Constants.ACTIVITY_PICK_SUBREDDIT);
         		break;
-        	case DIALOG_OPEN_BROWSER:
+        	case Constants.DIALOG_OPEN_BROWSER:
         		String url = new StringBuilder("http://www.reddit.com/r/")
         			.append(mSubreddit).toString();
         		RedditIsFun.this.startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse(url)));
         		break;
-            case DIALOG_LOGOUT:
+            case Constants.DIALOG_LOGOUT:
         		doLogout();
         		Toast.makeText(RedditIsFun.this, "You have been logged out.", Toast.LENGTH_SHORT).show();
         		doGetThreadsList(mSubreddit);
         		break;
-        	case DIALOG_REFRESH:
+        	case Constants.DIALOG_REFRESH:
         		doGetThreadsList(mSubreddit);
         		break;
-        	case DIALOG_THEME:
-        		if (mTheme == THEME_LIGHT) {
-        			mTheme = THEME_DARK;
-        			mThemeResId = android.R.style.Theme;
+        	case Constants.DIALOG_THEME:
+        		if (mSettings.theme == Constants.THEME_LIGHT) {
+        			mSettings.theme = Constants.THEME_DARK;
+        			mSettings.themeResId = android.R.style.Theme;
         		} else {
-        			mTheme = THEME_LIGHT;
-        			mThemeResId = android.R.style.Theme_Light;
+        			mSettings.theme = Constants.THEME_LIGHT;
+        			mSettings.themeResId = android.R.style.Theme_Light;
         		}
-        		RedditIsFun.this.setTheme(mThemeResId);
-        		RedditIsFun.this.setContentView(R.layout.comments_list_content);
+        		RedditIsFun.this.setTheme(mSettings.themeResId);
+        		RedditIsFun.this.setContentView(R.layout.threads_list_content);
         		RedditIsFun.this.getListView().setAdapter(mThreadsAdapter);
         		break;
         	default:
@@ -1142,7 +1022,7 @@ public final class RedditIsFun extends ListActivity
     	AlertDialog.Builder alertBuilder;
     	
     	switch (id) {
-    	case DIALOG_LOGIN:
+    	case Constants.DIALOG_LOGIN:
     		dialog = new Dialog(this);
     		dialog.setContentView(R.layout.login_dialog);
     		dialog.setTitle("Login to reddit.com");
@@ -1162,7 +1042,7 @@ public final class RedditIsFun extends ListActivity
     			public boolean onKey(View v, int keyCode, KeyEvent event) {
     		        if ((event.getAction() == KeyEvent.ACTION_DOWN) && (keyCode == KeyEvent.KEYCODE_ENTER)) {
     		        	doLogin(loginUsernameInput.getText(), loginPasswordInput.getText());
-    		            dismissDialog(DIALOG_LOGIN);
+    		            dismissDialog(Constants.DIALOG_LOGIN);
     		        	return true;
     		        }
     		        return false;
@@ -1172,12 +1052,12 @@ public final class RedditIsFun extends ListActivity
     		loginButton.setOnClickListener(new OnClickListener() {
     			public void onClick(View v) {
     				doLogin(loginUsernameInput.getText(), loginPasswordInput.getText());
-    		        dismissDialog(DIALOG_LOGIN);
+    		        dismissDialog(Constants.DIALOG_LOGIN);
     		    }
     		});
     		break;
     		
-    	case DIALOG_THREAD_CLICK:
+    	case Constants.DIALOG_THING_CLICK:
     		dialog = new Dialog(this);
     		dialog.setContentView(R.layout.thread_click_dialog);
     		dialog.findViewById(R.id.thread_vote_up_button);
@@ -1186,7 +1066,7 @@ public final class RedditIsFun extends ListActivity
     		
     		break;
 
-    	case DIALOG_POST_THREAD:
+    	case Constants.DIALOG_POST_THREAD:
     		// TODO: a scrollable Dialog with Title, URL/Selftext, and subreddit.
     		// Or one of those things that pops up at bottom of screen, like browser "Find on page"
     		alertBuilder = new AlertDialog.Builder(this);
@@ -1197,21 +1077,21 @@ public final class RedditIsFun extends ListActivity
     		break;
     		
    		// "Please wait"
-    	case DIALOG_LOGGING_IN:
+    	case Constants.DIALOG_LOGGING_IN:
     		pdialog = new ProgressDialog(this);
     		pdialog.setMessage("Logging in...");
     		pdialog.setIndeterminate(true);
     		pdialog.setCancelable(true);
     		dialog = pdialog;
     		break;
-    	case DIALOG_LOADING_THREADS_LIST:
+    	case Constants.DIALOG_LOADING_THREADS_LIST:
     		pdialog = new ProgressDialog(this);
     		pdialog.setMessage("Loading subreddit...");
     		pdialog.setIndeterminate(true);
     		pdialog.setCancelable(true);
     		dialog = pdialog;
     		break;
-    	case DIALOG_LOADING_LOOK_OF_DISAPPROVAL:
+    	case Constants.DIALOG_LOADING_LOOK_OF_DISAPPROVAL:
     		pdialog = new ProgressDialog(this);
     		pdialog.setIndeterminate(true);
     		pdialog.setCancelable(true);
@@ -1231,14 +1111,14 @@ public final class RedditIsFun extends ListActivity
     	super.onPrepareDialog(id, dialog);
     	
     	switch (id) {
-    	case DIALOG_LOGIN:
-    		if (mUsername != null) {
+    	case Constants.DIALOG_LOGIN:
+    		if (mSettings.username != null) {
 	    		final TextView loginUsernameInput = (TextView) dialog.findViewById(R.id.login_username_input);
-	    		loginUsernameInput.setText(mUsername);
+	    		loginUsernameInput.setText(mSettings.username);
     		}
     		break;
     		
-    	case DIALOG_THREAD_CLICK:
+    	case Constants.DIALOG_THING_CLICK:
     		final CheckBox voteUpButton = (CheckBox) dialog.findViewById(R.id.thread_vote_up_button);
     		final CheckBox voteDownButton = (CheckBox) dialog.findViewById(R.id.thread_vote_down_button);
     		final TextView urlView = (TextView) dialog.findViewById(R.id.url);
@@ -1248,15 +1128,15 @@ public final class RedditIsFun extends ListActivity
     		urlView.setText(mTargetURL);
 
     		// Only show upvote/downvote if user is logged in
-    		if (mLoggedIn) {
+    		if (mSettings.loggedIn) {
     			voteUpButton.setVisibility(View.VISIBLE);
     			voteDownButton.setVisibility(View.VISIBLE);
     			// Set initial states of the vote buttons based on user's past actions
-	    		if (TRUE_STRING.equals(mVoteTargetThreadInfo.getLikes())) {
+	    		if (Constants.TRUE_STRING.equals(mVoteTargetThreadInfo.getLikes())) {
 	    			// User currenty likes it
 	    			voteUpButton.setChecked(true);
 	    			voteDownButton.setChecked(false);
-	    		} else if (FALSE_STRING.equals(mVoteTargetThreadInfo.getLikes())) {
+	    		} else if (Constants.FALSE_STRING.equals(mVoteTargetThreadInfo.getLikes())) {
 	    			// User currently dislikes it
 	    			voteUpButton.setChecked(false);
 	    			voteDownButton.setChecked(true);
@@ -1275,7 +1155,7 @@ public final class RedditIsFun extends ListActivity
     		// The "link" and "comments" buttons
     		OnClickListener commentsOnClickListener = new OnClickListener() {
     			public void onClick(View v) {
-    				dismissDialog(DIALOG_THREAD_CLICK);
+    				dismissDialog(Constants.DIALOG_THING_CLICK);
     				// Launch an Intent for RedditCommentsListActivity
     				Intent i = new Intent(RedditIsFun.this, RedditCommentsListActivity.class);
     				i.putExtra(ThreadInfo.SUBREDDIT, mSubreddit);
@@ -1291,7 +1171,7 @@ public final class RedditIsFun extends ListActivity
             } else {
             	linkButton.setOnClickListener(new OnClickListener() {
             		public void onClick(View v) {
-            			dismissDialog(DIALOG_THREAD_CLICK);
+            			dismissDialog(Constants.DIALOG_THING_CLICK);
             			// Launch Intent to goto the URL
             			RedditIsFun.this.startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse(mTargetURL.toString())));
             		}
@@ -1338,13 +1218,13 @@ public final class RedditIsFun extends ListActivity
             		strings.add(item.mValues.get(ThreadInfo.SAVE_KEYS[k]));
             	}
             }
-            strings.add(SERIALIZE_SEPARATOR);
+            strings.add(Constants.SERIALIZE_SEPARATOR);
         }
-        outState.putSerializable(STRINGS_KEY, strings);
+        outState.putSerializable(Constants.STRINGS_KEY, strings);
 
         // Save current selection index (if focussed)
         if (getListView().hasFocus()) {
-            outState.putInt(SELECTION_KEY, Integer.valueOf(getListView().getSelectedItemPosition()));
+            outState.putInt(Constants.SELECTION_KEY, Integer.valueOf(getListView().getSelectedItemPosition()));
         }
 
     }
@@ -1363,13 +1243,13 @@ public final class RedditIsFun extends ListActivity
         if (state == null) return;
 
         // Restore items from the big list of CharSequence objects
-        List<CharSequence> strings = (ArrayList<CharSequence>)state.getSerializable(STRINGS_KEY);
+        List<CharSequence> strings = (ArrayList<CharSequence>)state.getSerializable(Constants.STRINGS_KEY);
         List<ThreadInfo> items = new ArrayList<ThreadInfo>();
         for (int i = 0; i < strings.size(); i++) {
         	ThreadInfo ti = new ThreadInfo();
         	CharSequence key, value;
-        	while (!SERIALIZE_SEPARATOR.equals(strings.get(i))) {
-        		if (SERIALIZE_SEPARATOR.equals(strings.get(i+1))) {
+        	while (!Constants.SERIALIZE_SEPARATOR.equals(strings.get(i))) {
+        		if (Constants.SERIALIZE_SEPARATOR.equals(strings.get(i+1))) {
         			// Well, just skip the value instead of throwing an exception.
         			break;
         		}
@@ -1386,14 +1266,14 @@ public final class RedditIsFun extends ListActivity
         getListView().setAdapter(mThreadsAdapter);
 
         // Restore selection
-        if (state.containsKey(SELECTION_KEY)) {
+        if (state.containsKey(Constants.SELECTION_KEY)) {
             getListView().requestFocus(View.FOCUS_FORWARD);
             // todo: is above right? needed it to work
-            getListView().setSelection(state.getInt(SELECTION_KEY));
+            getListView().setSelection(state.getInt(Constants.SELECTION_KEY));
         }
         
         if (mIsProgressDialogShowing) {
-        	dismissDialog(DIALOG_LOADING_THREADS_LIST);
+        	dismissDialog(Constants.DIALOG_LOADING_THREADS_LIST);
         	mIsProgressDialogShowing = false;
         }
     }
@@ -1412,19 +1292,19 @@ public final class RedditIsFun extends ListActivity
 //    	if (JsonToken.START_OBJECT != jp.nextToken()) // starts with "{"
 //    		throw new IllegalStateException(genericListingError);
     	jp.nextToken();
-    	if (!"kind".equals(jp.getCurrentName()))
+    	if (!Constants.JSON_KIND.equals(jp.getCurrentName()))
     		throw new IllegalStateException(genericListingError);
     	jp.nextToken();
-    	if (!"Listing".equals(jp.getText()))
+    	if (!Constants.JSON_LISTING.equals(jp.getText()))
     		throw new IllegalStateException(genericListingError);
     	jp.nextToken();
-    	if (!"data".equals(jp.getCurrentName()))
+    	if (!Constants.JSON_DATA.equals(jp.getCurrentName()))
     		throw new IllegalStateException(genericListingError);
     	jp.nextToken();
     	if (JsonToken.START_OBJECT != jp.getCurrentToken())
     		throw new IllegalStateException(genericListingError);
     	jp.nextToken();
-    	while (!"children".equals(jp.getCurrentName())) {
+    	while (!Constants.JSON_CHILDREN.equals(jp.getCurrentName())) {
     		// Don't care
     		jp.nextToken();
     	}
@@ -1443,8 +1323,8 @@ public final class RedditIsFun extends ListActivity
 				String fieldname = jp.getCurrentName();
 				jp.nextToken(); // move to value, or START_OBJECT/START_ARRAY
 			
-				if ("kind".equals(fieldname)) {
-					if (!THREAD_KIND.equals(jp.getText())) {
+				if (Constants.JSON_KIND.equals(fieldname)) {
+					if (!Constants.THREAD_KIND.equals(jp.getText())) {
 						// Skip this JSON Object since it doesn't represent a thread.
 						// May encounter nested objects too.
 						int nested = 0;
@@ -1459,23 +1339,23 @@ public final class RedditIsFun extends ListActivity
 						}
 						break;  // Go on to the next thread (JSON Object) in the JSON Array.
 					}
-					ti.put("kind", THREAD_KIND);
-				} else if ("data".equals(fieldname)) { // contains an object
+					ti.put(Constants.JSON_KIND, Constants.THREAD_KIND);
+				} else if (Constants.JSON_DATA.equals(fieldname)) { // contains an object
 					while (jp.nextToken() != JsonToken.END_OBJECT) {
 						String namefield = jp.getCurrentName();
 						jp.nextToken(); // move to value
 						// Should validate each field but I'm lazy
-						if ("media".equals(namefield) && jp.getCurrentToken() == JsonToken.START_OBJECT) {
+						if (Constants.JSON_MEDIA.equals(namefield) && jp.getCurrentToken() == JsonToken.START_OBJECT) {
 							while (jp.nextToken() != JsonToken.END_OBJECT) {
 								String mediaNamefield = jp.getCurrentName();
 								jp.nextToken(); // move to value
-								ti.put("_media_"+mediaNamefield, jp.getText());
+								ti.put("media/"+mediaNamefield, jp.getText());
 							}
-						} else if ("media_embed".equals(namefield) && jp.getCurrentToken() == JsonToken.START_OBJECT) {
+						} else if (Constants.JSON_MEDIA_EMBED.equals(namefield) && jp.getCurrentToken() == JsonToken.START_OBJECT) {
 							while (jp.nextToken() != JsonToken.END_OBJECT) {
 								String mediaNamefield = jp.getCurrentName();
 								jp.nextToken(); // move to value
-								ti.put("_media_embed_"+mediaNamefield, jp.getText());
+								ti.put("media_embed/"+mediaNamefield, jp.getText());
 							}
 						} else {
 							ti.put(namefield, StringEscapeUtils.unescapeHtml(jp.getText()));
