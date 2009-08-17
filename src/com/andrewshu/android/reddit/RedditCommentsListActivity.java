@@ -89,15 +89,12 @@ public final class RedditCommentsListActivity extends ListActivity
     private RedditSettings mSettings = new RedditSettings(this);
     
     private ThreadInfo mOpThreadInfo;
+
     // Comments map, only used during parsing.
     // When manipulating stuff already in list, use mCommentsAdapter.
     private TreeMap<Integer, CommentInfo> mCommentsMap = new TreeMap<Integer, CommentInfo>();
     
     // UI State
-    private CharSequence mSubreddit = null;  // Should remain constant for the life of this instance
-    private CharSequence mThreadId = null;   // Should remain constant for the life of this instance
-    private CharSequence mThingFullname = null;
-    private CharSequence mTargetURL = null;
     private View mVoteTargetView = null;
     private CommentInfo mVoteTargetCommentInfo = null;
     
@@ -124,8 +121,8 @@ public final class RedditCommentsListActivity extends ListActivity
         // Pull current subreddit and thread info from Intent
         Bundle extras = getIntent().getExtras();
         if (extras != null) {
-        	mThreadId = extras.getString(ThreadInfo.ID);
-        	mSubreddit = extras.getString(ThreadInfo.SUBREDDIT);
+        	mSettings.setThreadId(extras.getString(ThreadInfo.ID));
+        	mSettings.setSubreddit(extras.getString(ThreadInfo.SUBREDDIT));
         } else {
         	// Quit, because the Comments List requires subreddit and thread id from Intent.
         	Log.e(TAG, "Quitting because no subreddit and thread id data was passed into the Intent.");
@@ -136,7 +133,7 @@ public final class RedditCommentsListActivity extends ListActivity
         mCommentsAdapter = new CommentsListAdapter(this, commentItems);
         getListView().setAdapter(mCommentsAdapter);
 
-        doGetCommentsList(mSubreddit, mThreadId);
+        doGetCommentsList();
     }
     
     @Override
@@ -156,20 +153,30 @@ public final class RedditCommentsListActivity extends ListActivity
     public class VoteUpOnCheckedChangeListener implements CompoundButton.OnCheckedChangeListener {
     	public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
 	    	dismissDialog(Constants.DIALOG_THING_CLICK);
+	    	String thingFullname;
+	    	if (mVoteTargetCommentInfo.getOP() != null)
+	    		thingFullname = mVoteTargetCommentInfo.getOP().getName();
+	    	else
+	    		thingFullname = mVoteTargetCommentInfo.getName();
 			if (isChecked)
-				doVote(mThingFullname, 1, mSubreddit);
+				doVote(thingFullname, 1, mSettings.subreddit);
 			else
-				doVote(mThingFullname, 0, mSubreddit);
+				doVote(thingFullname, 0, mSettings.subreddit);
 		}
     }
     
     public class VoteDownOnCheckedChangeListener implements CompoundButton.OnCheckedChangeListener {
 	    public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
 	    	dismissDialog(Constants.DIALOG_THING_CLICK);
+	    	String thingFullname;
+	    	if (mVoteTargetCommentInfo.getOP() != null)
+	    		thingFullname = mVoteTargetCommentInfo.getOP().getName();
+	    	else
+	    		thingFullname = mVoteTargetCommentInfo.getName();
 			if (isChecked)
-				doVote(mThingFullname, -1, mSubreddit);
+				doVote(thingFullname, -1, mSettings.subreddit);
 			else
-				doVote(mThingFullname, 0, mSubreddit);
+				doVote(thingFullname, 0, mSettings.subreddit);
 		}
     }
 
@@ -295,9 +302,14 @@ public final class RedditCommentsListActivity extends ListActivity
 	            	if (!Constants.NULL_STRING.equals(mOpThreadInfo.getSelftext())) {
 	            		selftextView.getSettings().setTextSize(TextSize.SMALLER);
 	            		String baseURL = new StringBuilder("http://www.reddit.com/r/")
-	            				.append(mSubreddit).append("/comments/").append(item.getId()).toString();
-	            		selftextView.loadDataWithBaseURL(baseURL,
-	            				StringEscapeUtils.unescapeHtml(mOpThreadInfo.getSelftext()), "text/html", "UTF-8", null);
+	            				.append(mSettings.subreddit).append("/comments/").append(item.getId()).toString();
+	            		String selftextHtml;
+	            		if (mSettings.theme == Constants.THEME_DARK)
+	            			selftextHtml = Constants.CSS_DARK;
+	            		else
+	            			selftextHtml = "";
+	            		selftextHtml += StringEscapeUtils.unescapeHtml(mOpThreadInfo.getSelftext()); 
+	            		selftextView.loadDataWithBaseURL(baseURL, selftextHtml, "text/html", "UTF-8", null);
 	            	} else {
 	            		selftextView.setVisibility(View.INVISIBLE);
 	            	}
@@ -410,15 +422,16 @@ public final class RedditCommentsListActivity extends ListActivity
         CommentInfo item = mCommentsAdapter.getItem(position);
         
         // Mark the OP post/regular comment as selected
-        if (item.getOP() != null)
-        	mThingFullname = item.getOP().getName();
-        else
-        	mThingFullname = item.getName();
         mVoteTargetCommentInfo = item;
         mVoteTargetView = v;
-        
+        String thingFullname;
+    	if (mVoteTargetCommentInfo.getOP() != null)
+    		thingFullname = mVoteTargetCommentInfo.getOP().getName();
+    	else
+    		thingFullname = mVoteTargetCommentInfo.getName();
+		
         if (mMorePositions.contains(position))
-        	doLoadMoreComments(position, mThingFullname, mSubreddit);
+        	doLoadMoreComments(position, thingFullname, mSettings.subreddit);
         else
         	showDialog(Constants.DIALOG_THING_CLICK);
     }
@@ -447,18 +460,15 @@ public final class RedditCommentsListActivity extends ListActivity
     /**
      * Given a subreddit name string and thread id36, starts the commentslist-download-thread going.
      */
-    private void doGetCommentsList(CharSequence subreddit, CharSequence id36) {
-    	if (subreddit == null || id36 == null)
-    		return;
-    	
-    	CommentsWorker worker = new CommentsWorker(subreddit, id36);
+    private void doGetCommentsList() {
+    	CommentsWorker worker = new CommentsWorker(mSettings.subreddit, mSettings.threadId);
     	setCurrentWorker(worker);
     	
     	resetUI();
     	showDialog(Constants.DIALOG_LOADING_COMMENTS_LIST);
     	mIsProgressDialogShowing = true;
     	
-    	setTitle("/r/"+subreddit.toString().trim());
+    	setTitle("/r/"+mSettings.subreddit.toString().trim());
     	
     	worker.start();
     }
@@ -531,7 +541,7 @@ public final class RedditCommentsListActivity extends ListActivity
                 
                 parseCommentsJSON(in, mCommentsAdapter);
                 
-                mSubreddit = _mSubreddit;
+                mSettings.setSubreddit(_mSubreddit);  // XXX necessary?
             } catch (Exception e) {
                 Log.e(TAG, "failed:" + e.getMessage());
             }
@@ -912,8 +922,7 @@ public final class RedditCommentsListActivity extends ListActivity
         	case Constants.DIALOG_OP:
         	case Constants.DIALOG_REPLY:
         		// From the menu, only used for the OP, which is a thread.
-            	mThingFullname = THREAD_KIND + "_" + mThreadId;
-                mVoteTargetCommentInfo = mCommentsAdapter.getItem(0);
+            	mVoteTargetCommentInfo = mCommentsAdapter.getItem(0);
                 showDialog(mAction);
                 break;
         	case Constants.DIALOG_LOGIN:
@@ -922,14 +931,14 @@ public final class RedditCommentsListActivity extends ListActivity
         	case Constants.DIALOG_LOGOUT:
         		Common.doLogout(mSettings);
         		Toast.makeText(RedditCommentsListActivity.this, "You have been logged out.", Toast.LENGTH_SHORT).show();
-        		doGetCommentsList(mSubreddit, mThreadId);
+        		doGetCommentsList();
         		break;
         	case Constants.DIALOG_REFRESH:
-        		doGetCommentsList(mSubreddit, mThreadId);
+        		doGetCommentsList();
         		break;
         	case Constants.DIALOG_OPEN_BROWSER:
         		String url = new StringBuilder("http://www.reddit.com/r/")
-        			.append(mSubreddit).append("/comments/").append(mThreadId).toString();
+        			.append(mSettings.subreddit).append("/comments/").append(mSettings.threadId).toString();
         		RedditCommentsListActivity.this.startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse(url)));
         		break;
         	case Constants.DIALOG_THEME:
@@ -1013,9 +1022,9 @@ public final class RedditCommentsListActivity extends ListActivity
     			public void onClick(View v) {
     				dismissDialog(Constants.DIALOG_REPLY);
     				if (mVoteTargetCommentInfo.getOP() != null) {
-    					doReply(mVoteTargetCommentInfo.getOP().getName(), replyBody.getText(), mSubreddit);
+    					doReply(mVoteTargetCommentInfo.getOP().getName(), replyBody.getText(), mSettings.subreddit);
     				} else {
-    					doReply(mVoteTargetCommentInfo.getName(), replyBody.getText(), mSubreddit);
+    					doReply(mVoteTargetCommentInfo.getName(), replyBody.getText(), mSettings.subreddit);
     				}
     			}
     		});
@@ -1052,16 +1061,44 @@ public final class RedditCommentsListActivity extends ListActivity
     @Override
     protected void onPrepareDialog(int id, Dialog dialog) {
     	super.onPrepareDialog(id, dialog);
-    	
+    	    	
     	switch (id) {
+    	case Constants.DIALOG_LOGIN:
+    		if (mSettings.username != null) {
+	    		final TextView loginUsernameInput = (TextView) dialog.findViewById(R.id.login_username_input);
+	    		loginUsernameInput.setText(mSettings.username);
+    		}
+    		final TextView loginPasswordInput = (TextView) dialog.findViewById(R.id.login_password_input);
+    		loginPasswordInput.setText("");
+    		break;
+    		
     	case Constants.DIALOG_OP:
     	case Constants.DIALOG_THING_CLICK:
     		String likes;
     		if (mVoteTargetCommentInfo.getOP() != null) {
-    			dialog.setTitle("OP:");
+    			dialog.setTitle("OP: " + mVoteTargetCommentInfo.getOP().getAuthor());
     			likes = mVoteTargetCommentInfo.getOP().getLikes();
+    			final TextView urlView = (TextView) dialog.findViewById(R.id.url);
+    			final Button linkButton = (Button) dialog.findViewById(R.id.thread_link_button);
+    			urlView.setText(mOpThreadInfo.getURL());
+    			if (id == Constants.DIALOG_OP) {
+	    			linkButton.setOnClickListener(new OnClickListener() {
+	    				public void onClick(View v) {
+	    					dismissDialog(Constants.DIALOG_OP);
+	    					startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse(mOpThreadInfo.getURL())));
+	    				}
+	    			});
+    			} else {
+    				linkButton.setOnClickListener(new OnClickListener() {
+	    				public void onClick(View v) {
+	    					dismissDialog(Constants.DIALOG_THING_CLICK);
+	    					startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse(mOpThreadInfo.getURL())));
+	    				}
+	    			});
+    			}
+    			linkButton.setVisibility(View.VISIBLE);
     		} else {
-    			dialog.setTitle("Comment:");
+    			dialog.setTitle("Comment by " + mVoteTargetCommentInfo.getAuthor());
     			likes = mVoteTargetCommentInfo.getLikes();
     		}
     		final CheckBox voteUpButton = (CheckBox) dialog.findViewById(R.id.comment_vote_up_button);
@@ -1072,6 +1109,7 @@ public final class RedditCommentsListActivity extends ListActivity
     		if (mSettings.loggedIn) {
     			voteUpButton.setVisibility(View.VISIBLE);
     			voteDownButton.setVisibility(View.VISIBLE);
+    			replyButton.setVisibility(View.VISIBLE);
     			
     			// Make sure the setChecked() actions don't actually vote just yet.
     			voteUpButton.setOnCheckedChangeListener(null);
@@ -1096,16 +1134,25 @@ public final class RedditCommentsListActivity extends ListActivity
 	    		voteDownButton.setOnCheckedChangeListener(new VoteDownOnCheckedChangeListener());
 
 	    		// The "reply" button
-	    		replyButton.setOnClickListener(new OnClickListener() {
-	    			public void onClick(View v) {
-	    				dismissDialog(Constants.DIALOG_THING_CLICK);
-	    				showDialog(Constants.DIALOG_REPLY);
-	        		}
-	    		});
+	    		if (id == Constants.DIALOG_OP) {
+		    		replyButton.setOnClickListener(new OnClickListener() {
+		    			public void onClick(View v) {
+		    				dismissDialog(Constants.DIALOG_OP);
+		    				showDialog(Constants.DIALOG_REPLY);
+		        		}
+		    		});
+	    		} else {
+	    			replyButton.setOnClickListener(new OnClickListener() {
+		    			public void onClick(View v) {
+		    				dismissDialog(Constants.DIALOG_THING_CLICK);
+		    				showDialog(Constants.DIALOG_REPLY);
+		        		}
+		    		});
+	    		}
     		} else {
-    			// TODO: "login" button.
     			voteUpButton.setVisibility(View.INVISIBLE);
     			voteDownButton.setVisibility(View.INVISIBLE);
+    			replyButton.setVisibility(View.INVISIBLE);
     		}
     		break;
     		

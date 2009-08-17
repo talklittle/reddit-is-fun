@@ -39,6 +39,9 @@ public class Constants {
     static final int THEME_LIGHT = 0;
     static final int THEME_DARK = 1;
     
+    // Special CSS for webviews to match themes
+    static final String CSS_DARK = "<body style=\"color:#c0c0c0;background-color:#181818\">";
+    
     // States for StateListDrawables
     static final int[] STATE_CHECKED = new int[]{android.R.attr.state_checked};
     static final int[] STATE_NONE = new int[0];
@@ -75,7 +78,5 @@ public class Constants {
     // Group 1: whole error. Group 2: the time part
     static final Pattern RATELIMIT_RETRY_PATTERN = Pattern.compile("(you are trying to submit too fast. try again in (.+?)\\.)");
 
-
-    
 
 }

@@ -34,7 +34,11 @@ public class RedditSettings {
 	
 	// --- States that change frequently. ---
 	CharSequence subreddit;
+	CharSequence threadId;  // Does not change for a given commentslist (OP is static)
 	
+	//
+	// --- Methods ---
+	//
 	
 	RedditSettings(Activity activity) {
 		this.activity = activity;
@@ -74,5 +78,9 @@ public class RedditSettings {
 	
 	synchronized void setSubreddit(CharSequence subreddit) {
 		this.subreddit = subreddit;
+	}
+	
+	synchronized void setThreadId(CharSequence threadId) {
+		this.threadId = threadId;
 	}
 }

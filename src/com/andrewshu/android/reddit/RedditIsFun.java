@@ -63,10 +63,6 @@ public final class RedditIsFun extends ListActivity
     private RedditSettings mSettings = new RedditSettings(this);
     
     // UI State
-    private CharSequence mThingFullname = null;
-    private CharSequence mThingId = null;
-    private CharSequence mTargetURL = null;
-    private CharSequence mTargetDomain = null;
     private View mVoteTargetView = null;
     private ThreadInfo mVoteTargetThreadInfo = null;
     static boolean mIsProgressDialogShowing = false;
@@ -144,9 +140,9 @@ public final class RedditIsFun extends ListActivity
     	public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
 	    	dismissDialog(Constants.DIALOG_THING_CLICK);
 			if (isChecked)
-				doVote(mThingFullname, 1, mSettings.subreddit);
+				doVote(mVoteTargetThreadInfo.getName(), 1, mSettings.subreddit);
 			else
-				doVote(mThingFullname, 0, mSettings.subreddit);
+				doVote(mVoteTargetThreadInfo.getName(), 0, mSettings.subreddit);
 		}
     }
     
@@ -154,9 +150,9 @@ public final class RedditIsFun extends ListActivity
 	    public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
 	    	dismissDialog(Constants.DIALOG_THING_CLICK);
 			if (isChecked)
-				doVote(mThingFullname, -1, mSettings.subreddit);
+				doVote(mVoteTargetThreadInfo.getName(), -1, mSettings.subreddit);
 			else
-				doVote(mThingFullname, 0, mSettings.subreddit);
+				doVote(mVoteTargetThreadInfo.getName(), 0, mSettings.subreddit);
 		}
     }
 
@@ -331,11 +327,7 @@ public final class RedditIsFun extends ListActivity
         ThreadInfo item = mThreadsAdapter.getItem(position);
         
         // Mark the thread as selected
-        mThingFullname = item.getName();
-        mThingId = item.getId();
         mVoteTargetThreadInfo = item;
-        mTargetURL = item.getURL();
-        mTargetDomain = item.getDomain();
         mVoteTargetView = v;
         
         showDialog(Constants.DIALOG_THING_CLICK);
@@ -713,8 +705,6 @@ public final class RedditIsFun extends ListActivity
     		dialog.setContentView(R.layout.thread_click_dialog);
     		dialog.findViewById(R.id.thread_vote_up_button);
     		dialog.findViewById(R.id.thread_vote_down_button);
-    		dialog.setTitle("Thread:");
-    		
     		break;
 
     	case Constants.DIALOG_POST_THREAD:
@@ -767,16 +757,19 @@ public final class RedditIsFun extends ListActivity
 	    		final TextView loginUsernameInput = (TextView) dialog.findViewById(R.id.login_username_input);
 	    		loginUsernameInput.setText(mSettings.username);
     		}
+    		final TextView loginPasswordInput = (TextView) dialog.findViewById(R.id.login_password_input);
+    		loginPasswordInput.setText("");
     		break;
     		
     	case Constants.DIALOG_THING_CLICK:
+    		dialog.setTitle("Submitted by " + mVoteTargetThreadInfo.getAuthor());
     		final CheckBox voteUpButton = (CheckBox) dialog.findViewById(R.id.thread_vote_up_button);
     		final CheckBox voteDownButton = (CheckBox) dialog.findViewById(R.id.thread_vote_down_button);
     		final TextView urlView = (TextView) dialog.findViewById(R.id.url);
     		final Button linkButton = (Button) dialog.findViewById(R.id.thread_link_button);
     		final Button commentsButton = (Button) dialog.findViewById(R.id.thread_comments_button);
     		
-    		urlView.setText(mTargetURL);
+    		urlView.setText(mVoteTargetThreadInfo.getURL());
 
     		// Only show upvote/downvote if user is logged in
     		if (mSettings.loggedIn) {
@@ -810,13 +803,13 @@ public final class RedditIsFun extends ListActivity
     				// Launch an Intent for RedditCommentsListActivity
     				Intent i = new Intent(RedditIsFun.this, RedditCommentsListActivity.class);
     				i.putExtra(ThreadInfo.SUBREDDIT, mSettings.subreddit);
-    				i.putExtra(ThreadInfo.ID, mThingId);
+    				i.putExtra(ThreadInfo.ID, mVoteTargetThreadInfo.getId());
     				startActivity(i);
         		}
     		};
     		commentsButton.setOnClickListener(commentsOnClickListener);
     		// TODO: Handle bestof posts, which aren't self posts
-            if (("self."+mSettings.subreddit).toLowerCase().equals(mTargetDomain.toString().toLowerCase())) {
+            if (("self."+mSettings.subreddit).toLowerCase().equals(mVoteTargetThreadInfo.getDomain().toLowerCase())) {
             	// It's a self post. Both buttons do the same thing.
             	linkButton.setOnClickListener(commentsOnClickListener);
             } else {
@@ -824,7 +817,7 @@ public final class RedditIsFun extends ListActivity
             		public void onClick(View v) {
             			dismissDialog(Constants.DIALOG_THING_CLICK);
             			// Launch Intent to goto the URL
-            			RedditIsFun.this.startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse(mTargetURL.toString())));
+            			RedditIsFun.this.startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse(mVoteTargetThreadInfo.getURL())));
             		}
             	});
             }

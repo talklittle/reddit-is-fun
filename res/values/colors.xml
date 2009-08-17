@@ -24,6 +24,7 @@
     <color name="purple">#ff551a8b</color>
     <color name="arrow_red">#ffff8a63</color>
     <color name="arrow_blue">#ff9494ff</color>
+    <color name="arrow_gray">#ffc0c0c0</color>
     
     <color name="medium_pale_yellow">#ffffff99</color>
 </resources>

@@ -14,6 +14,14 @@
    		android:ellipsize="marquee"
    		android:textSize="9dip"
    		/>
+   		
+   	<TextView android:id="@id/submitter"
+   		android:layout_width="wrap_content"
+   		android:layout_height="wrap_content"
+   		android:singleLine="true"
+   		android:ellipsize="marquee"
+   		android:textSize="12dip"
+   		/>
 	
 	<LinearLayout
     	android:orientation="horizontal"
