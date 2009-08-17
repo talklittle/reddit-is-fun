@@ -65,7 +65,8 @@ public final class RedditIsFun extends ListActivity
     // UI State
     private View mVoteTargetView = null;
     private ThreadInfo mVoteTargetThreadInfo = null;
-    static boolean mIsProgressDialogShowing = false;
+    static boolean mIsLoggingInProgressShowing = false;
+    static boolean mIsLoadingThreadsProgressShowing = false;
     
     /**
      * Called when the activity starts up. Do activity initialization
@@ -91,7 +92,7 @@ public final class RedditIsFun extends ListActivity
         mThreadsAdapter = new ThreadsListAdapter(this, items);
         getListView().setAdapter(mThreadsAdapter);
 
-        doGetThreadsList(mSettings.subreddit);
+        doGetThreadsList();
         
         // NOTE: this could use the icicle as done in
         // onRestoreInstanceState().
@@ -109,7 +110,7 @@ public final class RedditIsFun extends ListActivity
     		getListView().setAdapter(mThreadsAdapter);
     	}
     	if (mSettings.loggedIn != previousLoggedIn) {
-    		doGetThreadsList(mSettings.subreddit);
+    		doGetThreadsList();
     	}
     }
     
@@ -130,7 +131,7 @@ public final class RedditIsFun extends ListActivity
     	switch(requestCode) {
     	case Constants.ACTIVITY_PICK_SUBREDDIT:
     		mSettings.setSubreddit(extras.getString(ThreadInfo.SUBREDDIT));
-    		doGetThreadsList(mSettings.subreddit);
+    		doGetThreadsList();
     		break;
     	}
     }
@@ -154,6 +155,26 @@ public final class RedditIsFun extends ListActivity
 			else
 				doVote(mVoteTargetThreadInfo.getName(), 0, mSettings.subreddit);
 		}
+    }
+    
+    public class LoginFinishedCallback implements Runnable {
+    	@Override
+    	public void run() {
+    		dismissDialog(Constants.DIALOG_LOGGING_IN);
+    		mIsLoggingInProgressShowing = false;
+	    	if (mSettings.loggedIn) {
+	    		// Refresh the threads list
+		    	doGetThreadsList();
+    		}
+    	}
+    }
+    
+    private class LoadingThreadsFinishedCallback implements Runnable {
+    	@Override
+    	public void run() {
+    		dismissDialog(Constants.DIALOG_LOADING_THREADS_LIST);
+    		mIsLoadingThreadsProgressShowing = false;
+    	}
     }
 
 
@@ -360,7 +381,7 @@ public final class RedditIsFun extends ListActivity
      * @param worker
      * @return
      */
-    public synchronized boolean isCurrentWorker(ThreadsWorker worker) {
+    public synchronized boolean isCurrentWorker(Thread worker) {
         return (mWorker == worker);
     }
     
@@ -369,11 +390,11 @@ public final class RedditIsFun extends ListActivity
      * 
      * @param subreddit The name of a subreddit ("reddit.com", "gaming", etc.) 
      */
-    private void doGetThreadsList(CharSequence subreddit) {
-    	if (subreddit == null)
+    private void doGetThreadsList() {
+    	if (mSettings.subreddit == null)
     		return;
     	
-    	if ("jailbait".equals(subreddit.toString())) {
+    	if ("jailbait".equals(mSettings.subreddit.toString())) {
     		Toast lodToast = Toast.makeText(this, "", Toast.LENGTH_LONG);
     		View lodView = ((LayoutInflater) getSystemService(Context.LAYOUT_INFLATER_SERVICE))
     			.inflate(R.layout.look_of_disapproval_view, null);
@@ -381,14 +402,14 @@ public final class RedditIsFun extends ListActivity
     		lodToast.show();
     	}
     	
-    	ThreadsWorker worker = new ThreadsWorker(subreddit);
+    	ThreadsWorker worker = new ThreadsWorker(mSettings.subreddit, mSettings);
     	setCurrentWorker(worker);
     	
     	resetUI();
+    	mIsLoadingThreadsProgressShowing = true;
     	showDialog(Constants.DIALOG_LOADING_THREADS_LIST);
-    	mIsProgressDialogShowing = true;
     	
-    	setTitle("/r/"+subreddit.toString().trim());
+    	setTitle("/r/"+mSettings.subreddit.toString().trim());
     	
     	worker.start();
     }
@@ -419,9 +440,11 @@ public final class RedditIsFun extends ListActivity
      */
     private class ThreadsWorker extends Thread {
         private CharSequence _mSubreddit;
+        private RedditSettings _mSettings;
 
-        public ThreadsWorker(CharSequence subreddit) {
+        public ThreadsWorker(CharSequence subreddit, RedditSettings settings) {
             _mSubreddit = subreddit;
+            _mSettings = settings;
         }
 
         @Override
@@ -432,19 +455,16 @@ public final class RedditIsFun extends ListActivity
             		.append("/.json").toString());
             	HttpResponse response = mSettings.client.execute(request);
             	
-            	// OK to dismiss the progress dialog when threads start loading
-            	dismissDialog(Constants.DIALOG_LOADING_THREADS_LIST);
-            	mIsProgressDialogShowing = false;
-
             	InputStream in = response.getEntity().getContent();
-                
                 parseSubredditJSON(in, mThreadsAdapter);
                 
                 mSettings.setSubreddit(_mSubreddit);
             } catch (IOException e) {
-            	dismissDialog(Constants.DIALOG_LOADING_THREADS_LIST);
-            	mIsProgressDialogShowing = false;
             	Log.e(TAG, "failed:" + e.getMessage());
+            }
+            if (_mSettings.isAlive) {
+	        	// Dismiss the dialog
+	        	_mSettings.handler.post(new LoadingThreadsFinishedCallback());
             }
         }
     }
@@ -625,10 +645,10 @@ public final class RedditIsFun extends ListActivity
             case Constants.DIALOG_LOGOUT:
         		Common.doLogout(mSettings);
         		Toast.makeText(RedditIsFun.this, "You have been logged out.", Toast.LENGTH_SHORT).show();
-        		doGetThreadsList(mSettings.subreddit);
+        		doGetThreadsList();
         		break;
         	case Constants.DIALOG_REFRESH:
-        		doGetThreadsList(mSettings.subreddit);
+        		doGetThreadsList();
         		break;
         	case Constants.DIALOG_THEME:
         		if (mSettings.theme == Constants.THEME_LIGHT) {
@@ -677,11 +697,12 @@ public final class RedditIsFun extends ListActivity
     			public boolean onKey(View v, int keyCode, KeyEvent event) {
     		        if ((event.getAction() == KeyEvent.ACTION_DOWN) && (keyCode == KeyEvent.KEYCODE_ENTER)) {
     		        	dismissDialog(Constants.DIALOG_LOGIN);
+    		        	mIsLoggingInProgressShowing = true;
     		        	showDialog(Constants.DIALOG_LOGGING_IN);
-    		        	Common.doLogin(loginUsernameInput.getText(), loginPasswordInput.getText(), mSettings);
-    		            dismissDialog(Constants.DIALOG_LOGGING_IN);
-    		        	// Refresh the threads list
-    		        	doGetThreadsList(mSettings.subreddit);
+    		        	LoginWorker lw = new LoginWorker(
+    		        			loginUsernameInput.getText(), loginPasswordInput.getText(), mSettings, new LoginFinishedCallback());
+    		        	RedditIsFun.this.setCurrentWorker(lw);
+    		        	lw.start();
     		        	return true;
     		        }
     		        return false;
@@ -691,11 +712,12 @@ public final class RedditIsFun extends ListActivity
     		loginButton.setOnClickListener(new OnClickListener() {
     			public void onClick(View v) {
     				dismissDialog(Constants.DIALOG_LOGIN);
+    				mIsLoggingInProgressShowing = true;
     	        	showDialog(Constants.DIALOG_LOGGING_IN);
-    				Common.doLogin(loginUsernameInput.getText(), loginPasswordInput.getText(), mSettings);
-    				dismissDialog(Constants.DIALOG_LOGGING_IN);
-    		        // Refresh the threads list
-    	        	doGetThreadsList(mSettings.subreddit);
+    	        	LoginWorker lw = new LoginWorker(
+		        			loginUsernameInput.getText(), loginPasswordInput.getText(), mSettings, new LoginFinishedCallback());
+		        	RedditIsFun.this.setCurrentWorker(lw);
+		        	lw.start();
     		    }
     		});
     		break;
@@ -857,17 +879,17 @@ public final class RedditIsFun extends ListActivity
         ArrayList<CharSequence> strings = new ArrayList<CharSequence>();
         for (int i = 0; i < count; i++) {
             ThreadInfo item = mThreadsAdapter.getItem(i);
-            for (int k = 0; k < ThreadInfo.SAVE_KEYS.length; k++) {
-            	if (item.mValues.containsKey(ThreadInfo.SAVE_KEYS[k])) {
-            		strings.add(ThreadInfo.SAVE_KEYS[k]);
-            		strings.add(item.mValues.get(ThreadInfo.SAVE_KEYS[k]));
+            for (int k = 0; k < ThreadInfo._KEYS.length; k++) {
+            	if (item.mValues.containsKey(ThreadInfo._KEYS[k])) {
+            		strings.add(ThreadInfo._KEYS[k]);
+            		strings.add(item.mValues.get(ThreadInfo._KEYS[k]));
             	}
             }
             strings.add(Constants.SERIALIZE_SEPARATOR);
         }
         outState.putSerializable(Constants.STRINGS_KEY, strings);
 
-        // Save current selection index (if focussed)
+        // Save current selection index (if focused)
         if (getListView().hasFocus()) {
             outState.putInt(Constants.SELECTION_KEY, Integer.valueOf(getListView().getSelectedItemPosition()));
         }
@@ -889,7 +911,7 @@ public final class RedditIsFun extends ListActivity
 
         // Restore items from the big list of CharSequence objects
         List<CharSequence> strings = (ArrayList<CharSequence>)state.getSerializable(Constants.STRINGS_KEY);
-        List<ThreadInfo> items = new ArrayList<ThreadInfo>();
+        resetUI();
         for (int i = 0; i < strings.size(); i++) {
         	ThreadInfo ti = new ThreadInfo();
         	CharSequence key, value;
@@ -903,12 +925,8 @@ public final class RedditIsFun extends ListActivity
         		ti.put(key.toString(), value.toString());
         		i += 2;
         	}
-            items.add(ti);
+            mThreadsAdapter.add(ti);
         }
-
-        // Reset the list view to show this data.
-        mThreadsAdapter = new ThreadsListAdapter(this, items);
-        getListView().setAdapter(mThreadsAdapter);
 
         // Restore selection
         if (state.containsKey(Constants.SELECTION_KEY)) {
@@ -917,9 +935,13 @@ public final class RedditIsFun extends ListActivity
             getListView().setSelection(state.getInt(Constants.SELECTION_KEY));
         }
         
-        if (mIsProgressDialogShowing) {
-        	dismissDialog(Constants.DIALOG_LOADING_THREADS_LIST);
-        	mIsProgressDialogShowing = false;
+        try {
+	        if (mIsLoggingInProgressShowing)
+	        	dismissDialog(Constants.DIALOG_LOGGING_IN);
+	        if (mIsLoadingThreadsProgressShowing)
+	        	dismissDialog(Constants.DIALOG_LOADING_THREADS_LIST);
+        } catch (IllegalArgumentException e) {
+        	// Ignore.
         }
     }
 

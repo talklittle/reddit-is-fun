@@ -2,24 +2,15 @@ package com.andrewshu.android.reddit;
 
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
-import java.util.ArrayList;
 import java.util.Date;
-import java.util.List;
 import java.util.regex.Matcher;
 
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpException;
 import org.apache.http.HttpResponse;
-import org.apache.http.NameValuePair;
-import org.apache.http.client.entity.UrlEncodedFormEntity;
 import org.apache.http.client.methods.HttpGet;
-import org.apache.http.client.methods.HttpPost;
-import org.apache.http.cookie.Cookie;
 import org.apache.http.impl.client.DefaultHttpClient;
 import org.apache.http.impl.cookie.BasicClientCookie;
-import org.apache.http.message.BasicNameValuePair;
-import org.apache.http.params.HttpConnectionParams;
-import org.apache.http.protocol.HTTP;
 
 import android.app.Activity;
 import android.content.SharedPreferences;
@@ -90,94 +81,7 @@ public class Common {
         rSettings.setThemeResId(sessionPrefs.getInt("theme_resid", android.R.style.Theme_Light));
     }
     
-    /**
-     * Login. Runs in the UI thread (synchronous).
-     * @param username
-     * @param password
-     * @return
-     */
-    static boolean doLogin(CharSequence username, CharSequence password, RedditSettings settings) {
-    	String status = "";
-    	String userError = "Error logging in. Please try again.";
-    	try {
-    		// Construct data
-    		List<NameValuePair> nvps = new ArrayList<NameValuePair>();
-    		nvps.add(new BasicNameValuePair("user", username.toString()));
-    		nvps.add(new BasicNameValuePair("passwd", password.toString()));
-    		
-            settings.client.getParams().setParameter(HttpConnectionParams.SO_TIMEOUT, 20000);
-            HttpPost httppost = new HttpPost("http://www.reddit.com/api/login/"+username);
-            httppost.setEntity(new UrlEncodedFormEntity(nvps, HTTP.UTF_8));
-            
-            // Perform the HTTP POST request
-        	HttpResponse response = settings.client.execute(httppost);
-        	status = response.getStatusLine().toString();
-        	if (!status.contains("OK"))
-        		throw new HttpException(status);
-        	
-        	HttpEntity entity = response.getEntity();
-        	
-        	BufferedReader in = new BufferedReader(new InputStreamReader(entity.getContent()));
-        	String line = in.readLine();
-        	if (line == null) {
-        		throw new HttpException("No content returned from login POST");
-        	}
-        	if (line.contains("WRONG_PASSWORD")) {
-        		userError = "Bad password.";
-        		throw new Exception("Wrong password");
-        	}
-
-        	// DEBUG
-//        	int c;
-//        	boolean done = false;
-//        	StringBuilder sb = new StringBuilder();
-//        	while ((c = in.read()) >= 0) {
-//        		sb.append((char) c);
-//        		for (int i = 0; i < 80; i++) {
-//        			c = in.read();
-//        			if (c < 0) {
-//        				done = true;
-//        				break;
-//        			}
-//        			sb.append((char) c);
-//        		}
-//        		Log.d(TAG, "doLogin response content: " + sb.toString());
-//        		sb = new StringBuilder();
-//        		if (done)
-//        			break;
-//        	}
-        	
-        	in.close();
-        	if (entity != null)
-        		entity.consumeContent();
-        	
-        	List<Cookie> cookies = settings.client.getCookieStore().getCookies();
-        	if (cookies.isEmpty()) {
-        		throw new HttpException("Failed to login: No cookies");
-        	}
-        	for (Cookie c : cookies) {
-        		if (c.getName().equals("reddit_session")) {
-        			settings.setRedditSessionCookie(c);
-        			break;
-        		}
-        	}
-        	
-        	// Getting here means you successfully logged in.
-        	// Congratulations!
-        	// You are a true reddit master!
         
-        	settings.setUsername(username);
-        	settings.setLoggedIn(true);
-        	Toast.makeText(settings.activity, "Logged in as "+username, Toast.LENGTH_SHORT).show();
-        } catch (Exception e) {
-            settings.handler.post(new ErrorToaster(userError, Toast.LENGTH_LONG, settings));
-        	settings.setLoggedIn(false);
-        }
-        Log.d(TAG, status);
-        return settings.loggedIn;
-    }
-
-    
     static void doLogout(RedditSettings settings) {
     	settings.client.getCookieStore().clear();
     	settings.setUsername(null);

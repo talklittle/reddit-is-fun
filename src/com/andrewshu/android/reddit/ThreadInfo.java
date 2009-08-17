@@ -41,11 +41,6 @@ public class ThreadInfo {
 		ID, KIND, LIKES, MEDIA, NAME, NUM_COMMENTS, SAVED, SCORE, SELFTEXT,
 		SUBREDDIT, SUBREDDIT_ID, THEN, THUMBNAIL, TITLE, UPS, URL
 	};
-	// Only save the keys we actually use.
-	public static final String[] SAVE_KEYS = {
-		AUTHOR, CLICKED, DOMAIN, DOWNS, HIDDEN, ID, KIND, LIKES, NAME, NUM_COMMENTS,
-		SAVED, SCORE, SELFTEXT, SUBREDDIT, TITLE, UPS, URL
-	};
 	
 	public HashMap<String, String> mValues = new HashMap<String, String>();
 	public JsonNode mMediaEmbed; // Unused.

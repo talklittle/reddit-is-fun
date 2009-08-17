@@ -1,28 +1,15 @@
 package com.andrewshu.android.reddit;
 
-import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.TreeMap;
-import java.util.regex.Matcher;
 
 import org.apache.commons.lang.StringEscapeUtils;
-import org.apache.http.HttpEntity;
-import org.apache.http.HttpException;
 import org.apache.http.HttpResponse;
-import org.apache.http.NameValuePair;
-import org.apache.http.client.entity.UrlEncodedFormEntity;
 import org.apache.http.client.methods.HttpGet;
-import org.apache.http.client.methods.HttpPost;
-import org.apache.http.cookie.Cookie;
-import org.apache.http.impl.client.DefaultHttpClient;
-import org.apache.http.message.BasicNameValuePair;
-import org.apache.http.params.HttpConnectionParams;
-import org.apache.http.protocol.HTTP;
 import org.codehaus.jackson.JsonFactory;
 import org.codehaus.jackson.JsonParseException;
 import org.codehaus.jackson.JsonParser;
@@ -97,8 +84,8 @@ public final class RedditCommentsListActivity extends ListActivity
     // UI State
     private View mVoteTargetView = null;
     private CommentInfo mVoteTargetCommentInfo = null;
-    
-    static boolean mIsProgressDialogShowing = false;
+    static boolean mIsLoggingInProgressShowing = false;
+    static boolean mIsLoadingCommentsProgressShowing = false;
     
     /**
      * Called when the activity starts up. Do activity initialization
@@ -140,7 +127,17 @@ public final class RedditCommentsListActivity extends ListActivity
     @Override
     protected void onResume() {
     	super.onResume();
+    	int previousTheme = mSettings.theme;
+    	boolean previousLoggedIn = mSettings.loggedIn;
     	Common.loadRedditPreferences(this, mSettings);
+    	if (mSettings.theme != previousTheme) {
+    		setTheme(mSettings.themeResId);
+    		setContentView(R.layout.threads_list_content);
+    		getListView().setAdapter(mCommentsAdapter);
+    	}
+    	if (mSettings.loggedIn != previousLoggedIn) {
+    		doGetCommentsList();
+    	}
     }
     
     @Override
@@ -179,6 +176,19 @@ public final class RedditCommentsListActivity extends ListActivity
 			else
 				doVote(thingFullname, 0, mSettings.subreddit);
 		}
+    }
+    
+
+    private class LoginFinishedCallback implements Runnable {
+    	@Override
+    	public void run() {
+	    	dismissDialog(Constants.DIALOG_LOGGING_IN);
+	    	mIsLoggingInProgressShowing = false;
+	    	if (mSettings.loggedIn) {
+		    	// Refresh the threads list
+		    	doGetCommentsList();
+	    	}
+    	}
     }
 
 
@@ -470,8 +480,8 @@ public final class RedditCommentsListActivity extends ListActivity
     	setCurrentWorker(worker);
     	
     	resetUI();
+    	mIsLoadingCommentsProgressShowing = true;
     	showDialog(Constants.DIALOG_LOADING_COMMENTS_LIST);
-    	mIsProgressDialogShowing = true;
     	
     	worker.start();
     }
@@ -497,14 +507,24 @@ public final class RedditCommentsListActivity extends ListActivity
     }
     
     
-    private class CommentInserter implements Runnable {
+    class CommentInserter implements Runnable {
     	CommentInfo _mComment;
     	
     	CommentInserter(CommentInfo comment) {
     		_mComment = comment;
     	}
     	
+    	public synchronized void setComment(CommentInfo comment) {
+    		_mComment = comment;
+    	}
+    	
     	public void run() {
+    		if (_mComment == null)
+    			return;
+    		
+    		// Success. OK to clear the reply draft.
+    		mVoteTargetCommentInfo.setReplyDraft("");
+    		
 			// Bump the list order of everything starting from where new comment will go.
 			int count = mCommentsAdapter.getCount();
 			for (int i = _mComment.getListOrder(); i < count; i++) {
@@ -551,165 +571,7 @@ public final class RedditCommentsListActivity extends ListActivity
         }
     }
     
-    
-    private class ReplyWorker extends Thread{
-    	private CharSequence _mParentThingId, _mText, _mSubreddit;
-    	CommentInfo _mTargetCommentInfo;
-    	
-    	public ReplyWorker(CharSequence parentThingId, CharSequence text, CharSequence subreddit,
-    			CommentInfo targetCommentInfo) {
-    		_mParentThingId = parentThingId;
-    		_mText = text;
-    		_mSubreddit = subreddit;
-    		_mTargetCommentInfo = targetCommentInfo;
-    	}
-    	
-        public void run() {
-        	CommentInfo newlyCreatedComment = null;
-        	String userError = "Error replying. Please try again.";
-        	
-        	String status = "";
-        	if (!mSettings.loggedIn) {
-        		mSettings.handler.post(new ErrorToaster("You must be logged in to reply.", Toast.LENGTH_LONG, mSettings));
-        		return;
-        	}
-        	// Update the modhash if necessary
-        	if (mSettings.modhash == null) {
-        		mSettings.setModhash(Common.doUpdateModhash(mSettings));
-        		if (mSettings.modhash == null) {
-        			// doUpdateModhash should have given an error about credentials
-        			throw new RuntimeException("Reply failed because doUpdateModhash() failed");
-        		}
-        	}
-        	
-        	try {
-        		// Create a new HttpClient with new timeout, and copy cookies over from the main one
-        		DefaultHttpClient client = new DefaultHttpClient();
-        		client.getParams().setParameter(HttpConnectionParams.SO_TIMEOUT, 30000);
-        		List<Cookie> mainCookies = mSettings.client.getCookieStore().getCookies();
-        		for (Cookie c : mainCookies) {
-        			client.getCookieStore().addCookie(c);
-        		}
-        		
-        		// Construct data
-    			List<NameValuePair> nvps = new ArrayList<NameValuePair>();
-    			nvps.add(new BasicNameValuePair("thing_id", _mParentThingId.toString()));
-    			nvps.add(new BasicNameValuePair("text", _mText.toString()));
-    			nvps.add(new BasicNameValuePair("r", _mSubreddit.toString()));
-    			nvps.add(new BasicNameValuePair("uh", mSettings.modhash.toString()));
-    			// Votehash is currently unused by reddit 
-//    				nvps.add(new BasicNameValuePair("vh", "0d4ab0ffd56ad0f66841c15609e9a45aeec6b015"));
-    			
-    			HttpPost httppost = new HttpPost("http://www.reddit.com/api/comment");
-    	        httppost.setEntity(new UrlEncodedFormEntity(nvps, HTTP.UTF_8));
-    	        
-    	        Log.d(TAG, nvps.toString());
-    	        
-                // Perform the HTTP POST request
-    	    	HttpResponse response = mSettings.client.execute(httppost);
-    	    	status = response.getStatusLine().toString();
-            	if (!status.contains("OK"))
-            		throw new HttpException(status);
-            	
-            	HttpEntity entity = response.getEntity();
-
-            	BufferedReader in = new BufferedReader(new InputStreamReader(entity.getContent()));
-            	String line = in.readLine();
-            	if (line == null) {
-            		throw new HttpException("No content returned from reply POST");
-            	}
-            	if (line.contains("WRONG_PASSWORD")) {
-            		throw new Exception("Wrong password");
-            	}
-            	if (line.contains("USER_REQUIRED")) {
-            		// The modhash probably expired
-            		mSettings.setModhash(null);
-            		mSettings.handler.post(new ErrorToaster("Error submitting reply. Please try again.", Toast.LENGTH_LONG, mSettings));
-            		return;
-            	}
-            	
-            	Log.d(TAG, line);
-
-//            	// DEBUG
-//            	int c;
-//            	boolean done = false;
-//            	StringBuilder sb = new StringBuilder();
-//            	for (int k = 0; k < line.length(); k += 80) {
-//            		for (int i = 0; i < 80; i++) {
-//            			if (k + i >= line.length()) {
-//            				done = true;
-//            				break;
-//            			}
-//            			c = line.charAt(k + i);
-//            			sb.append((char) c);
-//            		}
-//            		Log.d(TAG, "doReply response content: " + sb.toString());
-//            		sb = new StringBuilder();
-//            		if (done)
-//            			break;
-//            	}
-//    	        	
-
-            	String newId, newFullname;
-            	Matcher idMatcher = Constants.NEW_ID_PATTERN.matcher(line);
-            	if (idMatcher.find()) {
-            		newFullname = idMatcher.group(1);
-            		newId = idMatcher.group(3);
-            	} else {
-            		if (line.contains("RATELIMIT")) {
-                		// Try to find the # of minutes using regex
-                    	Matcher rateMatcher = Constants.RATELIMIT_RETRY_PATTERN.matcher(line);
-                    	if (rateMatcher.find())
-                    		userError = rateMatcher.group(1);
-                    	else
-                    		userError = "you are trying to submit too fast. try again in a few minutes.";
-                		throw new Exception(userError);
-                	}
-                	throw new Exception("No id returned by reply POST.");
-            	}
-            	
-            	in.close();
-            	if (entity != null)
-            		entity.consumeContent();
-            	
-            	// Getting here means success. Create a new CommentInfo.
-            	newlyCreatedComment = new CommentInfo(
-            			mSettings.username.toString(),     /* author */
-            			_mText.toString(),          /* body */
-            			null,                     /* body_html */
-            			null,                     /* created */
-            			String.valueOf(System.currentTimeMillis()), /* created_utc */
-            			"0",                      /* downs */
-            			newId,                    /* id */
-            			Constants.TRUE_STRING,              /* likes */
-            			null,                     /* link_id */
-            			newFullname,              /* name */
-            			_mParentThingId.toString(), /* parent_id */
-            			null,                     /* sr_id */
-            			"1"                       /* ups */
-            			);
-            	newlyCreatedComment.setListOrder(_mTargetCommentInfo.getListOrder()+1);
-            	if (_mTargetCommentInfo.getListOrder() == 0)
-            		newlyCreatedComment.setIndent(0);
-            	else
-            		newlyCreatedComment.setIndent(_mTargetCommentInfo.getIndent()+1);
-            	
-        	} catch (Exception e) {
-                Log.e(TAG, e.getMessage());
-                mSettings.handler.post(new ErrorToaster(userError, Toast.LENGTH_LONG, mSettings));
-        	}
-        	Log.d(TAG, status);
-        	
-        	// Update UI
-        	if (newlyCreatedComment != null) {
-        		_mTargetCommentInfo.setReplyDraft("");
-        		mSettings.handler.post(new CommentInserter(newlyCreatedComment));
-        	}
-        }
-    }
-    
-
-    
+        
     public boolean doVote(CharSequence thingFullname, int direction, CharSequence subreddit) {
     	if (!mSettings.loggedIn) {
     		mSettings.handler.post(new ErrorToaster("You must be logged in to vote.", Toast.LENGTH_LONG, mSettings));
@@ -814,7 +676,7 @@ public final class RedditCommentsListActivity extends ListActivity
     
 
     /**
-     * Synchronously do a reply POST HTTP request.
+     * Launch a background thread to do a reply POST HTTP request.
      * On success, return a new CommentInfo representing the reply.
      * @param parentThingId
      * @param text
@@ -827,7 +689,8 @@ public final class RedditCommentsListActivity extends ListActivity
     		return false;
     	}
     	
-    	ReplyWorker worker = new ReplyWorker(parentThingId, text, subreddit, mVoteTargetCommentInfo);
+    	ReplyWorker worker = new ReplyWorker(parentThingId, text, mVoteTargetCommentInfo, mSettings,
+    			new CommentInserter(null));
     	setCurrentWorker(worker);
     	worker.start();
     	
@@ -990,10 +853,13 @@ public final class RedditCommentsListActivity extends ListActivity
     			public boolean onKey(View v, int keyCode, KeyEvent event) {
     		        if ((event.getAction() == KeyEvent.ACTION_DOWN) && (keyCode == KeyEvent.KEYCODE_ENTER)) {
     		        	dismissDialog(Constants.DIALOG_LOGIN);
+    		        	mIsLoggingInProgressShowing = true;
         				showDialog(Constants.DIALOG_LOGGING_IN);
-        				Common.doLogin(loginUsernameInput.getText(), loginPasswordInput.getText(), mSettings);
-        		        dismissDialog(Constants.DIALOG_LOGGING_IN);
-        		        return true;
+        				LoginWorker lw = new LoginWorker(
+    		        			loginUsernameInput.getText(), loginPasswordInput.getText(), mSettings, new LoginFinishedCallback());
+        				RedditCommentsListActivity.this.setCurrentWorker(lw);
+    		        	lw.start();
+    		        	return true;
     		        }
     		        return false;
     		    }
@@ -1002,10 +868,13 @@ public final class RedditCommentsListActivity extends ListActivity
     		loginButton.setOnClickListener(new OnClickListener() {
     			public void onClick(View v) {
     				dismissDialog(Constants.DIALOG_LOGIN);
+    				mIsLoggingInProgressShowing = true;
     				showDialog(Constants.DIALOG_LOGGING_IN);
-    				Common.doLogin(loginUsernameInput.getText(), loginPasswordInput.getText(), mSettings);
-    		        dismissDialog(Constants.DIALOG_LOGGING_IN);
-    		    }
+    				LoginWorker lw = new LoginWorker(
+		        			loginUsernameInput.getText(), loginPasswordInput.getText(), mSettings, new LoginFinishedCallback());
+		        	RedditCommentsListActivity.this.setCurrentWorker(lw);
+		        	lw.start();
+		        }
     		});
     		break;
     		
@@ -1204,10 +1073,10 @@ public final class RedditCommentsListActivity extends ListActivity
         ArrayList<CharSequence> strings = new ArrayList<CharSequence>();
         
         // Save the OP
-        for (int k = 0; k < ThreadInfo.SAVE_KEYS.length; k++) {
-        	if (mOpThreadInfo.mValues.containsKey(ThreadInfo.SAVE_KEYS[k])) {
-        		strings.add(ThreadInfo.SAVE_KEYS[k]);
-        		strings.add(mOpThreadInfo.mValues.get(ThreadInfo.SAVE_KEYS[k]));
+        for (int k = 0; k < ThreadInfo._KEYS.length; k++) {
+        	if (mOpThreadInfo.mValues.containsKey(ThreadInfo._KEYS[k])) {
+        		strings.add(ThreadInfo._KEYS[k]);
+        		strings.add(mOpThreadInfo.mValues.get(ThreadInfo._KEYS[k]));
         	}
         }
         strings.add(SERIALIZE_SEPARATOR);
@@ -1216,10 +1085,10 @@ public final class RedditCommentsListActivity extends ListActivity
         // title0, link0, descr0, title1, link1, ...
         for (int i = 1; i < count; i++) {
             CommentInfo item = mCommentsAdapter.getItem(i);
-            for (int k = 0; k < CommentInfo.SAVE_KEYS.length; k++) {
-            	if (item.mValues.containsKey(CommentInfo.SAVE_KEYS[k])) {
-            		strings.add(CommentInfo.SAVE_KEYS[k]);
-            		strings.add(item.mValues.get(CommentInfo.SAVE_KEYS[k]));
+            for (int k = 0; k < CommentInfo._KEYS.length; k++) {
+            	if (item.mValues.containsKey(CommentInfo._KEYS[k])) {
+            		strings.add(CommentInfo._KEYS[k]);
+            		strings.add(item.mValues.get(CommentInfo._KEYS[k]));
             	}
             }
             strings.add(METADATA_SERIALIZE_SEPARATOR);
@@ -1301,9 +1170,13 @@ public final class RedditCommentsListActivity extends ListActivity
             getListView().setSelection(state.getInt(Constants.SELECTION_KEY));
         }
         
-        if (mIsProgressDialogShowing) {
-        	dismissDialog(Constants.DIALOG_LOADING_COMMENTS_LIST);
-        	mIsProgressDialogShowing = false;
+        try {
+	        if (mIsLoggingInProgressShowing)
+	        	dismissDialog(Constants.DIALOG_LOGGING_IN);
+	        if (mIsLoadingCommentsProgressShowing)
+	        	dismissDialog(Constants.DIALOG_LOADING_COMMENTS_LIST);
+        } catch (IllegalArgumentException e) {
+        	// Ignore.
         }
     }
 
@@ -1422,7 +1295,7 @@ public final class RedditCommentsListActivity extends ListActivity
 		// Add the comments after parsing to preserve correct order.
 		// OK to dismiss dialog when we start adding comments
 		dismissDialog(Constants.DIALOG_LOADING_COMMENTS_LIST);
-		mIsProgressDialogShowing = false;
+		mIsLoadingCommentsProgressShowing = false;
 		
 		for (Integer key : mCommentsMap.keySet()) {
 			mSettings.handler.post(new CommentItemAdder(mCommentsMap.get(key)));

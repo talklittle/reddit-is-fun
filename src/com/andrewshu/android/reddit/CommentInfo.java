@@ -29,10 +29,6 @@ public class CommentInfo {
 	public static final String[] _KEYS = {
 		AUTHOR, BODY, BODY_HTML, CREATED, CREATED_UTC, DOWNS, ID, LIKES, LINK_ID, NAME, PARENT_ID, REPLIES, SR_ID, UPS
 	};
-	// Only need to save the keys we actually use.
-	public static final String[] SAVE_KEYS = {
-		AUTHOR, BODY, DOWNS, ID, LIKES, NAME, PARENT_ID, UPS
-	};
 	
 	public HashMap<String, String> mValues = new HashMap<String, String>();
 	public JsonNode mReplies;  // Unused. use another JSON GET if necessary
