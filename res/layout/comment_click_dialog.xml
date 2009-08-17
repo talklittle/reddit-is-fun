@@ -10,7 +10,12 @@
               android:padding="10dp"
               >
     
-	<!-- Show the URL if this is the OP -->
+	<!-- Show the Title and URL if this is the OP -->
+	<TextView android:id="@+id/title"
+   		android:layout_width="wrap_content"
+   		android:layout_height="wrap_content"
+   		android:textSize="12dip"
+   		/>
    	<TextView android:id="@+id/url"
    		android:layout_width="wrap_content"
    		android:layout_height="wrap_content"

@@ -123,6 +123,7 @@ public final class RedditCommentsListActivity extends ListActivity
         if (extras != null) {
         	mSettings.setThreadId(extras.getString(ThreadInfo.ID));
         	mSettings.setSubreddit(extras.getString(ThreadInfo.SUBREDDIT));
+        	setTitle(extras.getString(ThreadInfo.TITLE) + " : " + mSettings.subreddit);
         } else {
         	// Quit, because the Comments List requires subreddit and thread id from Intent.
         	Log.e(TAG, "Quitting because no subreddit and thread id data was passed into the Intent.");
@@ -219,7 +220,8 @@ public final class RedditCommentsListActivity extends ListActivity
             if (position == mFrequentSeparatorPos) {
                 // We don't want the separator view to be recycled.
                 return IGNORE_ITEM_VIEW_TYPE;
-            } else if (mMorePositions.contains(position)) {
+            }
+            if (mMorePositions.contains(position)) {
             	return MORE_ITEM_VIEW_TYPE;
             }
             return COMMENT_ITEM_VIEW_TYPE;
@@ -334,7 +336,7 @@ public final class RedditCommentsListActivity extends ListActivity
 		            }
 	            	// TODO: Show number of replies, if possible
 	            	
-	            } else {
+	            } else {  // Regular comment
 		            // Here view may be passed in for re-use, or we make a new one.
 		            if (convertView == null) {
 		                view = mInflater.inflate(R.layout.comments_list_item, null);
@@ -403,7 +405,10 @@ public final class RedditCommentsListActivity extends ListActivity
             } catch (NullPointerException e) {
             	// Probably means that the List is still being built, and OP probably got put in wrong position
             	if (convertView == null) {
-	                view = mInflater.inflate(R.layout.comments_list_item, null);
+            		if (position == 0)
+            			view = mInflater.inflate(R.layout.threads_list_item_expanded, null);
+            		else
+            			view = mInflater.inflate(R.layout.comments_list_item, null);
 	            } else {
 	                view = convertView;
 	            }
@@ -467,8 +472,6 @@ public final class RedditCommentsListActivity extends ListActivity
     	resetUI();
     	showDialog(Constants.DIALOG_LOADING_COMMENTS_LIST);
     	mIsProgressDialogShowing = true;
-    	
-    	setTitle("/r/"+mSettings.subreddit.toString().trim());
     	
     	worker.start();
     }
@@ -1075,11 +1078,15 @@ public final class RedditCommentsListActivity extends ListActivity
     	case Constants.DIALOG_OP:
     	case Constants.DIALOG_THING_CLICK:
     		String likes;
-    		if (mVoteTargetCommentInfo.getOP() != null) {
+    		final TextView titleView = (TextView) dialog.findViewById(R.id.title);
+    		final TextView urlView = (TextView) dialog.findViewById(R.id.url);
+			final Button linkButton = (Button) dialog.findViewById(R.id.thread_link_button);
+			if (mVoteTargetCommentInfo.getOP() != null) {
     			dialog.setTitle("OP: " + mVoteTargetCommentInfo.getOP().getAuthor());
     			likes = mVoteTargetCommentInfo.getOP().getLikes();
-    			final TextView urlView = (TextView) dialog.findViewById(R.id.url);
-    			final Button linkButton = (Button) dialog.findViewById(R.id.thread_link_button);
+    			titleView.setVisibility(View.VISIBLE);
+    			titleView.setText(mOpThreadInfo.getTitle());
+    			urlView.setVisibility(View.VISIBLE);
     			urlView.setText(mOpThreadInfo.getURL());
     			if (id == Constants.DIALOG_OP) {
 	    			linkButton.setOnClickListener(new OnClickListener() {
@@ -1100,6 +1107,9 @@ public final class RedditCommentsListActivity extends ListActivity
     		} else {
     			dialog.setTitle("Comment by " + mVoteTargetCommentInfo.getAuthor());
     			likes = mVoteTargetCommentInfo.getLikes();
+    			titleView.setVisibility(View.INVISIBLE);
+    			urlView.setVisibility(View.INVISIBLE);
+    			linkButton.setVisibility(View.INVISIBLE);
     		}
     		final CheckBox voteUpButton = (CheckBox) dialog.findViewById(R.id.comment_vote_up_button);
     		final CheckBox voteDownButton = (CheckBox) dialog.findViewById(R.id.comment_vote_down_button);
@@ -1239,27 +1249,32 @@ public final class RedditCommentsListActivity extends ListActivity
         if (state == null) return;
         
         List<CharSequence> strings = (ArrayList<CharSequence>)state.getSerializable(Constants.STRINGS_KEY);
-        List<CommentInfo> items = new ArrayList<CommentInfo>();
         int i;
+        int listOrder = 0;
+        
+        resetUI();
         
         // Restore the OP
         CommentInfo opCi = new CommentInfo();
-        ThreadInfo opTi = new ThreadInfo();
+        opCi.setListOrder(listOrder++);
+        opCi.setIndent(0);
+        mOpThreadInfo = new ThreadInfo();
         i = 0;
     	while (!SERIALIZE_SEPARATOR.equals(strings.get(i))) {
     		if (SERIALIZE_SEPARATOR.equals(strings.get(i+1))) {
     			// XXX: Should throw an exception
     			break;
     		}
-    		opTi.put(strings.get(i).toString(), strings.get(i+1).toString());
+    		mOpThreadInfo.put(strings.get(i).toString(), strings.get(i+1).toString());
     		i += 2;
     	}
-    	opCi.setOpInfo(opTi);
-    	items.add(opCi);
+    	opCi.setOpInfo(mOpThreadInfo);
+    	mCommentsAdapter.add(opCi);
         
         // Restore items from the big list of CharSequence objects
         for (i++; i < strings.size(); i++) {
         	CommentInfo ci = new CommentInfo();
+        	ci.setListOrder(listOrder++);
         	CharSequence key, value;
         	while (!METADATA_SERIALIZE_SEPARATOR.equals(strings.get(i))) {
         		if (SERIALIZE_SEPARATOR.equals(strings.get(i+1))) {
@@ -1276,12 +1291,8 @@ public final class RedditCommentsListActivity extends ListActivity
         	do {
         		i++;
         	} while (!SERIALIZE_SEPARATOR.equals(strings.get(i)));
-            items.add(ci);
+            mCommentsAdapter.add(ci);
         }
-
-        // Reset the list view to show this data.
-        mCommentsAdapter = new CommentsListAdapter(this, items);
-        getListView().setAdapter(mCommentsAdapter);
 
         // Restore selection
         if (state.containsKey(Constants.SELECTION_KEY)) {

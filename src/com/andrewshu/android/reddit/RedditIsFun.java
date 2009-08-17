@@ -804,6 +804,7 @@ public final class RedditIsFun extends ListActivity
     				Intent i = new Intent(RedditIsFun.this, RedditCommentsListActivity.class);
     				i.putExtra(ThreadInfo.SUBREDDIT, mSettings.subreddit);
     				i.putExtra(ThreadInfo.ID, mVoteTargetThreadInfo.getId());
+    				i.putExtra(ThreadInfo.TITLE, mVoteTargetThreadInfo.getTitle());
     				startActivity(i);
         		}
     		};
