@@ -6,29 +6,23 @@ import java.util.List;
 import android.app.ListActivity;
 import android.content.Context;
 import android.content.Intent;
-import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.view.KeyEvent;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.View.OnClickListener;
 import android.view.View.OnKeyListener;
 import android.widget.ArrayAdapter;
+import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ListView;
 import android.widget.TextView;
 
 public final class PickSubredditActivity extends ListActivity {
 
-    // Themes
-    static final int THEME_LIGHT = 0;
-    static final int THEME_DARK = 1;
-    
-//    private int mTheme = THEME_LIGHT;
-    private int mThemeResId = android.R.style.Theme_Light;
-    
-    static final String PREFS_SESSION = "RedditSession";
-    
+	private RedditSettings mSettings = new RedditSettings();
+	
 	private PickSubredditAdapter mAdapter;
 	private EditText mEt;
 	
@@ -66,8 +60,8 @@ public final class PickSubredditActivity extends ListActivity {
     protected void onCreate(Bundle savedInstanceState) {
     	super.onCreate(savedInstanceState);
         
-    	loadRedditPreferences();
-    	setTheme(mThemeResId);
+    	Common.loadRedditPreferences(this, mSettings, null);
+    	setThemeDrawables();
     	
         setContentView(R.layout.pick_subreddit_view);
         
@@ -82,8 +76,15 @@ public final class PickSubredditActivity extends ListActivity {
 		        return false;
 		    }
 		});
-		mEt.requestFocus();
+        final Button goButton = (Button) findViewById(R.id.pick_subreddit_button);
+        goButton.setOnClickListener(new OnClickListener() {
+        	public void onClick(View v) {
+        		returnSubreddit(mEt.getText().toString());
+        	}
+        });
         
+		mEt.requestFocus();
+		
         // TODO: use the logged in user info to get his favorite reddits
         // to populate the list.
         // For now, use a predefined list.
@@ -92,36 +93,26 @@ public final class PickSubredditActivity extends ListActivity {
         mAdapter = new PickSubredditAdapter(this, items);
         getListView().setAdapter(mAdapter);
 
+
 //        // Need one of these to post things back to the UI thread.
 //        mHandler = new Handler();
         
     }
     
-    private void loadRedditPreferences() {
-        // Retrieve the stored session info
-        SharedPreferences sessionPrefs = getSharedPreferences(PREFS_SESSION, 0);
-//        mUsername = sessionPrefs.getString("username", null);
-//        String cookieValue = sessionPrefs.getString("reddit_sessionValue", null);
-//        String cookieDomain = sessionPrefs.getString("reddit_sessionDomain", null);
-//        String cookiePath = sessionPrefs.getString("reddit_sessionPath", null);
-//        long cookieExpiryDate = sessionPrefs.getLong("reddit_sessionExpiryDate", -1);
-//        if (cookieValue != null) {
-//        	BasicClientCookie redditSessionCookie = new BasicClientCookie("reddit_session", cookieValue);
-//        	redditSessionCookie.setDomain(cookieDomain);
-//        	redditSessionCookie.setPath(cookiePath);
-//        	if (cookieExpiryDate != -1)
-//        		redditSessionCookie.setExpiryDate(new Date(cookieExpiryDate));
-//        	else
-//        		redditSessionCookie.setExpiryDate(null);
-//        	mRedditSessionCookie = redditSessionCookie;
-//        	setClient(new DefaultHttpClient());
-//        	mClient.getCookieStore().addCookie(mRedditSessionCookie);
-//        	mLoggedIn = true;
-//        }
-//        mTheme = sessionPrefs.getInt("theme", THEME_LIGHT);
-        mThemeResId = sessionPrefs.getInt("theme_resid", android.R.style.Theme_Light);
+    /**
+     * Set the Activity's theme to the theme in mSettings.
+     * Then set other Drawables like the list selector.
+     */
+    private void setThemeDrawables() {
+    	setTheme(mSettings.themeResId);
+    	if (mSettings.theme == Constants.THEME_LIGHT) {
+    		getListView().setSelector(R.drawable.list_selector_solid_pale_blue);
+    		// TODO: Set the empty listview image
+    	} else if (mSettings.theme == Constants.THEME_DARK) {
+    		getListView().setSelector(android.R.drawable.list_selector_background);
+    	}
     }
-
+    
     
     @Override
     protected void onListItemClick(ListView l, View v, int position, long id) {
@@ -177,7 +168,6 @@ public final class PickSubredditActivity extends ListActivity {
         @Override
         public View getView(int position, View convertView, ViewGroup parent) {
             View view;
-//            Resources res = getResources();
 
             // Here view may be passed in for re-use, or we make a new one.
             if (convertView == null) {
@@ -185,18 +175,7 @@ public final class PickSubredditActivity extends ListActivity {
             } else {
                 view = convertView;
             }
-            
-//            if (mTheme == THEME_LIGHT) {
-//	            if (TRUE_STRING.equals(item.getClicked()))
-//	            	titleView.setTextColor(res.getColor(R.color.purple));
-//	            else
-//	            	titleView.setTextColor(res.getColor(R.color.blue));
-//            }
-
-//            if (mLoggedIn) {
-//            } else {
-//            }
-            
+                        
             TextView text = (TextView) view.findViewById(android.R.id.text1);
             text.setText(mAdapter.getItem(position));
             

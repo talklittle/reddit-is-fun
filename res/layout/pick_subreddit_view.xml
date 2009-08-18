@@ -11,16 +11,28 @@
         android:layout_width="fill_parent"
         android:layout_height="fill_parent"
         android:orientation="vertical">
-        
-    <EditText android:id="@+id/pick_subreddit_input"
+    
+    <LinearLayout
     	android:layout_width="fill_parent"
     	android:layout_height="?android:attr/listPreferredItemHeight"
-    	/>
+    	android:orientation="horizontal"
+    	>
+	    <EditText android:id="@+id/pick_subreddit_input"
+	    	android:layout_width="wrap_content"
+	    	android:layout_height="fill_parent"
+	    	android:layout_weight="5"
+	    	/>
+	    <Button android:id="@+id/pick_subreddit_button"
+	    	android:layout_width="?android:attr/listPreferredItemHeight"
+	    	android:layout_height="?android:attr/listPreferredItemHeight"
+	    	android:layout_weight="1"
+	    	android:text="@string/pick_subreddit_button"
+	    	/>
+   	</LinearLayout>
 
     <ListView android:id="@android:id/list"
     	android:layout_width="fill_parent"
 	    android:layout_height="wrap_content"
-	    android:listSelector="@drawable/thread_list_selector_solid_pale_blue"
     />
 
     <ScrollView android:id="@android:id/empty"

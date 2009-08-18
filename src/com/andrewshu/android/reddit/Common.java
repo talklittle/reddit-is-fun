@@ -13,12 +13,27 @@ import org.apache.http.impl.client.DefaultHttpClient;
 import org.apache.http.impl.cookie.BasicClientCookie;
 
 import android.app.Activity;
+import android.content.Context;
 import android.content.SharedPreferences;
+import android.view.LayoutInflater;
+import android.view.View;
+import android.widget.TextView;
 import android.widget.Toast;
 
 public class Common {
 	
 	private static final String TAG = "Common";
+	
+	static void showErrorToast(CharSequence error, int duration, Activity activity) {
+		LayoutInflater inflater = (LayoutInflater) activity.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
+		Toast t = new Toast(activity);
+		t.setDuration(duration);
+		View v = inflater.inflate(R.layout.error_toast, null);
+		TextView errorMessage = (TextView) v.findViewById(R.id.errorMessage);
+		errorMessage.setText(error);
+		t.setView(v);
+		t.show();
+	}
 	
     static void saveRedditPreferences(Activity act, RedditSettings rSettings) {
     	SharedPreferences settings = act.getSharedPreferences(Constants.PREFS_SESSION, 0);
@@ -52,7 +67,7 @@ public class Common {
     	editor.commit();
     }
     
-    static void loadRedditPreferences(Activity act, RedditSettings rSettings) {
+    static void loadRedditPreferences(Activity act, RedditSettings rSettings, DefaultHttpClient client) {
         // Retrieve the stored session info
         SharedPreferences sessionPrefs = act.getSharedPreferences(Constants.PREFS_SESSION, 0);
         rSettings.setUsername(sessionPrefs.getString("username", null));
@@ -69,8 +84,8 @@ public class Common {
         	else
         		redditSessionCookie.setExpiryDate(null);
         	rSettings.setRedditSessionCookie(redditSessionCookie);
-        	if (rSettings.client != null)
-        		rSettings.client.getCookieStore().addCookie(redditSessionCookie);
+        	if (client != null)
+        		client.getCookieStore().addCookie(redditSessionCookie);
         	rSettings.setLoggedIn(true);
         } else {
         	rSettings.setLoggedIn(false);
@@ -82,8 +97,7 @@ public class Common {
     }
     
         
-    static void doLogout(RedditSettings settings) {
-    	settings.client.getCookieStore().clear();
+    static void doLogout(RedditSettings settings, DefaultHttpClient client) {
     	settings.setUsername(null);
         settings.setLoggedIn(false);
     }
@@ -92,12 +106,12 @@ public class Common {
     
     /**
      * Get a new modhash and return it
+     * 
      * @param client
      * @return
      */
-    static String doUpdateModhash(RedditSettings settings) {
+    static String doUpdateModhash(DefaultHttpClient client) {
     	String modhash;
-    	DefaultHttpClient client = settings.client;
     	try {
     		String status;
     		
@@ -127,8 +141,8 @@ public class Common {
         		modhash = modhashMatcher.group(1);
         		if (Constants.EMPTY_STRING.equals(modhash)) {
         			// Means user is not actually logged in.
-        			doLogout(settings);
-        			settings.handler.post(new ErrorToaster("You have been logged out. Please login again.", Toast.LENGTH_LONG, settings));
+        			// FIXME: ErrorToaster
+//        			settings.handler.post(new ErrorToaster("You have been logged out. Please login again.", Toast.LENGTH_LONG, settings));
         			return null;
         		}
         	} else {
@@ -161,7 +175,8 @@ public class Common {
         	
     	} catch (Exception e) {
     		Log.e(TAG, e.getMessage());
-    		settings.handler.post(new ErrorToaster("Error performing action. Please try again.", Toast.LENGTH_LONG, settings));
+			// FIXME: ErrorToaster
+//    		settings.handler.post(new ErrorToaster("Error performing action. Please try again.", Toast.LENGTH_LONG, settings));
     		return null;
     	}
     	Log.d(TAG, "modhash: "+modhash);

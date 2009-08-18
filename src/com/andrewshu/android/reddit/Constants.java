@@ -7,12 +7,14 @@ public class Constants {
 	static final String COMMENT_KIND = "t1";
 	static final String THREAD_KIND = "t3";
 	
-	static final String SERIALIZE_SEPARATOR = "\r";
-	
 	static final String LOOK_OF_DISAPPROVAL = "\u0ca0\u005f\u0ca0";
 
 	static final String PREFS_SESSION = "RedditSession";
 	static final String PREFS_THEME= "RedditTheme";
+	
+
+    static final int DEFAULT_THREAD_DOWNLOAD_LIMIT = 25;
+    static final int DEFAULT_COMMENT_DOWNLOAD_LIMIT = 200;
     
     // startActivityForResult request codes
     static final int ACTIVITY_PICK_SUBREDDIT = 0;
@@ -40,7 +42,7 @@ public class Constants {
     static final int THEME_DARK = 1;
     
     // Special CSS for webviews to match themes
-    static final String CSS_DARK = "<body style=\"color:#c0c0c0;background-color:#181818\">";
+    static final String CSS_DARK = "<body style=\"color:#c0c0c0;background-color:#191919\">";
     
     // States for StateListDrawables
     static final int[] STATE_CHECKED = new int[]{android.R.attr.state_checked};

@@ -42,13 +42,17 @@
 				android:layout_height="50dip"
 				android:layout_marginBottom="10dip"
 				/>
-				
 			<CheckBox android:id="@+id/comment_vote_down_button"
 				style="@style/VoteDownButton"
 		    	android:layout_width="100dip"
 				android:layout_height="50dip"
 				android:layout_marginTop="10dip"
-				android:drawable="@drawable/vote_down_big_statelist"
+				/>
+			<Button android:id="@+id/login_button"
+				android:layout_width="wrap_content"
+				android:layout_height="wrap_content"
+				android:visibility="gone"
+				android:text="@string/login_button"
 				/>
 		</LinearLayout>
 		
@@ -65,7 +69,7 @@
 	    		android:layout_marginBottom="10dip"
 	    		android:singleLine="true"
 	    		android:text="@string/thread_link_button"
-	    		android:visibility="invisible"
+	    		android:visibility="gone"
 	    		/>
 	    		
 	    	<Button android:id="@+id/reply_button"

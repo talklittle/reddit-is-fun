@@ -4,7 +4,8 @@
 
     <string name="app_name">reddit is fun</string>
     
-    <string name="noThreads">This subreddit contains no threads.</string>
+    <string name="noThreads">Loading...</string>
+    <string name="noComments">Loading...</string>
     
     <string name="pick_subreddit_label">Subreddit name:</string>
     <string name="pick_subreddit_button">Go</string>
