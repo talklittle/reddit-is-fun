@@ -25,7 +25,6 @@ import org.codehaus.jackson.JsonParser;
 import org.codehaus.jackson.JsonToken;
 
 import android.app.Activity;
-import android.app.AlertDialog;
 import android.app.Dialog;
 import android.app.ListActivity;
 import android.app.ProgressDialog;
@@ -84,7 +83,7 @@ public final class RedditIsFun extends ListActivity
     private ThreadInfo mVoteTargetThreadInfo = null;
     
     // ProgressDialogs with percentage bars
-    ProgressDialog mLoadingThreadsProgress;
+    private AutoResetProgressDialog mLoadingThreadsProgress;
     
     
     /**
@@ -546,7 +545,7 @@ public final class RedditIsFun extends ListActivity
             	
             	BufferedReader in = new BufferedReader(new InputStreamReader(entity.getContent()));
             	String line = in.readLine();
-            	if (line == null) {
+            	if (line == null || Constants.EMPTY_STRING.equals(line)) {
             		throw new HttpException("No content returned from login POST");
             	}
             	if (line.contains("WRONG_PASSWORD")) {
@@ -651,16 +650,14 @@ public final class RedditIsFun extends ListActivity
         		_mUserError = "You must be logged in to vote.";
         		return false;
         	}
-        	if (_mDirection < -1 || _mDirection > 1) {
-        		throw new RuntimeException("How the hell did you vote something besides -1, 0, or 1?");
-        	}
         	
         	// Update the modhash if necessary
         	if (mModhash == null) {
         		if ((mModhash = Common.doUpdateModhash(mClient)) == null) {
         			// doUpdateModhash should have given an error about credentials
         			Common.doLogout(mSettings, mClient);
-        			throw new RuntimeException("Vote failed because doUpdateModhash() failed");
+        			Log.e(TAG, "Vote failed because doUpdateModhash() failed");
+        			return false;
         		}
         	}
         	
@@ -691,7 +688,7 @@ public final class RedditIsFun extends ListActivity
 
             	BufferedReader in = new BufferedReader(new InputStreamReader(entity.getContent()));
             	String line = in.readLine();
-            	if (line == null) {
+            	if (line == null || Constants.EMPTY_STRING.equals(line)) {
             		_mUserError = "Connection error when voting. Try again.";
             		throw new HttpException("No content returned from vote POST");
             	}
@@ -744,6 +741,7 @@ public final class RedditIsFun extends ListActivity
         		return;
         	}
         	if (_mDirection < -1 || _mDirection > 1) {
+        		Log.e(TAG, "WTF: _mDirection = " + _mDirection);
         		throw new RuntimeException("How the hell did you vote something besides -1, 0, or 1?");
         	}
     		final ImageView ivUp = (ImageView) _mTargetView.findViewById(R.id.vote_up_image);
@@ -861,8 +859,8 @@ public final class RedditIsFun extends ListActivity
         menu.add(0, Constants.DIALOG_REFRESH, 2, "Refresh")
         	.setOnMenuItemClickListener(new ThreadsListMenu(Constants.DIALOG_REFRESH));
         
-        menu.add(0, Constants.DIALOG_POST_THREAD, 3, "Post Thread")
-        	.setOnMenuItemClickListener(new ThreadsListMenu(Constants.DIALOG_POST_THREAD));
+        menu.add(0, Constants.DIALOG_SUBMIT_LINK, 3, "Submit link")
+        	.setOnMenuItemClickListener(new ThreadsListMenu(Constants.DIALOG_SUBMIT_LINK));
         
         if (mSettings.theme == Constants.THEME_LIGHT) {
         	menu.add(0, Constants.DIALOG_THEME, 4, "Dark")
@@ -920,8 +918,11 @@ public final class RedditIsFun extends ListActivity
         public boolean onMenuItemClick(MenuItem item) {
         	switch (mAction) {
         	case Constants.DIALOG_LOGIN:
-        	case Constants.DIALOG_POST_THREAD:
         		showDialog(mAction);
+        		break;
+        	case Constants.DIALOG_SUBMIT_LINK:
+        		Intent submitLinkIntent = new Intent(RedditIsFun.this, SubmitLinkActivity.class);
+        		startActivityForResult(submitLinkIntent, Constants.ACTIVITY_SUBMIT_LINK);
         		break;
         	case Constants.DIALOG_PICK_SUBREDDIT:
         		Intent pickSubredditIntent = new Intent(RedditIsFun.this, PickSubredditActivity.class);
@@ -964,8 +965,7 @@ public final class RedditIsFun extends ListActivity
     @Override
     protected Dialog onCreateDialog(int id) {
     	Dialog dialog;
-    	ProgressDialog pdialog;
-    	AlertDialog.Builder alertBuilder;
+    	AutoResetProgressDialog pdialog;
     	
     	switch (id) {
     	case Constants.DIALOG_LOGIN:
@@ -1010,33 +1010,23 @@ public final class RedditIsFun extends ListActivity
     		dialog.findViewById(R.id.thread_vote_down_button);
     		break;
 
-    	case Constants.DIALOG_POST_THREAD:
-    		// TODO: a scrollable Dialog with Title, URL/Selftext, and subreddit.
-    		// Or one of those things that pops up at bottom of screen, like browser "Find on page"
-    		alertBuilder = new AlertDialog.Builder(this);
-    		alertBuilder.setMessage("Sorry, this feature isn't implemented yet. Open in browser instead.")
-    				.setCancelable(true)
-    				.setPositiveButton("OK", null);
-    		dialog = alertBuilder.create();
-    		break;
-    		
-   		// "Please wait"
+    	// "Please wait"
     	case Constants.DIALOG_LOGGING_IN:
-    		pdialog = new ProgressDialog(this);
+    		pdialog = new AutoResetProgressDialog(this);
     		pdialog.setMessage("Logging in...");
     		pdialog.setIndeterminate(true);
     		pdialog.setCancelable(true);
     		dialog = pdialog;
     		break;
     	case Constants.DIALOG_LOADING_THREADS_LIST:
-    		mLoadingThreadsProgress = new ProgressDialog(this);
+    		mLoadingThreadsProgress = new AutoResetProgressDialog(this);
     		mLoadingThreadsProgress.setProgressStyle(ProgressDialog.STYLE_HORIZONTAL);
     		mLoadingThreadsProgress.setMessage("Loading subreddit...");
     		mLoadingThreadsProgress.setCancelable(true);
     		dialog = mLoadingThreadsProgress;
     		break;
     	case Constants.DIALOG_LOADING_LOOK_OF_DISAPPROVAL:
-    		pdialog = new ProgressDialog(this);
+    		pdialog = new AutoResetProgressDialog(this);
     		pdialog.setIndeterminate(true);
     		pdialog.setCancelable(true);
     		pdialog.requestWindowFeature(Window.FEATURE_INDETERMINATE_PROGRESS);
@@ -1138,7 +1128,6 @@ public final class RedditIsFun extends ListActivity
     		break;
     		
     	case Constants.DIALOG_LOADING_THREADS_LIST:
-    		mLoadingThreadsProgress.setProgress(0);
     		mLoadingThreadsProgress.setMax(mSettings.threadDownloadLimit);
     		break;
     		

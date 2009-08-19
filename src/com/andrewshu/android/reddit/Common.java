@@ -113,23 +113,22 @@ public class Common {
     static String doUpdateModhash(DefaultHttpClient client) {
     	String modhash;
     	try {
-    		String status;
-    		
     		HttpGet httpget = new HttpGet(Constants.MODHASH_URL);
     		HttpResponse response = client.execute(httpget);
     		
-    		status = response.getStatusLine().toString();
-        	if (!status.contains("OK"))
-        		throw new HttpException(status);
+    		// For modhash, we don't care about the status, since the 404 page has the info we want.
+//    		status = response.getStatusLine().toString();
+//        	if (!status.contains("OK"))
+//        		throw new HttpException(status);
         	
         	HttpEntity entity = response.getEntity();
 
         	BufferedReader in = new BufferedReader(new InputStreamReader(entity.getContent()));
         	// modhash should appear within first 1200 chars
-        	char[] buffer = new char[2048];
-        	in.read(buffer, 0, 2048);
+        	char[] buffer = new char[1200];
+        	in.read(buffer, 0, 1200);
         	String line = String.valueOf(buffer);
-        	if (line == null) {
+        	if (line == null || Constants.EMPTY_STRING.equals(line)) {
         		throw new HttpException("No content returned from doUpdateModhash GET to "+Constants.MODHASH_URL);
         	}
         	if (line.contains("USER_REQUIRED")) {
@@ -141,8 +140,6 @@ public class Common {
         		modhash = modhashMatcher.group(1);
         		if (Constants.EMPTY_STRING.equals(modhash)) {
         			// Means user is not actually logged in.
-        			// FIXME: ErrorToaster
-//        			settings.handler.post(new ErrorToaster("You have been logged out. Please login again.", Toast.LENGTH_LONG, settings));
         			return null;
         		}
         	} else {
@@ -173,15 +170,12 @@ public class Common {
         	if (entity != null)
         		entity.consumeContent();
         	
+        	Log.d(TAG, "modhash: "+modhash);
+        	return modhash;
+        	
     	} catch (Exception e) {
     		Log.e(TAG, e.getMessage());
-			// FIXME: ErrorToaster
-//    		settings.handler.post(new ErrorToaster("Error performing action. Please try again.", Toast.LENGTH_LONG, settings));
     		return null;
     	}
-    	Log.d(TAG, "modhash: "+modhash);
-    	return modhash;
     }
-
-
 }

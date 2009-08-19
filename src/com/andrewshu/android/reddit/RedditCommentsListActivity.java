@@ -102,7 +102,7 @@ public final class RedditCommentsListActivity extends ListActivity
     private CommentInfo mVoteTargetCommentInfo = null;
     
     // ProgressDialogs with percentage bars
-    private ProgressDialog mLoadingCommentsProgress;
+    private AutoResetProgressDialog mLoadingCommentsProgress;
     
     /**
      * Called when the activity starts up. Do activity initialization
@@ -834,7 +834,7 @@ public final class RedditCommentsListActivity extends ListActivity
             	
             	BufferedReader in = new BufferedReader(new InputStreamReader(entity.getContent()));
             	String line = in.readLine();
-            	if (line == null) {
+            	if (line == null || Constants.EMPTY_STRING.equals(line)) {
             		throw new HttpException("No content returned from login POST");
             	}
             	if (line.contains("WRONG_PASSWORD")) {
@@ -971,7 +971,7 @@ public final class RedditCommentsListActivity extends ListActivity
 
             	BufferedReader in = new BufferedReader(new InputStreamReader(entity.getContent()));
             	String line = in.readLine();
-            	if (line == null) {
+            	if (line == null || Constants.EMPTY_STRING.equals(line)) {
             		throw new HttpException("No content returned from reply POST");
             	}
             	if (line.contains("WRONG_PASSWORD")) {
@@ -1112,16 +1112,14 @@ public final class RedditCommentsListActivity extends ListActivity
         		_mUserError = "You must be logged in to vote.";
         		return false;
         	}
-        	if (_mDirection < -1 || _mDirection > 1) {
-        		throw new RuntimeException("How the hell did you vote something besides -1, 0, or 1?");
-        	}
         	
         	// Update the modhash if necessary
         	if (mModhash == null) {
         		if ((mModhash = Common.doUpdateModhash(mClient)) == null) {
         			// doUpdateModhash should have given an error about credentials
         			Common.doLogout(mSettings, mClient);
-        			throw new RuntimeException("Vote failed because doUpdateModhash() failed");
+        			Log.e(TAG, "Vote failed because doUpdateModhash() failed");
+        			return false;
         		}
         	}
         	
@@ -1152,7 +1150,7 @@ public final class RedditCommentsListActivity extends ListActivity
 
             	BufferedReader in = new BufferedReader(new InputStreamReader(entity.getContent()));
             	String line = in.readLine();
-            	if (line == null) {
+            	if (line == null || Constants.EMPTY_STRING.equals(line)) {
             		_mUserError = "Connection error when voting. Try again.";
             		throw new HttpException("No content returned from vote POST");
             	}
@@ -1205,6 +1203,7 @@ public final class RedditCommentsListActivity extends ListActivity
         		return;
         	}
         	if (_mDirection < -1 || _mDirection > 1) {
+        		Log.e(TAG, "WTF: _mDirection = " + _mDirection);
         		throw new RuntimeException("How the hell did you vote something besides -1, 0, or 1?");
         	}
 
@@ -1465,7 +1464,7 @@ public final class RedditCommentsListActivity extends ListActivity
     @Override
     protected Dialog onCreateDialog(int id) {
     	Dialog dialog;
-    	ProgressDialog pdialog;
+    	AutoResetProgressDialog pdialog;
     	
     	switch (id) {
     	case Constants.DIALOG_LOGIN:
@@ -1535,14 +1534,14 @@ public final class RedditCommentsListActivity extends ListActivity
     		
    		// "Please wait"
     	case Constants.DIALOG_LOGGING_IN:
-    		pdialog = new ProgressDialog(this);
+    		pdialog = new AutoResetProgressDialog(this);
     		pdialog.setMessage("Logging in...");
     		pdialog.setIndeterminate(true);
     		pdialog.setCancelable(true);
     		dialog = pdialog;
     		break;
     	case Constants.DIALOG_LOADING_COMMENTS_LIST:
-    		mLoadingCommentsProgress = new ProgressDialog(this);
+    		mLoadingCommentsProgress = new AutoResetProgressDialog(this);
     		mLoadingCommentsProgress.setProgressStyle(ProgressDialog.STYLE_HORIZONTAL);
     		mLoadingCommentsProgress.setMessage("Loading comments...");
     		mLoadingCommentsProgress.setCancelable(true);
