@@ -4,7 +4,6 @@
               android:layout_width="fill_parent"
               android:layout_height="fill_parent"
               android:minWidth="280dip"
-              android:minHeight="280dip"
               android:padding="30dip"
               >
     
@@ -14,9 +13,8 @@
    		android:layout_alignParentTop="true"
    		android:layout_marginBottom="5dip"
    		android:textSize="14dip"
-   		android:text="Title blahblah"
    		android:textColor="@color/white"
-   		android:maxLines="3"
+   		android:maxLines="5"
    		/>
    	
    	<TextView android:id="@+id/url"
@@ -26,7 +24,6 @@
    		android:singleLine="true"
    		android:ellipsize="marquee"
    		android:textSize="9dip"
-   		android:text="http://"
    		android:textColor="@color/white"
    		/>
    	
@@ -37,8 +34,7 @@
 		android:layout_below="@id/url"
 	    android:layout_alignLeft="@id/url"
 	    android:layout_marginBottom="15dip"
-	    android:text="submitted very recently by talklittle to android"
-        
+	    
         android:singleLine="true"
         android:ellipsize="marquee"
         android:textSize="10dip"
@@ -79,7 +75,6 @@
    	<Button android:id="@+id/thread_link_button"
    		android:layout_width="110dip"
    		android:layout_height="50dip"
-   		android:layout_marginTop="10dip"
    		android:layout_below="@id/submissionTime_submitter_subreddit"
    		android:layout_alignParentRight="true"
    		android:singleLine="true"

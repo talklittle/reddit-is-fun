@@ -121,8 +121,8 @@ public final class RedditCommentsListActivity extends ListActivity
         if (extras != null) {
         	mSettings.setThreadId(extras.getString(ThreadInfo.ID));
         	mSettings.setSubreddit(extras.getString(ThreadInfo.SUBREDDIT));
-        	mThreadTitle = extras.getString(ThreadInfo.TITLE) + " : " + mSettings.subreddit;
-        	setTitle(mThreadTitle);
+        	mThreadTitle = extras.getString(ThreadInfo.TITLE);
+        	setTitle(mThreadTitle + " : " + mSettings.subreddit);
         	mNumComments = extras.getInt(ThreadInfo.NUM_COMMENTS);
         	// TODO: Take into account very negative karma comments
         	if (mNumComments < Constants.DEFAULT_COMMENT_DOWNLOAD_LIMIT)
@@ -1593,7 +1593,7 @@ public final class RedditCommentsListActivity extends ListActivity
     			likes = mVoteTargetCommentInfo.getLikes();
     			urlView.setVisibility(View.INVISIBLE);
     			submissionStuffView.setVisibility(View.INVISIBLE);
-    			linkButton.setVisibility(View.GONE);
+    			linkButton.setVisibility(View.INVISIBLE);
     		}
     		final CheckBox voteUpButton = (CheckBox) dialog.findViewById(R.id.vote_up_button);
     		final CheckBox voteDownButton = (CheckBox) dialog.findViewById(R.id.vote_down_button);
@@ -1648,7 +1648,7 @@ public final class RedditCommentsListActivity extends ListActivity
     		} else {
     			voteUpButton.setVisibility(View.GONE);
     			voteDownButton.setVisibility(View.GONE);
-    			replyButton.setVisibility(View.GONE);
+    			replyButton.setVisibility(View.INVISIBLE);
     			loginButton.setVisibility(View.VISIBLE);
     			loginButton.setOnClickListener(new OnClickListener() {
     				public void onClick(View v) {

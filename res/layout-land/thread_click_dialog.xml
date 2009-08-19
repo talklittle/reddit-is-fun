@@ -4,16 +4,50 @@
               android:layout_width="fill_parent"
               android:layout_height="fill_parent"
               android:minWidth="280dip"
-              android:minHeight="280dip"
-              android:paddingLeft="30dip"
-              android:paddingRight="30dip"
-              android:paddingTop="20dip"
+              android:padding="30dip"
               >
+    
+    <View android:id="@+id/center"
+    	android:layout_width="0dip"
+    	android:layout_height="0dip"
+    	android:layout_centerInParent="true"
+    	/>
+    
+    <!-- Up/down/login -->
+        
+	<CheckBox android:id="@+id/vote_up_button"
+		style="@style/VoteUpButton"
+		android:layout_width="100dip"
+		android:layout_height="50dip"
+		android:layout_marginBottom="10dip"
+		android:layout_alignParentLeft="true"
+		android:layout_above="@id/center"
+		/>
+				
+	<CheckBox android:id="@+id/vote_down_button"
+		style="@style/VoteDownButton"
+	   	android:layout_width="100dip"
+		android:layout_height="50dip"
+		android:layout_marginTop="10dip"
+		android:layout_below="@id/center"
+		android:layout_alignParentLeft="true"
+		/>
+	<Button android:id="@+id/login_button"
+		android:layout_width="100dip"
+		android:layout_height="75dip"
+		android:layout_marginTop="25dip"
+		android:layout_centerVertical="true"
+		android:visibility="visible"
+		android:text="@string/login_button"
+		/>
+	
+	<!-- To the right of up/down/login -->
     
     <TextView android:id="@+id/title"
    		android:layout_width="wrap_content"
    		android:layout_height="wrap_content"
    		android:layout_alignParentTop="true"
+   		android:layout_marginLeft="120dip"
    		android:layout_marginBottom="5dip"
    		android:textSize="14dip"
    		android:textColor="@color/white"
@@ -24,6 +58,7 @@
    		android:layout_width="wrap_content"
    		android:layout_height="wrap_content"
    		android:layout_below="@id/title"
+   		android:layout_alignLeft="@id/title"
    		android:singleLine="true"
    		android:ellipsize="marquee"
    		android:textSize="9dip"
@@ -44,52 +79,23 @@
         android:textColor="@color/white"
     />
     
-    <!-- Left column -->
-        
-	<CheckBox android:id="@+id/vote_up_button"
-		style="@style/VoteUpButton"
-		android:layout_width="100dip"
-		android:layout_height="50dip"
-		android:layout_marginBottom="10dip"
-		android:layout_below="@id/submissionTime_submitter_subreddit"
-		android:layout_alignParentLeft="true"
-		/>
-				
-	<CheckBox android:id="@+id/vote_down_button"
-		style="@style/VoteDownButton"
-	   	android:layout_width="100dip"
-		android:layout_height="50dip"
-		android:layout_marginTop="10dip"
-		android:layout_below="@id/vote_up_button"
-		android:layout_alignParentLeft="true"
-		/>
-	<Button android:id="@+id/login_button"
-		android:layout_width="100dip"
-		android:layout_height="75dip"
-		android:layout_marginTop="25dip"
-		android:layout_below="@id/submissionTime_submitter_subreddit"
-		android:visibility="gone"
-		android:text="@string/login_button"
-		/>
-	
-	
-	<!-- Right column -->
-	
-   	<Button android:id="@+id/thread_link_button"
-   		android:layout_width="110dip"
-   		android:layout_height="wrap_content"
-   		android:layout_alignBottom="@id/vote_up_button"
-   		android:layout_alignParentRight="true"
-   		android:singleLine="true"
-   		android:text="@string/thread_link_button"
-   		/>
+    
    	<Button android:id="@+id/thread_comments_button"
    		android:layout_width="110dip"
-   		android:layout_height="wrap_content"
-   		android:layout_alignTop="@id/vote_down_button"
+   		android:layout_height="50dip"
+   		android:layout_below="@id/submissionTime_submitter_subreddit"
    		android:layout_alignParentRight="true"
    		android:singleLine="true"
    		android:text="@string/thread_comments_button"
+   		/>
+   	<Button android:id="@+id/thread_link_button"
+   		android:layout_width="110dip"
+   		android:layout_height="50dip"
+   		android:layout_marginRight="20dip"
+   		android:layout_below="@id/submissionTime_submitter_subreddit"
+   		android:layout_toLeftOf="@id/thread_comments_button"
+   		android:singleLine="true"
+   		android:text="@string/thread_link_button"
    		/>
 
 </RelativeLayout>
