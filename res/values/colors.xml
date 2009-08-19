@@ -1,13 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <color name="username_text">#ffffffff</color>
-    <color name="username_edit">#ff000000</color>
-
-    <color name="password_text">#ffffffff</color>
-    <color name="password_edit">#ff000000</color>
-
-    <color name="ssl_text_label">#ffffffff</color>
-    <color name="ssl_text_value">#ffffffff</color>
+    <color name="android_dark_background">#FF191919</color>
     
     <color name="error_toast_background">#ECCC</color>
     

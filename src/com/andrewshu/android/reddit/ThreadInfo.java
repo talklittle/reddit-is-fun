@@ -117,6 +117,10 @@ public class ThreadInfo {
 		return mValues.get(SELFTEXT);
 	}
 	
+	public String getSubreddit() {
+		return mValues.get(SUBREDDIT);
+	}
+	
 	public String getTitle() {
 		return mValues.get(TITLE);
 	}

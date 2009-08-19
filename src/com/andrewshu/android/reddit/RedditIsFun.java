@@ -25,6 +25,7 @@ import org.codehaus.jackson.JsonParser;
 import org.codehaus.jackson.JsonToken;
 
 import android.app.Activity;
+import android.app.AlertDialog;
 import android.app.Dialog;
 import android.app.ListActivity;
 import android.app.ProgressDialog;
@@ -104,8 +105,8 @@ public final class RedditIsFun extends ListActivity
         // which ListActivity adopts as its list -- we can
         // access it with getListView().
 
-        // Start at /r/reddit.com
-        mSettings.setSubreddit("reddit.com");
+        // Start at www.reddit.com (front page, not a subreddit)
+        mSettings.setSubreddit(Constants.FRONTPAGE_STRING);
         
         new DownloadThreadsTask().execute(mSettings.subreddit);
         
@@ -134,8 +135,6 @@ public final class RedditIsFun extends ListActivity
     protected void onPause() {
     	super.onPause();
     	Common.saveRedditPreferences(this, mSettings);
-    	if (isFinishing())
-    		mSettings.setIsAlive(false);
     }
     
 
@@ -175,9 +174,9 @@ public final class RedditIsFun extends ListActivity
     	public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
 	    	dismissDialog(Constants.DIALOG_THING_CLICK);
 			if (isChecked) {
-				new VoteTask(mVoteTargetThreadInfo.getName(), 1).execute((Void[])null);
+				new VoteTask(mVoteTargetThreadInfo.getName(), 1, mVoteTargetThreadInfo.getSubreddit()).execute((Void[])null);
 			} else {
-				new VoteTask(mVoteTargetThreadInfo.getName(), 0).execute((Void[])null);
+				new VoteTask(mVoteTargetThreadInfo.getName(), 0, mVoteTargetThreadInfo.getSubreddit()).execute((Void[])null);
 			}
 		}
     }
@@ -186,9 +185,9 @@ public final class RedditIsFun extends ListActivity
 	    public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
 	    	dismissDialog(Constants.DIALOG_THING_CLICK);
 			if (isChecked) {
-				new VoteTask(mVoteTargetThreadInfo.getName(), -1).execute((Void[])null);
+				new VoteTask(mVoteTargetThreadInfo.getName(), -1, mVoteTargetThreadInfo.getSubreddit()).execute((Void[])null);
 			} else {
-				new VoteTask(mVoteTargetThreadInfo.getName(), 0).execute((Void[])null);
+				new VoteTask(mVoteTargetThreadInfo.getName(), 0, mVoteTargetThreadInfo.getSubreddit()).execute((Void[])null);
 			}
 		}
     }
@@ -365,9 +364,14 @@ public final class RedditIsFun extends ListActivity
     	
     	public Boolean doInBackground(CharSequence... subreddit) {
 	    	try {
-            	HttpGet request = new HttpGet(new StringBuilder("http://www.reddit.com/r/")
-            		.append(subreddit[0].toString().trim())
-            		.append("/.json").toString());
+	    		String url;
+	    		if (Constants.FRONTPAGE_STRING.equals(subreddit[0]))
+	    			url = "http://www.reddit.com/.json";
+	    		else
+	    			url = new StringBuilder("http://www.reddit.com/r/")
+            			.append(subreddit[0].toString().trim())
+            			.append("/.json").toString();
+            	HttpGet request = new HttpGet(url);
             	HttpResponse response = mClient.execute(request);
             	
             	InputStream in = response.getEntity().getContent();
@@ -493,7 +497,10 @@ public final class RedditIsFun extends ListActivity
 	    		lodToast.show();
 	    	}
 	    	showDialog(Constants.DIALOG_LOADING_THREADS_LIST);
-	    	setTitle("/r/"+mSettings.subreddit.toString().trim());
+	    	if (Constants.FRONTPAGE_STRING.equals(mSettings.subreddit))
+	    		setTitle("reddit.com: what's new online!");
+	    	else
+	    		setTitle("/r/"+mSettings.subreddit.toString().trim());
     	}
     	
     	public void onPostExecute(Boolean success) {
@@ -625,7 +632,7 @@ public final class RedditIsFun extends ListActivity
     	
     	private static final String TAG = "VoteWorker";
     	
-    	private CharSequence _mThingFullname;
+    	private CharSequence _mThingFullname, _mSubreddit;
     	private int _mDirection;
     	private String _mUserError = "Error voting.";
     	private ThreadInfo _mTargetThreadInfo;
@@ -635,9 +642,10 @@ public final class RedditIsFun extends ListActivity
     	private int _mPreviousScore;
     	private String _mPreviousLikes;
     	
-    	VoteTask(CharSequence thingFullname, int direction) {
+    	VoteTask(CharSequence thingFullname, int direction, CharSequence subreddit) {
     		_mThingFullname = thingFullname;
     		_mDirection = direction;
+    		_mSubreddit = subreddit;
     		// Copy these because they can change while voting thread is running
     		_mTargetThreadInfo = mVoteTargetThreadInfo;
     		_mTargetView = mVoteTargetView;
@@ -666,7 +674,7 @@ public final class RedditIsFun extends ListActivity
     			List<NameValuePair> nvps = new ArrayList<NameValuePair>();
     			nvps.add(new BasicNameValuePair("id", _mThingFullname.toString()));
     			nvps.add(new BasicNameValuePair("dir", String.valueOf(_mDirection)));
-    			nvps.add(new BasicNameValuePair("r", mSettings.subreddit.toString()));
+    			nvps.add(new BasicNameValuePair("r", _mSubreddit.toString()));
     			nvps.add(new BasicNameValuePair("uh", mModhash.toString()));
     			// Votehash is currently unused by reddit 
 //    				nvps.add(new BasicNameValuePair("vh", "0d4ab0ffd56ad0f66841c15609e9a45aeec6b015"));
@@ -929,8 +937,11 @@ public final class RedditIsFun extends ListActivity
         		startActivityForResult(pickSubredditIntent, Constants.ACTIVITY_PICK_SUBREDDIT);
         		break;
         	case Constants.DIALOG_OPEN_BROWSER:
-        		String url = new StringBuilder("http://www.reddit.com/r/")
-        			.append(mSettings.subreddit).toString();
+        		String url;
+        		if (mSettings.subreddit.equals(Constants.FRONTPAGE_STRING))
+        			url = "http://www.reddit.com";
+        		else
+	        		url = new StringBuilder("http://www.reddit.com/r/").append(mSettings.subreddit).toString();
         		RedditIsFun.this.startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse(url)));
         		break;
             case Constants.DIALOG_LOGOUT:
@@ -966,6 +977,8 @@ public final class RedditIsFun extends ListActivity
     protected Dialog onCreateDialog(int id) {
     	Dialog dialog;
     	AutoResetProgressDialog pdialog;
+    	AlertDialog.Builder builder;
+    	LayoutInflater inflater;
     	
     	switch (id) {
     	case Constants.DIALOG_LOGIN:
@@ -1004,10 +1017,9 @@ public final class RedditIsFun extends ListActivity
     		break;
     		
     	case Constants.DIALOG_THING_CLICK:
-    		dialog = new Dialog(this);
-    		dialog.setContentView(R.layout.thread_click_dialog);
-    		dialog.findViewById(R.id.thread_vote_up_button);
-    		dialog.findViewById(R.id.thread_vote_down_button);
+    		inflater = (LayoutInflater)this.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
+    		builder = new AlertDialog.Builder(this);
+    		dialog = builder.setView(inflater.inflate(R.layout.thread_click_dialog, null)).create();
     		break;
 
     	// "Please wait"
@@ -1043,6 +1055,7 @@ public final class RedditIsFun extends ListActivity
     @Override
     protected void onPrepareDialog(int id, Dialog dialog) {
     	super.onPrepareDialog(id, dialog);
+    	StringBuilder sb;
     	
     	switch (id) {
     	case Constants.DIALOG_LOGIN:
@@ -1055,16 +1068,26 @@ public final class RedditIsFun extends ListActivity
     		break;
     		
     	case Constants.DIALOG_THING_CLICK:
-    		dialog.setTitle("Submitted by " + mVoteTargetThreadInfo.getAuthor());
-    		final CheckBox voteUpButton = (CheckBox) dialog.findViewById(R.id.thread_vote_up_button);
-    		final CheckBox voteDownButton = (CheckBox) dialog.findViewById(R.id.thread_vote_down_button);
+    		final CheckBox voteUpButton = (CheckBox) dialog.findViewById(R.id.vote_up_button);
+    		final CheckBox voteDownButton = (CheckBox) dialog.findViewById(R.id.vote_down_button);
+    		final TextView titleView = (TextView) dialog.findViewById(R.id.title);
     		final TextView urlView = (TextView) dialog.findViewById(R.id.url);
+    		final TextView submissionStuffView = (TextView) dialog.findViewById(R.id.submissionTime_submitter_subreddit);
     		final Button loginButton = (Button) dialog.findViewById(R.id.login_button);
     		final Button linkButton = (Button) dialog.findViewById(R.id.thread_link_button);
     		final Button commentsButton = (Button) dialog.findViewById(R.id.thread_comments_button);
     		
+    		titleView.setText(mVoteTargetThreadInfo.getTitle());
     		urlView.setText(mVoteTargetThreadInfo.getURL());
-
+    		sb = new StringBuilder("submitted ")
+    			.append(Util.getTimeAgo(Double.valueOf(mVoteTargetThreadInfo.getCreatedUtc())))
+    			.append(" by ").append(mVoteTargetThreadInfo.getAuthor());
+            // Show subreddit if user is currently looking at front page
+    		if (mSettings.isFrontpage) {
+    			sb.append(" to ").append(mVoteTargetThreadInfo.getSubreddit());
+    		}
+            submissionStuffView.setText(sb);
+            
     		// Only show upvote/downvote if user is logged in
     		if (mSettings.loggedIn) {
     			loginButton.setVisibility(View.GONE);
@@ -1104,7 +1127,7 @@ public final class RedditIsFun extends ListActivity
     				dismissDialog(Constants.DIALOG_THING_CLICK);
     				// Launch an Intent for RedditCommentsListActivity
     				Intent i = new Intent(RedditIsFun.this, RedditCommentsListActivity.class);
-    				i.putExtra(ThreadInfo.SUBREDDIT, mSettings.subreddit);
+    				i.putExtra(ThreadInfo.SUBREDDIT, mVoteTargetThreadInfo.getSubreddit());
     				i.putExtra(ThreadInfo.ID, mVoteTargetThreadInfo.getId());
     				i.putExtra(ThreadInfo.TITLE, mVoteTargetThreadInfo.getTitle());
     				i.putExtra(ThreadInfo.NUM_COMMENTS, Integer.valueOf(mVoteTargetThreadInfo.getNumComments()));
@@ -1113,7 +1136,7 @@ public final class RedditIsFun extends ListActivity
     		};
     		commentsButton.setOnClickListener(commentsOnClickListener);
     		// TODO: Handle bestof posts, which aren't self posts
-            if (("self."+mSettings.subreddit).toLowerCase().equals(mVoteTargetThreadInfo.getDomain().toLowerCase())) {
+            if (("self.").toLowerCase().equals(mVoteTargetThreadInfo.getDomain().substring(0, 5).toLowerCase())) {
             	// It's a self post. Both buttons do the same thing.
             	linkButton.setOnClickListener(commentsOnClickListener);
             } else {

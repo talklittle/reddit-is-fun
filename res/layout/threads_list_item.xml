@@ -57,81 +57,91 @@
         android:scaleType="centerInside"
     />
 
-	<LinearLayout
-		android:orientation="vertical"
-		android:layout_width="fill_parent"
-		android:layout_height="wrap_content"
-		android:layout_toRightOf="@id/thumbnail">
+	<RelativeLayout
+	    android:layout_width="fill_parent"
+	    android:layout_height="wrap_content"
+	    android:layout_toRightOf="@id/thumbnail"
+	    android:paddingLeft="14dip"
+	    android:paddingRight="5dip">
 
 		<!-- Top row -->
-		<RelativeLayout
-		    android:layout_width="fill_parent"
-		    android:layout_height="wrap_content"
-		    android:paddingLeft="14dip"
-		    android:paddingRight="5dip">
-
-		    <TextView android:id="@+id/title"
-		        android:layout_width="wrap_content"
-		        android:layout_height="wrap_content"
-		        android:layout_marginBottom="1dip"
-		        
-		        android:gravity="center_vertical|left"
-		        android:textSize="14dip"
-		    />
-		    
-	    </RelativeLayout>
+	
+	    <TextView android:id="@+id/title"
+	        android:layout_width="wrap_content"
+	        android:layout_height="wrap_content"
+	        android:layout_marginBottom="1dip"
+	        
+	        android:gravity="center_vertical|left"
+	        android:textSize="14dip"
+	    />
 	    
-	    <!-- Bottom row -->
-	    <RelativeLayout
-	    	android:layout_width="fill_parent"
+	    <!-- Next row -->
+	    
+        <TextView android:id="@+id/numComments"
+	        android:layout_width="wrap_content"
+	        android:layout_height="wrap_content"
+	        android:layout_below="@id/title"
+	        android:layout_alignLeft="@id/title"
+	        android:layout_marginRight="5dip"
+	        android:text="0 cmts"
+	
+	        android:singleLine="true"
+	        android:ellipsize="marquee"
+	        android:textSize="10dip"
+	        android:textStyle="bold"
+	    />
+	
+	    <TextView android:id="@+id/linkDomain"
+	        android:layout_width="wrap_content"
+	        android:layout_height="wrap_content"
+	        android:layout_marginLeft="5dip"
+	        android:layout_toRightOf="@id/numComments"
+	        android:layout_alignBaseline="@id/numComments"
+	        android:text="(self.reddit.com)"
+			android:textSize="10dip"
+	    />
+
+		<!-- A bottommost row used for OP posts in commentslist -->		
+	
+		<TextView android:id="@+id/submissionTime"
+	        android:layout_width="wrap_content"
+	        android:layout_height="wrap_content"
+			android:layout_below="@id/numComments"
+		    android:layout_alignLeft="@id/numComments"
+		    android:layout_marginRight="4dip"
+		    android:text="very recently"
+	        android:visibility="gone"
+	        
+	        android:singleLine="true"
+	        android:ellipsize="marquee"
+	        android:textSize="10dip"
+	    />
+	    
+	    <TextView android:id="@+id/submitter"
+	    	android:layout_width="wrap_content"
 		    android:layout_height="wrap_content"
-		    android:paddingLeft="14dip"
-		    android:paddingRight="5dip">
-		    
-	        <TextView android:id="@+id/numComments"
-		        android:layout_width="wrap_content"
-		        android:layout_height="wrap_content"
-		        android:layout_marginRight="5dip"
-		        android:text="0 cmts"
-		
-		        android:singleLine="true"
-		        android:ellipsize="marquee"
-		        android:textSize="10dip"
-		        android:textStyle="bold"
-		    />
-		
-		    <TextView android:id="@+id/linkDomain"
-		        android:layout_width="wrap_content"
-		        android:layout_height="wrap_content"
-		        android:layout_marginLeft="5dip"
-		        android:layout_toRightOf="@id/numComments"
-		        android:layout_alignBaseline="@id/numComments"
-		        android:text="(self.reddit.com)"
-				android:textSize="10dip"
-		    />
-
-		</RelativeLayout>
-		
-		<!-- ViewStubs, unused for now. Using threads_list_item_expanded.xml instead. -->
-		<!-- Extra bottom row for thread OP area -->
-		<!--
-		<ViewStub android:id="@+id/extraRowStub"
-			android:inflatedId="@+id/extraRowSubtree"
-			android:layout="@layout/threads_list_item_extra_row"
-			android:layout_width="wrap_content"
-			android:layout_height="wrap_content"
-			/>
-		-->
-
-    	<!-- OP post for comments view -->
-    	<!--
-	    <ViewStub android:id="@+id/selftextStub"
-	    	android:inflatedId="@+id/selftextSubtree"
-	    	android:layout="@layout/threads_list_item_selftext"
-	    	android:layout_width="fill_parent"
-	    	android:layout_height="wrap_content"
-	    	/>
-	    -->
-    </LinearLayout>
+		   	android:layout_toRightOf="@id/submissionTime"
+	        android:layout_alignBaseline="@id/submissionTime"
+		    android:layout_marginRight="4dip"
+			android:text="by talklittle"
+			android:visibility="gone"
+	
+			android:singleLine="true"
+	        android:ellipsize="marquee"
+	        android:textSize="10dip"
+	    />
+	    
+	</RelativeLayout>
+	
+	
+    <WebView android:id="@+id/selftext"
+    	android:layout_width="fill_parent"
+	    android:layout_height="wrap_content"
+	    android:layout_below="@id/submissionTime"
+	    android:layout_marginLeft="8dip"
+	    android:layout_marginRight="8dip"
+	    android:scrollbars="none"
+	    android:visibility="gone"
+    />
 
 </RelativeLayout>

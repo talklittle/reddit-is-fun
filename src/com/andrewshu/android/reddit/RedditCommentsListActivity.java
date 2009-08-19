@@ -28,6 +28,7 @@ import org.codehaus.jackson.JsonParser;
 import org.codehaus.jackson.JsonToken;
 
 import android.app.Activity;
+import android.app.AlertDialog;
 import android.app.Dialog;
 import android.app.ListActivity;
 import android.app.ProgressDialog;
@@ -69,14 +70,6 @@ public final class RedditCommentsListActivity extends ListActivity
 
 	private static final String TAG = "RedditCommentsListActivity";
 	
-	static final String PREFS_SESSION = "RedditSession";
-	
-	public final String COMMENT_KIND = "t1";
-	public final String THREAD_KIND = "t3";
-	public final String MORE_KIND = "more";
-	public final String SERIALIZE_SEPARATOR = "\r";
-	public final String METADATA_SERIALIZE_SEPARATOR = "\r\r";
-	
     private final JsonFactory jsonFactory = new JsonFactory(); 
     private int mNestedCommentsJSONOrder = 0;
     private HashSet<Integer> mMorePositions = new HashSet<Integer>(); 
@@ -94,6 +87,7 @@ public final class RedditCommentsListActivity extends ListActivity
     private RedditSettings mSettings = new RedditSettings();
     
     private ThreadInfo mOpThreadInfo;
+    private CharSequence mThreadTitle;
     private int mNumComments;
     private int mNumVisibleComments;
 
@@ -127,7 +121,8 @@ public final class RedditCommentsListActivity extends ListActivity
         if (extras != null) {
         	mSettings.setThreadId(extras.getString(ThreadInfo.ID));
         	mSettings.setSubreddit(extras.getString(ThreadInfo.SUBREDDIT));
-        	setTitle(extras.getString(ThreadInfo.TITLE) + " : " + mSettings.subreddit);
+        	mThreadTitle = extras.getString(ThreadInfo.TITLE) + " : " + mSettings.subreddit;
+        	setTitle(mThreadTitle);
         	mNumComments = extras.getInt(ThreadInfo.NUM_COMMENTS);
         	// TODO: Take into account very negative karma comments
         	if (mNumComments < Constants.DEFAULT_COMMENT_DOWNLOAD_LIMIT)
@@ -164,8 +159,6 @@ public final class RedditCommentsListActivity extends ListActivity
     protected void onPause() {
     	super.onPause();
     	Common.saveRedditPreferences(this, mSettings);
-    	if (isFinishing())
-    		mSettings.setIsAlive(false);
     }
     
     public class VoteUpOnCheckedChangeListener implements CompoundButton.OnCheckedChangeListener {
@@ -220,26 +213,11 @@ public final class RedditCommentsListActivity extends ListActivity
     	static final int VIEW_TYPE_COUNT = 3;
     	
     	private LayoutInflater mInflater;
-        private boolean mLoading = true;
         private int mFrequentSeparatorPos = ListView.INVALID_POSITION;
         
         public CommentsListAdapter(Context context, List<CommentInfo> objects) {
             super(context, 0, objects);
             mInflater = (LayoutInflater)context.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
-        }
-
-        public void setLoading(boolean loading) {
-            mLoading = loading;
-        }
-
-        @Override
-        public boolean isEmpty() {
-            if (mLoading) {
-                // We don't want the empty state to show when loading.
-                return false;
-            } else {
-                return super.isEmpty();
-            }
         }
 
         @Override
@@ -274,7 +252,7 @@ public final class RedditCommentsListActivity extends ListActivity
 	            if (position == 0) {
 	            	// The OP
 	            	if (convertView == null) {
-	            		view = mInflater.inflate(R.layout.threads_list_item_expanded, null);
+	            		view = mInflater.inflate(R.layout.threads_list_item, null);
 	            	} else {
 	            		view = convertView;
 	            	}
@@ -287,11 +265,15 @@ public final class RedditCommentsListActivity extends ListActivity
 	                TextView votesView = (TextView) view.findViewById(R.id.votes);
 	                TextView linkDomainView = (TextView) view.findViewById(R.id.linkDomain);
 	                TextView numCommentsView = (TextView) view.findViewById(R.id.numComments);
-	                TextView submitterView = (TextView) view.findViewById(R.id.submitter);
 	                TextView submissionTimeView = (TextView) view.findViewById(R.id.submissionTime);
+	                TextView submitterView = (TextView) view.findViewById(R.id.submitter);
 	                ImageView voteUpView = (ImageView) view.findViewById(R.id.vote_up_image);
 	                ImageView voteDownView = (ImageView) view.findViewById(R.id.vote_down_image);
 	                WebView selftextView = (WebView) view.findViewById(R.id.selftext);
+	                
+	                submitterView.setVisibility(View.VISIBLE);
+	                submissionTimeView.setVisibility(View.VISIBLE);
+	                selftextView.setVisibility(View.VISIBLE);
 	                
 	                titleView.setText(mOpThreadInfo.getTitle());
 	                if (mSettings.theme == Constants.THEME_LIGHT) {
@@ -303,8 +285,8 @@ public final class RedditCommentsListActivity extends ListActivity
 	                votesView.setText(mOpThreadInfo.getScore());
 	                linkDomainView.setText("("+mOpThreadInfo.getDomain()+")");
 	                numCommentsView.setText(mOpThreadInfo.getNumComments());
-	                submitterView.setText("submitted by "+mOpThreadInfo.getAuthor());
-	                submissionTimeView.setText(Util.getTimeAgo(Double.valueOf(mOpThreadInfo.getCreatedUtc())));
+	                submissionTimeView.setText("submitted " + Util.getTimeAgo(Double.valueOf(mOpThreadInfo.getCreatedUtc())));
+	                submitterView.setText("by "+mOpThreadInfo.getAuthor());
 	                titleView.setTag(mOpThreadInfo.getURL());
 	
 	                // Set the up and down arrow colors based on whether user likes
@@ -436,7 +418,7 @@ public final class RedditCommentsListActivity extends ListActivity
             	// Probably means that the List is still being built, and OP probably got put in wrong position
             	if (convertView == null) {
             		if (position == 0)
-            			view = mInflater.inflate(R.layout.threads_list_item_expanded, null);
+            			view = mInflater.inflate(R.layout.threads_list_item, null);
             		else
             			view = mInflater.inflate(R.layout.comments_list_item, null);
 	            } else {
@@ -562,7 +544,7 @@ public final class RedditCommentsListActivity extends ListActivity
 					jp.nextToken(); // move to value, or START_OBJECT/START_ARRAY
 				
 					if (Constants.JSON_KIND.equals(fieldname)) {
-						if (!THREAD_KIND.equals(jp.getText())) {
+						if (!Constants.THREAD_KIND.equals(jp.getText())) {
 							// Skip this JSON Object since it doesn't represent a thread.
 							// May encounter nested objects too.
 							int nested = 0;
@@ -577,7 +559,7 @@ public final class RedditCommentsListActivity extends ListActivity
 							}
 							break;  // Go on to the next thread (JSON Object) in the JSON Array.
 						}
-						ti.put(Constants.JSON_KIND, THREAD_KIND);
+						ti.put(Constants.JSON_KIND, Constants.THREAD_KIND);
 					} else if (Constants.JSON_DATA.equals(fieldname)) { // contains an object
 						while (jp.nextToken() != JsonToken.END_OBJECT) {
 							String namefield = jp.getCurrentName();
@@ -643,7 +625,7 @@ public final class RedditCommentsListActivity extends ListActivity
 				throw new IllegalStateException(genericListingError);
 			jp.nextToken();
 			// Handle "more" link (child)
-			if (MORE_KIND.equals(jp.getText())) {
+			if (Constants.JSON_MORE.equals(jp.getText())) {
 		//		more = true;
 				CommentInfo moreCi = new CommentInfo();
 				moreCi.setListOrder(mNestedCommentsJSONOrder);
@@ -706,9 +688,9 @@ public final class RedditCommentsListActivity extends ListActivity
 				
 					if (Constants.JSON_KIND.equals(fieldname)) {
 						// Handle "more" link (sibling)
-						if (MORE_KIND.equals(jp.getText())) {
+						if (Constants.JSON_MORE.equals(jp.getText())) {
 		//					more = true;
-				    		ci.put(Constants.JSON_KIND, MORE_KIND);
+				    		ci.put(Constants.JSON_KIND, Constants.JSON_MORE);
 					    	mMorePositions.add(ci.getListOrder());
 				    		
 					    	jp.nextToken();
@@ -724,7 +706,7 @@ public final class RedditCommentsListActivity extends ListActivity
 					    		ci.put(moreFieldname, jp.getText());
 					    	}
 						}
-						else if (!COMMENT_KIND.equals(jp.getText())) {
+						else if (!Constants.COMMENT_KIND.equals(jp.getText())) {
 							// Skip this JSON Object since it doesn't represent a comment.
 							// May encounter nested objects too.
 							int nested = 0;
@@ -739,7 +721,7 @@ public final class RedditCommentsListActivity extends ListActivity
 							}
 							break;  // Go on to the next thread (JSON Object) in the JSON Array.
 						} else {
-							ci.put(Constants.JSON_KIND, COMMENT_KIND);
+							ci.put(Constants.JSON_KIND, Constants.COMMENT_KIND);
 						}
 					} else if (Constants.JSON_DATA.equals(fieldname)) { // contains an object
 						while (jp.nextToken() != JsonToken.END_OBJECT) {
@@ -786,7 +768,7 @@ public final class RedditCommentsListActivity extends ListActivity
 	    		lodToast.show();
 	    	}
 	    	showDialog(Constants.DIALOG_LOADING_COMMENTS_LIST);
-	    	setTitle("/r/"+mSettings.subreddit.toString().trim());
+	    	setTitle(mThreadTitle + " : " + mSettings.subreddit);
     	}
     	
     	public void onPostExecute(Void v) {
@@ -1465,6 +1447,8 @@ public final class RedditCommentsListActivity extends ListActivity
     protected Dialog onCreateDialog(int id) {
     	Dialog dialog;
     	AutoResetProgressDialog pdialog;
+    	AlertDialog.Builder builder;
+    	LayoutInflater inflater;
     	
     	switch (id) {
     	case Constants.DIALOG_LOGIN:
@@ -1504,8 +1488,9 @@ public final class RedditCommentsListActivity extends ListActivity
     		
     	case Constants.DIALOG_OP:
     	case Constants.DIALOG_THING_CLICK:
-    		dialog = new Dialog(this);
-    		dialog.setContentView(R.layout.comment_click_dialog);
+    		inflater = (LayoutInflater)this.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
+    		builder = new AlertDialog.Builder(this);
+    		dialog = builder.setView(inflater.inflate(R.layout.comment_click_dialog, null)).create();
     		break;
 
     	case Constants.DIALOG_REPLY:
@@ -1557,6 +1542,7 @@ public final class RedditCommentsListActivity extends ListActivity
     @Override
     protected void onPrepareDialog(int id, Dialog dialog) {
     	super.onPrepareDialog(id, dialog);
+    	StringBuilder sb;
     	    	
     	switch (id) {
     	case Constants.DIALOG_LOGIN:
@@ -1573,14 +1559,19 @@ public final class RedditCommentsListActivity extends ListActivity
     		String likes;
     		final TextView titleView = (TextView) dialog.findViewById(R.id.title);
     		final TextView urlView = (TextView) dialog.findViewById(R.id.url);
+    		final TextView submissionStuffView = (TextView) dialog.findViewById(R.id.submissionTime_submitter_subreddit);
     		final Button linkButton = (Button) dialog.findViewById(R.id.thread_link_button);
 			if (mVoteTargetCommentInfo.getOP() != null) {
-    			dialog.setTitle("OP: " + mVoteTargetCommentInfo.getOP().getAuthor());
-    			likes = mVoteTargetCommentInfo.getOP().getLikes();
+				likes = mVoteTargetCommentInfo.getOP().getLikes();
     			titleView.setVisibility(View.VISIBLE);
     			titleView.setText(mOpThreadInfo.getTitle());
     			urlView.setVisibility(View.VISIBLE);
     			urlView.setText(mOpThreadInfo.getURL());
+    			submissionStuffView.setVisibility(View.VISIBLE);
+        		sb = new StringBuilder("submitted ")
+	    			.append(Util.getTimeAgo(Double.valueOf(mOpThreadInfo.getCreatedUtc())))
+	    			.append(" by ").append(mOpThreadInfo.getAuthor());
+        		submissionStuffView.setText(sb);
     			if (id == Constants.DIALOG_OP) {
 	    			linkButton.setOnClickListener(new OnClickListener() {
 	    				public void onClick(View v) {
@@ -1598,14 +1589,14 @@ public final class RedditCommentsListActivity extends ListActivity
     			}
     			linkButton.setVisibility(View.VISIBLE);
     		} else {
-    			dialog.setTitle("Comment by " + mVoteTargetCommentInfo.getAuthor());
+    			titleView.setText("Comment by " + mVoteTargetCommentInfo.getAuthor());
     			likes = mVoteTargetCommentInfo.getLikes();
-    			titleView.setVisibility(View.GONE);
-    			urlView.setVisibility(View.GONE);
+    			urlView.setVisibility(View.INVISIBLE);
+    			submissionStuffView.setVisibility(View.INVISIBLE);
     			linkButton.setVisibility(View.GONE);
     		}
-    		final CheckBox voteUpButton = (CheckBox) dialog.findViewById(R.id.comment_vote_up_button);
-    		final CheckBox voteDownButton = (CheckBox) dialog.findViewById(R.id.comment_vote_down_button);
+    		final CheckBox voteUpButton = (CheckBox) dialog.findViewById(R.id.vote_up_button);
+    		final CheckBox voteDownButton = (CheckBox) dialog.findViewById(R.id.vote_down_button);
     		final Button replyButton = (Button) dialog.findViewById(R.id.reply_button);
     		final Button loginButton = (Button) dialog.findViewById(R.id.login_button);
     		

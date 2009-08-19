@@ -43,7 +43,7 @@ public class Constants {
     static final int THEME_DARK = 1;
     
     // Special CSS for webviews to match themes
-    static final String CSS_DARK = "<body style=\"color:#c0c0c0;background-color:#191919\">";
+    static final String CSS_DARK = "<style>body{color:#c0c0c0;background-color:#191919}a:link{color:#ffffff}</style>";
     
     // States for StateListDrawables
     static final int[] STATE_CHECKED = new int[]{android.R.attr.state_checked};
@@ -55,7 +55,9 @@ public class Constants {
     static final String NULL_STRING = "null";
     static final String EMPTY_STRING = "";
     
-    // JSON keys
+    static final String FRONTPAGE_STRING = "reddit front page";
+    
+    // JSON values
     static final String JSON_BODY = "body";
     static final String JSON_CHILDREN = "children";
     static final String JSON_DATA = "data";
@@ -63,7 +65,8 @@ public class Constants {
     static final String JSON_LISTING = "Listing";
     static final String JSON_MEDIA = "media";
     static final String JSON_MEDIA_EMBED = "media_embed";
-    static final String JSON_REPLIES = "replies";
+    static final String JSON_MORE = "more";
+	static final String JSON_REPLIES = "replies";
     
     // TabSpec tags
     static final String TAB_LINK = "tab_link";

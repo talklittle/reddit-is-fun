@@ -27,6 +27,7 @@ public final class PickSubredditActivity extends ListActivity {
 	private EditText mEt;
 	
     public static final String[] SUBREDDITS = {
+    	Constants.FRONTPAGE_STRING,
     	"reddit.com",
     	"pics",
     	"politics",
