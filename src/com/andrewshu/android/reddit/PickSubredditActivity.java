@@ -93,7 +93,7 @@ public final class PickSubredditActivity extends ListActivity {
         List<String> items = Arrays.asList(SUBREDDITS);
         mAdapter = new PickSubredditAdapter(this, items);
         getListView().setAdapter(mAdapter);
-
+        Common.updateListDrawables(this, mSettings.theme);
 
 //        // Need one of these to post things back to the UI thread.
 //        mHandler = new Handler();
@@ -183,5 +183,4 @@ public final class PickSubredditActivity extends ListActivity {
             return view;
         }
     }
-	
 }

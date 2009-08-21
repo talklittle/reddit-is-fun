@@ -2,6 +2,8 @@ package com.andrewshu.android.reddit;
 
 import java.util.regex.Pattern;
 
+import android.app.Activity;
+
 public class Constants {
 
 	static final String COMMENT_KIND = "t1";
@@ -20,6 +22,9 @@ public class Constants {
     // startActivityForResult request codes
     static final int ACTIVITY_PICK_SUBREDDIT = 0;
     static final int ACTIVITY_SUBMIT_LINK = 1;
+    
+    // User-defined result codes
+    static final int RESULT_LOGIN_REQUIRED = Activity.RESULT_FIRST_USER;
     
     // Menu and dialog actions
     static final int DIALOG_PICK_SUBREDDIT = 0;

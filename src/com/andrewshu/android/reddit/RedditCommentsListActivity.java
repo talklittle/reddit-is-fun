@@ -145,7 +145,7 @@ public final class RedditCommentsListActivity extends ListActivity
     		setTheme(mSettings.themeResId);
     		setContentView(R.layout.threads_list_content);
     		setListAdapter(mCommentsAdapter);
-    		updateListDrawables();
+    		Common.updateListDrawables(this, mSettings.theme);
     	}
     	if (mSettings.loggedIn != previousLoggedIn) {
     		new DownloadCommentsTask().execute(Constants.DEFAULT_COMMENT_DOWNLOAD_LIMIT);
@@ -186,18 +186,6 @@ public final class RedditCommentsListActivity extends ListActivity
 			else
 				new VoteTask(thingFullname, 0).execute((Void[])null);
 		}
-    }
-    
-    /**
-     * Set the Drawable for the list selector etc. based on the current theme.
-     */
-    private void updateListDrawables() {
-    	if (mSettings.theme == Constants.THEME_LIGHT) {
-    		getListView().setSelector(R.drawable.list_selector_solid_pale_blue);
-    		// TODO: Set the empty listview image
-    	} else if (mSettings.theme == Constants.THEME_DARK) {
-    		getListView().setSelector(android.R.drawable.list_selector_background);
-    	}
     }
     
 
@@ -458,7 +446,7 @@ public final class RedditCommentsListActivity extends ListActivity
         List<CommentInfo> items = new ArrayList<CommentInfo>();
         mCommentsAdapter = new CommentsListAdapter(this, items);
         setListAdapter(mCommentsAdapter);
-        updateListDrawables();
+        Common.updateListDrawables(this, mSettings.theme);
     }
 
         
@@ -840,6 +828,7 @@ public final class RedditCommentsListActivity extends ListActivity
         public CommentInfo doInBackground(CharSequence... text) {
         	CommentInfo newlyCreatedComment = null;
         	String userError = "Error replying. Please try again.";
+        	HttpEntity entity = null;
         	
         	String status = "";
         	if (!mSettings.loggedIn) {
@@ -878,10 +867,11 @@ public final class RedditCommentsListActivity extends ListActivity
             	if (!status.contains("OK"))
             		throw new HttpException(status);
             	
-            	HttpEntity entity = response.getEntity();
+            	entity = response.getEntity();
 
             	BufferedReader in = new BufferedReader(new InputStreamReader(entity.getContent()));
             	String line = in.readLine();
+            	in.close();
             	if (line == null || Constants.EMPTY_STRING.equals(line)) {
             		throw new HttpException("No content returned from reply POST");
             	}
@@ -935,9 +925,7 @@ public final class RedditCommentsListActivity extends ListActivity
                 	throw new Exception("No id returned by reply POST.");
             	}
             	
-            	in.close();
-            	if (entity != null)
-            		entity.consumeContent();
+            	entity.consumeContent();
             	
             	// Getting here means success. Create a new CommentInfo.
             	newlyCreatedComment = new CommentInfo(
@@ -964,6 +952,13 @@ public final class RedditCommentsListActivity extends ListActivity
             	return newlyCreatedComment;
             	
         	} catch (Exception e) {
+        		if (entity != null) {
+        			try {
+        				entity.consumeContent();
+        			} catch (IOException e2) {
+        				Log.e(TAG, e.getMessage());
+        			}
+        		}
                 Log.e(TAG, e.getMessage());
         	}
         	return null;
@@ -1019,6 +1014,8 @@ public final class RedditCommentsListActivity extends ListActivity
     	@Override
     	public Boolean doInBackground(Void... v) {
         	String status = "";
+        	HttpEntity entity = null;
+        	
         	if (!mSettings.loggedIn) {
         		_mUserError = "You must be logged in to vote.";
         		return false;
@@ -1057,10 +1054,11 @@ public final class RedditCommentsListActivity extends ListActivity
             		throw new HttpException(status);
             	}
             	
-            	HttpEntity entity = response.getEntity();
+            	entity = response.getEntity();
 
             	BufferedReader in = new BufferedReader(new InputStreamReader(entity.getContent()));
             	String line = in.readLine();
+            	in.close();
             	if (line == null || Constants.EMPTY_STRING.equals(line)) {
             		_mUserError = "Connection error when voting. Try again.";
             		throw new HttpException("No content returned from vote POST");
@@ -1076,32 +1074,37 @@ public final class RedditCommentsListActivity extends ListActivity
             	
             	Log.d(TAG, line);
 
-//    	        	// DEBUG
-//    	        	int c;
-//    	        	boolean done = false;
-//    	        	StringBuilder sb = new StringBuilder();
-//    	        	while ((c = in.read()) >= 0) {
-//    	        		sb.append((char) c);
-//    	        		for (int i = 0; i < 80; i++) {
-//    	        			c = in.read();
-//    	        			if (c < 0) {
-//    	        				done = true;
-//    	        				break;
-//    	        			}
-//    	        			sb.append((char) c);
-//    	        		}
-//    	        		Log.d(TAG, "doLogin response content: " + sb.toString());
-//    	        		sb = new StringBuilder();
-//    	        		if (done)
-//    	        			break;
-//    	        	}
+//            	// DEBUG
+//            	int c;
+//            	boolean done = false;
+//            	StringBuilder sb = new StringBuilder();
+//            	for (int k = 0; k < line.length(); k += 80) {
+//            		for (int i = 0; i < 80; i++) {
+//            			if (k + i >= line.length()) {
+//            				done = true;
+//            				break;
+//            			}
+//            			c = line.charAt(k + i);
+//            			sb.append((char) c);
+//            		}
+//            		Log.d(TAG, "doReply response content: " + sb.toString());
+//            		sb = new StringBuilder();
+//            		if (done)
+//            			break;
+//            	}
+//    	        	
 
-            	in.close();
-            	if (entity != null)
-            		entity.consumeContent();
+            	entity.consumeContent();
             	
             	return true;
         	} catch (Exception e) {
+        		if (entity != null) {
+        			try {
+        				entity.consumeContent();
+        			} catch (IOException e2) {
+        				Log.e(TAG, e.getMessage());
+        			}
+        		}
                 Log.e(TAG, e.getMessage());
         	}
         	return false;
@@ -1362,7 +1365,7 @@ public final class RedditCommentsListActivity extends ListActivity
         		RedditCommentsListActivity.this.setTheme(mSettings.themeResId);
         		RedditCommentsListActivity.this.setContentView(R.layout.comments_list_content);
                 RedditCommentsListActivity.this.setListAdapter(mCommentsAdapter);
-                RedditCommentsListActivity.this.updateListDrawables();
+                Common.updateListDrawables(RedditCommentsListActivity.this, mSettings.theme);
         		break;
         	default:
         		throw new IllegalArgumentException("Unexpected action value "+mAction);
@@ -1500,22 +1503,27 @@ public final class RedditCommentsListActivity extends ListActivity
         		sb = new StringBuilder(Util.getTimeAgo(Double.valueOf(mOpThreadInfo.getCreatedUtc())))
 	    			.append(" by ").append(mOpThreadInfo.getAuthor());
         		submissionStuffView.setText(sb);
-    			if (id == Constants.DIALOG_OP) {
-	    			linkButton.setOnClickListener(new OnClickListener() {
-	    				public void onClick(View v) {
-	    					dismissDialog(Constants.DIALOG_OP);
-	    					startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse(mOpThreadInfo.getURL())));
-	    				}
-	    			});
+    			// For self posts, you're already there!
+    			if (("self.").toLowerCase().equals(mOpThreadInfo.getDomain().substring(0, 5).toLowerCase())) {
+    				linkButton.setVisibility(View.INVISIBLE);
     			} else {
-    				linkButton.setOnClickListener(new OnClickListener() {
-	    				public void onClick(View v) {
-	    					dismissDialog(Constants.DIALOG_THING_CLICK);
-	    					startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse(mOpThreadInfo.getURL())));
-	    				}
-	    			});
+	    			if (id == Constants.DIALOG_OP) {
+		    			linkButton.setOnClickListener(new OnClickListener() {
+		    				public void onClick(View v) {
+		    					dismissDialog(Constants.DIALOG_OP);
+		    					startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse(mOpThreadInfo.getURL())));
+		    				}
+		    			});
+	    			} else {
+	    				linkButton.setOnClickListener(new OnClickListener() {
+		    				public void onClick(View v) {
+		    					dismissDialog(Constants.DIALOG_THING_CLICK);
+		    					startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse(mOpThreadInfo.getURL())));
+		    				}
+		    			});
+	    			}
+    				linkButton.setVisibility(View.VISIBLE);
     			}
-    			linkButton.setVisibility(View.VISIBLE);
     		} else {
     			titleView.setText("Comment by " + mVoteTargetCommentInfo.getAuthor());
     			likes = mVoteTargetCommentInfo.getLikes();

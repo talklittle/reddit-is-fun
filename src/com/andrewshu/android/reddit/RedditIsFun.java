@@ -121,7 +121,7 @@ public final class RedditIsFun extends ListActivity
     		setTheme(mSettings.themeResId);
     		setContentView(R.layout.threads_list_content);
     		setListAdapter(mThreadsAdapter);
-    		updateListDrawables();
+    		Common.updateListDrawables(this, mSettings.theme);
     	}
     	if (mSettings.loggedIn != previousLoggedIn) {
     		new DownloadThreadsTask().execute(mSettings.subreddit);
@@ -141,13 +141,23 @@ public final class RedditIsFun extends ListActivity
     	
     	switch(requestCode) {
     	case Constants.ACTIVITY_PICK_SUBREDDIT:
-    		if (resultCode != Activity.RESULT_CANCELED) {
+    		if (resultCode == Activity.RESULT_OK) {
     			Bundle extras = intent.getExtras();
 	    		String newSubreddit = extras.getString(ThreadInfo.SUBREDDIT);
 	    		if (newSubreddit != null && !"".equals(newSubreddit)) {
 	    			mSettings.setSubreddit(newSubreddit);
-	    			new DownloadThreadsTask().execute(mSettings.subreddit);
+	    			new DownloadThreadsTask().execute(newSubreddit);
 	    		}
+    		}
+    		break;
+    	case Constants.ACTIVITY_SUBMIT_LINK:
+    		if (resultCode == Activity.RESULT_OK) {
+    			Bundle extras = intent.getExtras();
+	    		String newSubreddit = extras.getString(ThreadInfo.SUBREDDIT);
+	    		mSettings.setSubreddit(newSubreddit);
+    			new DownloadThreadsTask().execute(newSubreddit);
+    		} else if (resultCode == Constants.RESULT_LOGIN_REQUIRED) {
+    			Common.showErrorToast("You must be logged in to make a submission.", Toast.LENGTH_LONG, this);
     		}
     		break;
     	default:
@@ -155,17 +165,6 @@ public final class RedditIsFun extends ListActivity
     	}
     }
     
-    /**
-     * Set the Drawable for the list selector etc. based on the current theme.
-     */
-    private void updateListDrawables() {
-    	if (mSettings.theme == Constants.THEME_LIGHT) {
-    		getListView().setSelector(R.drawable.list_selector_solid_pale_blue);
-    		// TODO: Set the empty listview image
-    	} else if (mSettings.theme == Constants.THEME_DARK) {
-    		getListView().setSelector(android.R.drawable.list_selector_background);
-    	}
-    }
     
     private class VoteUpOnCheckedChangeListener implements CompoundButton.OnCheckedChangeListener {
     	public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
@@ -346,7 +345,7 @@ public final class RedditIsFun extends ListActivity
     	List<ThreadInfo> items = new ArrayList<ThreadInfo>();
 		mThreadsAdapter = new ThreadsListAdapter(this, items);
 	    setListAdapter(mThreadsAdapter);
-	    updateListDrawables();
+	    Common.updateListDrawables(this, mSettings.theme);
     }
 
     /**
@@ -583,6 +582,8 @@ public final class RedditIsFun extends ListActivity
     	@Override
     	public Boolean doInBackground(Void... v) {
         	String status = "";
+        	HttpEntity entity = null;
+        	
         	if (!mSettings.loggedIn) {
         		_mUserError = "You must be logged in to vote.";
         		return false;
@@ -621,10 +622,11 @@ public final class RedditIsFun extends ListActivity
             		throw new HttpException(status);
             	}
             	
-            	HttpEntity entity = response.getEntity();
+            	entity = response.getEntity();
 
             	BufferedReader in = new BufferedReader(new InputStreamReader(entity.getContent()));
             	String line = in.readLine();
+            	in.close();
             	if (line == null || Constants.EMPTY_STRING.equals(line)) {
             		_mUserError = "Connection error when voting. Try again.";
             		throw new HttpException("No content returned from vote POST");
@@ -640,32 +642,37 @@ public final class RedditIsFun extends ListActivity
             	
             	Log.d(TAG, line);
 
-//    	        	// DEBUG
-//    	        	int c;
-//    	        	boolean done = false;
-//    	        	StringBuilder sb = new StringBuilder();
-//    	        	while ((c = in.read()) >= 0) {
-//    	        		sb.append((char) c);
-//    	        		for (int i = 0; i < 80; i++) {
-//    	        			c = in.read();
-//    	        			if (c < 0) {
-//    	        				done = true;
-//    	        				break;
-//    	        			}
-//    	        			sb.append((char) c);
-//    	        		}
-//    	        		Log.d(TAG, "doLogin response content: " + sb.toString());
-//    	        		sb = new StringBuilder();
-//    	        		if (done)
-//    	        			break;
-//    	        	}
+//            	// DEBUG
+//            	int c;
+//            	boolean done = false;
+//            	StringBuilder sb = new StringBuilder();
+//            	for (int k = 0; k < line.length(); k += 80) {
+//            		for (int i = 0; i < 80; i++) {
+//            			if (k + i >= line.length()) {
+//            				done = true;
+//            				break;
+//            			}
+//            			c = line.charAt(k + i);
+//            			sb.append((char) c);
+//            		}
+//            		Log.d(TAG, "doReply response content: " + sb.toString());
+//            		sb = new StringBuilder();
+//            		if (done)
+//            			break;
+//            	}
+//    	        	
 
-            	in.close();
-            	if (entity != null)
-            		entity.consumeContent();
-            	
+            	entity.consumeContent();
             	return true;
+            	
         	} catch (Exception e) {
+        		if (entity != null) {
+        			try {
+        				entity.consumeContent();
+        			} catch (IOException e2) {
+        				Log.e(TAG, e.getMessage());
+        			}
+        		}
                 Log.e(TAG, e.getMessage());
         	}
         	return false;
@@ -859,6 +866,7 @@ public final class RedditIsFun extends ListActivity
         		break;
         	case Constants.DIALOG_SUBMIT_LINK:
         		Intent submitLinkIntent = new Intent(RedditIsFun.this, SubmitLinkActivity.class);
+        		submitLinkIntent.putExtra(ThreadInfo.SUBREDDIT, mSettings.subreddit);
         		startActivityForResult(submitLinkIntent, Constants.ACTIVITY_SUBMIT_LINK);
         		break;
         	case Constants.DIALOG_PICK_SUBREDDIT:
@@ -892,7 +900,7 @@ public final class RedditIsFun extends ListActivity
         		RedditIsFun.this.setTheme(mSettings.themeResId);
         		RedditIsFun.this.setContentView(R.layout.threads_list_content);
         		RedditIsFun.this.setListAdapter(mThreadsAdapter);
-        		RedditIsFun.this.updateListDrawables();
+        		Common.updateListDrawables(RedditIsFun.this, mSettings.theme);
         		break;
         	default:
         		throw new IllegalArgumentException("Unexpected action value "+mAction);

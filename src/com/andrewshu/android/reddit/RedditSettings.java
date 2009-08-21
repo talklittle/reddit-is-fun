@@ -39,6 +39,14 @@ public class RedditSettings {
 		this.redditSessionCookie = redditSessionCookie;
 	}
 	
+	synchronized void setThreadDownloadLimit(int threadDownloadLimit) {
+		this.threadDownloadLimit = threadDownloadLimit;
+	}
+
+	synchronized void setFrontpage(boolean isFrontpage) {
+		this.isFrontpage = isFrontpage;
+	}
+
 	synchronized void setTheme(int theme) {
 		this.theme = theme;
 	}

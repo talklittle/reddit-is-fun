@@ -1,6 +1,7 @@
 package com.andrewshu.android.reddit;
 
 import java.io.BufferedReader;
+import java.io.IOException;
 import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.Date;
@@ -20,10 +21,13 @@ import org.apache.http.message.BasicNameValuePair;
 import org.apache.http.protocol.HTTP;
 
 import android.app.Activity;
+import android.app.ListActivity;
 import android.content.Context;
 import android.content.SharedPreferences;
+import android.content.res.Resources;
 import android.view.LayoutInflater;
 import android.view.View;
+import android.widget.ListView;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -40,6 +44,21 @@ public class Common {
 		errorMessage.setText(error);
 		t.setView(v);
 		t.show();
+	}
+	
+	/**
+     * Set the Drawable for the list selector etc. based on the current theme.
+     */
+	static void updateListDrawables(ListActivity la, int theme) {
+		final ListView lv = la.getListView();
+		final Resources res = la.getResources();
+		if (theme == Constants.THEME_LIGHT) {
+    		lv.setSelector(R.drawable.list_selector_solid_pale_blue);
+    		lv.setCacheColorHint(res.getColor(R.color.white));
+    	} else if (theme == Constants.THEME_DARK) {
+    		lv.setSelector(android.R.drawable.list_selector_background);
+    		lv.setCacheColorHint(res.getColor(R.color.android_dark_background));
+    	}
 	}
 	
     static void saveRedditPreferences(Activity act, RedditSettings rSettings) {
@@ -110,6 +129,7 @@ public class Common {
     static String doLogin(CharSequence username, CharSequence password, DefaultHttpClient client) {
 		String status = "";
     	String userError = "Error logging in. Please try again.";
+    	HttpEntity entity = null;
     	try {
     		// Construct data
     		List<NameValuePair> nvps = new ArrayList<NameValuePair>();
@@ -126,10 +146,11 @@ public class Common {
         		throw new HttpException(status);
         	}
         	
-        	HttpEntity entity = response.getEntity();
+        	entity = response.getEntity();
         	
         	BufferedReader in = new BufferedReader(new InputStreamReader(entity.getContent()));
         	String line = in.readLine();
+        	in.close();
         	if (line == null || Constants.EMPTY_STRING.equals(line)) {
         		throw new HttpException("No content returned from login POST");
         	}
@@ -138,29 +159,27 @@ public class Common {
         		throw new Exception("Wrong password");
         	}
 
-        	// DEBUG
-//	        	int c;
-//	        	boolean done = false;
-//	        	StringBuilder sb = new StringBuilder();
-//	        	while ((c = in.read()) >= 0) {
-//	        		sb.append((char) c);
-//	        		for (int i = 0; i < 80; i++) {
-//	        			c = in.read();
-//	        			if (c < 0) {
-//	        				done = true;
-//	        				break;
-//	        			}
-//	        			sb.append((char) c);
-//	        		}
-//	        		Log.d(TAG, "doLogin response content: " + sb.toString());
-//	        		sb = new StringBuilder();
-//	        		if (done)
-//	        			break;
-//	        	}
+//        	// DEBUG
+//        	int c;
+//        	boolean done = false;
+//        	StringBuilder sb = new StringBuilder();
+//        	for (int k = 0; k < line.length(); k += 80) {
+//        		for (int i = 0; i < 80; i++) {
+//        			if (k + i >= line.length()) {
+//        				done = true;
+//        				break;
+//        			}
+//        			c = line.charAt(k + i);
+//        			sb.append((char) c);
+//        		}
+//        		Log.d(TAG, "doReply response content: " + sb.toString());
+//        		sb = new StringBuilder();
+//        		if (done)
+//        			break;
+//        	}
+//	        	
         	
-        	in.close();
-        	if (entity != null)
-        		entity.consumeContent();
+        	entity.consumeContent();
         	
         	if (client.getCookieStore().getCookies().isEmpty())
         		throw new HttpException("Failed to login: No cookies");
@@ -172,6 +191,13 @@ public class Common {
         	return null;
 
     	} catch (Exception e) {
+    		if (entity != null) {
+    			try {
+    				entity.consumeContent();
+    			} catch (IOException e2) {
+    				Log.e(TAG, e.getMessage());
+    			}
+    		}
         	Log.e(TAG, e.getMessage());
         }
         return userError;
@@ -194,6 +220,7 @@ public class Common {
      */
     static String doUpdateModhash(DefaultHttpClient client) {
     	String modhash;
+    	HttpEntity entity = null;
     	try {
     		HttpGet httpget = new HttpGet(Constants.MODHASH_URL);
     		HttpResponse response = client.execute(httpget);
@@ -203,12 +230,13 @@ public class Common {
 //        	if (!status.contains("OK"))
 //        		throw new HttpException(status);
         	
-        	HttpEntity entity = response.getEntity();
+        	entity = response.getEntity();
 
         	BufferedReader in = new BufferedReader(new InputStreamReader(entity.getContent()));
         	// modhash should appear within first 1200 chars
         	char[] buffer = new char[1200];
         	in.read(buffer, 0, 1200);
+        	in.close();
         	String line = String.valueOf(buffer);
         	if (line == null || Constants.EMPTY_STRING.equals(line)) {
         		throw new HttpException("No content returned from doUpdateModhash GET to "+Constants.MODHASH_URL);
@@ -232,30 +260,35 @@ public class Common {
 //        	int c;
 //        	boolean done = false;
 //        	StringBuilder sb = new StringBuilder();
-//        	while ((c = in.read()) >= 0) {
-//        		sb.append((char) c);
+//        	for (int k = 0; k < line.length(); k += 80) {
 //        		for (int i = 0; i < 80; i++) {
-//        			c = in.read();
-//        			if (c < 0) {
+//        			if (k + i >= line.length()) {
 //        				done = true;
 //        				break;
 //        			}
+//        			c = line.charAt(k + i);
 //        			sb.append((char) c);
 //        		}
-//        		Log.d(TAG, "doLogin response content: " + sb.toString());
+//        		Log.d(TAG, "doReply response content: " + sb.toString());
 //        		sb = new StringBuilder();
 //        		if (done)
 //        			break;
 //        	}
+//	        	
 
-        	in.close();
-        	if (entity != null)
-        		entity.consumeContent();
+        	entity.consumeContent();
         	
         	Log.d(TAG, "modhash: "+modhash);
         	return modhash;
         	
     	} catch (Exception e) {
+    		if (entity != null) {
+    			try {
+    				entity.consumeContent();
+    			} catch (IOException e2) {
+    				Log.e(TAG, e.getMessage());
+    			}
+    		}
     		Log.e(TAG, e.getMessage());
     		return null;
     	}

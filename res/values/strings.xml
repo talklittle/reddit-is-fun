@@ -34,4 +34,11 @@
 	
 	<string name="error_voting_toast">Error voting. Please try again.</string>
 	
+	<string name="submit_link_title_label">title</string>
+	<string name="submit_link_url_label">url</string>
+	<string name="submit_link_reddit_label">reddit</string>
+	<string name="submit_text_title_label">title</string>
+	<string name="submit_text_text_label">text (optional)</string>
+	<string name="submit_text_reddit_label">reddit</string>
+	
 </resources>

@@ -15,7 +15,8 @@
     <!-- OP post is the position 0 item of this list -->
     <ListView android:id="@android:id/list"
     	android:layout_width="fill_parent"
-	    android:layout_height="wrap_content"
+	    android:layout_height="fill_parent"
+	    android:smoothScrollbar="false"
 	    android:divider="@null"
     />
 
