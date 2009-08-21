@@ -38,7 +38,6 @@ import android.content.res.Resources;
 import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Bundle;
-import android.os.Handler;
 import android.view.KeyEvent;
 import android.view.LayoutInflater;
 import android.view.Menu;
@@ -76,15 +75,13 @@ public final class RedditCommentsListActivity extends ListActivity
 	
     /** Custom list adapter that fits our threads data into the list. */
     private CommentsListAdapter mCommentsAdapter;
-    /** Handler used to post things to UI thread */
-    Handler mHandler = new Handler();
     
-    private DefaultHttpClient mClient = new DefaultHttpClient();
+    private final DefaultHttpClient mClient = new DefaultHttpClient();
     volatile private String mModhash;
    
     
     // Common settings are stored here
-    private RedditSettings mSettings = new RedditSettings();
+    private final RedditSettings mSettings = new RedditSettings();
     
     private ThreadInfo mOpThreadInfo;
     private CharSequence mThreadTitle;
@@ -285,7 +282,7 @@ public final class RedditCommentsListActivity extends ListActivity
 	                votesView.setText(mOpThreadInfo.getScore());
 	                linkDomainView.setText("("+mOpThreadInfo.getDomain()+")");
 	                numCommentsView.setText(mOpThreadInfo.getNumComments());
-	                submissionTimeView.setText("submitted " + Util.getTimeAgo(Double.valueOf(mOpThreadInfo.getCreatedUtc())));
+	                submissionTimeView.setText(Util.getTimeAgo(Double.valueOf(mOpThreadInfo.getCreatedUtc())));
 	                submitterView.setText("by "+mOpThreadInfo.getAuthor());
 	                titleView.setTag(mOpThreadInfo.getURL());
 	
@@ -784,7 +781,7 @@ public final class RedditCommentsListActivity extends ListActivity
     }
     
     
-    private class LoginTask extends AsyncTask<Void, Void, Boolean> {
+    private class LoginTask extends AsyncTask<Void, Void, String> {
     	private CharSequence mUsername, mPassword, mUserError;
     	
     	LoginTask(CharSequence username, CharSequence password) {
@@ -793,99 +790,31 @@ public final class RedditCommentsListActivity extends ListActivity
     	}
     	
     	@Override
-    	public Boolean doInBackground(Void... v) {
-    		String status = "";
-        	mUserError = "Error logging in. Please try again.";
-        	try {
-        		// Construct data
-        		List<NameValuePair> nvps = new ArrayList<NameValuePair>();
-        		nvps.add(new BasicNameValuePair("user", mUsername.toString()));
-        		nvps.add(new BasicNameValuePair("passwd", mPassword.toString()));
-        		
-                DefaultHttpClient client = new DefaultHttpClient();
-                HttpPost httppost = new HttpPost("http://www.reddit.com/api/login/"+mUsername);
-                httppost.setEntity(new UrlEncodedFormEntity(nvps, HTTP.UTF_8));
-                
-                // Perform the HTTP POST request
-            	HttpResponse response = client.execute(httppost);
-            	status = response.getStatusLine().toString();
-            	if (!status.contains("OK"))
-            		throw new HttpException(status);
-            	
-            	HttpEntity entity = response.getEntity();
-            	
-            	BufferedReader in = new BufferedReader(new InputStreamReader(entity.getContent()));
-            	String line = in.readLine();
-            	if (line == null || Constants.EMPTY_STRING.equals(line)) {
-            		throw new HttpException("No content returned from login POST");
-            	}
-            	if (line.contains("WRONG_PASSWORD")) {
-            		mUserError = "Bad password.";
-            		throw new Exception("Wrong password");
-            	}
-
-            	// DEBUG
-//    	        	int c;
-//    	        	boolean done = false;
-//    	        	StringBuilder sb = new StringBuilder();
-//    	        	while ((c = in.read()) >= 0) {
-//    	        		sb.append((char) c);
-//    	        		for (int i = 0; i < 80; i++) {
-//    	        			c = in.read();
-//    	        			if (c < 0) {
-//    	        				done = true;
-//    	        				break;
-//    	        			}
-//    	        			sb.append((char) c);
-//    	        		}
-//    	        		Log.d(TAG, "doLogin response content: " + sb.toString());
-//    	        		sb = new StringBuilder();
-//    	        		if (done)
-//    	        			break;
-//    	        	}
-            	
-            	in.close();
-            	if (entity != null)
-            		entity.consumeContent();
-            	
-            	List<Cookie> cookies = client.getCookieStore().getCookies();
-            	if (cookies.isEmpty()) {
-            		throw new HttpException("Failed to login: No cookies");
-            	}
-            	for (Cookie c : cookies) {
-            		if (c.getName().equals("reddit_session")) {
-            			mSettings.setRedditSessionCookie(c);
-            			break;
-            		}
-            	}
-            	
-            	// Getting here means you successfully logged in.
-            	// Congratulations!
-            	// You are a true reddit master!
-            
-            	mSettings.setUsername(mUsername);
-            	mSettings.setLoggedIn(true);
-            } catch (Exception e) {
-            	Log.e(TAG, e.getMessage());
-            	mSettings.setLoggedIn(false);
-            }
-            Log.d(TAG, status);
-            return mSettings.loggedIn;
+    	public String doInBackground(Void... v) {
+    		return Common.doLogin(mUsername, mPassword, mClient);
         }
     	
     	protected void onPreExecute() {
     		showDialog(Constants.DIALOG_LOGGING_IN);
     	}
     	
-    	protected void onPostExecute(Boolean success) {
-    		if (success) {
+    	protected void onPostExecute(String errorMessage) {
+    		dismissDialog(Constants.DIALOG_LOGGING_IN);
+    		if (errorMessage == null) {
+    			List<Cookie> cookies = mClient.getCookieStore().getCookies();
+            	for (Cookie c : cookies) {
+            		if (c.getName().equals("reddit_session")) {
+            			mSettings.setRedditSessionCookie(c);
+            			break;
+            		}
+            	}
+            	mSettings.setUsername(mUsername);
+            	mSettings.setLoggedIn(true);
     			Toast.makeText(RedditCommentsListActivity.this, "Logged in as "+mUsername, Toast.LENGTH_SHORT).show();
-        		dismissDialog(Constants.DIALOG_LOGGING_IN);
-        		if (mSettings.loggedIn) {
-    	    		// Refresh the threads list
-        			new DownloadCommentsTask().execute(Constants.DEFAULT_COMMENT_DOWNLOAD_LIMIT);
-        		}
+	    		// Refresh the threads list
+    			new DownloadCommentsTask().execute(Constants.DEFAULT_COMMENT_DOWNLOAD_LIMIT);
     		} else {
+            	mSettings.setLoggedIn(false);
     			Common.showErrorToast(mUserError, Toast.LENGTH_LONG, RedditCommentsListActivity.this);
     		}
     	}
@@ -1568,8 +1497,7 @@ public final class RedditCommentsListActivity extends ListActivity
     			urlView.setVisibility(View.VISIBLE);
     			urlView.setText(mOpThreadInfo.getURL());
     			submissionStuffView.setVisibility(View.VISIBLE);
-        		sb = new StringBuilder("submitted ")
-	    			.append(Util.getTimeAgo(Double.valueOf(mOpThreadInfo.getCreatedUtc())))
+        		sb = new StringBuilder(Util.getTimeAgo(Double.valueOf(mOpThreadInfo.getCreatedUtc())))
 	    			.append(" by ").append(mOpThreadInfo.getAuthor());
         		submissionStuffView.setText(sb);
     			if (id == Constants.DIALOG_OP) {

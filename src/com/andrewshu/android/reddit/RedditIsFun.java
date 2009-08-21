@@ -35,7 +35,6 @@ import android.content.res.Resources;
 import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Bundle;
-import android.os.Handler;
 import android.view.KeyEvent;
 import android.view.LayoutInflater;
 import android.view.Menu;
@@ -70,14 +69,12 @@ public final class RedditIsFun extends ListActivity
 	
     /** Custom list adapter that fits our threads data into the list. */
     private ThreadsListAdapter mThreadsAdapter;
-    /** Handler used to post things to UI thread */
-    Handler mHandler = new Handler();
-
-	DefaultHttpClient mClient = new DefaultHttpClient();
+    
+	private final DefaultHttpClient mClient = new DefaultHttpClient();
 	String mModhash = null;
 	
    
-    private RedditSettings mSettings = new RedditSettings();
+    private final RedditSettings mSettings = new RedditSettings();
     
     // UI State
     private View mVoteTargetView = null;
@@ -520,8 +517,8 @@ public final class RedditIsFun extends ListActivity
     }
     
     
-    private class LoginTask extends AsyncTask<Void, Void, Boolean> {
-    	private CharSequence mUsername, mPassword, mUserError;
+    private class LoginTask extends AsyncTask<Void, Void, String> {
+    	private CharSequence mUsername, mPassword;
     	
     	LoginTask(CharSequence username, CharSequence password) {
     		mUsername = username;
@@ -529,100 +526,32 @@ public final class RedditIsFun extends ListActivity
     	}
     	
     	@Override
-    	public Boolean doInBackground(Void... v) {
-    		String status = "";
-        	mUserError = "Error logging in. Please try again.";
-        	boolean success = false;
-        	try {
-        		// Construct data
-        		List<NameValuePair> nvps = new ArrayList<NameValuePair>();
-        		nvps.add(new BasicNameValuePair("user", mUsername.toString()));
-        		nvps.add(new BasicNameValuePair("passwd", mPassword.toString()));
-        		
-                HttpPost httppost = new HttpPost("http://www.reddit.com/api/login/"+mUsername);
-                httppost.setEntity(new UrlEncodedFormEntity(nvps, HTTP.UTF_8));
-                
-                // Perform the HTTP POST request
-            	HttpResponse response = mClient.execute(httppost);
-            	status = response.getStatusLine().toString();
-            	if (!status.contains("OK"))
-            		throw new HttpException(status);
-            	
-            	HttpEntity entity = response.getEntity();
-            	
-            	BufferedReader in = new BufferedReader(new InputStreamReader(entity.getContent()));
-            	String line = in.readLine();
-            	if (line == null || Constants.EMPTY_STRING.equals(line)) {
-            		throw new HttpException("No content returned from login POST");
-            	}
-            	if (line.contains("WRONG_PASSWORD")) {
-            		mUserError = "Bad password.";
-            		throw new Exception("Wrong password");
-            	}
-
-            	// DEBUG
-//    	        	int c;
-//    	        	boolean done = false;
-//    	        	StringBuilder sb = new StringBuilder();
-//    	        	while ((c = in.read()) >= 0) {
-//    	        		sb.append((char) c);
-//    	        		for (int i = 0; i < 80; i++) {
-//    	        			c = in.read();
-//    	        			if (c < 0) {
-//    	        				done = true;
-//    	        				break;
-//    	        			}
-//    	        			sb.append((char) c);
-//    	        		}
-//    	        		Log.d(TAG, "doLogin response content: " + sb.toString());
-//    	        		sb = new StringBuilder();
-//    	        		if (done)
-//    	        			break;
-//    	        	}
-            	
-            	in.close();
-            	if (entity != null)
-            		entity.consumeContent();
-            	
-            	List<Cookie> cookies = mClient.getCookieStore().getCookies();
-            	if (cookies.isEmpty()) {
-            		throw new HttpException("Failed to login: No cookies");
-            	}
-            	for (Cookie c : cookies) {
-            		if (c.getName().equals("reddit_session")) {
-            			mSettings.setRedditSessionCookie(c);
-            			break;
-            		}
-            	}
-            	
-            	// Getting here means you successfully logged in.
-            	// Congratulations!
-            	// You are a true reddit master!
-            
-            	success = true;
-            	mSettings.setUsername(mUsername);
-            	mSettings.setLoggedIn(true);
-            } catch (Exception e) {
-            	Log.e(TAG, e.getMessage());
-            	success = false;
-            	mSettings.setLoggedIn(false);
-            }
-            Log.d(TAG, status);
-            return success;
+    	public String doInBackground(Void... v) {
+    		return Common.doLogin(mUsername, mPassword, mClient);
         }
     	
     	protected void onPreExecute() {
     		showDialog(Constants.DIALOG_LOGGING_IN);
     	}
     	
-    	protected void onPostExecute(Boolean success) {
+    	protected void onPostExecute(String errorMessage) {
     		dismissDialog(Constants.DIALOG_LOGGING_IN);
-    		if (success) {
+    		if (errorMessage == null) {
+    			List<Cookie> cookies = mClient.getCookieStore().getCookies();
+            	for (Cookie c : cookies) {
+            		if (c.getName().equals("reddit_session")) {
+            			mSettings.setRedditSessionCookie(c);
+            			break;
+            		}
+            	}
+            	mSettings.setUsername(mUsername);
+            	mSettings.setLoggedIn(true);
     			Toast.makeText(RedditIsFun.this, "Logged in as "+mUsername, Toast.LENGTH_SHORT).show();
     			// Refresh the threads list
     			new DownloadThreadsTask().execute(mSettings.subreddit);
         	} else {
-    			Common.showErrorToast(mUserError, Toast.LENGTH_LONG, RedditIsFun.this);
+            	mSettings.setLoggedIn(false);
+    			Common.showErrorToast(errorMessage, Toast.LENGTH_LONG, RedditIsFun.this);
     		}
     	}
     }
@@ -1079,8 +1008,7 @@ public final class RedditIsFun extends ListActivity
     		
     		titleView.setText(mVoteTargetThreadInfo.getTitle());
     		urlView.setText(mVoteTargetThreadInfo.getURL());
-    		sb = new StringBuilder("submitted ")
-    			.append(Util.getTimeAgo(Double.valueOf(mVoteTargetThreadInfo.getCreatedUtc())))
+    		sb = new StringBuilder(Util.getTimeAgo(Double.valueOf(mVoteTargetThreadInfo.getCreatedUtc())))
     			.append(" by ").append(mVoteTargetThreadInfo.getAuthor());
             // Show subreddit if user is currently looking at front page
     		if (mSettings.isFrontpage) {

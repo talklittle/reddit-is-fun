@@ -2,15 +2,22 @@ package com.andrewshu.android.reddit;
 
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
+import java.util.ArrayList;
 import java.util.Date;
+import java.util.List;
 import java.util.regex.Matcher;
 
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpException;
 import org.apache.http.HttpResponse;
+import org.apache.http.NameValuePair;
+import org.apache.http.client.entity.UrlEncodedFormEntity;
 import org.apache.http.client.methods.HttpGet;
+import org.apache.http.client.methods.HttpPost;
 import org.apache.http.impl.client.DefaultHttpClient;
 import org.apache.http.impl.cookie.BasicClientCookie;
+import org.apache.http.message.BasicNameValuePair;
+import org.apache.http.protocol.HTTP;
 
 import android.app.Activity;
 import android.content.Context;
@@ -96,8 +103,83 @@ public class Common {
         rSettings.setThemeResId(sessionPrefs.getInt("theme_resid", android.R.style.Theme_Light));
     }
     
+    /**
+     * Should be called from a background thread.
+     * @return Error message, or null on success
+     */
+    static String doLogin(CharSequence username, CharSequence password, DefaultHttpClient client) {
+		String status = "";
+    	String userError = "Error logging in. Please try again.";
+    	try {
+    		// Construct data
+    		List<NameValuePair> nvps = new ArrayList<NameValuePair>();
+    		nvps.add(new BasicNameValuePair("user", username.toString()));
+    		nvps.add(new BasicNameValuePair("passwd", password.toString()));
+    		
+            HttpPost httppost = new HttpPost("http://www.reddit.com/api/login/"+username);
+            httppost.setEntity(new UrlEncodedFormEntity(nvps, HTTP.UTF_8));
+            
+            // Perform the HTTP POST request
+        	HttpResponse response = client.execute(httppost);
+        	status = response.getStatusLine().toString();
+        	if (!status.contains("OK")) {
+        		throw new HttpException(status);
+        	}
+        	
+        	HttpEntity entity = response.getEntity();
+        	
+        	BufferedReader in = new BufferedReader(new InputStreamReader(entity.getContent()));
+        	String line = in.readLine();
+        	if (line == null || Constants.EMPTY_STRING.equals(line)) {
+        		throw new HttpException("No content returned from login POST");
+        	}
+        	if (line.contains("WRONG_PASSWORD")) {
+        		userError = "Bad password.";
+        		throw new Exception("Wrong password");
+        	}
+
+        	// DEBUG
+//	        	int c;
+//	        	boolean done = false;
+//	        	StringBuilder sb = new StringBuilder();
+//	        	while ((c = in.read()) >= 0) {
+//	        		sb.append((char) c);
+//	        		for (int i = 0; i < 80; i++) {
+//	        			c = in.read();
+//	        			if (c < 0) {
+//	        				done = true;
+//	        				break;
+//	        			}
+//	        			sb.append((char) c);
+//	        		}
+//	        		Log.d(TAG, "doLogin response content: " + sb.toString());
+//	        		sb = new StringBuilder();
+//	        		if (done)
+//	        			break;
+//	        	}
+        	
+        	in.close();
+        	if (entity != null)
+        		entity.consumeContent();
+        	
+        	if (client.getCookieStore().getCookies().isEmpty())
+        		throw new HttpException("Failed to login: No cookies");
+        	
+        	// Getting here means you successfully logged in.
+        	// Congratulations!
+        	// You are a true reddit master!
+        
+        	return null;
+
+    	} catch (Exception e) {
+        	Log.e(TAG, e.getMessage());
+        }
+        return userError;
+    }
+    
         
     static void doLogout(RedditSettings settings, DefaultHttpClient client) {
+    	client.getCookieStore().clear();
     	settings.setUsername(null);
         settings.setLoggedIn(false);
     }
