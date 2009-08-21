@@ -43,10 +43,6 @@ public class RedditSettings {
 		this.threadDownloadLimit = threadDownloadLimit;
 	}
 
-	synchronized void setFrontpage(boolean isFrontpage) {
-		this.isFrontpage = isFrontpage;
-	}
-
 	synchronized void setTheme(int theme) {
 		this.theme = theme;
 	}

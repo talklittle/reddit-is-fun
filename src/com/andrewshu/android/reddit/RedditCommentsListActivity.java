@@ -38,6 +38,11 @@ import android.content.res.Resources;
 import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Bundle;
+import android.text.SpannableString;
+import android.text.SpannableStringBuilder;
+import android.text.Spanned;
+import android.text.style.AbsoluteSizeSpan;
+import android.text.style.ForegroundColorSpan;
 import android.view.KeyEvent;
 import android.view.LayoutInflater;
 import android.view.Menu;
@@ -85,7 +90,6 @@ public final class RedditCommentsListActivity extends ListActivity
     
     private ThreadInfo mOpThreadInfo;
     private CharSequence mThreadTitle;
-    private int mNumComments;
     private int mNumVisibleComments;
 
     // UI State
@@ -120,10 +124,10 @@ public final class RedditCommentsListActivity extends ListActivity
         	mSettings.setSubreddit(extras.getString(ThreadInfo.SUBREDDIT));
         	mThreadTitle = extras.getString(ThreadInfo.TITLE);
         	setTitle(mThreadTitle + " : " + mSettings.subreddit);
-        	mNumComments = extras.getInt(ThreadInfo.NUM_COMMENTS);
+        	int numComments = extras.getInt(ThreadInfo.NUM_COMMENTS);
         	// TODO: Take into account very negative karma comments
-        	if (mNumComments < Constants.DEFAULT_COMMENT_DOWNLOAD_LIMIT)
-        		mNumVisibleComments = mNumComments;
+        	if (numComments < Constants.DEFAULT_COMMENT_DOWNLOAD_LIMIT)
+        		mNumVisibleComments = numComments;
         	else
         		mNumVisibleComments = Constants.DEFAULT_COMMENT_DOWNLOAD_LIMIT;
         } else {
@@ -248,8 +252,8 @@ public final class RedditCommentsListActivity extends ListActivity
 	                
 	                TextView titleView = (TextView) view.findViewById(R.id.title);
 	                TextView votesView = (TextView) view.findViewById(R.id.votes);
-	                TextView linkDomainView = (TextView) view.findViewById(R.id.linkDomain);
 	                TextView numCommentsView = (TextView) view.findViewById(R.id.numComments);
+	                TextView subredditView = (TextView) view.findViewById(R.id.subreddit);
 	                TextView submissionTimeView = (TextView) view.findViewById(R.id.submissionTime);
 	                TextView submitterView = (TextView) view.findViewById(R.id.submitter);
 	                ImageView voteUpView = (ImageView) view.findViewById(R.id.vote_up_image);
@@ -260,20 +264,37 @@ public final class RedditCommentsListActivity extends ListActivity
 	                submissionTimeView.setVisibility(View.VISIBLE);
 	                selftextView.setVisibility(View.VISIBLE);
 	                
-	                titleView.setText(mOpThreadInfo.getTitle());
+	                // Set the title and domain using a SpannableStringBuilder
+	                SpannableStringBuilder builder = new SpannableStringBuilder();
+	                SpannableString titleSS = new SpannableString(mOpThreadInfo.getTitle());
+	                int titleLen = mOpThreadInfo.getTitle().length();
+	                AbsoluteSizeSpan titleASS = new AbsoluteSizeSpan(14);
+	                titleSS.setSpan(titleASS, 0, titleLen, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
 	                if (mSettings.theme == Constants.THEME_LIGHT) {
-	    	            if (Constants.TRUE_STRING.equals(mOpThreadInfo.getClicked()))
+	                	// FIXME: This doesn't work persistently, since "clicked" is not delivered to reddit.com
+	    	            if (Constants.TRUE_STRING.equals(mOpThreadInfo.getClicked())) {
+	    	            	ForegroundColorSpan fcs = new ForegroundColorSpan(res.getColor(R.color.purple));
 	    	            	titleView.setTextColor(res.getColor(R.color.purple));
-	    	            else
-	    	            	titleView.setTextColor(res.getColor(R.color.blue));
+	    	            	titleSS.setSpan(fcs, 0, titleLen, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
+	    	            } else {
+	    	            	ForegroundColorSpan fcs = new ForegroundColorSpan(res.getColor(R.color.blue));
+	    	            	titleSS.setSpan(fcs, 0, titleLen, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
+	    	            }
 	                }
+	                builder.append(titleSS);
+	                builder.append(" ");
+	                SpannableString domainSS = new SpannableString("("+mOpThreadInfo.getDomain()+")");
+	                AbsoluteSizeSpan domainASS = new AbsoluteSizeSpan(10);
+	                domainSS.setSpan(domainASS, 0, mOpThreadInfo.getDomain().length()+2, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
+	                builder.append(domainSS);
+	                titleView.setText(builder);
+	                
 	                votesView.setText(mOpThreadInfo.getScore());
-	                linkDomainView.setText("("+mOpThreadInfo.getDomain()+")");
-	                numCommentsView.setText(mOpThreadInfo.getNumComments());
+	                numCommentsView.setText(mOpThreadInfo.getNumComments()+" comments");
+	                subredditView.setText(mOpThreadInfo.getSubreddit());
 	                submissionTimeView.setText(Util.getTimeAgo(Double.valueOf(mOpThreadInfo.getCreatedUtc())));
 	                submitterView.setText("by "+mOpThreadInfo.getAuthor());
-	                titleView.setTag(mOpThreadInfo.getURL());
-	
+	                
 	                // Set the up and down arrow colors based on whether user likes
 	                if (mSettings.loggedIn) {
 	                	if (Constants.TRUE_STRING.equals(mOpThreadInfo.getLikes())) {
@@ -972,7 +993,8 @@ public final class RedditCommentsListActivity extends ListActivity
     		} else {
         		// Success. OK to clear the reply draft.
         		_mTargetCommentInfo.setReplyDraft("");
-        		mNumComments++;
+        		// Increment op thread's number comments
+        		mOpThreadInfo.setNumComments(String.valueOf(Integer.valueOf(mOpThreadInfo.getNumComments())+1));
         		
     			// Bump the list order of everything starting from where new comment will go.
     			int count = mCommentsAdapter.getCount();

@@ -98,17 +98,16 @@
 		        android:singleLine="true"
 		        android:ellipsize="marquee"
 		        android:textSize="10dip"
-		        android:textStyle="bold"
 		    />
 		
-		    <TextView android:id="@+id/linkDomain"
+		    <TextView android:id="@+id/subreddit"
 		        android:layout_width="wrap_content"
 		        android:layout_height="wrap_content"
 		        android:layout_marginLeft="5dip"
 		        android:layout_toRightOf="@id/numComments"
 		        android:layout_alignBaseline="@id/numComments"
-		        android:text="(self.reddit.com)"
-				android:textSize="10dip"
+		        android:textSize="10dip"
+		        android:text="funny"
 		    />
 	
 			<!-- A bottommost row used for OP posts in commentslist -->		

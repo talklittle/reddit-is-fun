@@ -57,6 +57,10 @@ public class ThreadInfo {
 		mValues.put(LIKES, likes);
 	}
 	
+	public void setNumComments(String numComments) {
+		mValues.put(NUM_COMMENTS, numComments);
+	}
+	
 	public void setScore(String score) {
 		mValues.put(SCORE, score);
 	}

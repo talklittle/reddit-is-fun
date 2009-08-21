@@ -35,6 +35,11 @@ import android.content.res.Resources;
 import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Bundle;
+import android.text.SpannableString;
+import android.text.SpannableStringBuilder;
+import android.text.Spanned;
+import android.text.style.AbsoluteSizeSpan;
+import android.text.style.ForegroundColorSpan;
 import android.view.KeyEvent;
 import android.view.LayoutInflater;
 import android.view.Menu;
@@ -217,28 +222,50 @@ public final class RedditIsFun extends ListActivity
             
             TextView titleView = (TextView) view.findViewById(R.id.title);
             TextView votesView = (TextView) view.findViewById(R.id.votes);
-            TextView linkDomainView = (TextView) view.findViewById(R.id.linkDomain);
             TextView numCommentsView = (TextView) view.findViewById(R.id.numComments);
+            TextView subredditView = (TextView) view.findViewById(R.id.subreddit);
 //            TextView submissionTimeView = (TextView) view.findViewById(R.id.submissionTime);
             ImageView voteUpView = (ImageView) view.findViewById(R.id.vote_up_image);
             ImageView voteDownView = (ImageView) view.findViewById(R.id.vote_down_image);
             
-            titleView.setText(item.getTitle());
+            // Set the title and domain using a SpannableStringBuilder
+            SpannableStringBuilder builder = new SpannableStringBuilder();
+            SpannableString titleSS = new SpannableString(item.getTitle());
+            int titleLen = item.getTitle().length();
+            AbsoluteSizeSpan titleASS = new AbsoluteSizeSpan(14);
+            titleSS.setSpan(titleASS, 0, titleLen, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
             if (mSettings.theme == Constants.THEME_LIGHT) {
-	            if (Constants.TRUE_STRING.equals(item.getClicked()))
+            	// FIXME: This doesn't work persistently, since "clicked" is not delivered to reddit.com
+	            if (Constants.TRUE_STRING.equals(item.getClicked())) {
+	            	ForegroundColorSpan fcs = new ForegroundColorSpan(res.getColor(R.color.purple));
 	            	titleView.setTextColor(res.getColor(R.color.purple));
-	            else
-	            	titleView.setTextColor(res.getColor(R.color.blue));
+	            	titleSS.setSpan(fcs, 0, titleLen, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
+	            } else {
+	            	ForegroundColorSpan fcs = new ForegroundColorSpan(res.getColor(R.color.blue));
+	            	titleSS.setSpan(fcs, 0, titleLen, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
+	            }
             }
+            builder.append(titleSS);
+            builder.append(" ");
+            SpannableString domainSS = new SpannableString("("+item.getDomain()+")");
+            AbsoluteSizeSpan domainASS = new AbsoluteSizeSpan(10);
+            domainSS.setSpan(domainASS, 0, item.getDomain().length()+2, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
+            builder.append(domainSS);
+            titleView.setText(builder);
+            
             votesView.setText(item.getScore());
-            linkDomainView.setText("("+item.getDomain()+")");
-            numCommentsView.setText(item.getNumComments());
+            numCommentsView.setText(item.getNumComments()+" comments");
+            if (mSettings.isFrontpage) {
+            	subredditView.setVisibility(View.VISIBLE);
+            	subredditView.setText(item.getSubreddit());
+            } else {
+            	subredditView.setVisibility(View.GONE);
+            }
 //            submitterView.setText(item.getAuthor());
             // TODO: convert submission time to a displayable time
 //            Date submissionTimeDate = new Date((long) (Double.parseDouble(item.getCreated()) / 1000));
 //            submissionTimeView.setText("5 hours ago");
-            titleView.setTag(item.getURL());
-
+            
             // Set the up and down arrow colors based on whether user likes
             if (mSettings.loggedIn) {
             	if (Constants.TRUE_STRING.equals(item.getLikes())) {
