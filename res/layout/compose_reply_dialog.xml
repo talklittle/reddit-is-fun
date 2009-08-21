@@ -22,6 +22,8 @@
    		android:layout_height="wrap_content"
    		android:minLines="4"
    		android:textSize="12dip"
+   		android:gravity="top|left"
+   		android:inputType="text|textMultiLine|textCapSentences"
    		/>
    	
    	<Button android:id="@+id/reply_save_button"
