@@ -74,8 +74,8 @@ public final class RedditIsFun extends ListActivity
 	
     /** Custom list adapter that fits our threads data into the list. */
     private ThreadsListAdapter mThreadsAdapter;
-    
-	private final DefaultHttpClient mClient = new DefaultHttpClient();
+
+    private final DefaultHttpClient mClient = Common.createGzipHttpClient();
 	String mModhash = null;
 	
    
