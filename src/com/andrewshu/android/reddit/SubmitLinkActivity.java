@@ -185,6 +185,8 @@ public class SubmitLinkActivity extends TabActivity {
     			else // if (Constants.SUBMIT_KIND_SELF.equals(_mKind))
     				nvps.add(new BasicNameValuePair("text", _mUrlOrText.toString()));
     			nvps.add(new BasicNameValuePair("uh", mModhash.toString()));
+    			if (mCaptchaIden != null)
+    				nvps.add(new BasicNameValuePair("iden", mCaptchaIden));
     			// Votehash is currently unused by reddit 
 //    				nvps.add(new BasicNameValuePair("vh", "0d4ab0ffd56ad0f66841c15609e9a45aeec6b015"));
     			
@@ -319,10 +321,10 @@ public class SubmitLinkActivity extends TabActivity {
 		public Boolean doInBackground(Void... voidz) {
 			HttpEntity entity = null;
 			try {
-				HttpGet request = new HttpGet("http://www.reddit.com" + mCaptchaUrl);
+				HttpGet request = new HttpGet(mSubmitUrl);
 				HttpResponse response = mClient.execute(request);
-	    	
-            	BufferedReader in = new BufferedReader(new InputStreamReader(entity.getContent()));
+				entity = response.getEntity(); 
+	    		BufferedReader in = new BufferedReader(new InputStreamReader(entity.getContent()));
             	String line = in.readLine();
             	in.close();
 
@@ -331,7 +333,11 @@ public class SubmitLinkActivity extends TabActivity {
             	if (idenMatcher.find() && urlMatcher.find()) {
             		mCaptchaIden = idenMatcher.group(1);
             		mCaptchaUrl = urlMatcher.group(2);
+            		entity.consumeContent();
+            		return true;
             	} else {
+            		mCaptchaIden = null;
+            		mCaptchaUrl = null;
             		entity.consumeContent();
             		return false;
             	}
@@ -345,7 +351,7 @@ public class SubmitLinkActivity extends TabActivity {
 				}
 				Log.e(TAG, "Error accessing "+mSubmitUrl+" to check for CAPTCHA");
 			}
-			return true;
+			return null;
 		}
 		
 		@Override
@@ -356,6 +362,10 @@ public class SubmitLinkActivity extends TabActivity {
 			final TextView textCaptchaLabel = (TextView) findViewById(R.id.submit_text_captcha_label);
 			final ImageView textCaptchaImage = (ImageView) findViewById(R.id.submit_text_captcha_image);
 			final EditText textCaptchaEdit = (EditText) findViewById(R.id.submit_text_captcha);
+			if (required == null) {
+				Common.showErrorToast("Error retrieving captcha. Use the menu to try again.", Toast.LENGTH_LONG, SubmitLinkActivity.this);
+				return;
+			}
 			if (required) {
 				linkCaptchaLabel.setVisibility(View.VISIBLE);
 				linkCaptchaImage.setVisibility(View.VISIBLE);
