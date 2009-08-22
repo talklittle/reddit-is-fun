@@ -26,6 +26,8 @@ import android.content.Intent;
 import android.graphics.drawable.Drawable;
 import android.os.AsyncTask;
 import android.os.Bundle;
+import android.view.Menu;
+import android.view.MenuItem;
 import android.view.View;
 import android.view.View.OnClickListener;
 import android.widget.Button;
@@ -120,8 +122,9 @@ public class SubmitLinkActivity extends TabActivity {
 	        		final EditText submitLinkTitle = (EditText) findViewById(R.id.submit_link_title);
 	        		final EditText submitLinkUrl = (EditText) findViewById(R.id.submit_link_url);
 	        		final EditText submitLinkReddit = (EditText) findViewById(R.id.submit_link_reddit);
+	        		final EditText submitLinkCaptcha = (EditText) findViewById(R.id.submit_link_captcha);
 	        		new SubmitLinkTask(submitLinkTitle.getText(), submitLinkUrl.getText(), submitLinkReddit.getText(),
-	        				Constants.SUBMIT_KIND_LINK).execute();
+	        				Constants.SUBMIT_KIND_LINK, submitLinkCaptcha.getText()).execute();
         		}
         	}
         });
@@ -132,22 +135,27 @@ public class SubmitLinkActivity extends TabActivity {
 	        		final EditText submitTextTitle = (EditText) findViewById(R.id.submit_text_title);
 	        		final EditText submitTextText = (EditText) findViewById(R.id.submit_text_text);
 	        		final EditText submitTextReddit = (EditText) findViewById(R.id.submit_text_reddit);
+	        		final EditText submitTextCaptcha = (EditText) findViewById(R.id.submit_text_captcha);
 	        		new SubmitLinkTask(submitTextTitle.getText(), submitTextText.getText(), submitTextReddit.getText(),
-	        				Constants.SUBMIT_KIND_SELF).execute();
+	        				Constants.SUBMIT_KIND_SELF, submitTextCaptcha.getText()).execute();
         		}
         	}
         });
+        
+        // Check the CAPTCHA
+        new CheckCaptchaRequiredTask().execute();
 	}
 
 	private class SubmitLinkTask extends AsyncTask<Void, Void, ThreadInfo> {
-    	CharSequence _mTitle, _mUrlOrText, _mSubreddit, _mKind;
+    	CharSequence _mTitle, _mUrlOrText, _mSubreddit, _mKind, _mCaptcha;
 		String _mUserError = "Error submitting reply. Please try again.";
     	
-    	SubmitLinkTask(CharSequence title, CharSequence urlOrText, CharSequence subreddit, CharSequence kind) {
+    	SubmitLinkTask(CharSequence title, CharSequence urlOrText, CharSequence subreddit, CharSequence kind, CharSequence captcha) {
     		_mTitle = title;
     		_mUrlOrText = urlOrText;
     		_mSubreddit = subreddit;
     		_mKind = kind;
+    		_mCaptcha = captcha;
     	}
     	
     	@Override
@@ -185,8 +193,10 @@ public class SubmitLinkActivity extends TabActivity {
     			else // if (Constants.SUBMIT_KIND_SELF.equals(_mKind))
     				nvps.add(new BasicNameValuePair("text", _mUrlOrText.toString()));
     			nvps.add(new BasicNameValuePair("uh", mModhash.toString()));
-    			if (mCaptchaIden != null)
+    			if (mCaptchaIden != null) {
     				nvps.add(new BasicNameValuePair("iden", mCaptchaIden));
+    				nvps.add(new BasicNameValuePair("captcha", _mCaptcha.toString()));
+    			}
     			// Votehash is currently unused by reddit 
 //    				nvps.add(new BasicNameValuePair("vh", "0d4ab0ffd56ad0f66841c15609e9a45aeec6b015"));
     			
@@ -355,6 +365,20 @@ public class SubmitLinkActivity extends TabActivity {
 		}
 		
 		@Override
+		public void onPreExecute() {
+			// Hide submit buttons so user can't submit until we know whether he needs captcha
+			final Button submitLinkButton = (Button) findViewById(R.id.submit_link_button);
+			final Button submitTextButton = (Button) findViewById(R.id.submit_text_button);
+			submitLinkButton.setVisibility(View.GONE);
+			submitTextButton.setVisibility(View.GONE);
+			// Show "loading captcha" label
+			final TextView loadingLinkCaptcha = (TextView) findViewById(R.id.submit_link_captcha_loading);
+			final TextView loadingTextCaptcha = (TextView) findViewById(R.id.submit_text_captcha_loading);
+			loadingLinkCaptcha.setVisibility(View.VISIBLE);
+			loadingTextCaptcha.setVisibility(View.VISIBLE);
+		}
+		
+		@Override
 		public void onPostExecute(Boolean required) {
 			final TextView linkCaptchaLabel = (TextView) findViewById(R.id.submit_link_captcha_label);
 			final ImageView linkCaptchaImage = (ImageView) findViewById(R.id.submit_link_captcha_image);
@@ -362,6 +386,10 @@ public class SubmitLinkActivity extends TabActivity {
 			final TextView textCaptchaLabel = (TextView) findViewById(R.id.submit_text_captcha_label);
 			final ImageView textCaptchaImage = (ImageView) findViewById(R.id.submit_text_captcha_image);
 			final EditText textCaptchaEdit = (EditText) findViewById(R.id.submit_text_captcha);
+			final TextView loadingLinkCaptcha = (TextView) findViewById(R.id.submit_link_captcha_loading);
+			final TextView loadingTextCaptcha = (TextView) findViewById(R.id.submit_text_captcha_loading);
+			final Button submitLinkButton = (Button) findViewById(R.id.submit_link_button);
+			final Button submitTextButton = (Button) findViewById(R.id.submit_text_button);
 			if (required == null) {
 				Common.showErrorToast("Error retrieving captcha. Use the menu to try again.", Toast.LENGTH_LONG, SubmitLinkActivity.this);
 				return;
@@ -373,6 +401,7 @@ public class SubmitLinkActivity extends TabActivity {
 				textCaptchaLabel.setVisibility(View.VISIBLE);
 				textCaptchaImage.setVisibility(View.VISIBLE);
 				textCaptchaEdit.setVisibility(View.VISIBLE);
+				// Launch a task to download captcha and display it
 				new DownloadCaptchaTask().execute();
 			} else {
 				linkCaptchaLabel.setVisibility(View.GONE);
@@ -382,6 +411,10 @@ public class SubmitLinkActivity extends TabActivity {
 				textCaptchaImage.setVisibility(View.GONE);
 				textCaptchaEdit.setVisibility(View.GONE);
 			}
+			loadingLinkCaptcha.setVisibility(View.GONE);
+			loadingTextCaptcha.setVisibility(View.GONE);
+			submitLinkButton.setVisibility(View.VISIBLE);
+			submitTextButton.setVisibility(View.VISIBLE);
 		}
 	}
 	
@@ -405,9 +438,15 @@ public class SubmitLinkActivity extends TabActivity {
 		
 		@Override
 		public void onPostExecute(Drawable captcha) {
+			if (captcha == null) {
+				Common.showErrorToast("Error retrieving captcha. Use the menu to try again.", Toast.LENGTH_LONG, SubmitLinkActivity.this);
+				return;
+			}
 			final ImageView linkCaptchaView = (ImageView) findViewById(R.id.submit_link_captcha_image);
 			final ImageView textCaptchaView = (ImageView) findViewById(R.id.submit_text_captcha_image);
 			linkCaptchaView.setVisibility(View.VISIBLE);
+			linkCaptchaView.setImageDrawable(captcha);
+			textCaptchaView.setVisibility(View.VISIBLE);
 			textCaptchaView.setImageDrawable(captcha);
 		}
 	}
@@ -461,4 +500,78 @@ public class SubmitLinkActivity extends TabActivity {
 		}
 		return true;
 	}
+	
+	
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        super.onCreateOptionsMenu(menu);
+        
+        menu.add(0, Constants.DIALOG_PICK_SUBREDDIT, 0, "Pick subreddit")
+            .setOnMenuItemClickListener(new SubmitLinkMenu(Constants.DIALOG_PICK_SUBREDDIT));
+
+        menu.add(0, Constants.DIALOG_DOWNLOAD_CAPTCHA, 1, "Update CAPTCHA")
+        	.setOnMenuItemClickListener(new SubmitLinkMenu(Constants.DIALOG_DOWNLOAD_CAPTCHA));
+
+        
+        return true;
+    }
+    
+    @Override
+    public boolean onPrepareOptionsMenu(Menu menu) {
+    	super.onPrepareOptionsMenu(menu);
+    	
+    	if (mCaptchaUrl == null)
+    		menu.removeItem(Constants.DIALOG_DOWNLOAD_CAPTCHA);
+    	
+    	return true;
+    }
+    
+    private class SubmitLinkMenu implements MenuItem.OnMenuItemClickListener {
+        private int mAction;
+
+        SubmitLinkMenu(int action) {
+            mAction = action;
+        }
+
+        public boolean onMenuItemClick(MenuItem item) {
+        	switch (mAction) {
+        	case Constants.DIALOG_PICK_SUBREDDIT:
+        		Intent pickSubredditIntent = new Intent(SubmitLinkActivity.this, PickSubredditActivity.class);
+        		pickSubredditIntent.putExtra(Constants.HIDE_FRONTPAGE_STRING, true);
+        		startActivityForResult(pickSubredditIntent, Constants.ACTIVITY_PICK_SUBREDDIT);
+        		break;
+        	case Constants.DIALOG_DOWNLOAD_CAPTCHA:
+        		new CheckCaptchaRequiredTask().execute();
+        		break;
+        	default:
+        		throw new IllegalArgumentException("Unexpected action value "+mAction);
+        	}
+        	
+        	return true;
+        }
+    }
+    
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent intent) {
+    	super.onActivityResult(requestCode, resultCode, intent);
+    	
+    	switch(requestCode) {
+    	case Constants.ACTIVITY_PICK_SUBREDDIT:
+    		if (resultCode == Activity.RESULT_OK) {
+    			Bundle extras = intent.getExtras();
+	    		String newSubreddit = extras.getString(ThreadInfo.SUBREDDIT);
+	    		if (newSubreddit != null && !"".equals(newSubreddit)) {
+	    			final EditText linkSubreddit = (EditText) findViewById(R.id.submit_link_reddit);
+	    			final EditText textSubreddit = (EditText) findViewById(R.id.submit_text_reddit);
+	    			linkSubreddit.setText(newSubreddit);
+	    			textSubreddit.setText(newSubreddit);
+	    		}
+    		}
+    		break;
+    	default:
+    		break;
+    	}
+    }
+    
+
 }

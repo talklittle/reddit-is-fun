@@ -15,17 +15,16 @@
             android:id="@android:id/tabcontent"
             android:layout_width="fill_parent"
             android:layout_height="fill_parent">
-            <ScrollView
+            <ScrollView android:id="@+id/submit_link_view"
             	android:layout_width="fill_parent"
             	android:layout_height="fill_parent"
             	>
 	            <LinearLayout
-	                android:id="@+id/submit_link_view"
 	                android:layout_width="fill_parent"
 	                android:layout_height="fill_parent"
 	                android:orientation="vertical"
 	                >
-	                <TextView android:text="@string/submit_link_title_label"
+	                <TextView android:text="@string/submit_title_label"
 		                android:layout_width="wrap_content"
 		                android:layout_height="wrap_content"
 		                android:padding="4dip"
@@ -37,7 +36,8 @@
 		            	android:inputType="text|textMultiLine|textCapSentences"
 		            	android:gravity="top|left"
 		            	/>
-					<TextView android:text="@string/submit_link_url_label"
+					<TextView
+						android:text="@string/submit_url_label"
 		                android:layout_width="wrap_content"
 		                android:layout_height="wrap_content"
 		                android:padding="4dip"
@@ -46,7 +46,8 @@
 		            	android:layout_width="fill_parent"
 		            	android:layout_height="wrap_content"
 		            	/>
-	            	<TextView android:text="@string/submit_link_reddit_label"
+	            	<TextView
+	            		android:text="@string/submit_reddit_label"
 		                android:layout_width="wrap_content"
 		                android:layout_height="wrap_content"
 		                android:padding="4dip"
@@ -57,7 +58,7 @@
 		            	android:singleLine="true"
 		            	/>
 	            	<TextView android:id="@+id/submit_link_captcha_label"
-	            		android:text="@string/submit_link_captcha_label"
+	            		android:text="@string/submit_captcha_label"
 		                android:layout_width="wrap_content"
 		                android:layout_height="wrap_content"
 		                android:padding="4dip"
@@ -72,26 +73,33 @@
 		            	android:layout_height="wrap_content"
 		            	android:singleLine="true"
 		            	/>
+		            <TextView android:id="@+id/submit_link_captcha_loading"
+		            	android:text="@string/submit_captcha_loading"
+		            	android:layout_width="wrap_content"
+		            	android:layout_height="wrap_content"
+		            	android:padding="4dip"
+		            	/>
 		            <Button android:id="@+id/submit_link_button"
 		            	android:layout_width="wrap_content"
 		            	android:layout_height="wrap_content"
-		            	android:text="@string/submit_link_button"
+		            	android:text="@string/submit_button"
+		            	android:visibility="gone"
 		            	/>
 	                
 	            </LinearLayout>
             </ScrollView>
 	            
-	        <ScrollView
+	        <ScrollView android:id="@+id/submit_text_view"
 	        	android:layout_width="fill_parent"
 	        	android:layout_height="fill_parent"
 	        	>
 	            <LinearLayout 
-	                android:id="@+id/submit_text_view"
 	                android:layout_width="fill_parent"
 	                android:layout_height="fill_parent"
 	                android:orientation="vertical"
 	                >
-	                <TextView android:text="@string/submit_text_title_label"
+	                <TextView
+	                	android:text="@string/submit_title_label"
 		                android:layout_width="wrap_content"
 		                android:layout_height="wrap_content"
 		                android:padding="4dip"
@@ -103,7 +111,8 @@
 		            	android:inputType="text|textMultiLine|textCapSentences"
 		            	android:gravity="top|left"
 		            	/>
-					<TextView android:text="@string/submit_text_text_label"
+					<TextView
+						android:text="@string/submit_text_label"
 		                android:layout_width="wrap_content"
 		                android:layout_height="wrap_content"
 		                android:padding="4dip"
@@ -116,7 +125,8 @@
 		            	android:gravity="top|left"
 		            	android:textAppearance="?android:attr/textAppearanceSmall"
 		            	/>
-	            	<TextView android:text="@string/submit_text_reddit_label"
+	            	<TextView
+	            		android:text="@string/submit_reddit_label"
 		                android:layout_width="wrap_content"
 		                android:layout_height="wrap_content"
 		                android:padding="4dip"
@@ -127,7 +137,7 @@
 		            	android:singleLine="true"
 		            	/>
 		            <TextView android:id="@+id/submit_text_captcha_label"
-		            	android:text="@string/submit_text_captcha_label"
+		            	android:text="@string/submit_captcha_label"
 		                android:layout_width="wrap_content"
 		                android:layout_height="wrap_content"
 		                android:padding="4dip"
@@ -142,10 +152,17 @@
 		            	android:layout_height="wrap_content"
 		            	android:singleLine="true"
 		            	/>
+		            <TextView android:id="@+id/submit_text_captcha_loading"
+		            	android:text="@string/submit_captcha_loading"
+		            	android:layout_width="wrap_content"
+		            	android:layout_height="wrap_content"
+		            	android:padding="4dip"
+		            	/>
 		            <Button android:id="@+id/submit_text_button"
 		            	android:layout_width="wrap_content"
 		            	android:layout_height="wrap_content"
-		            	android:text="@string/submit_text_button"
+		            	android:text="@string/submit_button"
+		            	android:visibility="gone"
 		            	/>
 	            </LinearLayout>
             </ScrollView>

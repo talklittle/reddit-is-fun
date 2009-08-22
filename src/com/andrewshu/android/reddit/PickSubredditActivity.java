@@ -55,6 +55,33 @@ public final class PickSubredditActivity extends ListActivity {
     	"android"
     };
     
+    public static final String[] SUBREDDITS_MINUS_FRONTPAGE = {
+    	"reddit.com",
+    	"pics",
+    	"politics",
+    	"wtf",
+    	"funny",
+    	"technology",
+    	"askreddit",
+    	"science",
+    	"programming",
+    	"gaming",
+    	"worldnews",
+    	"comics",
+    	"offbeat",
+    	"videos",
+    	"environment",
+    	"iama",
+    	"business",
+    	"entertainment",
+    	"bestof",
+    	"economics",
+    	"marijuana",
+    	"todayilearned",
+    	"linux",
+    	"android"
+    };
+    
     
 
 
@@ -94,7 +121,18 @@ public final class PickSubredditActivity extends ListActivity {
         // to populate the list.
         // For now, use a predefined list.
         
-        List<String> items = Arrays.asList(SUBREDDITS);
+        List<String> items;
+        Bundle extras = getIntent().getExtras();
+        if (extras != null) {
+        	boolean shouldHideFrontpage = extras.getBoolean(Constants.HIDE_FRONTPAGE_STRING, false);
+        	if (shouldHideFrontpage)
+        		items = Arrays.asList(SUBREDDITS_MINUS_FRONTPAGE);
+        	else
+        		items = Arrays.asList(SUBREDDITS);
+        } else {
+        	items = Arrays.asList(SUBREDDITS);
+        }
+        
         mAdapter = new PickSubredditAdapter(this, items);
         getListView().setAdapter(mAdapter);
         Common.updateListDrawables(this, mSettings.theme);

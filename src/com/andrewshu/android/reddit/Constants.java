@@ -23,6 +23,9 @@ public class Constants {
     static final int ACTIVITY_PICK_SUBREDDIT = 0;
     static final int ACTIVITY_SUBMIT_LINK = 1;
     
+    // Tell PickSubredditActivity to hide the fronptage string
+    static final String HIDE_FRONTPAGE_STRING = "hideFrontpage";
+    
     // User-defined result codes
     static final int RESULT_LOGIN_REQUIRED = Activity.RESULT_FIRST_USER;
     
@@ -43,6 +46,7 @@ public class Constants {
     static final int DIALOG_OP = 13;
     static final int DIALOG_REPLY = 14;
     static final int DIALOG_SUBMITTING = 15;
+    static final int DIALOG_DOWNLOAD_CAPTCHA = 16;
 
     // Themes
     static final int THEME_LIGHT = 0;
