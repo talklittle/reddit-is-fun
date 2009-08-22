@@ -159,8 +159,16 @@ public final class RedditIsFun extends ListActivity
     		if (resultCode == Activity.RESULT_OK) {
     			Bundle extras = intent.getExtras();
 	    		String newSubreddit = extras.getString(ThreadInfo.SUBREDDIT);
+	    		String newId = extras.getString(ThreadInfo.ID);
+	    		String newTitle = extras.getString(ThreadInfo.TITLE);
 	    		mSettings.setSubreddit(newSubreddit);
-    			new DownloadThreadsTask().execute(newSubreddit);
+	    		// Start up comments list with the new thread
+	    		Intent i = new Intent(RedditIsFun.this, RedditCommentsListActivity.class);
+				i.putExtra(ThreadInfo.SUBREDDIT, newSubreddit);
+				i.putExtra(ThreadInfo.ID, newId);
+				i.putExtra(ThreadInfo.TITLE, newTitle);
+				i.putExtra(ThreadInfo.NUM_COMMENTS, 0);
+				startActivity(i);
     		} else if (resultCode == Constants.RESULT_LOGIN_REQUIRED) {
     			Common.showErrorToast("You must be logged in to make a submission.", Toast.LENGTH_LONG, this);
     		}
@@ -175,9 +183,9 @@ public final class RedditIsFun extends ListActivity
     	public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
 	    	dismissDialog(Constants.DIALOG_THING_CLICK);
 			if (isChecked) {
-				new VoteTask(mVoteTargetThreadInfo.getName(), 1, mVoteTargetThreadInfo.getSubreddit()).execute((Void[])null);
+				new VoteTask(mVoteTargetThreadInfo.getName(), 1, mVoteTargetThreadInfo.getSubreddit()).execute();
 			} else {
-				new VoteTask(mVoteTargetThreadInfo.getName(), 0, mVoteTargetThreadInfo.getSubreddit()).execute((Void[])null);
+				new VoteTask(mVoteTargetThreadInfo.getName(), 0, mVoteTargetThreadInfo.getSubreddit()).execute();
 			}
 		}
     }
@@ -186,9 +194,9 @@ public final class RedditIsFun extends ListActivity
 	    public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
 	    	dismissDialog(Constants.DIALOG_THING_CLICK);
 			if (isChecked) {
-				new VoteTask(mVoteTargetThreadInfo.getName(), -1, mVoteTargetThreadInfo.getSubreddit()).execute((Void[])null);
+				new VoteTask(mVoteTargetThreadInfo.getName(), -1, mVoteTargetThreadInfo.getSubreddit()).execute();
 			} else {
-				new VoteTask(mVoteTargetThreadInfo.getName(), 0, mVoteTargetThreadInfo.getSubreddit()).execute((Void[])null);
+				new VoteTask(mVoteTargetThreadInfo.getName(), 0, mVoteTargetThreadInfo.getSubreddit()).execute();
 			}
 		}
     }

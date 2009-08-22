@@ -42,6 +42,7 @@ public class Constants {
     static final int DIALOG_THEME = 12;
     static final int DIALOG_OP = 13;
     static final int DIALOG_REPLY = 14;
+    static final int DIALOG_SUBMITTING = 15;
 
     // Themes
     static final int THEME_LIGHT = 0;
@@ -61,6 +62,10 @@ public class Constants {
     static final String EMPTY_STRING = "";
     
     static final String FRONTPAGE_STRING = "reddit front page";
+    
+    static final String SUBMIT_KIND_LINK = "link";
+    static final String SUBMIT_KIND_SELF = "self";
+    static final String SUBMIT_KIND_POLL = "poll";
     
     // JSON values
     static final String JSON_BODY = "body";
@@ -84,8 +89,12 @@ public class Constants {
     static final Pattern MODHASH_PATTERN = Pattern.compile("modhash: '(.*?)'");
     // Group 1: fullname. Group 2: kind. Group 3: id36.
     static final Pattern NEW_ID_PATTERN = Pattern.compile("\"id\": \"((.+?)_(.+?))\"");
+    // Group 1: Subreddit. Group 2: thread id (no t3_ prefix)
+    static final Pattern NEW_THREAD_PATTERN = Pattern.compile("\"http://www.reddit.com/r/(.+?)/comments/(.+?)/.*?/\"");
     // Group 1: whole error. Group 2: the time part
     static final Pattern RATELIMIT_RETRY_PATTERN = Pattern.compile("(you are trying to submit too fast. try again in (.+?)\\.)");
-
-
+    // Captcha "iden"
+    static final Pattern CAPTCHA_IDEN_PATTERN = Pattern.compile("name=\"iden\" value=\"(.*?)\"");
+    // Group 2: Captcha image absolute path
+    static final Pattern CAPTCHA_IMAGE_PATTERN = Pattern.compile("<img class=\"capimage\"( alt=\".*?\")? src=\"(.+?)\"");
 }

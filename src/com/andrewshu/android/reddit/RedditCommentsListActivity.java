@@ -171,9 +171,9 @@ public final class RedditCommentsListActivity extends ListActivity
 	    	else
 	    		thingFullname = mVoteTargetCommentInfo.getName();
 			if (isChecked)
-				new VoteTask(thingFullname, 1).execute((Void[])null);
+				new VoteTask(thingFullname, 1).execute();
 			else
-				new VoteTask(thingFullname, 0).execute((Void[])null);
+				new VoteTask(thingFullname, 0).execute();
 		}
     }
     
@@ -186,9 +186,9 @@ public final class RedditCommentsListActivity extends ListActivity
 	    	else
 	    		thingFullname = mVoteTargetCommentInfo.getName();
 			if (isChecked)
-				new VoteTask(thingFullname, -1).execute((Void[])null);
+				new VoteTask(thingFullname, -1).execute();
 			else
-				new VoteTask(thingFullname, 0).execute((Void[])null);
+				new VoteTask(thingFullname, 0).execute();
 		}
     }
     
@@ -902,7 +902,6 @@ public final class RedditCommentsListActivity extends ListActivity
             	if (line.contains("USER_REQUIRED")) {
             		// The modhash probably expired
             		mModhash = null;
-            		Common.showErrorToast("Error submitting reply. Please try again.", Toast.LENGTH_LONG, RedditCommentsListActivity.this);
             		throw new Exception("User required. Huh?");
             	}
             	

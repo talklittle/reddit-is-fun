@@ -56,6 +56,22 @@
 		            	android:layout_height="wrap_content"
 		            	android:singleLine="true"
 		            	/>
+	            	<TextView android:id="@+id/submit_link_captcha_label"
+	            		android:text="@string/submit_link_captcha_label"
+		                android:layout_width="wrap_content"
+		                android:layout_height="wrap_content"
+		                android:padding="4dip"
+		                />
+		            <ImageView android:id="@+id/submit_link_captcha_image"
+		                android:layout_width="wrap_content"
+		                android:layout_height="wrap_content"
+		                android:padding="4dip"
+		                />
+		            <EditText android:id="@+id/submit_link_captcha"
+		            	android:layout_width="fill_parent"
+		            	android:layout_height="wrap_content"
+		            	android:singleLine="true"
+		            	/>
 		            <Button android:id="@+id/submit_link_button"
 		            	android:layout_width="wrap_content"
 		            	android:layout_height="wrap_content"
@@ -106,6 +122,22 @@
 		                android:padding="4dip"
 		                />
 		            <EditText android:id="@+id/submit_text_reddit"
+		            	android:layout_width="fill_parent"
+		            	android:layout_height="wrap_content"
+		            	android:singleLine="true"
+		            	/>
+		            <TextView android:id="@+id/submit_text_captcha_label"
+		            	android:text="@string/submit_text_captcha_label"
+		                android:layout_width="wrap_content"
+		                android:layout_height="wrap_content"
+		                android:padding="4dip"
+		                />
+		            <ImageView android:id="@+id/submit_text_captcha_image"
+		                android:layout_width="wrap_content"
+		                android:layout_height="wrap_content"
+		                android:padding="4dip"
+		                />
+		            <EditText android:id="@+id/submit_text_captcha"
 		            	android:layout_width="fill_parent"
 		            	android:layout_height="wrap_content"
 		            	android:singleLine="true"
