@@ -17,6 +17,8 @@ import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.impl.client.DefaultHttpClient;
 import org.apache.http.message.BasicNameValuePair;
+import org.apache.http.params.HttpConnectionParams;
+import org.apache.http.params.HttpParams;
 import org.apache.http.protocol.HTTP;
 
 import android.app.Activity;
@@ -202,6 +204,10 @@ public class SubmitLinkActivity extends TabActivity {
     			
     			HttpPost httppost = new HttpPost("http://www.reddit.com/api/submit");
     	        httppost.setEntity(new UrlEncodedFormEntity(nvps, HTTP.UTF_8));
+    	        // The progress dialog is non-cancelable, so set a shorter timeout than system's
+    	        HttpParams params = httppost.getParams();
+    	        HttpConnectionParams.setConnectionTimeout(params, 30000);
+    	        HttpConnectionParams.setSoTimeout(params, 30000);
     	        
     	        Log.d(TAG, nvps.toString());
     	        
