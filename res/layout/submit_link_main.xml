@@ -62,16 +62,19 @@
 		                android:layout_width="wrap_content"
 		                android:layout_height="wrap_content"
 		                android:padding="4dip"
+		                android:visibility="gone"
 		                />
 		            <ImageView android:id="@+id/submit_link_captcha_image"
 		                android:layout_width="wrap_content"
 		                android:layout_height="wrap_content"
 		                android:padding="4dip"
+		                android:visibility="gone"
 		                />
 		            <EditText android:id="@+id/submit_link_captcha"
 		            	android:layout_width="fill_parent"
 		            	android:layout_height="wrap_content"
 		            	android:singleLine="true"
+		            	android:visibility="gone"
 		            	/>
 		            <TextView android:id="@+id/submit_link_captcha_loading"
 		            	android:text="@string/submit_captcha_loading"
@@ -79,6 +82,7 @@
 		            	android:layout_height="wrap_content"
 		            	android:padding="4dip"
 		            	/>
+		            <!-- Hide the submit button until we know if captcha is needed -->
 		            <Button android:id="@+id/submit_link_button"
 		            	android:layout_width="wrap_content"
 		            	android:layout_height="wrap_content"
@@ -141,16 +145,19 @@
 		                android:layout_width="wrap_content"
 		                android:layout_height="wrap_content"
 		                android:padding="4dip"
+		                android:visibility="gone"
 		                />
 		            <ImageView android:id="@+id/submit_text_captcha_image"
 		                android:layout_width="wrap_content"
 		                android:layout_height="wrap_content"
 		                android:padding="4dip"
+		                android:visibility="gone"
 		                />
 		            <EditText android:id="@+id/submit_text_captcha"
 		            	android:layout_width="fill_parent"
 		            	android:layout_height="wrap_content"
 		            	android:singleLine="true"
+		            	android:visibility="gone"
 		            	/>
 		            <TextView android:id="@+id/submit_text_captcha_loading"
 		            	android:text="@string/submit_captcha_loading"
@@ -158,6 +165,7 @@
 		            	android:layout_height="wrap_content"
 		            	android:padding="4dip"
 		            	/>
+	            	<!-- Hide the submit button until we know if captcha is needed -->
 		            <Button android:id="@+id/submit_text_button"
 		            	android:layout_width="wrap_content"
 		            	android:layout_height="wrap_content"
