@@ -320,6 +320,7 @@ public class SubmitLinkActivity extends TabActivity {
     			Intent i = new Intent();
     			i.putExtra(ThreadInfo.SUBREDDIT, newlyCreatedThread.getSubreddit());
     			i.putExtra(ThreadInfo.ID, newlyCreatedThread.getId());
+    			i.putExtra(ThreadInfo.TITLE, newlyCreatedThread.getTitle());
     			setResult(Activity.RESULT_OK, i);
     			finish();
     		}
