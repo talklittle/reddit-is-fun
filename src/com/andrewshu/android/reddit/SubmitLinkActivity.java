@@ -15,7 +15,7 @@ public class SubmitLinkActivity extends TabActivity {
 	TabHost mTabHost;
 	
 	private RedditSettings mSettings = new RedditSettings();
-	private DefaultHttpClient mClient = new DefaultHttpClient();
+	private final DefaultHttpClient mClient = Common.createGzipHttpClient();
 	
 	@Override
 	public void onCreate(Bundle icicle) {

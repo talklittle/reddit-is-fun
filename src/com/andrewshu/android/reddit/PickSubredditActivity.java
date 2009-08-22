@@ -13,6 +13,7 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.view.View.OnClickListener;
 import android.view.View.OnKeyListener;
+import android.view.inputmethod.InputMethodManager;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.EditText;
@@ -83,10 +84,13 @@ public final class PickSubredditActivity extends ListActivity {
         		returnSubreddit(mEt.getText().toString());
         	}
         });
+
+        mEt.requestFocus();
+        // Prevent soft keyboard from initially showing up on some systems (HTC Hero)
+        InputMethodManager imm = (InputMethodManager)getSystemService(Context.INPUT_METHOD_SERVICE);
+        imm.hideSoftInputFromWindow(mEt.getWindowToken(), 0);
         
-		mEt.requestFocus();
-		
-        // TODO: use the logged in user info to get his favorite reddits
+		// TODO: use the logged in user info to get his favorite reddits
         // to populate the list.
         // For now, use a predefined list.
         
