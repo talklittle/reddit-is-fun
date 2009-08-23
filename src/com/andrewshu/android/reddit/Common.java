@@ -32,8 +32,11 @@ import org.apache.http.protocol.HttpContext;
 import android.app.Activity;
 import android.app.ListActivity;
 import android.content.Context;
+import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.res.Resources;
+import android.net.Uri;
+import android.provider.Browser;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.widget.ListView;
@@ -300,6 +303,12 @@ public class Common {
     		Log.e(TAG, e.getMessage());
     		return null;
     	}
+    }
+    
+    static void launchBrowser(CharSequence url, Activity act) {
+		Intent browser = new Intent(Intent.ACTION_VIEW, Uri.parse(url.toString()));
+		browser.putExtra(Browser.EXTRA_APPLICATION_ID, act.getPackageName());
+		act.startActivity(browser);
     }
     
     
