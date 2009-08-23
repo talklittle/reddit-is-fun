@@ -33,16 +33,20 @@ import android.app.Dialog;
 import android.app.ListActivity;
 import android.app.ProgressDialog;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.res.Resources;
+import android.graphics.drawable.Drawable;
 import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Bundle;
+import android.telephony.PhoneNumberUtils;
 import android.text.SpannableString;
 import android.text.SpannableStringBuilder;
 import android.text.Spanned;
 import android.text.style.AbsoluteSizeSpan;
 import android.text.style.ForegroundColorSpan;
+import android.text.style.URLSpan;
 import android.view.KeyEvent;
 import android.view.LayoutInflater;
 import android.view.Menu;
@@ -95,6 +99,7 @@ public final class RedditCommentsListActivity extends ListActivity
     // UI State
     private View mVoteTargetView = null;
     private CommentInfo mVoteTargetCommentInfo = null;
+    private URLSpan[] mVoteTargetSpans = null;
     
     // ProgressDialogs with percentage bars
     private AutoResetProgressDialog mLoadingCommentsProgress;
@@ -1373,15 +1378,15 @@ public final class RedditCommentsListActivity extends ListActivity
         	case Constants.DIALOG_OPEN_BROWSER:
         		String url = new StringBuilder("http://www.reddit.com/r/")
         			.append(mSettings.subreddit).append("/comments/").append(mSettings.threadId).toString();
-        		RedditCommentsListActivity.this.startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse(url)));
+        		Common.launchBrowser(url, RedditCommentsListActivity.this);
         		break;
         	case Constants.DIALOG_THEME:
         		if (mSettings.theme == Constants.THEME_LIGHT) {
         			mSettings.setTheme(Constants.THEME_DARK);
-        			mSettings.setThemeResId(android.R.style.Theme);
+        			mSettings.setThemeResId(R.style.Reddit_Dark);
         		} else {
         			mSettings.setTheme(Constants.THEME_LIGHT);
-        			mSettings.setThemeResId(android.R.style.Theme_Light);
+        			mSettings.setThemeResId(R.style.Reddit_Light);
         		}
         		RedditCommentsListActivity.this.setTheme(mSettings.themeResId);
         		RedditCommentsListActivity.this.setContentView(R.layout.comments_list_content);
@@ -1532,14 +1537,14 @@ public final class RedditCommentsListActivity extends ListActivity
 		    			linkButton.setOnClickListener(new OnClickListener() {
 		    				public void onClick(View v) {
 		    					dismissDialog(Constants.DIALOG_OP);
-		    					startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse(mOpThreadInfo.getURL())));
+		    					Common.launchBrowser(mOpThreadInfo.getURL(), RedditCommentsListActivity.this);
 		    				}
 		    			});
 	    			} else {
 	    				linkButton.setOnClickListener(new OnClickListener() {
 		    				public void onClick(View v) {
 		    					dismissDialog(Constants.DIALOG_THING_CLICK);
-		    					startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse(mOpThreadInfo.getURL())));
+		    					Common.launchBrowser(mOpThreadInfo.getURL(), RedditCommentsListActivity.this);
 		    				}
 		    			});
 	    			}
@@ -1550,7 +1555,78 @@ public final class RedditCommentsListActivity extends ListActivity
     			likes = mVoteTargetCommentInfo.getLikes();
     			urlView.setVisibility(View.INVISIBLE);
     			submissionStuffView.setVisibility(View.INVISIBLE);
-    			linkButton.setVisibility(View.INVISIBLE);
+
+    			// Look for embedded URLs
+    			final TextView commentBody = (TextView) mVoteTargetView.findViewById(R.id.body);
+    	        mVoteTargetSpans = commentBody.getUrls();
+    	        if (mVoteTargetSpans.length == 0) {
+        			linkButton.setVisibility(View.INVISIBLE);
+    	        } else if (mVoteTargetSpans.length == 1) {
+    	        	linkButton.setVisibility(View.VISIBLE);
+    	        	linkButton.setText("link");
+    	        	linkButton.setOnClickListener(new OnClickListener() {
+    	        		public void onClick(View v) {
+    	        			dismissDialog(Constants.DIALOG_THING_CLICK);
+    	        			Common.launchBrowser(mVoteTargetSpans[0].getURL(), RedditCommentsListActivity.this);
+    	        		}
+    	        	});
+    	        } else {
+    	        	linkButton.setVisibility(View.VISIBLE);
+    	        	linkButton.setText("links");
+    	        	linkButton.setOnClickListener(new OnClickListener() {
+    	        		public void onClick(View v) {
+    	        			dismissDialog(Constants.DIALOG_THING_CLICK);
+    	        			final java.util.ArrayList<String> urls = Util.extractUris(mVoteTargetSpans);
+
+    	    	            ArrayAdapter<String> adapter = 
+    	    	                new ArrayAdapter<String>(RedditCommentsListActivity.this, android.R.layout.select_dialog_item, urls) {
+    	    	                public View getView(int position, View convertView, ViewGroup parent) {
+    	    	                    View v = super.getView(position, convertView, parent);
+    	    	                    try {
+    	    	                        String url = getItem(position).toString();
+    	    	                        TextView tv = (TextView) v;
+    	    	                        Drawable d = getPackageManager().getActivityIcon(new Intent(Intent.ACTION_VIEW, Uri.parse(url)));
+    	    	                        if (d != null) {
+    	    	                            d.setBounds(0, 0, d.getIntrinsicHeight(), d.getIntrinsicHeight());
+    	    	                            tv.setCompoundDrawablePadding(10);
+    	    	                            tv.setCompoundDrawables(d, null, null, null);
+    	    	                        }
+    	    	                        final String telPrefix = "tel:";
+    	    	                        if (url.startsWith(telPrefix)) {
+    	    	                            url = PhoneNumberUtils.formatNumber(url.substring(telPrefix.length()));
+    	    	                        }
+    	    	                        tv.setText(url);
+    	    	                    } catch (android.content.pm.PackageManager.NameNotFoundException ex) {
+    	    	                        ;
+    	    	                    }
+    	    	                    return v;
+    	    	                }
+    	    	            };
+
+    	    	            AlertDialog.Builder b = new AlertDialog.Builder(RedditCommentsListActivity.this);
+
+    	    	            DialogInterface.OnClickListener click = new DialogInterface.OnClickListener() {
+    	    	                public final void onClick(DialogInterface dialog, int which) {
+    	    	                    if (which >= 0) {
+    	    	                        Common.launchBrowser(urls.get(which), RedditCommentsListActivity.this);
+    	    	                    }
+    	    	                }
+    	    	            };
+    	    	                
+    	    	            b.setTitle(R.string.select_link_title);
+    	    	            b.setCancelable(true);
+    	    	            b.setAdapter(adapter, click);
+
+    	    	            b.setNegativeButton(android.R.string.cancel, new DialogInterface.OnClickListener() {
+    	    	                public final void onClick(DialogInterface dialog, int which) {
+    	    	                    dialog.dismiss();
+    	    	                }
+    	    	            });
+
+    	    	            b.show();
+    	        		}
+    	        	});
+    	        }
     		}
     		final CheckBox voteUpButton = (CheckBox) dialog.findViewById(R.id.vote_up_button);
     		final CheckBox voteDownButton = (CheckBox) dialog.findViewById(R.id.vote_down_button);

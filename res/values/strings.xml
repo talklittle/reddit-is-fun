@@ -26,7 +26,6 @@
 	<string name="thread_comments_button">comments</string>
 	
 	<string name="comment_reply_button">reply</string>
-	
 	<string name="reply_save_button">save</string>
 	<string name="reply_cancel_button">cancel</string>
 	
@@ -41,5 +40,7 @@
 	<string name="submit_captcha_label">are you human? (sorry)</string>
 	<string name="submit_captcha_loading">loading CAPTCHA...</string>
 	<string name="submit_button">submit</string>
+	
+	<string name="select_link_title">Select action</string>
 	
 </resources>

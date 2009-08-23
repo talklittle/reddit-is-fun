@@ -1,6 +1,21 @@
 package com.andrewshu.android.reddit;
 
+import java.util.ArrayList;
+
+import android.text.style.URLSpan;
+
 public class Util {
+	
+    public static ArrayList<String> extractUris(URLSpan[] spans) {
+        int size = spans.length;
+        ArrayList<String> accumulator = new ArrayList<String>();
+
+        for (int i = 0; i < size; i++) {
+            accumulator.add(spans[i].getURL());
+        }
+        return accumulator;
+    }
+	
 	/**
 	 * To the second, not millisecond like reddit
 	 * @param timeSeconds

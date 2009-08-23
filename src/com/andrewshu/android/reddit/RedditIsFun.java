@@ -32,7 +32,6 @@ import android.app.ProgressDialog;
 import android.content.Context;
 import android.content.Intent;
 import android.content.res.Resources;
-import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.text.SpannableString;
@@ -65,8 +64,7 @@ import android.widget.Toast;
  * @author TalkLittle
  *
  */
-public final class RedditIsFun extends ListActivity
-		implements View.OnCreateContextMenuListener {
+public final class RedditIsFun extends ListActivity {
 
 	private static final String TAG = "RedditIsFun";
 	
@@ -914,7 +912,7 @@ public final class RedditIsFun extends ListActivity
         			url = "http://www.reddit.com";
         		else
 	        		url = new StringBuilder("http://www.reddit.com/r/").append(mSettings.subreddit).toString();
-        		RedditIsFun.this.startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse(url)));
+        		Common.launchBrowser(url, RedditIsFun.this);
         		break;
             case Constants.DIALOG_LOGOUT:
         		Common.doLogout(mSettings, mClient);
@@ -927,10 +925,10 @@ public final class RedditIsFun extends ListActivity
         	case Constants.DIALOG_THEME:
         		if (mSettings.theme == Constants.THEME_LIGHT) {
         			mSettings.setTheme(Constants.THEME_DARK);
-        			mSettings.setThemeResId(android.R.style.Theme);
+        			mSettings.setThemeResId(R.style.Reddit_Dark);
         		} else {
         			mSettings.setTheme(Constants.THEME_LIGHT);
-        			mSettings.setThemeResId(android.R.style.Theme_Light);
+        			mSettings.setThemeResId(R.style.Reddit_Light);
         		}
         		RedditIsFun.this.setTheme(mSettings.themeResId);
         		RedditIsFun.this.setContentView(R.layout.threads_list_content);
@@ -1115,7 +1113,7 @@ public final class RedditIsFun extends ListActivity
             		public void onClick(View v) {
             			dismissDialog(Constants.DIALOG_THING_CLICK);
             			// Launch Intent to goto the URL
-            			RedditIsFun.this.startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse(mVoteTargetThreadInfo.getURL())));
+            			Common.launchBrowser(mVoteTargetThreadInfo.getURL(), RedditIsFun.this);
             		}
             	});
             }
