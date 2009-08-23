@@ -925,10 +925,10 @@ public final class RedditIsFun extends ListActivity {
         	case Constants.DIALOG_THEME:
         		if (mSettings.theme == Constants.THEME_LIGHT) {
         			mSettings.setTheme(Constants.THEME_DARK);
-        			mSettings.setThemeResId(android.R.style.Theme);
+        			mSettings.setThemeResId(R.style.Reddit_Dark);
         		} else {
         			mSettings.setTheme(Constants.THEME_LIGHT);
-        			mSettings.setThemeResId(android.R.style.Theme_Light);
+        			mSettings.setThemeResId(R.style.Reddit_Light);
         		}
         		RedditIsFun.this.setTheme(mSettings.themeResId);
         		RedditIsFun.this.setContentView(R.layout.threads_list_content);

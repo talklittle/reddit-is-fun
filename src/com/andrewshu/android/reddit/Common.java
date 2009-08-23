@@ -34,7 +34,6 @@ import android.app.ListActivity;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
-import android.content.res.Resources;
 import android.net.Uri;
 import android.provider.Browser;
 import android.view.LayoutInflater;
@@ -63,13 +62,10 @@ public class Common {
      */
 	static void updateListDrawables(ListActivity la, int theme) {
 		final ListView lv = la.getListView();
-		final Resources res = la.getResources();
 		if (theme == Constants.THEME_LIGHT) {
     		lv.setSelector(R.drawable.list_selector_solid_pale_blue);
-    		lv.setCacheColorHint(res.getColor(R.color.white));
     	} else if (theme == Constants.THEME_DARK) {
     		lv.setSelector(android.R.drawable.list_selector_background);
-    		lv.setCacheColorHint(res.getColor(R.color.android_dark_background));
     	}
 	}
 	
