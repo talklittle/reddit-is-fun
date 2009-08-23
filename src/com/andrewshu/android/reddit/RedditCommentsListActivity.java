@@ -38,6 +38,7 @@ import android.content.res.Resources;
 import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Bundle;
+import android.provider.Browser;
 import android.text.SpannableString;
 import android.text.SpannableStringBuilder;
 import android.text.Spanned;
@@ -1373,7 +1374,9 @@ public final class RedditCommentsListActivity extends ListActivity
         	case Constants.DIALOG_OPEN_BROWSER:
         		String url = new StringBuilder("http://www.reddit.com/r/")
         			.append(mSettings.subreddit).append("/comments/").append(mSettings.threadId).toString();
-        		RedditCommentsListActivity.this.startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse(url)));
+        		Intent browser = new Intent(Intent.ACTION_VIEW, Uri.parse(url));
+        		browser.putExtra(Browser.EXTRA_APPLICATION_ID, getPackageName());
+        		RedditCommentsListActivity.this.startActivity(browser);
         		break;
         	case Constants.DIALOG_THEME:
         		if (mSettings.theme == Constants.THEME_LIGHT) {
@@ -1532,14 +1535,18 @@ public final class RedditCommentsListActivity extends ListActivity
 		    			linkButton.setOnClickListener(new OnClickListener() {
 		    				public void onClick(View v) {
 		    					dismissDialog(Constants.DIALOG_OP);
-		    					startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse(mOpThreadInfo.getURL())));
+		    					Intent browser = new Intent(Intent.ACTION_VIEW, Uri.parse(mOpThreadInfo.getURL()));
+		    					browser.putExtra(Browser.EXTRA_APPLICATION_ID, getPackageName());
+		    					startActivity(browser);
 		    				}
 		    			});
 	    			} else {
 	    				linkButton.setOnClickListener(new OnClickListener() {
 		    				public void onClick(View v) {
 		    					dismissDialog(Constants.DIALOG_THING_CLICK);
-		    					startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse(mOpThreadInfo.getURL())));
+		    					Intent browser = new Intent(Intent.ACTION_VIEW, Uri.parse(mOpThreadInfo.getURL()));
+		    					browser.putExtra(Browser.EXTRA_APPLICATION_ID, getPackageName());
+		    					startActivity(browser);
 		    				}
 		    			});
 	    			}

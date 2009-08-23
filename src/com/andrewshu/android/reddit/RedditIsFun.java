@@ -35,6 +35,7 @@ import android.content.res.Resources;
 import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Bundle;
+import android.provider.Browser;
 import android.text.SpannableString;
 import android.text.SpannableStringBuilder;
 import android.text.Spanned;
@@ -65,8 +66,7 @@ import android.widget.Toast;
  * @author TalkLittle
  *
  */
-public final class RedditIsFun extends ListActivity
-		implements View.OnCreateContextMenuListener {
+public final class RedditIsFun extends ListActivity {
 
 	private static final String TAG = "RedditIsFun";
 	
@@ -914,7 +914,9 @@ public final class RedditIsFun extends ListActivity
         			url = "http://www.reddit.com";
         		else
 	        		url = new StringBuilder("http://www.reddit.com/r/").append(mSettings.subreddit).toString();
-        		RedditIsFun.this.startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse(url)));
+        		Intent browser = new Intent(Intent.ACTION_VIEW, Uri.parse(url));
+        		browser.putExtra(Browser.EXTRA_APPLICATION_ID, getPackageName());
+        		RedditIsFun.this.startActivity(browser);
         		break;
             case Constants.DIALOG_LOGOUT:
         		Common.doLogout(mSettings, mClient);
@@ -1115,7 +1117,9 @@ public final class RedditIsFun extends ListActivity
             		public void onClick(View v) {
             			dismissDialog(Constants.DIALOG_THING_CLICK);
             			// Launch Intent to goto the URL
-            			RedditIsFun.this.startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse(mVoteTargetThreadInfo.getURL())));
+            			Intent browser = new Intent(Intent.ACTION_VIEW, Uri.parse(mVoteTargetThreadInfo.getURL()));
+            			browser.putExtra(Browser.EXTRA_APPLICATION_ID, getPackageName());
+            			RedditIsFun.this.startActivity(browser);
             		}
             	});
             }
