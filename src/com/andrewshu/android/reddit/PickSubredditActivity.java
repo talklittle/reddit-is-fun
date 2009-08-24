@@ -89,7 +89,6 @@ public final class PickSubredditActivity extends ListActivity {
     	super.onCreate(savedInstanceState);
         
     	Common.loadRedditPreferences(this, mSettings, null);
-    	setThemeDrawables();
     	
         setContentView(R.layout.pick_subreddit_view);
         
@@ -134,20 +133,6 @@ public final class PickSubredditActivity extends ListActivity {
 //        // Need one of these to post things back to the UI thread.
 //        mHandler = new Handler();
         
-    }
-    
-    /**
-     * Set the Activity's theme to the theme in mSettings.
-     * Then set other Drawables like the list selector.
-     */
-    private void setThemeDrawables() {
-    	setTheme(mSettings.themeResId);
-    	if (mSettings.theme == Constants.THEME_LIGHT) {
-    		getListView().setSelector(R.drawable.list_selector_solid_pale_blue);
-    		// TODO: Set the empty listview image
-    	} else if (mSettings.theme == Constants.THEME_DARK) {
-    		getListView().setSelector(android.R.drawable.list_selector_background);
-    	}
     }
     
     

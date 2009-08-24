@@ -47,6 +47,8 @@ public class Constants {
     static final int DIALOG_REPLY = 14;
     static final int DIALOG_SUBMITTING = 15;
     static final int DIALOG_DOWNLOAD_CAPTCHA = 16;
+    static final int DIALOG_HIDE_COMMENT = 17;
+    static final int DIALOG_SHOW_COMMENT = 18;
 
     // Themes
     static final int THEME_LIGHT = 0;

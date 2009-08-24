@@ -63,7 +63,7 @@ public class Common {
 	static void updateListDrawables(ListActivity la, int theme) {
 		final ListView lv = la.getListView();
 		if (theme == Constants.THEME_LIGHT) {
-    		lv.setSelector(R.drawable.list_selector_solid_pale_blue);
+    		lv.setSelector(R.drawable.list_selector_blue);
     	} else if (theme == Constants.THEME_DARK) {
     		lv.setSelector(android.R.drawable.list_selector_background);
     	}

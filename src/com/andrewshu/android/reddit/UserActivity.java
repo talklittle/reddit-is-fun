@@ -63,7 +63,7 @@ public class UserActivity extends ListActivity {
      */
     private void updateListDrawables() {
     	if (mSettings.theme == Constants.THEME_LIGHT) {
-    		getListView().setSelector(R.drawable.list_selector_solid_pale_blue);
+    		getListView().setSelector(R.drawable.list_selector_blue);
     		// TODO: Set the empty listview image
     	} else if (mSettings.theme == Constants.THEME_DARK) {
     		getListView().setSelector(android.R.drawable.list_selector_background);

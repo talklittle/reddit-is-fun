@@ -10,7 +10,7 @@
 	</style>
 	
 	<style name="Reddit_Light" parent="@android:style/Theme.Light">
-		<item name="android:listSelector">@drawable/list_selector_solid_pale_blue</item>
+		<item name="android:listSelector">@drawable/list_selector_blue</item>
 		<item name="android:cacheColorHint">@color/white</item>
 	</style>
 	

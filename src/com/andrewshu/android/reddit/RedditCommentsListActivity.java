@@ -47,12 +47,14 @@ import android.text.Spanned;
 import android.text.style.AbsoluteSizeSpan;
 import android.text.style.ForegroundColorSpan;
 import android.text.style.URLSpan;
+import android.view.ContextMenu;
 import android.view.KeyEvent;
 import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.ContextMenu.ContextMenuInfo;
 import android.view.View.OnClickListener;
 import android.view.View.OnKeyListener;
 import android.webkit.WebView;
@@ -66,6 +68,7 @@ import android.widget.ImageView;
 import android.widget.ListView;
 import android.widget.TextView;
 import android.widget.Toast;
+import android.widget.AdapterView.AdapterContextMenuInfo;
 
 /**
  * Main Activity class representing a Subreddit, i.e., a ThreadsList.
@@ -95,6 +98,11 @@ public final class RedditCommentsListActivity extends ListActivity
     private ThreadInfo mOpThreadInfo;
     private CharSequence mThreadTitle;
     private int mNumVisibleComments;
+    
+    // Keep track of the row ids of comments that user has hidden
+    private HashSet<Integer> mHiddenCommentHeads = new HashSet<Integer>();
+    // Keep track of the row ids of descendants of hidden comment heads
+    private HashSet<Integer> mHiddenComments = new HashSet<Integer>();
 
     // UI State
     private View mVoteTargetView = null;
@@ -118,6 +126,7 @@ public final class RedditCommentsListActivity extends ListActivity
         setTheme(mSettings.themeResId);
         
         setContentView(R.layout.comments_list_content);
+        registerForContextMenu(getListView());
         // The above layout contains a list id "android:list"
         // which ListActivity adopts as its list -- we can
         // access it with getListView().
@@ -153,6 +162,7 @@ public final class RedditCommentsListActivity extends ListActivity
     	if (mSettings.theme != previousTheme) {
     		setTheme(mSettings.themeResId);
     		setContentView(R.layout.threads_list_content);
+    		registerForContextMenu(getListView());
     		setListAdapter(mCommentsAdapter);
     		Common.updateListDrawables(this, mSettings.theme);
     	}
@@ -203,8 +213,9 @@ public final class RedditCommentsListActivity extends ListActivity
     	static final int OP_ITEM_VIEW_TYPE = 0;
     	static final int COMMENT_ITEM_VIEW_TYPE = 1;
     	static final int MORE_ITEM_VIEW_TYPE = 2;
+    	static final int HIDDEN_ITEM_HEAD_VIEW_TYPE = 3;
     	// The number of view types
-    	static final int VIEW_TYPE_COUNT = 3;
+    	static final int VIEW_TYPE_COUNT = 4;
     	
     	private LayoutInflater mInflater;
         private int mFrequentSeparatorPos = ListView.INVALID_POSITION;
@@ -216,16 +227,16 @@ public final class RedditCommentsListActivity extends ListActivity
 
         @Override
         public int getItemViewType(int position) {
-        	if (position == 0) {
+        	if (position == 0)
         		return OP_ITEM_VIEW_TYPE;
-        	}
-            if (position == mFrequentSeparatorPos) {
+        	if (position == mFrequentSeparatorPos || mHiddenComments.contains(position)) {
                 // We don't want the separator view to be recycled.
                 return IGNORE_ITEM_VIEW_TYPE;
             }
-            if (mMorePositions.contains(position)) {
+            if (mHiddenCommentHeads.contains(position))
+            	return HIDDEN_ITEM_HEAD_VIEW_TYPE;
+            if (mMorePositions.contains(position))
             	return MORE_ITEM_VIEW_TYPE;
-            }
             return COMMENT_ITEM_VIEW_TYPE;
         }
         
@@ -338,7 +349,47 @@ public final class RedditCommentsListActivity extends ListActivity
 	            	} else {
 	            		selftextView.setVisibility(View.GONE);
 	            	}
-	            } else if (mMorePositions.contains(position)) {
+	            } else if (mHiddenComments.contains(position)) { 
+	            	if (convertView == null) {
+	            		// Doesn't matter which view we inflate since it's gonna be invisible
+	            		view = mInflater.inflate(R.layout.zero_size_layout, null);
+	            	} else {
+	            		view = convertView;
+	            	}
+	            } else if (mHiddenCommentHeads.contains(position)) {
+	            	if (convertView == null) {
+	            		view = mInflater.inflate(R.layout.comments_list_item_hidden, null);
+	            	} else {
+	            		view = convertView;
+	            	}
+	            	TextView votesView = (TextView) view.findViewById(R.id.votes);
+		            TextView submitterView = (TextView) view.findViewById(R.id.submitter);
+	                TextView submissionTimeView = (TextView) view.findViewById(R.id.submissionTime);
+		            TextView leftIndent = (TextView) view.findViewById(R.id.left_indent);
+		            
+		            try {
+		            	votesView.setText(String.valueOf(
+		            			Integer.valueOf(item.getUps()) - Integer.valueOf(item.getDowns())
+		            			) + " points");
+		            } catch (NumberFormatException e) {
+		            	// This happens because "ups" comes after the potentially long "replies" object,
+		            	// so the ListView might try to display the View before "ups" in JSON has been parsed.
+		            	Log.e(TAG, e.getMessage());
+		            }
+		            submitterView.setText(item.getAuthor());
+		            submissionTimeView.setText(Util.getTimeAgo(Double.valueOf(item.getCreatedUtc())));
+		            switch (item.getIndent()) {
+		            case 0:  leftIndent.setText(""); break;
+		            case 1:  leftIndent.setText("w"); break;
+		            case 2:  leftIndent.setText("ww"); break;
+		            case 3:  leftIndent.setText("www"); break;
+		            case 4:  leftIndent.setText("wwww"); break;
+		            case 5:  leftIndent.setText("wwwww"); break;
+		            case 6:  leftIndent.setText("wwwwww"); break;
+		            case 7:  leftIndent.setText("wwwwwww"); break;
+		            default: leftIndent.setText("wwwwwww"); break;
+		            }
+            	} else if (mMorePositions.contains(position)) {
 	            	// "load more comments"
 	            	if (convertView == null) {
 	            		view = mInflater.inflate(R.layout.more_comments_view, null);
@@ -388,6 +439,7 @@ public final class RedditCommentsListActivity extends ListActivity
 		            	Log.e(TAG, e.getMessage());
 		            }
 		            submitterView.setText(item.getAuthor());
+		            submissionTimeView.setText(Util.getTimeAgo(Double.valueOf(item.getCreatedUtc())));
 		            bodyView.setText(item.getBody());
 		            switch (item.getIndent()) {
 		            case 0:  leftIndent.setText(""); break;
@@ -400,9 +452,6 @@ public final class RedditCommentsListActivity extends ListActivity
 		            case 7:  leftIndent.setText("wwwwwww"); break;
 		            default: leftIndent.setText("wwwwwww"); break;
 		            }
-		            
-		//            submitterView.setText(item.getAuthor());
-		            submissionTimeView.setText(Util.getTimeAgo(Double.valueOf(item.getCreatedUtc())));
 		            
 		            // Set the up and down arrow colors based on whether user likes
 		            if (mSettings.loggedIn) {
@@ -449,6 +498,11 @@ public final class RedditCommentsListActivity extends ListActivity
     protected void onListItemClick(ListView l, View v, int position, long id) {
         CommentInfo item = mCommentsAdapter.getItem(position);
         
+        if (mHiddenCommentHeads.contains(position)) {
+        	showComment(position);
+        	return;
+        }
+        
         // Mark the OP post/regular comment as selected
         mVoteTargetCommentInfo = item;
         mVoteTargetView = v;
@@ -473,6 +527,8 @@ public final class RedditCommentsListActivity extends ListActivity
         mCommentsAdapter = new CommentsListAdapter(this, items);
         setListAdapter(mCommentsAdapter);
         Common.updateListDrawables(this, mSettings.theme);
+        mHiddenComments.clear();
+        mHiddenCommentHeads.clear();
     }
 
         
@@ -1393,6 +1449,7 @@ public final class RedditCommentsListActivity extends ListActivity
         		}
         		RedditCommentsListActivity.this.setTheme(mSettings.themeResId);
         		RedditCommentsListActivity.this.setContentView(R.layout.comments_list_content);
+        		registerForContextMenu(getListView());
                 RedditCommentsListActivity.this.setListAdapter(mCommentsAdapter);
                 Common.updateListDrawables(RedditCommentsListActivity.this, mSettings.theme);
         		break;
@@ -1402,6 +1459,74 @@ public final class RedditCommentsListActivity extends ListActivity
         	
         	return true;
         }
+    }
+    
+    @Override
+    public void onCreateContextMenu(ContextMenu menu, View v, ContextMenuInfo menuInfo) {
+    	super.onCreateContextMenu(menu, v, menuInfo);
+    	AdapterContextMenuInfo info = (AdapterContextMenuInfo) menuInfo;
+    	int rowId = (int) info.id;
+    	
+    	if (rowId == 0)
+    		;
+    	else if (mHiddenCommentHeads.contains(rowId))
+    		menu.add(0, Constants.DIALOG_SHOW_COMMENT, 0, "Show comment");
+    	else
+    		menu.add(0, Constants.DIALOG_HIDE_COMMENT, 0, "Hide comment");
+    }
+    
+    @Override
+    public boolean onContextItemSelected(MenuItem item) {
+    	AdapterContextMenuInfo info = (AdapterContextMenuInfo) item.getMenuInfo();
+    	int rowId = (int) info.id;
+    	
+    	switch (item.getItemId()) {
+    	case Constants.DIALOG_HIDE_COMMENT:
+    		hideComment(rowId);
+    		return true;
+    	case Constants.DIALOG_SHOW_COMMENT:
+    		showComment(rowId);
+    		return true;
+		default:
+    		return super.onContextItemSelected(item);	
+    	}
+    }
+    
+    private void hideComment(int rowId) {
+    	mHiddenCommentHeads.add(rowId);
+    	int myIndent = mCommentsAdapter.getItem(rowId).getIndent();
+    	// Hide everything after the row.
+    	for (int i = rowId + 1; i < mCommentsAdapter.getCount(); i++) {
+    		CommentInfo ci = mCommentsAdapter.getItem(i);
+    		if (ci.getIndent() <= myIndent)
+    			break;
+    		mHiddenComments.add(i);
+    	}
+    	mCommentsAdapter.notifyDataSetChanged();
+    }
+    
+    private void showComment(int rowId) {
+    	if (mHiddenCommentHeads.contains(rowId)) {
+    		mHiddenCommentHeads.remove(rowId);
+    	}
+    	int stopIndent = mCommentsAdapter.getItem(rowId).getIndent();
+    	int skipIndentAbove = -1;
+    	for (int i = rowId + 1; i < mCommentsAdapter.getCount(); i++) {
+    		CommentInfo ci = mCommentsAdapter.getItem(i);
+    		int ciIndent = ci.getIndent();
+    		if (ciIndent <= stopIndent)
+    			break;
+    		if (skipIndentAbove != -1 && ciIndent > skipIndentAbove)
+    			continue;
+    		if (mHiddenCommentHeads.contains(i) && mHiddenComments.contains(i)) {
+    			mHiddenComments.remove(i);
+    			skipIndentAbove = ci.getIndent();
+    		}
+    		skipIndentAbove = -1;
+    		if (mHiddenComments.contains(i))
+    			mHiddenComments.remove(i);
+    	}
+    	mCommentsAdapter.notifyDataSetChanged();
     }
 
     @Override
