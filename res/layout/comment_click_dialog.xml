@@ -9,17 +9,6 @@
               android:minWidth="280dip"
               android:padding="30dip"
               >
-              
-    <Button android:id="@+id/hide_button"
-    	android:layout_width="wrap_content"
-    	android:layout_height="wrap_content"
-    	android:layout_alignParentRight="true"
-    	android:layout_alignParentTop="true"
-    	android:text="@string/comment_hide"
-    	android:textSize="10dip"
-    	android:padding="0dip"
-    	/>
-    	
     <!-- Show title and URL if this is the OP -->
     <TextView android:id="@+id/title"
    		android:layout_width="wrap_content"
