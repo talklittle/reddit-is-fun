@@ -1359,6 +1359,9 @@ public final class RedditCommentsListActivity extends ListActivity
         public boolean onMenuItemClick(MenuItem item) {
         	switch (mAction) {
         	case Constants.DIALOG_OP:
+        		mVoteTargetCommentInfo = mCommentsAdapter.getItem(0);
+        		showDialog(Constants.DIALOG_THING_CLICK);
+        		break;
         	case Constants.DIALOG_REPLY:
         		// From the menu, only used for the OP, which is a thread.
             	mVoteTargetCommentInfo = mCommentsAdapter.getItem(0);
@@ -1444,7 +1447,6 @@ public final class RedditCommentsListActivity extends ListActivity
     		});
     		break;
     		
-    	case Constants.DIALOG_OP:
     	case Constants.DIALOG_THING_CLICK:
     		inflater = (LayoutInflater)this.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
     		builder = new AlertDialog.Builder(this);
@@ -1512,7 +1514,6 @@ public final class RedditCommentsListActivity extends ListActivity
     		loginPasswordInput.setText("");
     		break;
     		
-    	case Constants.DIALOG_OP:
     	case Constants.DIALOG_THING_CLICK:
     		String likes;
     		final TextView titleView = (TextView) dialog.findViewById(R.id.title);
@@ -1533,22 +1534,13 @@ public final class RedditCommentsListActivity extends ListActivity
     			if (("self.").toLowerCase().equals(mOpThreadInfo.getDomain().substring(0, 5).toLowerCase())) {
     				linkButton.setVisibility(View.INVISIBLE);
     			} else {
-	    			if (id == Constants.DIALOG_OP) {
-		    			linkButton.setOnClickListener(new OnClickListener() {
-		    				public void onClick(View v) {
-		    					dismissDialog(Constants.DIALOG_OP);
-		    					Common.launchBrowser(mOpThreadInfo.getURL(), RedditCommentsListActivity.this);
-		    				}
-		    			});
-	    			} else {
-	    				linkButton.setOnClickListener(new OnClickListener() {
-		    				public void onClick(View v) {
-		    					dismissDialog(Constants.DIALOG_THING_CLICK);
-		    					Common.launchBrowser(mOpThreadInfo.getURL(), RedditCommentsListActivity.this);
-		    				}
-		    			});
-	    			}
-    				linkButton.setVisibility(View.VISIBLE);
+	    			linkButton.setOnClickListener(new OnClickListener() {
+	    				public void onClick(View v) {
+	    					dismissDialog(Constants.DIALOG_THING_CLICK);
+	    					Common.launchBrowser(mOpThreadInfo.getURL(), RedditCommentsListActivity.this);
+	    				}
+	    			});
+	    			linkButton.setVisibility(View.VISIBLE);
     			}
     		} else {
     			titleView.setText("Comment by " + mVoteTargetCommentInfo.getAuthor());
@@ -1663,22 +1655,13 @@ public final class RedditCommentsListActivity extends ListActivity
 	    		voteDownButton.setOnCheckedChangeListener(new VoteDownOnCheckedChangeListener());
 
 	    		// The "reply" button
-	    		if (id == Constants.DIALOG_OP) {
-		    		replyButton.setOnClickListener(new OnClickListener() {
-		    			public void onClick(View v) {
-		    				dismissDialog(Constants.DIALOG_OP);
-		    				showDialog(Constants.DIALOG_REPLY);
-		        		}
-		    		});
-	    		} else {
-	    			replyButton.setOnClickListener(new OnClickListener() {
-		    			public void onClick(View v) {
-		    				dismissDialog(Constants.DIALOG_THING_CLICK);
-		    				showDialog(Constants.DIALOG_REPLY);
-		        		}
-		    		});
-	    		}
-    		} else {
+    			replyButton.setOnClickListener(new OnClickListener() {
+	    			public void onClick(View v) {
+	    				dismissDialog(Constants.DIALOG_THING_CLICK);
+	    				showDialog(Constants.DIALOG_REPLY);
+	        		}
+	    		});
+	    	} else {
     			voteUpButton.setVisibility(View.GONE);
     			voteDownButton.setVisibility(View.GONE);
     			replyButton.setVisibility(View.INVISIBLE);
