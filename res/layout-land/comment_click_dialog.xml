@@ -15,6 +15,16 @@
     	android:layout_height="0dip"
     	android:layout_centerInParent="true"
     	/>
+    	
+    <Button android:id="@+id/hide_button"
+    	android:layout_width="wrap_content"
+    	android:layout_height="wrap_content"
+    	android:layout_alignParentRight="true"
+    	android:layout_alignParentTop="true"
+    	android:text="@string/comment_hide"
+    	android:textSize="10dip"
+    	android:padding="0dip"
+    	/>
     
     <!-- Up/down/login -->
         

@@ -91,6 +91,16 @@
 		        android:ellipsize="marquee"
 		        android:textSize="10dip"
 		    	/>
+		    
+		    <TextView android:id="@+id/hidden"
+		    	android:layout_width="wrap_content"
+		    	android:layout_height="wrap_content"
+		    	android:layout_toRightOf="@id/submissionTime"
+		    	android:text="@string/comment_hidden"
+		    	android:textSize="10dip"
+		    	android:textStyle="bold"
+		    	android:visibility="gone"
+		    	/>
 		            
 	    
 	    <!-- Bottom row -->
