@@ -86,7 +86,7 @@ public final class RedditIsFun extends ListActivity {
     private CharSequence mAfter = null;
     private CharSequence mBefore = null;
     private CharSequence mUrlToGetHere = null;
-    private int mCount = Constants.DEFAULT_THREAD_DOWNLOAD_LIMIT;
+    private volatile int mCount = Constants.DEFAULT_THREAD_DOWNLOAD_LIMIT;
     
     // ProgressDialogs with percentage bars
     private AutoResetProgressDialog mLoadingThreadsProgress;
@@ -160,8 +160,9 @@ public final class RedditIsFun extends ListActivity {
 	    		String newSubreddit = extras.getString(ThreadInfo.SUBREDDIT);
 	    		if (newSubreddit != null && !"".equals(newSubreddit)) {
 	    			mSettings.setSubreddit(newSubreddit);
-	    			// Reset url when changing subreddit
+	    			// Reset url and count when changing subreddit
 	    			mUrlToGetHere = null;
+	    			mCount = Constants.DEFAULT_THREAD_DOWNLOAD_LIMIT;
 	    			new DownloadThreadsTask().execute(newSubreddit);
 	    		}
     		}
@@ -402,7 +403,7 @@ public final class RedditIsFun extends ListActivity {
             	} else {
             		nextButton.setVisibility(View.INVISIBLE);
             	}
-            	if (mBefore != null) {
+            	if (mBefore != null && mCount != Constants.DEFAULT_THREAD_DOWNLOAD_LIMIT) {
             		previousButton.setVisibility(View.VISIBLE);
             		previousButton.setOnClickListener(new OnClickListener() {
             			public void onClick(View v) {
