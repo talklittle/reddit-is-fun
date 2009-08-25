@@ -69,11 +69,16 @@ public class Constants {
     
     static final String FRONTPAGE_STRING = "reddit front page";
     
+    static final String URL_TO_GET_HERE = "urlToGetHere";
+    static final String THREAD_COUNT = "threadCount";
+    
     static final String SUBMIT_KIND_LINK = "link";
     static final String SUBMIT_KIND_SELF = "self";
     static final String SUBMIT_KIND_POLL = "poll";
     
     // JSON values
+    static final String JSON_AFTER = "after";
+    static final String JSON_BEFORE = "before";
     static final String JSON_BODY = "body";
     static final String JSON_CHILDREN = "children";
     static final String JSON_DATA = "data";
