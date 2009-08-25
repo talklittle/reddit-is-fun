@@ -1467,7 +1467,7 @@ public final class RedditCommentsListActivity extends ListActivity
     	AdapterContextMenuInfo info = (AdapterContextMenuInfo) menuInfo;
     	int rowId = (int) info.id;
     	
-    	if (rowId == 0)
+    	if (rowId == 0 || mMorePositions.contains(rowId))
     		;
     	else if (mHiddenCommentHeads.contains(rowId))
     		menu.add(0, Constants.DIALOG_SHOW_COMMENT, 0, "Show comment");
