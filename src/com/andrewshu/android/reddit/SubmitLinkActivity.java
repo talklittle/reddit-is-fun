@@ -98,23 +98,40 @@ public class SubmitLinkActivity extends TabActivity {
 		});
 		mTabHost.setCurrentTab(0);
 		
-        // Pull current subreddit and thread info from Intent
-        Bundle extras = getIntent().getExtras();
-        if (extras != null) {
-        	String subreddit = extras.getString(ThreadInfo.SUBREDDIT);
-    		final EditText submitLinkReddit = (EditText) findViewById(R.id.submit_link_reddit);
-        	final EditText submitTextReddit = (EditText) findViewById(R.id.submit_text_reddit);
-        	if (Constants.FRONTPAGE_STRING.equals(subreddit)) {
-        		submitLinkReddit.setText("reddit.com");
+		// Intents can be external (browser share page) or from Reddit is fun.
+        String intentAction = getIntent().getAction();
+        if (Intent.ACTION_SEND.equals(intentAction)) {
+        	// Share
+	        Bundle extras = getIntent().getExtras();
+	        if (extras != null) {
+	        	String url = extras.getString(Intent.EXTRA_TEXT);
+	        	final EditText submitLinkUrl = (EditText) findViewById(R.id.submit_link_url);
+	        	final EditText submitLinkReddit = (EditText) findViewById(R.id.submit_link_reddit);
+	        	final EditText submitTextReddit = (EditText) findViewById(R.id.submit_text_reddit);
+	        	submitLinkUrl.setText(url);
+	        	submitLinkReddit.setText("reddit.com");
         		submitTextReddit.setText("reddit.com");
         		mSubmitUrl = "http://www.reddit.com/submit";
-        	} else {
-	        	submitLinkReddit.setText(subreddit);
-	        	submitTextReddit.setText(subreddit);
-	        	mSubmitUrl = "http://www.reddit.com/r/"+subreddit+"/submit";
-        	}
+	        }
         } else {
-        	mSubmitUrl = "http://www.reddit.com/submit";
+	        Bundle extras = getIntent().getExtras();
+	        if (extras != null) {
+	            // Pull current subreddit and thread info from Intent
+	        	String subreddit = extras.getString(ThreadInfo.SUBREDDIT);
+	    		final EditText submitLinkReddit = (EditText) findViewById(R.id.submit_link_reddit);
+	        	final EditText submitTextReddit = (EditText) findViewById(R.id.submit_text_reddit);
+	        	if (Constants.FRONTPAGE_STRING.equals(subreddit)) {
+	        		submitLinkReddit.setText("reddit.com");
+	        		submitTextReddit.setText("reddit.com");
+	        		mSubmitUrl = "http://www.reddit.com/submit";
+	        	} else {
+		        	submitLinkReddit.setText(subreddit);
+		        	submitTextReddit.setText(subreddit);
+		        	mSubmitUrl = "http://www.reddit.com/r/"+subreddit+"/submit";
+	        	}
+	        } else {
+	        	mSubmitUrl = "http://www.reddit.com/submit";
+	        }
         }
         
         final Button submitLinkButton = (Button) findViewById(R.id.submit_link_button);
