@@ -26,6 +26,8 @@ import org.apache.http.entity.HttpEntityWrapper;
 import org.apache.http.impl.client.DefaultHttpClient;
 import org.apache.http.impl.cookie.BasicClientCookie;
 import org.apache.http.message.BasicNameValuePair;
+import org.apache.http.params.HttpConnectionParams;
+import org.apache.http.params.HttpParams;
 import org.apache.http.protocol.HTTP;
 import org.apache.http.protocol.HttpContext;
 
@@ -46,9 +48,9 @@ public class Common {
 	
 	private static final String TAG = "Common";
 	
-	static void showErrorToast(CharSequence error, int duration, Activity activity) {
-		LayoutInflater inflater = (LayoutInflater) activity.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
-		Toast t = new Toast(activity);
+	static void showErrorToast(CharSequence error, int duration, Context context) {
+		LayoutInflater inflater = (LayoutInflater) context.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
+		Toast t = new Toast(context);
 		t.setDuration(duration);
 		View v = inflater.inflate(R.layout.error_toast, null);
 		TextView errorMessage = (TextView) v.findViewById(R.id.errorMessage);
@@ -147,6 +149,11 @@ public class Common {
             HttpPost httppost = new HttpPost("http://www.reddit.com/api/login/"+username);
             httppost.setEntity(new UrlEncodedFormEntity(nvps, HTTP.UTF_8));
             
+            // Set timeout to 30 seconds for login
+            HttpParams params = httppost.getParams();
+	        HttpConnectionParams.setConnectionTimeout(params, 30000);
+	        HttpConnectionParams.setSoTimeout(params, 30000);
+	        
             // Perform the HTTP POST request
         	HttpResponse response = client.execute(httppost);
         	status = response.getStatusLine().toString();

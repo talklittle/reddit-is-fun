@@ -15,6 +15,7 @@ import org.apache.http.NameValuePair;
 import org.apache.http.client.entity.UrlEncodedFormEntity;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPost;
+import org.apache.http.cookie.Cookie;
 import org.apache.http.impl.client.DefaultHttpClient;
 import org.apache.http.message.BasicNameValuePair;
 import org.apache.http.params.HttpConnectionParams;
@@ -23,15 +24,20 @@ import org.apache.http.protocol.HTTP;
 
 import android.app.Activity;
 import android.app.Dialog;
+import android.app.ProgressDialog;
 import android.app.TabActivity;
+import android.content.DialogInterface;
 import android.content.Intent;
+import android.content.DialogInterface.OnCancelListener;
 import android.graphics.drawable.Drawable;
 import android.os.AsyncTask;
 import android.os.Bundle;
+import android.view.KeyEvent;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.View.OnClickListener;
+import android.view.View.OnKeyListener;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.FrameLayout;
@@ -71,12 +77,6 @@ public class SubmitLinkActivity extends TabActivity {
 			fl.setBackgroundResource(R.color.android_dark_background);
 		}
 		
-		if (!mSettings.loggedIn) {
-			Intent loginRequired = new Intent();
-			setResult(Constants.RESULT_LOGIN_REQUIRED, loginRequired);
-			finish();
-		}
-		
 		mTabHost = getTabHost();
 		mTabHost.addTab(mTabHost.newTabSpec(Constants.TAB_LINK).setIndicator("link").setContent(R.id.submit_link_view));
 		mTabHost.addTab(mTabHost.newTabSpec(Constants.TAB_TEXT).setIndicator("text").setContent(R.id.submit_text_view));
@@ -98,6 +98,17 @@ public class SubmitLinkActivity extends TabActivity {
 		});
 		mTabHost.setCurrentTab(0);
 		
+		if (mSettings.loggedIn) {
+			start();
+		} else {
+			showDialog(Constants.DIALOG_LOGIN);
+		}
+	}
+	
+	/**
+	 * Enable the UI after user is logged in.
+	 */
+	private void start() {
 		// Intents can be external (browser share page) or from Reddit is fun.
         String intentAction = getIntent().getAction();
         if (Intent.ACTION_SEND.equals(intentAction)) {
@@ -164,6 +175,65 @@ public class SubmitLinkActivity extends TabActivity {
         // Check the CAPTCHA
         new CheckCaptchaRequiredTask().execute();
 	}
+	
+	private void returnStatus(int status) {
+		Intent i = new Intent();
+		setResult(status, i);
+		finish();
+	}
+
+	
+	@Override
+    protected void onPause() {
+    	super.onPause();
+    	Common.saveRedditPreferences(this, mSettings);
+    }
+    
+    
+	
+	private class LoginTask extends AsyncTask<Void, Void, String> {
+    	private CharSequence mUsername, mPassword;
+    	
+    	LoginTask(CharSequence username, CharSequence password) {
+    		mUsername = username;
+    		mPassword = password;
+    	}
+    	
+    	@Override
+    	public String doInBackground(Void... v) {
+    		return Common.doLogin(mUsername, mPassword, mClient);
+        }
+    	
+    	@Override
+    	protected void onPreExecute() {
+    		showDialog(Constants.DIALOG_LOGGING_IN);
+    	}
+    	
+    	@Override
+    	protected void onPostExecute(String errorMessage) {
+    		dismissDialog(Constants.DIALOG_LOGGING_IN);
+			if (errorMessage == null) {
+    			List<Cookie> cookies = mClient.getCookieStore().getCookies();
+            	for (Cookie c : cookies) {
+            		if (c.getName().equals("reddit_session")) {
+            			mSettings.setRedditSessionCookie(c);
+            			break;
+            		}
+            	}
+            	mSettings.setUsername(mUsername);
+            	mSettings.setLoggedIn(true);
+    			Toast.makeText(SubmitLinkActivity.this, "Logged in as "+mUsername, Toast.LENGTH_SHORT).show();
+    			// Show the UI and allow user to proceed
+    			start();
+        	} else {
+            	mSettings.setLoggedIn(false);
+    			Common.showErrorToast(errorMessage, Toast.LENGTH_LONG, SubmitLinkActivity.this);
+    			returnStatus(Constants.RESULT_LOGIN_REQUIRED);
+        	}
+    	}
+    }
+    
+    
 
 	private class SubmitLinkTask extends AsyncTask<Void, Void, ThreadInfo> {
     	CharSequence _mTitle, _mUrlOrText, _mSubreddit, _mKind, _mCaptcha;
@@ -478,10 +548,65 @@ public class SubmitLinkActivity extends TabActivity {
 	@Override
 	protected Dialog onCreateDialog(int id) {
 		Dialog dialog = null;
-		AutoResetProgressDialog pdialog;
+		ProgressDialog pdialog;
 		switch (id) {
+		case Constants.DIALOG_LOGIN:
+    		dialog = new Dialog(this);
+    		dialog.setContentView(R.layout.login_dialog);
+    		dialog.setTitle("Login to reddit.com");
+    		// If user presses "back" then quit.
+    		dialog.setOnCancelListener(new OnCancelListener() {
+    			public void onCancel(DialogInterface d) {
+    				if (!mSettings.loggedIn) {
+	        			returnStatus(Activity.RESULT_CANCELED);
+    				}
+    			}
+    		});
+    		final EditText loginUsernameInput = (EditText) dialog.findViewById(R.id.login_username_input);
+    		final EditText loginPasswordInput = (EditText) dialog.findViewById(R.id.login_password_input);
+    		loginUsernameInput.setOnKeyListener(new OnKeyListener() {
+    			public boolean onKey(View v, int keyCode, KeyEvent event) {
+    		        if ((event.getAction() == KeyEvent.ACTION_DOWN)
+    		        		&& (keyCode == KeyEvent.KEYCODE_ENTER || keyCode == KeyEvent.KEYCODE_TAB)) {
+    		        	loginPasswordInput.requestFocus();
+    		        	return true;
+    		        }
+    		        return false;
+    		    }
+    		});
+    		loginPasswordInput.setOnKeyListener(new OnKeyListener() {
+    			public boolean onKey(View v, int keyCode, KeyEvent event) {
+    		        if ((event.getAction() == KeyEvent.ACTION_DOWN) && (keyCode == KeyEvent.KEYCODE_ENTER)) {
+        				CharSequence user = loginUsernameInput.getText();
+        				CharSequence password = loginPasswordInput.getText();
+        				dismissDialog(Constants.DIALOG_LOGIN);
+    		        	new LoginTask(user, password).execute(); 
+    		        	return true;
+    		        }
+    		        return false;
+    		    }
+    		});
+    		final Button loginButton = (Button) dialog.findViewById(R.id.login_button);
+    		loginButton.setOnClickListener(new OnClickListener() {
+    			public void onClick(View v) {
+    				CharSequence user = loginUsernameInput.getText();
+    				CharSequence password = loginPasswordInput.getText();
+    				dismissDialog(Constants.DIALOG_LOGIN);
+    				new LoginTask(user, password).execute();
+    		    }
+    		});
+    		break;
+
+       	// "Please wait"
+    	case Constants.DIALOG_LOGGING_IN:
+    		pdialog = new ProgressDialog(this);
+    		pdialog.setMessage("Logging in...");
+    		pdialog.setIndeterminate(true);
+    		pdialog.setCancelable(false);
+    		dialog = pdialog;
+    		break;
 		case Constants.DIALOG_SUBMITTING:
-    		pdialog = new AutoResetProgressDialog(this);
+			pdialog = new ProgressDialog(this);
     		pdialog.setMessage("Submitting...");
     		pdialog.setIndeterminate(true);
     		pdialog.setCancelable(false);
@@ -492,6 +617,25 @@ public class SubmitLinkActivity extends TabActivity {
 		}
 		return dialog;
 	}
+	
+    @Override
+    protected void onPrepareDialog(int id, Dialog dialog) {
+    	super.onPrepareDialog(id, dialog);
+    	
+    	switch (id) {
+    	case Constants.DIALOG_LOGIN:
+    		if (mSettings.username != null) {
+	    		final TextView loginUsernameInput = (TextView) dialog.findViewById(R.id.login_username_input);
+	    		loginUsernameInput.setText(mSettings.username);
+    		}
+    		final TextView loginPasswordInput = (TextView) dialog.findViewById(R.id.login_password_input);
+    		loginPasswordInput.setText("");
+    		break;
+    		
+		default:
+			break;
+    	}
+    }
 	
 	private boolean validateLinkForm() {
 		final EditText titleText = (EditText) findViewById(R.id.submit_link_title);

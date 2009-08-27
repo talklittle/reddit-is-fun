@@ -1532,7 +1532,7 @@ public final class RedditCommentsListActivity extends ListActivity
     @Override
     protected Dialog onCreateDialog(int id) {
     	Dialog dialog;
-    	AutoResetProgressDialog pdialog;
+    	ProgressDialog pdialog;
     	AlertDialog.Builder builder;
     	LayoutInflater inflater;
     	
@@ -1556,8 +1556,10 @@ public final class RedditCommentsListActivity extends ListActivity
     		loginPasswordInput.setOnKeyListener(new OnKeyListener() {
     			public boolean onKey(View v, int keyCode, KeyEvent event) {
     		        if ((event.getAction() == KeyEvent.ACTION_DOWN) && (keyCode == KeyEvent.KEYCODE_ENTER)) {
-    		        	dismissDialog(Constants.DIALOG_LOGIN);
-    		        	new LoginTask(loginUsernameInput.getText(), loginPasswordInput.getText()).execute();
+        				CharSequence user = loginUsernameInput.getText();
+        				CharSequence password = loginPasswordInput.getText();
+        				dismissDialog(Constants.DIALOG_LOGIN);
+    		        	new LoginTask(user, password).execute();
     		        	return true;
     		        }
     		        return false;
@@ -1566,8 +1568,10 @@ public final class RedditCommentsListActivity extends ListActivity
     		final Button loginButton = (Button) dialog.findViewById(R.id.login_button);
     		loginButton.setOnClickListener(new OnClickListener() {
     			public void onClick(View v) {
+    				CharSequence user = loginUsernameInput.getText();
+    				CharSequence password = loginPasswordInput.getText();
     				dismissDialog(Constants.DIALOG_LOGIN);
-    				new LoginTask(loginUsernameInput.getText(), loginPasswordInput.getText()).execute();
+    				new LoginTask(user, password).execute();
 		        }
     		});
     		break;
@@ -1604,10 +1608,10 @@ public final class RedditCommentsListActivity extends ListActivity
     		
    		// "Please wait"
     	case Constants.DIALOG_LOGGING_IN:
-    		pdialog = new AutoResetProgressDialog(this);
+    		pdialog = new ProgressDialog(this);
     		pdialog.setMessage("Logging in...");
     		pdialog.setIndeterminate(true);
-    		pdialog.setCancelable(true);
+    		pdialog.setCancelable(false);
     		dialog = pdialog;
     		break;
     	case Constants.DIALOG_LOADING_COMMENTS_LIST:
