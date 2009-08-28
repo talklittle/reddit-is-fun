@@ -8,6 +8,7 @@ public class Constants {
 
 	static final String COMMENT_KIND = "t1";
 	static final String THREAD_KIND = "t3";
+	static final String MESSAGE_KIND = "t4";
 	static final String SUBREDDIT_KIND = "t5";
 	
 	// Requires a non-default font
@@ -22,6 +23,9 @@ public class Constants {
     // startActivityForResult request codes
     static final int ACTIVITY_PICK_SUBREDDIT = 0;
     static final int ACTIVITY_SUBMIT_LINK = 1;
+    
+    // notifications
+    static final int NOTIFICATION_HAVE_MAIL = 0;
     
     // Tell PickSubredditActivity to hide the fronptage string
     static final String HIDE_FRONTPAGE_STRING = "hideFrontpage";
@@ -49,6 +53,7 @@ public class Constants {
     static final int DIALOG_DOWNLOAD_CAPTCHA = 16;
     static final int DIALOG_HIDE_COMMENT = 17;
     static final int DIALOG_SHOW_COMMENT = 18;
+    static final int DIALOG_LOADING_INBOX = 19;
 
     // Themes
     static final int THEME_LIGHT = 0;
@@ -66,8 +71,12 @@ public class Constants {
     static final String FALSE_STRING = "false";
     static final String NULL_STRING = "null";
     static final String EMPTY_STRING = "";
+    static final String NO_STRING = "no";
     
     static final String FRONTPAGE_STRING = "reddit front page";
+    static final String HAVE_MAIL_TICKER = "reddit mail";
+    static final String HAVE_MAIL_TITLE = "reddit is fun";
+    static final String HAVE_MAIL_TEXT = "You have reddit mail.";
     
     static final String URL_TO_GET_HERE = "urlToGetHere";
     static final String THREAD_COUNT = "threadCount";
@@ -108,4 +117,6 @@ public class Constants {
     static final Pattern CAPTCHA_IDEN_PATTERN = Pattern.compile("name=\"iden\" value=\"(.*?)\"");
     // Group 2: Captcha image absolute path
     static final Pattern CAPTCHA_IMAGE_PATTERN = Pattern.compile("<img class=\"capimage\"( alt=\".*?\")? src=\"(.+?)\"");
+    // Group 1: "no" if no mail, "" if yes mail
+    static final Pattern HAVE_MAIL_PATTERN = Pattern.compile("class=\"(no)?havemail\"");
 }

@@ -252,6 +252,8 @@ public class Common {
         	in.read(buffer, 0, 1200);
         	in.close();
         	String line = String.valueOf(buffer);
+        	entity.consumeContent();
+        	
         	if (line == null || Constants.EMPTY_STRING.equals(line)) {
         		throw new HttpException("No content returned from doUpdateModhash GET to "+Constants.MODHASH_URL);
         	}
@@ -290,8 +292,6 @@ public class Common {
 //        	}
 //	        	
 
-        	entity.consumeContent();
-        	
         	Log.d(TAG, "modhash: "+modhash);
         	return modhash;
         	
@@ -307,6 +307,92 @@ public class Common {
     		return null;
     	}
     }
+    
+    /**
+     * Check mail
+     * 
+     * @param client
+     * @param shortcutHtml The HTML for the page to bypass network
+     * @return
+     */
+    static boolean doPeekEnvelope(DefaultHttpClient client, String shortcutHtml) {
+    	String no;
+    	String line;
+    	HttpEntity entity = null;
+    	try {
+    		if (shortcutHtml == null) {
+	    		HttpGet httpget = new HttpGet(Constants.MODHASH_URL);
+	    		HttpResponse response = client.execute(httpget);
+	    		
+	    		// For modhash, we don't care about the status, since the 404 page has the info we want.
+	//    		status = response.getStatusLine().toString();
+	//        	if (!status.contains("OK"))
+	//        		throw new HttpException(status);
+	        	
+	        	entity = response.getEntity();
+	
+	        	BufferedReader in = new BufferedReader(new InputStreamReader(entity.getContent()));
+	        	line = in.readLine();
+	        	in.close();
+	        	entity.consumeContent();
+    		} else {
+    			line = shortcutHtml;
+    		}
+        	
+        	if (line == null || Constants.EMPTY_STRING.equals(line)) {
+        		throw new HttpException("No content returned from doPeekEnvelope GET to "+Constants.MODHASH_URL);
+        	}
+        	if (line.contains("USER_REQUIRED")) {
+        		throw new Exception("User session error: USER_REQUIRED");
+        	}
+        	
+        	Matcher haveMailMatcher = Constants.HAVE_MAIL_PATTERN.matcher(line);
+        	if (haveMailMatcher.find()) {
+        		no = haveMailMatcher.group(1);
+        		if (Constants.NO_STRING.equals(no)) {
+        			// No mail.
+        			return false;
+        		}
+        	} else {
+        		throw new Exception("No envelope found at URL "+Constants.MODHASH_URL);
+        	}
+
+//        	// DEBUG
+//        	int c;
+//        	boolean done = false;
+//        	StringBuilder sb = new StringBuilder();
+//        	for (int k = 0; k < line.length(); k += 80) {
+//        		for (int i = 0; i < 80; i++) {
+//        			if (k + i >= line.length()) {
+//        				done = true;
+//        				break;
+//        			}
+//        			c = line.charAt(k + i);
+//        			sb.append((char) c);
+//        		}
+//        		Log.d(TAG, "doReply response content: " + sb.toString());
+//        		sb = new StringBuilder();
+//        		if (done)
+//        			break;
+//        	}
+//	        	
+
+        	return true;
+        	
+    	} catch (Exception e) {
+    		if (entity != null) {
+    			try {
+    				entity.consumeContent();
+    			} catch (IOException e2) {
+    				Log.e(TAG, e.getMessage());
+    			}
+    		}
+    		Log.e(TAG, e.getMessage());
+    		return false;
+    	}
+    }
+    
+
     
     static void launchBrowser(CharSequence url, Activity act) {
 		Intent browser = new Intent(Intent.ACTION_VIEW, Uri.parse(url.toString()));

@@ -28,6 +28,9 @@ import android.app.Activity;
 import android.app.AlertDialog;
 import android.app.Dialog;
 import android.app.ListActivity;
+import android.app.Notification;
+import android.app.NotificationManager;
+import android.app.PendingIntent;
 import android.app.ProgressDialog;
 import android.content.Context;
 import android.content.Intent;
@@ -55,6 +58,7 @@ import android.widget.CompoundButton;
 import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.ListView;
+import android.widget.RemoteViews;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -140,6 +144,7 @@ public final class RedditIsFun extends ListActivity {
     	if (mSettings.loggedIn != previousLoggedIn) {
     		new DownloadThreadsTask().execute(mSettings.subreddit);
     	}
+    	new PeekEnvelopeTask().execute();
     }
     
     @Override
@@ -920,6 +925,27 @@ public final class RedditIsFun extends ListActivity {
     	}
     }
 
+    
+    private class PeekEnvelopeTask extends AsyncTask<Void, Void, Boolean> {
+    	@Override
+    	public Boolean doInBackground(Void... voidz) {
+    		return Common.doPeekEnvelope(mClient, null);
+    	}
+    	@Override
+    	public void onPostExecute(Boolean hasMail) {
+    		if (hasMail) {
+    			Intent nIntent = new Intent(RedditIsFun.this, InboxActivity.class);
+    			PendingIntent contentIntent = PendingIntent.getActivity(RedditIsFun.this, 0, nIntent, Notification.FLAG_AUTO_CANCEL);
+    			Notification notification = new Notification(R.drawable.mail, Constants.HAVE_MAIL_TICKER, System.currentTimeMillis());
+    			RemoteViews contentView = new RemoteViews(getPackageName(), R.layout.envelope_view);
+    			notification.contentView = contentView;
+    			notification.contentIntent = contentIntent;
+//    			notification.setLatestEventInfo(RedditIsFun.this, Constants.HAVE_MAIL_TITLE, Constants.HAVE_MAIL_TEXT, contentIntent);
+    			NotificationManager notificationManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
+    			notificationManager.notify(Constants.NOTIFICATION_HAVE_MAIL, notification);
+    		}
+    	}
+    }
     
     
     /**

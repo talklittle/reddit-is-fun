@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+/*
+ * reddit is fun
+ *
+ * by talklittle
+ */
+-->
+
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="fill_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:padding="4dip"
+    >
+    
+    <!-- Use Spans to make this nice -->
+  	<TextView android:id="@+id/from_info"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginRight="5dip"
+        android:singleLine="true"
+        android:textSize="10dip"
+    />
+    
+	<TextView android:id="@+id/subject"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="4dip"
+      	android:textSize="12dip"
+      	android:textStyle="bold"
+        />
+	
+	<TextView android:id="@+id/body"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Loading..."
+        android:textSize="12dip"
+		android:autoLink="all"
+		android:linksClickable="false"
+    />
+	    
+</LinearLayout>
