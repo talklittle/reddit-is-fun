@@ -89,7 +89,7 @@ public final class PickSubredditActivity extends ListActivity {
     	super.onCreate(savedInstanceState);
         
     	Common.loadRedditPreferences(this, mSettings, null);
-    	setTheme(mSettings.themeResId);
+    	setTheme(mSettings.theme);
     	
         setContentView(R.layout.pick_subreddit_view);
         

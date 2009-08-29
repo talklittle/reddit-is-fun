@@ -23,6 +23,7 @@
            	</intent-filter>
 	    </activity>
 	    <activity android:name=".InboxActivity"></activity>
+	    <activity android:name=".RedditPreferencesPage"></activity>
 	</application>
     <uses-sdk android:minSdkVersion="3" />
 </manifest> 

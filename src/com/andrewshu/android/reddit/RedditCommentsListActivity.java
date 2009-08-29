@@ -123,7 +123,7 @@ public final class RedditCommentsListActivity extends ListActivity
         super.onCreate(savedInstanceState);
         
         Common.loadRedditPreferences(this, mSettings, mClient);
-        setTheme(mSettings.themeResId);
+        setTheme(mSettings.theme);
         
         setContentView(R.layout.comments_list_content);
         registerForContextMenu(getListView());
@@ -160,7 +160,7 @@ public final class RedditCommentsListActivity extends ListActivity
     	boolean previousLoggedIn = mSettings.loggedIn;
     	Common.loadRedditPreferences(this, mSettings, mClient);
     	if (mSettings.theme != previousTheme) {
-    		setTheme(mSettings.themeResId);
+    		setTheme(mSettings.theme);
     		setContentView(R.layout.threads_list_content);
     		registerForContextMenu(getListView());
     		setListAdapter(mCommentsAdapter);
@@ -286,7 +286,7 @@ public final class RedditCommentsListActivity extends ListActivity
 	                int titleLen = mOpThreadInfo.getTitle().length();
 	                AbsoluteSizeSpan titleASS = new AbsoluteSizeSpan(14);
 	                titleSS.setSpan(titleASS, 0, titleLen, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
-	                if (mSettings.theme == Constants.THEME_LIGHT) {
+	                if (mSettings.theme == R.style.Reddit_Light) {
 	                	// FIXME: This doesn't work persistently, since "clicked" is not delivered to reddit.com
 	    	            if (Constants.TRUE_STRING.equals(mOpThreadInfo.getClicked())) {
 	    	            	ForegroundColorSpan fcs = new ForegroundColorSpan(res.getColor(R.color.purple));
@@ -340,7 +340,7 @@ public final class RedditCommentsListActivity extends ListActivity
 	            		String baseURL = new StringBuilder("http://www.reddit.com/r/")
 	            				.append(mSettings.subreddit).append("/comments/").append(item.getId()).toString();
 	            		String selftextHtml;
-	            		if (mSettings.theme == Constants.THEME_DARK)
+	            		if (mSettings.theme == R.style.Reddit_Dark)
 	            			selftextHtml = Constants.CSS_DARK;
 	            		else
 	            			selftextHtml = "";
@@ -543,6 +543,7 @@ public final class RedditCommentsListActivity extends ListActivity
        
     	// XXX: maxComments is unused for now
     	public Void doInBackground(Integer... maxComments) {
+    		HttpEntity entity = null;
             try {
             	HttpGet request = new HttpGet(new StringBuilder("http://www.reddit.com/r/")
             		.append(mSettings.subreddit.toString().trim())
@@ -550,13 +551,24 @@ public final class RedditCommentsListActivity extends ListActivity
             		.append(mSettings.threadId)
             		.append("/.json").toString());
             	HttpResponse response = mClient.execute(request);
+            	entity = response.getEntity();
             	
-            	InputStream in = response.getEntity().getContent();
+            	InputStream in = entity.getContent();
                 
                 parseCommentsJSON(in);
                 
+                in.close();
+                entity.consumeContent();
+                
             } catch (Exception e) {
                 Log.e(TAG, "failed:" + e.getMessage());
+                if (entity != null) {
+                	try {
+                		entity.consumeContent();
+                	} catch (IOException e2) {
+                		// Ignore.
+                	}
+                }
             }
             return null;
 	    }
@@ -1363,7 +1375,7 @@ public final class RedditCommentsListActivity extends ListActivity
         menu.add(0, Constants.DIALOG_REPLY, 3, "Reply to thread")
     		.setOnMenuItemClickListener(new CommentsListMenu(Constants.DIALOG_REPLY));
         
-        if (mSettings.theme == Constants.THEME_LIGHT) {
+        if (mSettings.theme == R.style.Reddit_Light) {
         	menu.add(0, Constants.DIALOG_THEME, 4, "Dark")
 //        		.setIcon(R.drawable.dark_circle_menu_icon)
         		.setOnMenuItemClickListener(new CommentsListMenu(Constants.DIALOG_THEME));
@@ -1393,7 +1405,7 @@ public final class RedditCommentsListActivity extends ListActivity
     	}
     	
     	// Theme: Light/Dark
-    	if (mSettings.theme == Constants.THEME_LIGHT) {
+    	if (mSettings.theme == R.style.Reddit_Light) {
     		menu.findItem(Constants.DIALOG_THEME).setTitle("Dark");
 //    			.setIcon(R.drawable.dark_circle_menu_icon);
     	} else {
@@ -1440,14 +1452,12 @@ public final class RedditCommentsListActivity extends ListActivity
         		Common.launchBrowser(url, RedditCommentsListActivity.this);
         		break;
         	case Constants.DIALOG_THEME:
-        		if (mSettings.theme == Constants.THEME_LIGHT) {
-        			mSettings.setTheme(Constants.THEME_DARK);
-        			mSettings.setThemeResId(R.style.Reddit_Dark);
+        		if (mSettings.theme == R.style.Reddit_Light) {
+        			mSettings.setTheme(R.style.Reddit_Dark);
         		} else {
-        			mSettings.setTheme(Constants.THEME_LIGHT);
-        			mSettings.setThemeResId(R.style.Reddit_Light);
+        			mSettings.setTheme(R.style.Reddit_Light);
         		}
-        		RedditCommentsListActivity.this.setTheme(mSettings.themeResId);
+        		RedditCommentsListActivity.this.setTheme(mSettings.theme);
         		RedditCommentsListActivity.this.setContentView(R.layout.comments_list_content);
         		registerForContextMenu(getListView());
                 RedditCommentsListActivity.this.setListAdapter(mCommentsAdapter);

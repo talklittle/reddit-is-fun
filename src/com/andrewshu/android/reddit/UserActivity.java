@@ -62,10 +62,10 @@ public class UserActivity extends ListActivity {
      * Set the Drawable for the list selector etc. based on the current theme.
      */
     private void updateListDrawables() {
-    	if (mSettings.theme == Constants.THEME_LIGHT) {
+    	if (mSettings.theme == R.style.Reddit_Light) {
     		getListView().setSelector(R.drawable.list_selector_blue);
     		// TODO: Set the empty listview image
-    	} else if (mSettings.theme == Constants.THEME_DARK) {
+    	} else if (mSettings.theme == R.style.Reddit_Dark) {
     		getListView().setSelector(android.R.drawable.list_selector_background);
     	}
     }
@@ -113,7 +113,7 @@ public class UserActivity extends ListActivity {
             int titleLen = item.getTitle().length();
             AbsoluteSizeSpan titleASS = new AbsoluteSizeSpan(14);
             titleSS.setSpan(titleASS, 0, titleLen, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
-            if (mSettings.theme == Constants.THEME_LIGHT) {
+            if (mSettings.theme == R.style.Reddit_Light) {
             	// FIXME: This doesn't work persistently, since "clicked" is not delivered to reddit.com
 	            if (Constants.TRUE_STRING.equals(item.getClicked())) {
 	            	ForegroundColorSpan fcs = new ForegroundColorSpan(res.getColor(R.color.purple));
@@ -133,7 +133,7 @@ public class UserActivity extends ListActivity {
             titleView.setText(builder);
             
             titleView.setText(item.getTitle());
-            if (mSettings.theme == Constants.THEME_LIGHT) {
+            if (mSettings.theme == R.style.Reddit_Light) {
 	            if (Constants.TRUE_STRING.equals(item.getClicked()))
 	            	titleView.setTextColor(res.getColor(R.color.purple));
 	            else

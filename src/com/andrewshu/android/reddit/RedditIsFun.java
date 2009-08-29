@@ -111,7 +111,7 @@ public final class RedditIsFun extends ListActivity {
         super.onCreate(savedInstanceState);
                 
         Common.loadRedditPreferences(this, mSettings, mClient);
-        setTheme(mSettings.themeResId);
+        setTheme(mSettings.theme);
         
         setContentView(R.layout.threads_list_content);
         // The above layout contains a list id "android:list"
@@ -140,7 +140,7 @@ public final class RedditIsFun extends ListActivity {
     	boolean previousLoggedIn = mSettings.loggedIn;
     	Common.loadRedditPreferences(this, mSettings, mClient);
     	if (mSettings.theme != previousTheme) {
-    		setTheme(mSettings.themeResId);
+    		setTheme(mSettings.theme);
     		setContentView(R.layout.threads_list_content);
     		setListAdapter(mThreadsAdapter);
     		Common.updateListDrawables(this, mSettings.theme);
@@ -285,11 +285,10 @@ public final class RedditIsFun extends ListActivity {
 	            int titleLen = item.getTitle().length();
 	            AbsoluteSizeSpan titleASS = new AbsoluteSizeSpan(14);
 	            titleSS.setSpan(titleASS, 0, titleLen, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
-	            if (mSettings.theme == Constants.THEME_LIGHT) {
+	            if (mSettings.theme == R.style.Reddit_Light) {
 	            	// FIXME: This doesn't work persistently, since "clicked" is not delivered to reddit.com
 		            if (Constants.TRUE_STRING.equals(item.getClicked())) {
 		            	ForegroundColorSpan fcs = new ForegroundColorSpan(res.getColor(R.color.purple));
-		            	titleView.setTextColor(res.getColor(R.color.purple));
 		            	titleSS.setSpan(fcs, 0, titleLen, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
 		            } else {
 		            	ForegroundColorSpan fcs = new ForegroundColorSpan(res.getColor(R.color.blue));
@@ -470,6 +469,7 @@ public final class RedditIsFun extends ListActivity {
     	private String _mUserError = "Error retrieving subreddit info.";
     	
     	public Boolean doInBackground(CharSequence... subreddit) {
+    		HttpEntity entity = null;
 	    	try {
 	    		String url;
 	    		// If refreshing or something, use the previously used URL to get the threads.
@@ -502,10 +502,12 @@ public final class RedditIsFun extends ListActivity {
 	    		
     			HttpGet request = new HttpGet(url);
             	HttpResponse response = mClient.execute(request);
-            	
-            	InputStream in = response.getEntity().getContent();
+            	entity = response.getEntity();
+            	InputStream in = entity.getContent();
                 try {
                 	parseSubredditJSON(in);
+                	in.close();
+                	entity.consumeContent();
                 	mSettings.setSubreddit(subreddit[0]);
                 	return true;
                 } catch (IllegalStateException e) {
@@ -513,6 +515,13 @@ public final class RedditIsFun extends ListActivity {
                 	Log.e(TAG, e.getMessage());
                 } catch (Exception e) {
                 	Log.e(TAG, e.getMessage());
+                	if (entity != null) {
+                		try {
+                			entity.consumeContent();
+                		} catch (IOException e2) {
+                			// Ignore.
+                		}
+                	}
                 }
             } catch (IOException e) {
             	Log.e(TAG, "failed:" + e.getMessage());
@@ -978,12 +987,15 @@ public final class RedditIsFun extends ListActivity {
     	if (mSettings.loggedIn) {
 	        menu.findItem(R.id.login_logout_menu_id).setTitle(
 	        		getResources().getString(R.string.logout)+": " + mSettings.username);
+//	        menu.setGroupVisible(group, visible)
+	        menu.findItem(R.id.inbox_menu_id).setVisible(true);
     	} else {
             menu.findItem(R.id.login_logout_menu_id).setTitle(getResources().getString(R.string.login));
+            menu.findItem(R.id.inbox_menu_id).setVisible(false);
     	}
     	
     	// Theme: Light/Dark
-    	src = mSettings.theme == Constants.THEME_LIGHT ?
+    	src = mSettings.theme == R.style.Reddit_Light ?
         		menu.findItem(R.id.dark_menu_id) :
         			menu.findItem(R.id.light_menu_id);
         dest = menu.findItem(R.id.light_dark_menu_id);
@@ -1005,19 +1017,19 @@ public final class RedditIsFun extends ListActivity {
         case R.id.login_logout_menu_id:
         	if (mSettings.loggedIn) {
         		Common.doLogout(mSettings, mClient);
-        		Toast.makeText(RedditIsFun.this, "You have been logged out.", Toast.LENGTH_SHORT).show();
+        		Toast.makeText(this, "You have been logged out.", Toast.LENGTH_SHORT).show();
         		new DownloadThreadsTask().execute(mSettings.subreddit);
         	} else {
         		showDialog(Constants.DIALOG_LOGIN);
         	}
     		break;
     	case R.id.submit_link_menu_id:
-    		Intent submitLinkIntent = new Intent(RedditIsFun.this, SubmitLinkActivity.class);
+    		Intent submitLinkIntent = new Intent(this, SubmitLinkActivity.class);
     		submitLinkIntent.putExtra(ThreadInfo.SUBREDDIT, mSettings.subreddit);
     		startActivityForResult(submitLinkIntent, Constants.ACTIVITY_SUBMIT_LINK);
     		break;
     	case R.id.pick_subreddit_menu_id:
-    		Intent pickSubredditIntent = new Intent(RedditIsFun.this, PickSubredditActivity.class);
+    		Intent pickSubredditIntent = new Intent(this, PickSubredditActivity.class);
     		startActivityForResult(pickSubredditIntent, Constants.ACTIVITY_PICK_SUBREDDIT);
     		break;
     	case R.id.open_browser_menu_id:
@@ -1026,24 +1038,28 @@ public final class RedditIsFun extends ListActivity {
     			url = "http://www.reddit.com";
     		else
         		url = new StringBuilder("http://www.reddit.com/r/").append(mSettings.subreddit).toString();
-    		Common.launchBrowser(url, RedditIsFun.this);
+    		Common.launchBrowser(url, this);
     		break;
         case R.id.refresh_menu_id:
     		new DownloadThreadsTask().execute(mSettings.subreddit);
     		break;
     	case R.id.light_dark_menu_id:
-    		if (mSettings.theme == Constants.THEME_LIGHT) {
-    			mSettings.setTheme(Constants.THEME_DARK);
-    			mSettings.setThemeResId(R.style.Reddit_Dark);
+    		if (mSettings.theme == R.style.Reddit_Light) {
+    			mSettings.setTheme(R.style.Reddit_Dark);
     		} else {
-    			mSettings.setTheme(Constants.THEME_LIGHT);
-    			mSettings.setThemeResId(R.style.Reddit_Light);
+    			mSettings.setTheme(R.style.Reddit_Light);
     		}
-    		RedditIsFun.this.setTheme(mSettings.themeResId);
-    		RedditIsFun.this.setContentView(R.layout.threads_list_content);
-    		RedditIsFun.this.setListAdapter(mThreadsAdapter);
-    		Common.updateListDrawables(RedditIsFun.this, mSettings.theme);
+    		setTheme(mSettings.theme);
+    		setContentView(R.layout.threads_list_content);
+    		setListAdapter(mThreadsAdapter);
+    		Common.updateListDrawables(this, mSettings.theme);
     		break;
+    	case R.id.preferences_menu_id:
+            Intent prefsIntent = new Intent(this,
+                    RedditPreferencesPage.class);
+            startActivity(prefsIntent);
+            break;
+
     	default:
     		throw new IllegalArgumentException("Unexpected action value "+item.getItemId());
     	}

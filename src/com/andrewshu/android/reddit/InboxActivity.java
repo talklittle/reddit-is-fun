@@ -5,9 +5,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.List;
-import java.util.TreeMap;
 import java.util.regex.Matcher;
 
 import org.apache.commons.lang.StringEscapeUtils;
@@ -35,7 +33,7 @@ import android.app.ProgressDialog;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
-import android.content.res.Resources;
+import android.graphics.Typeface;
 import android.graphics.drawable.Drawable;
 import android.net.Uri;
 import android.os.AsyncTask;
@@ -44,31 +42,23 @@ import android.telephony.PhoneNumberUtils;
 import android.text.SpannableString;
 import android.text.SpannableStringBuilder;
 import android.text.Spanned;
-import android.text.style.AbsoluteSizeSpan;
 import android.text.style.ForegroundColorSpan;
+import android.text.style.StyleSpan;
 import android.text.style.URLSpan;
-import android.view.ContextMenu;
 import android.view.KeyEvent;
 import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
-import android.view.ContextMenu.ContextMenuInfo;
 import android.view.View.OnClickListener;
 import android.view.View.OnKeyListener;
-import android.webkit.WebView;
-import android.webkit.WebSettings.TextSize;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
-import android.widget.CheckBox;
-import android.widget.CompoundButton;
 import android.widget.EditText;
-import android.widget.ImageView;
 import android.widget.ListView;
 import android.widget.TextView;
 import android.widget.Toast;
-import android.widget.AdapterView.AdapterContextMenuInfo;
 
 /**
  * Main Activity class representing a Subreddit, i.e., a ThreadsList.
@@ -102,8 +92,10 @@ public final class InboxActivity extends ListActivity
     private String mBefore = null;
     
     // ProgressDialogs with percentage bars
-    private AutoResetProgressDialog mLoadingCommentsProgress;
-    private int mNumVisibleMessages;
+//    private AutoResetProgressDialog mLoadingCommentsProgress;
+//    private int mNumVisibleMessages;
+    
+    private boolean mCanChord = false;
     
     /**
      * Called when the activity starts up. Do activity initialization
@@ -116,7 +108,7 @@ public final class InboxActivity extends ListActivity
         super.onCreate(savedInstanceState);
         
         Common.loadRedditPreferences(this, mSettings, mClient);
-        setTheme(mSettings.themeResId);
+        setTheme(mSettings.theme);
         
         setContentView(R.layout.comments_list_content);
         registerForContextMenu(getListView());
@@ -124,7 +116,11 @@ public final class InboxActivity extends ListActivity
         // which ListActivity adopts as its list -- we can
         // access it with getListView().
         
-        new DownloadMessagesTask().execute(Constants.DEFAULT_COMMENT_DOWNLOAD_LIMIT);
+		if (mSettings.loggedIn) {
+			new DownloadMessagesTask().execute(Constants.DEFAULT_COMMENT_DOWNLOAD_LIMIT);
+		} else {
+			showDialog(Constants.DIALOG_LOGIN);
+		}
     }
     
     @Override
@@ -134,7 +130,7 @@ public final class InboxActivity extends ListActivity
     	boolean previousLoggedIn = mSettings.loggedIn;
     	Common.loadRedditPreferences(this, mSettings, mClient);
     	if (mSettings.theme != previousTheme) {
-    		setTheme(mSettings.themeResId);
+    		setTheme(mSettings.theme);
     		setContentView(R.layout.threads_list_content);
     		registerForContextMenu(getListView());
     		setListAdapter(mMessagesAdapter);
@@ -166,36 +162,51 @@ public final class InboxActivity extends ListActivity
             
             MessageInfo item = this.getItem(position);
             
-            try {
-                // Here view may be passed in for re-use, or we make a new one.
-	            if (convertView == null) {
-	                view = mInflater.inflate(R.layout.inbox_list_item, null);
-	            } else {
-	                view = convertView;
-	            }
-	            
-	            // Set the values of the Views for the CommentsListItem
-	            
-	            TextView fromInfoView = (TextView) view.findViewById(R.id.from_info);
-	            TextView subjectView = (TextView) view.findViewById(R.id.subject);
-	            TextView bodyView = (TextView) view.findViewById(R.id.body);
-	            
-	            bodyView.setText(item.getBody());
-	            
-            } catch (NullPointerException e) {
-            	// Probably means that the List is still being built, and OP probably got put in wrong position
-            	if (convertView == null) {
-            		if (position == 0)
-            			view = mInflater.inflate(R.layout.threads_list_item, null);
-            		else
-            			view = mInflater.inflate(R.layout.comments_list_item, null);
-	            } else {
-	                view = convertView;
-	            }
+            // Here view may be passed in for re-use, or we make a new one.
+            if (convertView == null) {
+                view = mInflater.inflate(R.layout.inbox_list_item, null);
+            } else {
+                view = convertView;
             }
-            return view;
+            
+            // Set the values of the Views for the CommentsListItem
+            
+            TextView fromInfoView = (TextView) view.findViewById(R.id.from_info);
+            TextView subjectView = (TextView) view.findViewById(R.id.subject);
+            TextView bodyView = (TextView) view.findViewById(R.id.body);
+            
+            // Highlight new messages in red
+            if (Constants.TRUE_STRING.equals(item.getNew()))
+            	fromInfoView.setTextColor(getResources().getColor(R.color.red));
+            else
+            	fromInfoView.setTextColor(getResources().getColor(R.color.light_gray));
+            // Build fromInfoView using Spans. Example (** means bold & different color):
+            // from *talklittle_test* sent 20 hours ago
+            SpannableStringBuilder builder = new SpannableStringBuilder();
+            SpannableString authorSS = new SpannableString(item.getAuthor());
+            builder.append("from ");
+            // Make the author bold and a different color
+            int authorLen = item.getAuthor().length();
+            StyleSpan authorStyleSpan = new StyleSpan(Typeface.BOLD);
+            authorSS.setSpan(authorStyleSpan, 0, authorLen, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
+            ForegroundColorSpan fcs;
+            if (mSettings.theme == R.style.Reddit_Light)
+            	fcs = new ForegroundColorSpan(getResources().getColor(R.color.dark_blue));
+            else
+            	fcs = new ForegroundColorSpan(getResources().getColor(R.color.white));
+            authorSS.setSpan(fcs, 0, authorLen, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
+            builder.append(authorSS);
+            // When it was sent
+            builder.append(" sent ");
+            builder.append(Util.getTimeAgo(Double.valueOf(item.getCreatedUtc())));
+            fromInfoView.setText(builder);
+            
+            subjectView.setText(item.getSubject());
+            bodyView.setText(item.getBody());
+    
+	        return view;
         }
-    } // End of CommentsListAdapter
+    } // End of MessagesListAdapter
 
     
     /**
@@ -209,8 +220,6 @@ public final class InboxActivity extends ListActivity
         // Mark the OP post/regular comment as selected
         mVoteTargetMessageInfo = item;
         mVoteTargetView = v;
-        String thingFullname;
-    	thingFullname = mVoteTargetMessageInfo.getName();
 		
         showDialog(Constants.DIALOG_THING_CLICK);
     }
@@ -236,20 +245,27 @@ public final class InboxActivity extends ListActivity
     	
     	// XXX: maxComments is unused for now
     	public Void doInBackground(Integer... maxComments) {
+    		HttpEntity entity = null;
             try {
-            	HttpGet request = new HttpGet(new StringBuilder("http://www.reddit.com/r/")
-            		.append(mSettings.subreddit.toString().trim())
-            		.append("/comments/")
-            		.append(mSettings.threadId)
-            		.append("/.json").toString());
+            	HttpGet request = new HttpGet("http://www.reddit.com/message/inbox/.json");
             	HttpResponse response = mClient.execute(request);
-            	
-            	InputStream in = response.getEntity().getContent();
+            	entity = response.getEntity();
+            	InputStream in = entity.getContent();
                 
                 parseInboxJSON(in);
                 
+                in.close();
+                entity.consumeContent();
+                
             } catch (Exception e) {
                 Log.e(TAG, "failed:" + e.getMessage());
+                if (entity != null) {
+	                try {
+	                	entity.consumeContent();
+	                } catch (IOException e2) {
+	                	// Ignore.
+	                }
+                }
             }
             return null;
 	    }
@@ -342,11 +358,6 @@ public final class InboxActivity extends ListActivity
     		mMessagesAdapter.notifyDataSetChanged();
 			dismissDialog(Constants.DIALOG_LOADING_INBOX);
     	}
-    	
-//		@Override
-//    	public void onProgressUpdate(Integer... progress) {
-//    		mLoadingCommentsProgress.setProgress(progress[0]);
-//    	}
     }
     
     
@@ -385,6 +396,7 @@ public final class InboxActivity extends ListActivity
     		} else {
             	mSettings.setLoggedIn(false);
     			Common.showErrorToast(mUserError, Toast.LENGTH_LONG, InboxActivity.this);
+    			finish();
     		}
     	}
     }
@@ -395,7 +407,7 @@ public final class InboxActivity extends ListActivity
     
     
     
-    private class MessageReplyTask extends AsyncTask<CharSequence, Void, MessageInfo> {
+    private class MessageReplyTask extends AsyncTask<CharSequence, Void, Boolean> {
     	private CharSequence _mParentThingId;
     	MessageInfo _mTargetMessageInfo;
     	String _mUserError = "Error submitting reply. Please try again.";
@@ -406,8 +418,7 @@ public final class InboxActivity extends ListActivity
     	}
     	
     	@Override
-        public MessageInfo doInBackground(CharSequence... text) {
-        	MessageInfo newlyCreatedComment = null;
+        public Boolean doInBackground(CharSequence... text) {
         	String userError = "Error replying. Please try again.";
         	HttpEntity entity = null;
         	
@@ -415,7 +426,7 @@ public final class InboxActivity extends ListActivity
         	if (!mSettings.loggedIn) {
         		Common.showErrorToast("You must be logged in to reply.", Toast.LENGTH_LONG, InboxActivity.this);
         		_mUserError = "Not logged in";
-        		return null;
+        		return false;
         	}
         	// Update the modhash if necessary
         	if (mModhash == null) {
@@ -423,7 +434,7 @@ public final class InboxActivity extends ListActivity
         			// doUpdateModhash should have given an error about credentials
         			Common.doLogout(mSettings, mClient);
         			Log.e(TAG, "Reply failed because doUpdateModhash() failed");
-        			return null;
+        			return false;
         		}
         	}
         	
@@ -487,11 +498,11 @@ public final class InboxActivity extends ListActivity
 //            	}
 //    	        	
 
-            	String newId, newFullname;
             	Matcher idMatcher = Constants.NEW_ID_PATTERN.matcher(line);
             	if (idMatcher.find()) {
-            		newFullname = idMatcher.group(1);
-            		newId = idMatcher.group(3);
+            		// Don't need id since reply isn't posted to inbox
+//            		newFullname = idMatcher.group(1);
+//            		newId = idMatcher.group(3);
             	} else {
             		if (line.contains("RATELIMIT")) {
                 		// Try to find the # of minutes using regex
@@ -507,29 +518,7 @@ public final class InboxActivity extends ListActivity
             	
             	entity.consumeContent();
             	
-            	// Getting here means success. Create a new MessageInfo.
-            	newlyCreatedComment = new MessageInfo(
-            			mSettings.username.toString(),     /* author */
-            			text[0].toString(),          /* body */
-            			null,                     /* body_html */
-            			null,                     /* created */
-            			String.valueOf(System.currentTimeMillis()), /* created_utc */
-            			"0",                      /* downs */
-            			newId,                    /* id */
-            			Constants.TRUE_STRING,              /* likes */
-            			null,                     /* link_id */
-            			newFullname,              /* name */
-            			_mParentThingId.toString(), /* parent_id */
-            			null,                     /* sr_id */
-            			"1"                       /* ups */
-            			);
-            	newlyCreatedComment.setListOrder(_mTargetMessageInfo.getListOrder()+1);
-            	if (_mTargetMessageInfo.getListOrder() == 0)
-            		newlyCreatedComment.setIndent(0);
-            	else
-            		newlyCreatedComment.setIndent(_mTargetMessageInfo.getIndent()+1);
-            	
-            	return newlyCreatedComment;
+            	return true;
             	
         	} catch (Exception e) {
         		if (entity != null) {
@@ -541,20 +530,18 @@ public final class InboxActivity extends ListActivity
         		}
                 Log.e(TAG, e.getMessage());
         	}
-        	return null;
+        	return false;
         }
     	
     	
     	@Override
-    	public void onPostExecute(MessageInfo newlyCreatedComment) {
-    		if (newlyCreatedComment == null) {
-    			Common.showErrorToast(_mUserError, Toast.LENGTH_LONG, InboxActivity.this);
+    	public void onPostExecute(Boolean success) {
+    		if (success) {
+    			_mTargetMessageInfo.setReplyDraft("");
     		} else {
-        		// Success. OK to clear the reply draft.
-        		_mTargetMessageInfo.setReplyDraft("");
+    			Common.showErrorToast(_mUserError, Toast.LENGTH_LONG, InboxActivity.this);
     		}
     	}
-
     }
     
         
@@ -584,7 +571,7 @@ public final class InboxActivity extends ListActivity
         menu.add(0, Constants.DIALOG_REPLY, 3, "Reply to thread")
     		.setOnMenuItemClickListener(new CommentsListMenu(Constants.DIALOG_REPLY));
         
-        if (mSettings.theme == Constants.THEME_LIGHT) {
+        if (mSettings.theme == R.style.Reddit_Light) {
         	menu.add(0, Constants.DIALOG_THEME, 4, "Dark")
 //        		.setIcon(R.drawable.dark_circle_menu_icon)
         		.setOnMenuItemClickListener(new CommentsListMenu(Constants.DIALOG_THEME));
@@ -614,7 +601,7 @@ public final class InboxActivity extends ListActivity
     	}
     	
     	// Theme: Light/Dark
-    	if (mSettings.theme == Constants.THEME_LIGHT) {
+    	if (mSettings.theme == R.style.Reddit_Light) {
     		menu.findItem(Constants.DIALOG_THEME).setTitle("Dark");
 //    			.setIcon(R.drawable.dark_circle_menu_icon);
     	} else {
@@ -625,6 +612,12 @@ public final class InboxActivity extends ListActivity
         return true;
     }
 
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+    	
+    	
+    	return true;
+    }
 
     private class CommentsListMenu implements MenuItem.OnMenuItemClickListener {
         private int mAction;
@@ -661,14 +654,12 @@ public final class InboxActivity extends ListActivity
         		Common.launchBrowser(url, InboxActivity.this);
         		break;
         	case Constants.DIALOG_THEME:
-        		if (mSettings.theme == Constants.THEME_LIGHT) {
-        			mSettings.setTheme(Constants.THEME_DARK);
-        			mSettings.setThemeResId(R.style.Reddit_Dark);
+        		if (mSettings.theme == R.style.Reddit_Light) {
+        			mSettings.setTheme(R.style.Reddit_Dark);
         		} else {
-        			mSettings.setTheme(Constants.THEME_LIGHT);
-        			mSettings.setThemeResId(R.style.Reddit_Light);
+        			mSettings.setTheme(R.style.Reddit_Light);
         		}
-        		InboxActivity.this.setTheme(mSettings.themeResId);
+        		InboxActivity.this.setTheme(mSettings.theme);
         		InboxActivity.this.setContentView(R.layout.comments_list_content);
         		registerForContextMenu(getListView());
                 InboxActivity.this.setListAdapter(mMessagesAdapter);
@@ -682,74 +673,6 @@ public final class InboxActivity extends ListActivity
         }
     }
     
-    @Override
-    public void onCreateContextMenu(ContextMenu menu, View v, ContextMenuInfo menuInfo) {
-    	super.onCreateContextMenu(menu, v, menuInfo);
-    	AdapterContextMenuInfo info = (AdapterContextMenuInfo) menuInfo;
-    	int rowId = (int) info.id;
-    	
-    	if (rowId == 0 || mMorePositions.contains(rowId))
-    		;
-    	else if (mHiddenCommentHeads.contains(rowId))
-    		menu.add(0, Constants.DIALOG_SHOW_COMMENT, 0, "Show comment");
-    	else
-    		menu.add(0, Constants.DIALOG_HIDE_COMMENT, 0, "Hide comment");
-    }
-    
-    @Override
-    public boolean onContextItemSelected(MenuItem item) {
-    	AdapterContextMenuInfo info = (AdapterContextMenuInfo) item.getMenuInfo();
-    	int rowId = (int) info.id;
-    	
-    	switch (item.getItemId()) {
-    	case Constants.DIALOG_HIDE_COMMENT:
-    		hideComment(rowId);
-    		return true;
-    	case Constants.DIALOG_SHOW_COMMENT:
-    		showComment(rowId);
-    		return true;
-		default:
-    		return super.onContextItemSelected(item);	
-    	}
-    }
-    
-    private void hideComment(int rowId) {
-    	mHiddenCommentHeads.add(rowId);
-    	int myIndent = mMessagesAdapter.getItem(rowId).getIndent();
-    	// Hide everything after the row.
-    	for (int i = rowId + 1; i < mMessagesAdapter.getCount(); i++) {
-    		MessageInfo ci = mMessagesAdapter.getItem(i);
-    		if (ci.getIndent() <= myIndent)
-    			break;
-    		mHiddenComments.add(i);
-    	}
-    	mMessagesAdapter.notifyDataSetChanged();
-    }
-    
-    private void showComment(int rowId) {
-    	if (mHiddenCommentHeads.contains(rowId)) {
-    		mHiddenCommentHeads.remove(rowId);
-    	}
-    	int stopIndent = mMessagesAdapter.getItem(rowId).getIndent();
-    	int skipIndentAbove = -1;
-    	for (int i = rowId + 1; i < mMessagesAdapter.getCount(); i++) {
-    		MessageInfo ci = mMessagesAdapter.getItem(i);
-    		int ciIndent = ci.getIndent();
-    		if (ciIndent <= stopIndent)
-    			break;
-    		if (skipIndentAbove != -1 && ciIndent > skipIndentAbove)
-    			continue;
-    		if (mHiddenCommentHeads.contains(i) && mHiddenComments.contains(i)) {
-    			mHiddenComments.remove(i);
-    			skipIndentAbove = ci.getIndent();
-    		}
-    		skipIndentAbove = -1;
-    		if (mHiddenComments.contains(i))
-    			mHiddenComments.remove(i);
-    	}
-    	mMessagesAdapter.notifyDataSetChanged();
-    }
-
     @Override
     protected Dialog onCreateDialog(int id) {
     	Dialog dialog;
@@ -811,11 +734,7 @@ public final class InboxActivity extends ListActivity
     		final Button replyCancelButton = (Button) dialog.findViewById(R.id.reply_cancel_button);
     		replySaveButton.setOnClickListener(new OnClickListener() {
     			public void onClick(View v) {
-    				if (mVoteTargetMessageInfo.getOP() != null) {
-    					new MessageReplyTask(mVoteTargetMessageInfo.getOP().getName(), mVoteTargetMessageInfo).execute(replyBody.getText());
-    				} else {
-    					new MessageReplyTask(mVoteTargetMessageInfo.getName(), mVoteTargetMessageInfo).execute(replyBody.getText());
-    				}
+    				new MessageReplyTask(mVoteTargetMessageInfo.getName(), mVoteTargetMessageInfo).execute(replyBody.getText());
     				dismissDialog(Constants.DIALOG_REPLY);
     			}
     		});
@@ -835,12 +754,17 @@ public final class InboxActivity extends ListActivity
     		pdialog.setCancelable(false);
     		dialog = pdialog;
     		break;
-    	case Constants.DIALOG_LOADING_COMMENTS_LIST:
-    		mLoadingCommentsProgress = new AutoResetProgressDialog(this);
-    		mLoadingCommentsProgress.setProgressStyle(ProgressDialog.STYLE_HORIZONTAL);
-    		mLoadingCommentsProgress.setMessage("Loading comments...");
-    		mLoadingCommentsProgress.setCancelable(true);
-    		dialog = mLoadingCommentsProgress;
+    	case Constants.DIALOG_LOADING_INBOX:
+//    		mLoadingCommentsProgress = new AutoResetProgressDialog(this);
+//    		mLoadingCommentsProgress.setProgressStyle(ProgressDialog.STYLE_HORIZONTAL);
+//    		mLoadingCommentsProgress.setMessage("Loading comments...");
+//    		mLoadingCommentsProgress.setCancelable(true);
+//    		dialog = mLoadingCommentsProgress;
+    		pdialog = new ProgressDialog(this);
+    		pdialog.setMessage("Loading messages...");
+    		pdialog.setIndeterminate(true);
+    		pdialog.setCancelable(false);
+    		dialog = pdialog;
     		break;
     	
     	default:
@@ -852,7 +776,6 @@ public final class InboxActivity extends ListActivity
     @Override
     protected void onPrepareDialog(int id, Dialog dialog) {
     	super.onPrepareDialog(id, dialog);
-    	StringBuilder sb;
     	    	
     	switch (id) {
     	case Constants.DIALOG_LOGIN:
@@ -865,13 +788,11 @@ public final class InboxActivity extends ListActivity
     		break;
     		
     	case Constants.DIALOG_THING_CLICK:
-    		String likes;
     		final TextView titleView = (TextView) dialog.findViewById(R.id.title);
     		final TextView urlView = (TextView) dialog.findViewById(R.id.url);
     		final TextView submissionStuffView = (TextView) dialog.findViewById(R.id.submissionTime_submitter_subreddit);
     		final Button linkButton = (Button) dialog.findViewById(R.id.thread_link_button);
 			titleView.setText("Comment by " + mVoteTargetMessageInfo.getAuthor());
-			likes = mVoteTargetMessageInfo.getLikes();
 			urlView.setVisibility(View.INVISIBLE);
 			submissionStuffView.setVisibility(View.INVISIBLE);
 
@@ -980,9 +901,9 @@ public final class InboxActivity extends ListActivity
     		}
     		break;
     		
-    	case Constants.DIALOG_LOADING_INBOX:
-    		mLoadingCommentsProgress.setMax(mNumVisibleMessages);
-    		break;
+//    	case Constants.DIALOG_LOADING_INBOX:
+//    		mLoadingCommentsProgress.setMax(mNumVisibleMessages);
+//    		break;
     		
 		default:
 			// No preparation based on app state is required.
@@ -1004,7 +925,7 @@ public final class InboxActivity extends ListActivity
         	// Ignore.
         }
         try {
-	        dismissDialog(Constants.DIALOG_LOADING_COMMENTS_LIST);
+	        dismissDialog(Constants.DIALOG_LOADING_INBOX);
         } catch (IllegalArgumentException e) {
         	// Ignore.
         }

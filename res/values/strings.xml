@@ -10,6 +10,7 @@
     
     <string name="pick_subreddit_label">Subreddit name:</string>
     <string name="pick_subreddit_button">Go</string>
+    <string name="frontpage">reddit front page</string>
     
     <string name="subreddit_layout_srtext_text">Android</string>
     <string name="subreddit_layout_statustext_text"></string>
@@ -56,11 +57,11 @@
 	<string name="refresh">Refresh</string>
 	<string name="submit_link">Submit link</string>
 	<string name="sort_by">Sort by</string>
-	<string name="light_theme">Light theme</string>
-	<string name="dark_theme">Dark theme</string>
+	<string name="light_theme">Use light theme</string>
+	<string name="dark_theme">Use dark theme</string>
 	<string name="open_browser">Open in browser</string>
 	<string name="inbox">Inbox</string>
-	<string name="user_profile">View user's profile</string>
+	<string name="user_profile">View user\'s profile</string>
 	<string name="menu_preferences">Settings</string>
 	
 	

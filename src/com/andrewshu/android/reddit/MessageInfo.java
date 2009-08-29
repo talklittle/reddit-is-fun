@@ -28,9 +28,15 @@ public class MessageInfo {
 	
 	public HashMap<String, String> mValues = new HashMap<String, String>();
 	
+	public String mReplyDraft = null;
+	
 	// TODO?: Make setters for everything instead... or not.
 	public void put(String key, String value) {
 		mValues.put(key, value);
+	}
+	
+	public void setReplyDraft(String replyDraft) {
+		mReplyDraft = replyDraft;
 	}
 	
 	public String getAuthor() {
@@ -63,6 +69,10 @@ public class MessageInfo {
 	
 	public String getNew() {
 		return mValues.get(NEW);
+	}
+	
+	public String getReplyDraft() {
+		return mReplyDraft;
 	}
 	
 	public String getSubject() {

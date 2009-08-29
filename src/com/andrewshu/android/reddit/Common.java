@@ -37,6 +37,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.net.Uri;
+import android.preference.PreferenceManager;
 import android.provider.Browser;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -64,17 +65,19 @@ public class Common {
      */
 	static void updateListDrawables(ListActivity la, int theme) {
 		final ListView lv = la.getListView();
-		if (theme == Constants.THEME_LIGHT) {
+		if (theme == R.style.Reddit_Light) {
     		lv.setSelector(R.drawable.list_selector_blue);
-    	} else if (theme == Constants.THEME_DARK) {
+    	} else if (theme == R.style.Reddit_Dark) {
     		lv.setSelector(android.R.drawable.list_selector_background);
     	}
 	}
 	
-    static void saveRedditPreferences(Activity act, RedditSettings rSettings) {
-    	SharedPreferences settings = act.getSharedPreferences(Constants.PREFS_SESSION, 0);
+    static void saveRedditPreferences(Context context, RedditSettings rSettings) {
+    	SharedPreferences settings = PreferenceManager.getDefaultSharedPreferences(context);
     	SharedPreferences.Editor editor = settings.edit();
     	editor.clear();
+    	
+    	// Session
     	if (rSettings.loggedIn) {
 	    	if (rSettings.username != null)
 	    		editor.putString("username", rSettings.username.toString());
@@ -86,32 +89,19 @@ public class Common {
 	    			editor.putLong("reddit_sessionExpiryDate", rSettings.redditSessionCookie.getExpiryDate().getTime());
 	    	}
     	}
-    	editor.commit();
     	
-    	settings = act.getSharedPreferences(Constants.PREFS_THEME, 0);
-    	editor = settings.edit();
-    	editor.clear();
-    	switch (rSettings.theme) {
-    	case Constants.THEME_DARK:
-    		editor.putInt("theme", Constants.THEME_DARK);
-    		editor.putInt("theme_resid", android.R.style.Theme);
-    		break;
-    	default:
-    		editor.putInt("theme", Constants.THEME_LIGHT);
-    		editor.putInt("theme_resid", android.R.style.Theme_Light);
-    	}
-    	editor.commit();
+    	// Theme
+    	editor.putString("theme", RedditSettings.Theme.toString(rSettings.theme));
     	
-    	settings = act.getSharedPreferences(Constants.PREFS_NOTIFICATIONS, 0);
-    	editor = settings.edit();
-    	editor.clear();
-    	editor.putInt("mail_notification_style", Constants.MAIL_NOTIFICATION_STYLE_DEFAULT);
+    	// Notifications
+    	editor.putString("mail_notification_style", RedditSettings.MailNotificationStyle.toString(rSettings.mailNotificationStyle));
+    
     	editor.commit();
     }
     
-    static void loadRedditPreferences(Activity act, RedditSettings rSettings, DefaultHttpClient client) {
-        // XXX The defaults are set both here and in RedditPreferencesPage.onPause()
-        SharedPreferences sessionPrefs = act.getSharedPreferences(Constants.PREFS_SESSION, 0);
+    static void loadRedditPreferences(Context context, RedditSettings rSettings, DefaultHttpClient client) {
+        // Session
+    	SharedPreferences sessionPrefs = PreferenceManager.getDefaultSharedPreferences(context);
         rSettings.setUsername(sessionPrefs.getString("username", null));
         String cookieValue = sessionPrefs.getString("reddit_sessionValue", null);
         String cookieDomain = sessionPrefs.getString("reddit_sessionDomain", null);
@@ -133,12 +123,13 @@ public class Common {
         	rSettings.setLoggedIn(false);
         }
         
-        sessionPrefs = act.getSharedPreferences(Constants.PREFS_THEME, 0);
-        rSettings.setTheme(sessionPrefs.getInt("theme", Constants.THEME_LIGHT));
-        rSettings.setThemeResId(sessionPrefs.getInt("theme_resid", android.R.style.Theme_Light));
+        // Theme
+        rSettings.setTheme(RedditSettings.Theme.valueOf(
+        		sessionPrefs.getString("theme", Constants.PREF_THEME_LIGHT)));
         
-        sessionPrefs = act.getSharedPreferences(Constants.PREFS_NOTIFICATIONS, 0);
-        rSettings.setMailNotificationStyle(sessionPrefs.getInt("mail_notification_style", Constants.MAIL_NOTIFICATION_STYLE_DEFAULT));
+        // Notifications
+        rSettings.setMailNotificationStyle(RedditSettings.MailNotificationStyle.valueOf(
+        		sessionPrefs.getString("mail_notification_style", Constants.PREF_MAIL_NOTIFICATION_STYLE_DEFAULT)));
     }
     
     /**

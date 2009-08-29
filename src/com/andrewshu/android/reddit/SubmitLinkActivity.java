@@ -66,12 +66,12 @@ public class SubmitLinkActivity extends TabActivity {
 		super.onCreate(icicle);
 		
 		Common.loadRedditPreferences(this, mSettings, mClient);
-		setTheme(mSettings.themeResId);
+		setTheme(mSettings.theme);
 		
 		setContentView(R.layout.submit_link_main);
 
 		final FrameLayout fl = (FrameLayout) findViewById(android.R.id.tabcontent);
-		if (mSettings.theme == Constants.THEME_LIGHT) {
+		if (mSettings.theme == R.style.Reddit_Light) {
 			fl.setBackgroundResource(R.color.light_gray);
 		} else {
 			fl.setBackgroundResource(R.color.android_dark_background);
@@ -689,7 +689,9 @@ public class SubmitLinkActivity extends TabActivity {
     	super.onPrepareOptionsMenu(menu);
     	
     	if (mCaptchaUrl == null)
-    		menu.removeItem(Constants.DIALOG_DOWNLOAD_CAPTCHA);
+    		menu.getItem(Constants.DIALOG_DOWNLOAD_CAPTCHA).setVisible(false);
+    	else
+    		menu.getItem(Constants.DIALOG_DOWNLOAD_CAPTCHA).setVisible(true);
     	
     	return true;
     }

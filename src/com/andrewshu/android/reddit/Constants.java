@@ -56,10 +56,6 @@ public class Constants {
     static final int DIALOG_SHOW_COMMENT = 18;
     static final int DIALOG_LOADING_INBOX = 19;
 
-    // Themes
-    static final int THEME_LIGHT = 0;
-    static final int THEME_DARK = 1;
-    
     // Expanded status bar notification style
     static final int MAIL_NOTIFICATION_STYLE_DEFAULT = 0;
     static final int MAIL_NOTIFICATION_STYLE_BIG_ENVELOPE = 1;

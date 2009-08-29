@@ -15,8 +15,7 @@ public class RedditSettings {
 	int threadDownloadLimit = Constants.DEFAULT_THREAD_DOWNLOAD_LIMIT;
 	
 	// --- Themes ---
-	int theme = Constants.THEME_LIGHT;
-	int themeResId = android.R.style.Theme_Light;
+	int theme = R.style.Reddit_Light;
 	
 	int mailNotificationStyle = Constants.MAIL_NOTIFICATION_STYLE_DEFAULT;
 	
@@ -40,16 +39,38 @@ public class RedditSettings {
 				return Constants.MAIL_NOTIFICATION_STYLE_BIG_ENVELOPE;
 			if (Constants.PREF_MAIL_NOTIFICATION_STYLE_OFF.equals(valueString))
 				return Constants.MAIL_NOTIFICATION_STYLE_OFF;
-			return -1;	
+			return Constants.MAIL_NOTIFICATION_STYLE_DEFAULT;
+		}
+		public static String toString(int value) {
+			switch (value) {
+			case Constants.MAIL_NOTIFICATION_STYLE_DEFAULT:
+				return Constants.PREF_MAIL_NOTIFICATION_STYLE_DEFAULT;
+			case Constants.MAIL_NOTIFICATION_STYLE_BIG_ENVELOPE:
+				return Constants.PREF_MAIL_NOTIFICATION_STYLE_BIG_ENVELOPE;
+			case Constants.MAIL_NOTIFICATION_STYLE_OFF:
+				return Constants.PREF_MAIL_NOTIFICATION_STYLE_OFF;
+			default:
+				return Constants.PREF_MAIL_NOTIFICATION_STYLE_DEFAULT;
+			}
 		}
 	}
 	public static class Theme {
 		public static int valueOf(String valueString) {
 			if (Constants.PREF_THEME_LIGHT.equals(valueString))
-				return Constants.THEME_LIGHT;
+				return R.style.Reddit_Light;
 			if (Constants.PREF_THEME_DARK.equals(valueString))
-				return Constants.THEME_DARK;
-			return -1;
+				return R.style.Reddit_Dark;
+			return R.style.Reddit_Light;
+		}
+		public static String toString(int value) {
+			switch (value) {
+			case R.style.Reddit_Light:
+				return Constants.PREF_THEME_LIGHT;
+			case R.style.Reddit_Dark:
+				return Constants.PREF_THEME_DARK;
+			default:
+				return Constants.PREF_THEME_LIGHT;
+			}
 		}
 	}
 	
@@ -77,10 +98,6 @@ public class RedditSettings {
 
 	synchronized void setTheme(int theme) {
 		this.theme = theme;
-	}
-	
-	synchronized void setThemeResId(int themeResId) {
-		this.themeResId = themeResId;
 	}
 	
 	synchronized void setSubreddit(CharSequence subreddit) {
