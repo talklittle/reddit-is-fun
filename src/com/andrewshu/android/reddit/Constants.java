@@ -15,7 +15,8 @@ public class Constants {
 	static final String LOOK_OF_DISAPPROVAL = "\u0ca0\u005f\u0ca0";
 
 	static final String PREFS_SESSION = "RedditSession";
-	static final String PREFS_THEME= "RedditTheme";
+	static final String PREFS_THEME = "RedditTheme";
+	static final String PREFS_NOTIFICATIONS = "RedditNotifications";
 	
     static final int DEFAULT_THREAD_DOWNLOAD_LIMIT = 25;
     static final int DEFAULT_COMMENT_DOWNLOAD_LIMIT = 200;
@@ -59,6 +60,11 @@ public class Constants {
     static final int THEME_LIGHT = 0;
     static final int THEME_DARK = 1;
     
+    // Expanded status bar notification style
+    static final int MAIL_NOTIFICATION_STYLE_DEFAULT = 0;
+    static final int MAIL_NOTIFICATION_STYLE_BIG_ENVELOPE = 1;
+    static final int MAIL_NOTIFICATION_STYLE_OFF = 2;
+    
     // Special CSS for webviews to match themes
     static final String CSS_DARK = "<style>body{color:#c0c0c0;background-color:#191919}a:link{color:#ffffff}</style>";
     
@@ -101,6 +107,15 @@ public class Constants {
     // TabSpec tags
     static final String TAB_LINK = "tab_link";
     static final String TAB_TEXT = "tab_text";
+    
+    // Preference keys and values
+    static final String PREF_THEME = "theme";
+    static final String PREF_THEME_LIGHT = "THEME_LIGHT";
+    static final String PREF_THEME_DARK	 = "THEME_DARK";
+    static final String PREF_MAIL_NOTIFICATION_STYLE = "mail_notification_style";
+    static final String PREF_MAIL_NOTIFICATION_STYLE_DEFAULT = "MAIL_NOTIFICATION_STYLE_DEFAULT";
+    static final String PREF_MAIL_NOTIFICATION_STYLE_BIG_ENVELOPE = "MAIL_NOTIFICATION_STYLE_BIG_ENVELOPE";
+    static final String PREF_MAIL_NOTIFICATION_STYLE_OFF = "MAIL_NOTIFICATION_STYLE_OFF";
     
     // A short HTML file returned by reddit, so we can get the modhash
     static final String MODHASH_URL = "http://www.reddit.com/r";

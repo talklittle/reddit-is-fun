@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<menu xmlns:android="http://schemas.android.com/apk/res/android">
+    <group android:id="@+id/MAIN_MENU">
+        <item android:id="@+id/pick_subreddit_menu_id"
+            android:title="@string/pick_subreddit" />
+        <item android:id="@+id/login_logout_menu_id" />
+        <item android:id="@+id/refresh_menu_id"
+            android:title="@string/refresh" 
+            android:alphabeticShortcut="r" />
+        <item android:id="@+id/submit_link_menu_id"
+            android:title="@string/submit_link" />
+        <item android:id="@+id/sort_by_menu_id"
+            android:title="@string/sort_by" 
+            android:alphabeticShortcut="s" />
+        <item android:id="@+id/light_dark_menu_id" />
+        <item android:id="@+id/open_browser_menu_id"
+        	android:title="@string/open_browser" />
+        <item android:id="@+id/inbox_menu_id"
+            android:title="@string/inbox" />
+        <item android:id="@+id/user_profile_menu_id"
+            android:title="@string/user_profile" />
+        <item android:id="@+id/preferences_menu_id"
+            android:title="@string/menu_preferences"
+            android:alphabeticShortcut="p" />
+    </group>
+    <!--
+    <group android:id="@+id/MAIN_SHORTCUT_MENU" android:visible="false">
+        <item android:id="@+id/back_menu_id"
+            android:alphabeticShortcut="j" />
+        <item android:id="@+id/close_menu_id"
+            android:alphabeticShortcut="w" />
+        <item android:id="@+id/homepage_menu_id"
+            android:alphabeticShortcut="&#32;" />
+        <item android:id="@+id/classic_history_menu_id"
+            android:alphabeticShortcut="h" />
+        <item android:id="@+id/zoom_in_menu_id"
+            android:alphabeticShortcut="i" />
+        <item android:id="@+id/zoom_out_menu_id"
+            android:alphabeticShortcut="o" />
+        <item android:id="@+id/window_one_menu_id"
+            android:alphabeticShortcut="1" />
+        <item android:id="@+id/window_two_menu_id"
+            android:alphabeticShortcut="2" />
+        <item android:id="@+id/window_three_menu_id"
+            android:alphabeticShortcut="3" />
+        <item android:id="@+id/window_four_menu_id"
+            android:alphabeticShortcut="4" />
+        <item android:id="@+id/window_five_menu_id"
+            android:alphabeticShortcut="5" />
+        <item android:id="@+id/window_six_menu_id"
+            android:alphabeticShortcut="6" />
+        <item android:id="@+id/window_seven_menu_id"
+            android:alphabeticShortcut="7" />
+        <item android:id="@+id/window_eight_menu_id"
+            android:alphabeticShortcut="8" />
+    </group>
+    -->
+    <!-- these items are toggled in and out of @+id/login_logout_menu_id -->
+    <item android:id="@+id/login_menu_id"
+        android:title="@string/login" 
+        android:visible="false" />
+    <item android:id="@+id/logout_menu_id"
+        android:title="@string/logout" 
+        android:visible="false" />
+    <!-- these items are toggled in and out of @+id/light_dark_menu_id -->
+    <item android:id="@+id/light_menu_id"
+        android:title="@string/light_theme" 
+        android:visible="false" />
+    <item android:id="@+id/dark_menu_id"
+        android:title="@string/dark_theme" 
+        android:visible="false" />
+
+</menu>
+ 

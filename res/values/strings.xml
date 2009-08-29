@@ -47,4 +47,52 @@
 	
 	<string name="select_link_title">Select action</string>
 	
+	
+	<!--  === Menus === -->
+	
+	<string name="pick_subreddit">Pick subreddit</string>
+	<string name="login">Login</string>
+	<string name="logout">Logout</string>
+	<string name="refresh">Refresh</string>
+	<string name="submit_link">Submit link</string>
+	<string name="sort_by">Sort by</string>
+	<string name="light_theme">Light theme</string>
+	<string name="dark_theme">Dark theme</string>
+	<string name="open_browser">Open in browser</string>
+	<string name="inbox">Inbox</string>
+	<string name="user_profile">View user's profile</string>
+	<string name="menu_preferences">Settings</string>
+	
+	
+	<!-- === Preferences === -->
+	<string name="pref_general_title">General settings</string>
+	
+	<!-- Settings label -->
+	<string name="pref_theme">Theme</string>
+	<!-- Title of dialog for setting the text size -->
+	<string name="pref_theme_dialogtitle">Theme</string>
+	<!-- Settings text size options; appear in Text size dialog box -->
+	<string-array name="pref_theme_choices">
+        <item>Light</item>
+        <item>Dark</item>
+    </string-array>
+	<string-array name="pref_theme_values" translatable="false">
+        <item>THEME_LIGHT</item>
+        <item>THEME_DARK</item>
+    </string-array>
+
+	<string name="pref_mail_notification_style">Mail notification style</string>
+	<string name="pref_mail_notification_style_dialogtitle">Mail notification style</string>
+	<string-array name="pref_mail_notification_style_choices">
+		<item>Standard</item>
+		<item>Big envelope</item>
+		<item>Off</item>
+	</string-array>
+    <string-array name="pref_mail_notification_style_values" translatable="false">
+        <item>MAIL_NOTIFICATION_STYLE_DEFAULT</item>
+        <item>MAIL_NOTIFICATION_STYLE_BIG_ENVELOPE</item>
+        <item>MAIL_NOTIFICATION_STYLE_OFF</item>
+    </string-array>
+	
+	
 </resources>

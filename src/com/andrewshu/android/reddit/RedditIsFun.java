@@ -45,6 +45,7 @@ import android.text.style.ForegroundColorSpan;
 import android.view.KeyEvent;
 import android.view.LayoutInflater;
 import android.view.Menu;
+import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
@@ -94,6 +95,9 @@ public final class RedditIsFun extends ListActivity {
     
     // ProgressDialogs with percentage bars
     private AutoResetProgressDialog mLoadingThreadsProgress;
+    
+    // Menu
+    private boolean mCanChord = false;
     
     
     /**
@@ -937,7 +941,7 @@ public final class RedditIsFun extends ListActivity {
     			Intent nIntent = new Intent(RedditIsFun.this, InboxActivity.class);
     			PendingIntent contentIntent = PendingIntent.getActivity(RedditIsFun.this, 0, nIntent, Notification.FLAG_AUTO_CANCEL);
     			Notification notification = new Notification(R.drawable.mail, Constants.HAVE_MAIL_TICKER, System.currentTimeMillis());
-    			RemoteViews contentView = new RemoteViews(getPackageName(), R.layout.envelope_view);
+    			RemoteViews contentView = new RemoteViews(getPackageName(), R.layout.big_envelope_notification);
     			notification.contentView = contentView;
     			notification.contentIntent = contentIntent;
 //    			notification.setLatestEventInfo(RedditIsFun.this, Constants.HAVE_MAIL_TITLE, Constants.HAVE_MAIL_TEXT, contentIntent);
@@ -955,126 +959,96 @@ public final class RedditIsFun extends ListActivity {
     public boolean onCreateOptionsMenu(Menu menu) {
         super.onCreateOptionsMenu(menu);
         
-        menu.add(0, Constants.DIALOG_PICK_SUBREDDIT, 0, "Pick subreddit")
-            .setOnMenuItemClickListener(new ThreadsListMenu(Constants.DIALOG_PICK_SUBREDDIT));
-
-        // Login and Logout need to use the same ID for menu entry so they can be swapped
-        if (mSettings.loggedIn) {
-        	menu.add(0, Constants.DIALOG_LOGIN, 1, "Logout: " + mSettings.username)
-       			.setOnMenuItemClickListener(new ThreadsListMenu(Constants.DIALOG_LOGOUT));
-        } else {
-        	menu.add(0, Constants.DIALOG_LOGIN, 1, "Login")
-       			.setOnMenuItemClickListener(new ThreadsListMenu(Constants.DIALOG_LOGIN));
-        }
-        
-        menu.add(0, Constants.DIALOG_REFRESH, 2, "Refresh")
-        	.setOnMenuItemClickListener(new ThreadsListMenu(Constants.DIALOG_REFRESH));
-        
-        menu.add(0, Constants.DIALOG_SUBMIT_LINK, 3, "Submit link")
-        	.setOnMenuItemClickListener(new ThreadsListMenu(Constants.DIALOG_SUBMIT_LINK));
-        
-        if (mSettings.theme == Constants.THEME_LIGHT) {
-        	menu.add(0, Constants.DIALOG_THEME, 4, "Dark")
-//        		.setIcon(R.drawable.dark_circle_menu_icon)
-        		.setOnMenuItemClickListener(new ThreadsListMenu(Constants.DIALOG_THEME));
-        } else {
-        	menu.add(0, Constants.DIALOG_THEME, 4, "Light")
-//	    		.setIcon(R.drawable.light_circle_menu_icon)
-	    		.setOnMenuItemClickListener(new ThreadsListMenu(Constants.DIALOG_THEME));
-        }
-        
-        menu.add(0, Constants.DIALOG_OPEN_BROWSER, 5, "Open in browser")
-        	.setOnMenuItemClickListener(new ThreadsListMenu(Constants.DIALOG_OPEN_BROWSER));
-        
+        MenuInflater inflater = getMenuInflater();
+        inflater.inflate(R.menu.subreddit, menu);
         return true;
     }
     
     @Override
     public boolean onPrepareOptionsMenu(Menu menu) {
+        // This happens when the user begins to hold down the menu key, so
+        // allow them to chord to get a shortcut.
+        mCanChord = true;
+
     	super.onPrepareOptionsMenu(menu);
     	
-    	// Login/Logout
+    	MenuItem src, dest;
+    	
+        // Login/Logout
     	if (mSettings.loggedIn) {
-	        menu.findItem(Constants.DIALOG_LOGIN).setTitle("Logout: " + mSettings.username)
-	        	.setOnMenuItemClickListener(new ThreadsListMenu(Constants.DIALOG_LOGOUT));
+	        menu.findItem(R.id.login_logout_menu_id).setTitle(
+	        		getResources().getString(R.string.logout)+": " + mSettings.username);
     	} else {
-            menu.findItem(Constants.DIALOG_LOGIN).setTitle("Login")
-            	.setOnMenuItemClickListener(new ThreadsListMenu(Constants.DIALOG_LOGIN));
+            menu.findItem(R.id.login_logout_menu_id).setTitle(getResources().getString(R.string.login));
     	}
     	
     	// Theme: Light/Dark
-    	if (mSettings.theme == Constants.THEME_LIGHT) {
-    		menu.findItem(Constants.DIALOG_THEME).setTitle("Dark");
-//    			.setIcon(R.drawable.dark_circle_menu_icon);
-    	} else {
-    		menu.findItem(Constants.DIALOG_THEME).setTitle("Light");
-//    			.setIcon(R.drawable.light_circle_menu_icon);
-    	}
-        
+    	src = mSettings.theme == Constants.THEME_LIGHT ?
+        		menu.findItem(R.id.dark_menu_id) :
+        			menu.findItem(R.id.light_menu_id);
+        dest = menu.findItem(R.id.light_dark_menu_id);
+//        dest.setIcon(src.getIcon());
+        dest.setTitle(src.getTitle());
+    	
         return true;
     }
-
-    /**
-     * Puts text in the url text field and gives it focus. Used to make a Runnable
-     * for each menu item. This way, one inner class works for all items vs. an
-     * anonymous inner class for each menu item.
-     */
-    private class ThreadsListMenu implements MenuItem.OnMenuItemClickListener {
-        private int mAction;
-
-        ThreadsListMenu(int action) {
-            mAction = action;
+    
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        if (!mCanChord) {
+            // The user has already fired a shortcut with this hold down of the
+            // menu key.
+            return false;
         }
-
-        public boolean onMenuItemClick(MenuItem item) {
-        	switch (mAction) {
-        	case Constants.DIALOG_LOGIN:
-        		showDialog(mAction);
-        		break;
-        	case Constants.DIALOG_SUBMIT_LINK:
-        		Intent submitLinkIntent = new Intent(RedditIsFun.this, SubmitLinkActivity.class);
-        		submitLinkIntent.putExtra(ThreadInfo.SUBREDDIT, mSettings.subreddit);
-        		startActivityForResult(submitLinkIntent, Constants.ACTIVITY_SUBMIT_LINK);
-        		break;
-        	case Constants.DIALOG_PICK_SUBREDDIT:
-        		Intent pickSubredditIntent = new Intent(RedditIsFun.this, PickSubredditActivity.class);
-        		startActivityForResult(pickSubredditIntent, Constants.ACTIVITY_PICK_SUBREDDIT);
-        		break;
-        	case Constants.DIALOG_OPEN_BROWSER:
-        		String url;
-        		if (mSettings.subreddit.equals(Constants.FRONTPAGE_STRING))
-        			url = "http://www.reddit.com";
-        		else
-	        		url = new StringBuilder("http://www.reddit.com/r/").append(mSettings.subreddit).toString();
-        		Common.launchBrowser(url, RedditIsFun.this);
-        		break;
-            case Constants.DIALOG_LOGOUT:
+        
+        switch (item.getItemId()) {
+        case R.id.login_logout_menu_id:
+        	if (mSettings.loggedIn) {
         		Common.doLogout(mSettings, mClient);
         		Toast.makeText(RedditIsFun.this, "You have been logged out.", Toast.LENGTH_SHORT).show();
         		new DownloadThreadsTask().execute(mSettings.subreddit);
-        		break;
-        	case Constants.DIALOG_REFRESH:
-        		new DownloadThreadsTask().execute(mSettings.subreddit);
-        		break;
-        	case Constants.DIALOG_THEME:
-        		if (mSettings.theme == Constants.THEME_LIGHT) {
-        			mSettings.setTheme(Constants.THEME_DARK);
-        			mSettings.setThemeResId(R.style.Reddit_Dark);
-        		} else {
-        			mSettings.setTheme(Constants.THEME_LIGHT);
-        			mSettings.setThemeResId(R.style.Reddit_Light);
-        		}
-        		RedditIsFun.this.setTheme(mSettings.themeResId);
-        		RedditIsFun.this.setContentView(R.layout.threads_list_content);
-        		RedditIsFun.this.setListAdapter(mThreadsAdapter);
-        		Common.updateListDrawables(RedditIsFun.this, mSettings.theme);
-        		break;
-        	default:
-        		throw new IllegalArgumentException("Unexpected action value "+mAction);
+        	} else {
+        		showDialog(Constants.DIALOG_LOGIN);
         	}
-        	
-        	return true;
-        }
+    		break;
+    	case R.id.submit_link_menu_id:
+    		Intent submitLinkIntent = new Intent(RedditIsFun.this, SubmitLinkActivity.class);
+    		submitLinkIntent.putExtra(ThreadInfo.SUBREDDIT, mSettings.subreddit);
+    		startActivityForResult(submitLinkIntent, Constants.ACTIVITY_SUBMIT_LINK);
+    		break;
+    	case R.id.pick_subreddit_menu_id:
+    		Intent pickSubredditIntent = new Intent(RedditIsFun.this, PickSubredditActivity.class);
+    		startActivityForResult(pickSubredditIntent, Constants.ACTIVITY_PICK_SUBREDDIT);
+    		break;
+    	case R.id.open_browser_menu_id:
+    		String url;
+    		if (mSettings.subreddit.equals(Constants.FRONTPAGE_STRING))
+    			url = "http://www.reddit.com";
+    		else
+        		url = new StringBuilder("http://www.reddit.com/r/").append(mSettings.subreddit).toString();
+    		Common.launchBrowser(url, RedditIsFun.this);
+    		break;
+        case R.id.refresh_menu_id:
+    		new DownloadThreadsTask().execute(mSettings.subreddit);
+    		break;
+    	case R.id.light_dark_menu_id:
+    		if (mSettings.theme == Constants.THEME_LIGHT) {
+    			mSettings.setTheme(Constants.THEME_DARK);
+    			mSettings.setThemeResId(R.style.Reddit_Dark);
+    		} else {
+    			mSettings.setTheme(Constants.THEME_LIGHT);
+    			mSettings.setThemeResId(R.style.Reddit_Light);
+    		}
+    		RedditIsFun.this.setTheme(mSettings.themeResId);
+    		RedditIsFun.this.setContentView(R.layout.threads_list_content);
+    		RedditIsFun.this.setListAdapter(mThreadsAdapter);
+    		Common.updateListDrawables(RedditIsFun.this, mSettings.theme);
+    		break;
+    	default:
+    		throw new IllegalArgumentException("Unexpected action value "+item.getItemId());
+    	}
+    	
+        return true;
     }
 
     @Override

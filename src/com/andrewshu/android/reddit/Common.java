@@ -101,10 +101,16 @@ public class Common {
     		editor.putInt("theme_resid", android.R.style.Theme_Light);
     	}
     	editor.commit();
+    	
+    	settings = act.getSharedPreferences(Constants.PREFS_NOTIFICATIONS, 0);
+    	editor = settings.edit();
+    	editor.clear();
+    	editor.putInt("mail_notification_style", Constants.MAIL_NOTIFICATION_STYLE_DEFAULT);
+    	editor.commit();
     }
     
     static void loadRedditPreferences(Activity act, RedditSettings rSettings, DefaultHttpClient client) {
-        // Retrieve the stored session info
+        // XXX The defaults are set both here and in RedditPreferencesPage.onPause()
         SharedPreferences sessionPrefs = act.getSharedPreferences(Constants.PREFS_SESSION, 0);
         rSettings.setUsername(sessionPrefs.getString("username", null));
         String cookieValue = sessionPrefs.getString("reddit_sessionValue", null);
@@ -130,6 +136,9 @@ public class Common {
         sessionPrefs = act.getSharedPreferences(Constants.PREFS_THEME, 0);
         rSettings.setTheme(sessionPrefs.getInt("theme", Constants.THEME_LIGHT));
         rSettings.setThemeResId(sessionPrefs.getInt("theme_resid", android.R.style.Theme_Light));
+        
+        sessionPrefs = act.getSharedPreferences(Constants.PREFS_NOTIFICATIONS, 0);
+        rSettings.setMailNotificationStyle(sessionPrefs.getInt("mail_notification_style", Constants.MAIL_NOTIFICATION_STYLE_DEFAULT));
     }
     
     /**
