@@ -35,11 +35,8 @@ import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.DialogInterface.OnCancelListener;
 import android.graphics.Typeface;
-import android.graphics.drawable.Drawable;
-import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Bundle;
-import android.telephony.PhoneNumberUtils;
 import android.text.SpannableString;
 import android.text.SpannableStringBuilder;
 import android.text.Spanned;
@@ -233,8 +230,11 @@ public final class InboxActivity extends ListActivity
         // Mark the OP post/regular comment as selected
         mVoteTargetMessageInfo = item;
         mVoteTargetView = v;
-		
-        showDialog(Constants.DIALOG_THING_CLICK);
+        
+        if (Constants.TRUE_STRING.equals(item.getWasComment()))
+        	showDialog(Constants.DIALOG_COMMENT_CLICK);
+        else
+        	showDialog(Constants.DIALOG_MESSAGE_CLICK);
     }
 
     /**
@@ -462,7 +462,6 @@ public final class InboxActivity extends ListActivity
     			List<NameValuePair> nvps = new ArrayList<NameValuePair>();
     			nvps.add(new BasicNameValuePair("thing_id", _mParentThingId.toString()));
     			nvps.add(new BasicNameValuePair("text", text[0].toString()));
-    			nvps.add(new BasicNameValuePair("r", mSettings.subreddit.toString()));
     			nvps.add(new BasicNameValuePair("uh", mModhash.toString()));
     			// Votehash is currently unused by reddit 
 //    				nvps.add(new BasicNameValuePair("vh", "0d4ab0ffd56ad0f66841c15609e9a45aeec6b015"));
@@ -535,11 +534,18 @@ public final class InboxActivity extends ListActivity
         	return false;
         }
     	
+    	@Override
+    	public void onPreExecute() {
+    		showDialog(Constants.DIALOG_REPLYING);
+    	}
     	
     	@Override
     	public void onPostExecute(Boolean success) {
+    		dismissDialog(Constants.DIALOG_REPLYING);
     		if (success) {
     			_mTargetMessageInfo.setReplyDraft("");
+    			Toast.makeText(InboxActivity.this, "Reply sent.", Toast.LENGTH_SHORT).show();
+    			// TODO: add the reply beneath the original, OR redirect to sent messages page
     		} else {
     			Common.showErrorToast(_mUserError, Toast.LENGTH_LONG, InboxActivity.this);
     		}
@@ -729,11 +735,43 @@ public final class InboxActivity extends ListActivity
     		});
     		break;
     		
-    	case Constants.DIALOG_THING_CLICK:
-    		inflater = (LayoutInflater)this.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
+    	case Constants.DIALOG_COMMENT_CLICK:
     		builder = new AlertDialog.Builder(this);
-    		dialog = builder.setView(inflater.inflate(R.layout.comment_click_dialog, null)).create();
+    		builder.setMessage("Comment reply")
+    			.setCancelable(false)
+    			.setPositiveButton("Go to thread", new DialogInterface.OnClickListener() {
+    				public void onClick(DialogInterface dialog, int id) {
+    					dialog.dismiss();
+    					Intent i = new Intent(InboxActivity.this, RedditCommentsListActivity.class);
+    					i.putExtra(Constants.EXTRA_COMMENT_CONTEXT, mVoteTargetMessageInfo.getContext());
+    					startActivity(i);
+    				}
+    			})
+    			.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
+    				public void onClick(DialogInterface dialog, int id) {
+    					dialog.cancel();
+    				}
+    			});
+    		dialog = builder.create();
     		break;
+    		
+		case Constants.DIALOG_MESSAGE_CLICK:
+			builder = new AlertDialog.Builder(this);
+    		builder.setMessage("Private message")
+				.setCancelable(false)
+				.setPositiveButton("Reply", new DialogInterface.OnClickListener() {
+					public void onClick(DialogInterface dialog, int id) {
+						dialog.dismiss();
+						showDialog(Constants.DIALOG_REPLY);
+					}
+				})
+				.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
+					public void onClick(DialogInterface dialog, int id) {
+						dialog.cancel();
+					}
+				});
+    		dialog = builder.create();
+    		break; 
 
     	case Constants.DIALOG_REPLY:
     		dialog = new Dialog(this);
@@ -770,6 +808,13 @@ public final class InboxActivity extends ListActivity
     		pdialog.setCancelable(false);
     		dialog = pdialog;
     		break;
+    	case Constants.DIALOG_REPLYING:
+    		pdialog = new ProgressDialog(this);
+    		pdialog.setMessage("Sending reply...");
+    		pdialog.setIndeterminate(true);
+    		pdialog.setCancelable(false);
+    		dialog = pdialog;
+    		break;
     	
     	default:
     		throw new IllegalArgumentException("Unexpected dialog id "+id);
@@ -789,113 +834,6 @@ public final class InboxActivity extends ListActivity
     		}
     		final TextView loginPasswordInput = (TextView) dialog.findViewById(R.id.login_password_input);
     		loginPasswordInput.setText("");
-    		break;
-    		
-    	case Constants.DIALOG_THING_CLICK:
-    		final TextView titleView = (TextView) dialog.findViewById(R.id.title);
-    		final TextView urlView = (TextView) dialog.findViewById(R.id.url);
-    		final TextView submissionStuffView = (TextView) dialog.findViewById(R.id.submissionTime_submitter_subreddit);
-    		final Button linkButton = (Button) dialog.findViewById(R.id.thread_link_button);
-			titleView.setText("Comment by " + mVoteTargetMessageInfo.getAuthor());
-			urlView.setVisibility(View.INVISIBLE);
-			submissionStuffView.setVisibility(View.INVISIBLE);
-
-			// Look for embedded URLs
-			final TextView commentBody = (TextView) mVoteTargetView.findViewById(R.id.body);
-	        mVoteTargetSpans = commentBody.getUrls();
-	        if (mVoteTargetSpans.length == 0) {
-    			linkButton.setVisibility(View.INVISIBLE);
-	        } else if (mVoteTargetSpans.length == 1) {
-	        	linkButton.setVisibility(View.VISIBLE);
-	        	linkButton.setText("link");
-	        	linkButton.setOnClickListener(new OnClickListener() {
-	        		public void onClick(View v) {
-	        			dismissDialog(Constants.DIALOG_THING_CLICK);
-	        			Common.launchBrowser(mVoteTargetSpans[0].getURL(), InboxActivity.this);
-	        		}
-	        	});
-	        } else {
-	        	linkButton.setVisibility(View.VISIBLE);
-	        	linkButton.setText("links");
-	        	linkButton.setOnClickListener(new OnClickListener() {
-	        		public void onClick(View v) {
-	        			dismissDialog(Constants.DIALOG_THING_CLICK);
-	        			final java.util.ArrayList<String> urls = Util.extractUris(mVoteTargetSpans);
-
-	    	            ArrayAdapter<String> adapter = 
-	    	                new ArrayAdapter<String>(InboxActivity.this, android.R.layout.select_dialog_item, urls) {
-	    	                public View getView(int position, View convertView, ViewGroup parent) {
-	    	                    View v = super.getView(position, convertView, parent);
-	    	                    try {
-	    	                        String url = getItem(position).toString();
-	    	                        TextView tv = (TextView) v;
-	    	                        Drawable d = getPackageManager().getActivityIcon(new Intent(Intent.ACTION_VIEW, Uri.parse(url)));
-	    	                        if (d != null) {
-	    	                            d.setBounds(0, 0, d.getIntrinsicHeight(), d.getIntrinsicHeight());
-	    	                            tv.setCompoundDrawablePadding(10);
-	    	                            tv.setCompoundDrawables(d, null, null, null);
-	    	                        }
-	    	                        final String telPrefix = "tel:";
-	    	                        if (url.startsWith(telPrefix)) {
-	    	                            url = PhoneNumberUtils.formatNumber(url.substring(telPrefix.length()));
-	    	                        }
-	    	                        tv.setText(url);
-	    	                    } catch (android.content.pm.PackageManager.NameNotFoundException ex) {
-	    	                        ;
-	    	                    }
-	    	                    return v;
-	    	                }
-	    	            };
-
-	    	            AlertDialog.Builder b = new AlertDialog.Builder(InboxActivity.this);
-
-	    	            DialogInterface.OnClickListener click = new DialogInterface.OnClickListener() {
-	    	                public final void onClick(DialogInterface dialog, int which) {
-	    	                    if (which >= 0) {
-	    	                        Common.launchBrowser(urls.get(which), InboxActivity.this);
-	    	                    }
-	    	                }
-	    	            };
-	    	                
-	    	            b.setTitle(R.string.select_link_title);
-	    	            b.setCancelable(true);
-	    	            b.setAdapter(adapter, click);
-
-	    	            b.setNegativeButton(android.R.string.cancel, new DialogInterface.OnClickListener() {
-	    	                public final void onClick(DialogInterface dialog, int which) {
-	    	                    dialog.dismiss();
-	    	                }
-	    	            });
-
-	    	            b.show();
-	        		}
-	        	});
-	        }
-    		final Button replyButton = (Button) dialog.findViewById(R.id.reply_button);
-    		final Button loginButton = (Button) dialog.findViewById(R.id.login_button);
-    		
-    		// Only show upvote/downvote if user is logged in
-    		if (mSettings.loggedIn) {
-    			loginButton.setVisibility(View.GONE);
-    			replyButton.setVisibility(View.VISIBLE);
-    			
-	    		// The "reply" button
-    			replyButton.setOnClickListener(new OnClickListener() {
-	    			public void onClick(View v) {
-	    				dismissDialog(Constants.DIALOG_THING_CLICK);
-	    				showDialog(Constants.DIALOG_REPLY);
-	        		}
-	    		});
-	    	} else {
-    			replyButton.setVisibility(View.INVISIBLE);
-    			loginButton.setVisibility(View.VISIBLE);
-    			loginButton.setOnClickListener(new OnClickListener() {
-    				public void onClick(View v) {
-    					dismissDialog(Constants.DIALOG_THING_CLICK);
-    					showDialog(Constants.DIALOG_LOGIN);
-    				}
-    			});
-    		}
     		break;
     		
     	case Constants.DIALOG_REPLY:

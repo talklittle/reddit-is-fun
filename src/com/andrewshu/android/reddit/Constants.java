@@ -27,15 +27,16 @@ public class Constants {
     // services
     static final int SERVICE_ENVELOPE = 0;
     
+    // --- Intent extras ---
     // Tell PickSubredditActivity to hide the fronptage string
-    static final String HIDE_FRONTPAGE_STRING = "hideFrontpage";
+    static final String EXTRA_HIDE_FRONTPAGE_STRING = "hideFrontpage";
+    // Tell RedditCommentsListActivity to jump to a comment context
+    static final String EXTRA_COMMENT_CONTEXT = "jumpToComment";
     
     // User-defined result codes
     static final int RESULT_LOGIN_REQUIRED = Activity.RESULT_FIRST_USER;
     
     // Menu and dialog actions
-    static final int DIALOG_PICK_SUBREDDIT = 0;
-    static final int DIALOG_REDDIT_COM = 1;
     static final int DIALOG_LOGIN = 2;
     static final int DIALOG_LOGOUT = 3;
     static final int DIALOG_REFRESH = 4;
@@ -58,6 +59,9 @@ public class Constants {
     static final int DIALOG_SORT_BY_NEW = 21;
     static final int DIALOG_SORT_BY_CONTROVERSIAL = 22;
     static final int DIALOG_SORT_BY_TOP = 23;
+    static final int DIALOG_COMMENT_CLICK = 24;
+    static final int DIALOG_MESSAGE_CLICK = 25;
+    static final int DIALOG_REPLYING = 26;
     
     // Special CSS for webviews to match themes
     static final String CSS_DARK = "<style>body{color:#c0c0c0;background-color:#191919}a:link{color:#ffffff}</style>";
@@ -158,6 +162,7 @@ public class Constants {
     static final String JSON_MEDIA = "media";
     static final String JSON_MEDIA_EMBED = "media_embed";
     static final String JSON_MORE = "more";
+    static final String JSON_NUM_COMMENTS = "num_comments";
 	static final String JSON_REPLIES = "replies";
     
     // TabSpec tags
@@ -189,6 +194,8 @@ public class Constants {
     static final Pattern NEW_ID_PATTERN = Pattern.compile("\"id\": \"((.+?)_(.+?))\"");
     // Group 1: Subreddit. Group 2: thread id (no t3_ prefix)
     static final Pattern NEW_THREAD_PATTERN = Pattern.compile("\"http://www.reddit.com/r/(.+?)/comments/(.+?)/.*?/\"");
+    // Group 2: subreddit name. Group 3: thread id36. Group 4: Comment id36.
+    static final Pattern COMMENT_CONTEXT_PATTERN = Pattern.compile("(http://www.reddit.com)?/r/(.+?)/comments/(.+?)/.+?/([a-zA-Z0-9]+)");
     // Group 1: whole error. Group 2: the time part
     static final Pattern RATELIMIT_RETRY_PATTERN = Pattern.compile("(you are trying to submit too fast. try again in (.+?)\\.)");
     // Captcha "iden"

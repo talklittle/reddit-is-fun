@@ -657,8 +657,8 @@ public class SubmitLinkActivity extends TabActivity {
     public boolean onCreateOptionsMenu(Menu menu) {
         super.onCreateOptionsMenu(menu);
         
-        menu.add(0, Constants.DIALOG_PICK_SUBREDDIT, 0, "Pick subreddit")
-            .setOnMenuItemClickListener(new SubmitLinkMenu(Constants.DIALOG_PICK_SUBREDDIT));
+        menu.add(0, R.id.pick_subreddit_menu_id, 0, "Pick subreddit")
+            .setOnMenuItemClickListener(new SubmitLinkMenu(R.id.pick_subreddit_menu_id));
 
         menu.add(0, Constants.DIALOG_DOWNLOAD_CAPTCHA, 1, "Update CAPTCHA")
         	.setOnMenuItemClickListener(new SubmitLinkMenu(Constants.DIALOG_DOWNLOAD_CAPTCHA));
@@ -688,9 +688,9 @@ public class SubmitLinkActivity extends TabActivity {
 
         public boolean onMenuItemClick(MenuItem item) {
         	switch (mAction) {
-        	case Constants.DIALOG_PICK_SUBREDDIT:
+        	case R.id.pick_subreddit_menu_id:
         		Intent pickSubredditIntent = new Intent(SubmitLinkActivity.this, PickSubredditActivity.class);
-        		pickSubredditIntent.putExtra(Constants.HIDE_FRONTPAGE_STRING, true);
+        		pickSubredditIntent.putExtra(Constants.EXTRA_HIDE_FRONTPAGE_STRING, true);
         		startActivityForResult(pickSubredditIntent, Constants.ACTIVITY_PICK_SUBREDDIT);
         		break;
         	case Constants.DIALOG_DOWNLOAD_CAPTCHA:

@@ -97,9 +97,10 @@ public final class RedditCommentsListActivity extends ListActivity
     private final RedditSettings mSettings = new RedditSettings();
     
     private ThreadInfo mOpThreadInfo;
-    private CharSequence mThreadTitle;
-    private int mNumVisibleComments;
+    private CharSequence mThreadTitle = null;
+    private int mNumVisibleComments = Constants.DEFAULT_COMMENT_DOWNLOAD_LIMIT;
     private CharSequence mSortByUrl = Constants.CommentsSort.SORT_BY_HOT_URL;
+    private CharSequence mJumpToCommentId = null;
     
     // Keep track of the row ids of comments that user has hidden
     private HashSet<Integer> mHiddenCommentHeads = new HashSet<Integer>();
@@ -138,16 +139,30 @@ public final class RedditCommentsListActivity extends ListActivity
         // Pull current subreddit and thread info from Intent
         Bundle extras = getIntent().getExtras();
         if (extras != null) {
-        	mSettings.setThreadId(extras.getString(ThreadInfo.ID));
-        	mSettings.setSubreddit(extras.getString(ThreadInfo.SUBREDDIT));
-        	mThreadTitle = extras.getString(ThreadInfo.TITLE);
-        	setTitle(mThreadTitle + " : " + mSettings.subreddit);
-        	int numComments = extras.getInt(ThreadInfo.NUM_COMMENTS);
-        	// TODO: Take into account very negative karma comments
-        	if (numComments < Constants.DEFAULT_COMMENT_DOWNLOAD_LIMIT)
-        		mNumVisibleComments = numComments;
-        	else
-        		mNumVisibleComments = Constants.DEFAULT_COMMENT_DOWNLOAD_LIMIT;
+        	String commentContext = extras.getString(Constants.EXTRA_COMMENT_CONTEXT);
+        	if (commentContext != null) {
+        		Matcher commentContextMatcher = Constants.COMMENT_CONTEXT_PATTERN.matcher(commentContext);
+        		if (commentContextMatcher.find()) {
+            		mSettings.setSubreddit(commentContextMatcher.group(2));
+        			mSettings.setThreadId(commentContextMatcher.group(3));
+        			mJumpToCommentId = commentContextMatcher.group(4);
+        		} else {
+        			// Quit, because the Comments List requires subreddit and thread id from Intent.
+                	Log.e(TAG, "Quitting because of bad comment context.");
+                	finish();
+        		}
+        	} else {
+	        	mSettings.setThreadId(extras.getString(ThreadInfo.ID));
+	        	mSettings.setSubreddit(extras.getString(ThreadInfo.SUBREDDIT));
+	        	mThreadTitle = extras.getString(ThreadInfo.TITLE);
+	        	setTitle(mThreadTitle + " : " + mSettings.subreddit);
+	        	int numComments = extras.getInt(ThreadInfo.NUM_COMMENTS);
+	        	// TODO: Take into account very negative karma comments
+	        	if (numComments < Constants.DEFAULT_COMMENT_DOWNLOAD_LIMIT)
+	        		mNumVisibleComments = numComments;
+	        	else
+	        		mNumVisibleComments = Constants.DEFAULT_COMMENT_DOWNLOAD_LIMIT;
+        	}
         } else {
         	// Quit, because the Comments List requires subreddit and thread id from Intent.
         	Log.e(TAG, "Quitting because no subreddit and thread id data was passed into the Intent.");
@@ -559,6 +574,7 @@ public final class RedditCommentsListActivity extends ListActivity
     private class DownloadCommentsTask extends AsyncTask<Integer, Integer, Void> {
     	
     	private TreeMap<Integer, CommentInfo> mCommentsMap = new TreeMap<Integer, CommentInfo>();
+    	private int _mNumComments = mNumVisibleComments;
        
     	// XXX: maxComments is unused for now
     	public Void doInBackground(Integer... maxComments) {
@@ -678,6 +694,11 @@ public final class RedditCommentsListActivity extends ListActivity
 								}
 							} else {
 								ti.put(namefield, StringEscapeUtils.unescapeHtml(jp.getText()));
+								if (Constants.JSON_NUM_COMMENTS.equals(namefield)) {
+									int numComments = Integer.valueOf(jp.getText());
+									if (numComments != _mNumComments)
+										_mNumComments = numComments;
+								}
 							}
 						}
 					} else {
@@ -868,18 +889,37 @@ public final class RedditCommentsListActivity extends ListActivity
 	    		lodToast.show();
 	    	}
 	    	showDialog(Constants.DIALOG_LOADING_COMMENTS_LIST);
-	    	setTitle(mThreadTitle + " : " + mSettings.subreddit);
+	    	if (mThreadTitle != null)
+	    		setTitle(mThreadTitle + " : " + mSettings.subreddit);
     	}
     	
     	public void onPostExecute(Void v) {
     		for (Integer key : mCommentsMap.keySet())
         		mCommentsAdapter.add(mCommentsMap.get(key));
+    		if (mThreadTitle == null) {
+    			mThreadTitle = mOpThreadInfo.getTitle();
+    			setTitle(mThreadTitle + " : " + mSettings.subreddit);
+    		}
     		mCommentsAdapter.mIsLoading = false;
     		mCommentsAdapter.notifyDataSetChanged();
+    		if (mJumpToCommentId != null) {
+    			for (int k = 0; k < mCommentsAdapter.getCount(); k++) {
+    				if (mJumpToCommentId.equals(mCommentsAdapter.getItem(k).getId())) {
+    					getListView().setSelection(k);
+    					mJumpToCommentId = null;
+    					break;
+    				}
+    			}
+    		}
 			dismissDialog(Constants.DIALOG_LOADING_COMMENTS_LIST);
     	}
     	
     	public void onProgressUpdate(Integer... progress) {
+    		// The number of comments may have been unknown before, and now found during parsing.
+    		if (_mNumComments != mNumVisibleComments) {
+    			mNumVisibleComments = _mNumComments;
+    			mLoadingCommentsProgress.setMax(_mNumComments);
+    		}
     		mLoadingCommentsProgress.setProgress(progress[0]);
     	}
     }
@@ -1060,9 +1100,14 @@ public final class RedditCommentsListActivity extends ListActivity
         	return null;
         }
     	
+    	@Override
+    	public void onPreExecute() {
+    		showDialog(Constants.DIALOG_REPLYING);
+    	}
     	
     	@Override
     	public void onPostExecute(CommentInfo newlyCreatedComment) {
+    		dismissDialog(Constants.DIALOG_REPLYING);
     		if (newlyCreatedComment == null) {
     			Common.showErrorToast(_mUserError, Toast.LENGTH_LONG, RedditCommentsListActivity.this);
     		} else {
@@ -1649,6 +1694,13 @@ public final class RedditCommentsListActivity extends ListActivity
     		mLoadingCommentsProgress.setMessage("Loading comments...");
     		mLoadingCommentsProgress.setCancelable(true);
     		dialog = mLoadingCommentsProgress;
+    		break;
+    	case Constants.DIALOG_REPLYING:
+    		pdialog = new ProgressDialog(this);
+    		pdialog.setMessage("Sending reply...");
+    		pdialog.setIndeterminate(true);
+    		pdialog.setCancelable(false);
+    		dialog = pdialog;
     		break;
     	
     	default:

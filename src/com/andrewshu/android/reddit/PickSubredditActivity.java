@@ -118,7 +118,7 @@ public final class PickSubredditActivity extends ListActivity {
         List<String> items;
         Bundle extras = getIntent().getExtras();
         if (extras != null) {
-        	boolean shouldHideFrontpage = extras.getBoolean(Constants.HIDE_FRONTPAGE_STRING, false);
+        	boolean shouldHideFrontpage = extras.getBoolean(Constants.EXTRA_HIDE_FRONTPAGE_STRING, false);
         	if (shouldHideFrontpage)
         		items = Arrays.asList(SUBREDDITS_MINUS_FRONTPAGE);
         	else
