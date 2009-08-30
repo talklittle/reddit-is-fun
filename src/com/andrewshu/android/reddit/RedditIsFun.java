@@ -89,7 +89,7 @@ public final class RedditIsFun extends ListActivity {
     private CharSequence mBefore = null;
     private CharSequence mUrlToGetHere = null;
     private boolean mUrlToGetHereChanged = true;
-    private CharSequence mSortByUrl = Constants.SORT_BY_HOT_URL;
+    private CharSequence mSortByUrl = Constants.ThreadsSort.SORT_BY_HOT_URL;
     private CharSequence mSortByUrlExtra = Constants.EMPTY_STRING;
     private volatile int mCount = Constants.DEFAULT_THREAD_DOWNLOAD_LIMIT;
     
@@ -126,7 +126,7 @@ public final class RedditIsFun extends ListActivity {
 	        	mSettings.setSubreddit(Constants.FRONTPAGE_STRING);
 		    mUrlToGetHere = savedInstanceState.getCharSequence(Constants.URL_TO_GET_HERE_KEY);
 		    mCount = savedInstanceState.getInt(Constants.THREAD_COUNT);
-		    mSortByUrl = savedInstanceState.getCharSequence(Constants.SORT_BY_KEY);
+		    mSortByUrl = savedInstanceState.getCharSequence(Constants.ThreadsSort.SORT_BY_KEY);
         } else {
         	mSettings.setSubreddit(Constants.FRONTPAGE_STRING);
         }
@@ -149,7 +149,7 @@ public final class RedditIsFun extends ListActivity {
     	if (mSettings.loggedIn != previousLoggedIn) {
     		new DownloadThreadsTask().execute(mSettings.subreddit);
     	}
-    	new PeekEnvelopeTask().execute();
+    	new Common.PeekEnvelopeTask(this, mClient, mSettings.mailNotificationStyle).execute();
     }
     
     @Override
@@ -503,8 +503,8 @@ public final class RedditIsFun extends ListActivity {
 	    			// "before" always comes back null unless you provide correct "count"
 		    		if (subreddit.length == 2) {
 		    			// count: 25, 50, ...
-	    				sb = sb.append("count=").append(mCount).append("&after=")
-	    					.append(subreddit[1]).append("&");
+	    				sb = sb.append("count=").append(mCount)
+	    					.append("&after=").append(subreddit[1]).append("&");
 	    				mCount += Constants.DEFAULT_THREAD_DOWNLOAD_LIMIT;
 		    		}
 		    		else if (subreddit.length == 3) {
@@ -822,25 +822,8 @@ public final class RedditIsFun extends ListActivity {
             	Log.d(TAG, line);
 
 //            	// DEBUG
-//            	int c;
-//            	boolean done = false;
-//            	StringBuilder sb = new StringBuilder();
-//            	for (int k = 0; k < line.length(); k += 80) {
-//            		for (int i = 0; i < 80; i++) {
-//            			if (k + i >= line.length()) {
-//            				done = true;
-//            				break;
-//            			}
-//            			c = line.charAt(k + i);
-//            			sb.append((char) c);
-//            		}
-//            		Log.d(TAG, "doReply response content: " + sb.toString());
-//            		sb = new StringBuilder();
-//            		if (done)
-//            			break;
-//            	}
-//    	        	
-
+//            	Log.dLong(TAG, line);
+            	
             	entity.consumeContent();
             	return true;
             	
@@ -957,20 +940,6 @@ public final class RedditIsFun extends ListActivity {
     		}
     	}
     }
-
-    
-    private class PeekEnvelopeTask extends AsyncTask<Void, Void, Boolean> {
-    	@Override
-    	public Boolean doInBackground(Void... voidz) {
-    		return Common.doPeekEnvelope(mClient, null);
-    	}
-    	@Override
-    	public void onPostExecute(Boolean hasMail) {
-    		if (hasMail) {
-    			Common.newMailNotification(RedditIsFun.this, mSettings.mailNotificationStyle);
-    		}
-    	}
-    }
     
     
     /**
@@ -1013,13 +982,13 @@ public final class RedditIsFun extends ListActivity {
         dest.setTitle(src.getTitle());
         
         // Sort
-        if (Constants.SORT_BY_HOT_URL.equals(mSortByUrl))
+        if (Constants.ThreadsSort.SORT_BY_HOT_URL.equals(mSortByUrl))
         	src = menu.findItem(R.id.sort_by_hot_menu_id);
-        else if (Constants.SORT_BY_NEW_URL.equals(mSortByUrl))
+        else if (Constants.ThreadsSort.SORT_BY_NEW_URL.equals(mSortByUrl))
         	src = menu.findItem(R.id.sort_by_new_menu_id);
-        else if (Constants.SORT_BY_CONTROVERSIAL_URL.equals(mSortByUrl))
+        else if (Constants.ThreadsSort.SORT_BY_CONTROVERSIAL_URL.equals(mSortByUrl))
         	src = menu.findItem(R.id.sort_by_controversial_menu_id);
-        else if (Constants.SORT_BY_TOP_URL.equals(mSortByUrl))
+        else if (Constants.ThreadsSort.SORT_BY_TOP_URL.equals(mSortByUrl))
         	src = menu.findItem(R.id.sort_by_top_menu_id);
         dest = menu.findItem(R.id.sort_by_menu_id);
         dest.setTitle(src.getTitle());
@@ -1079,6 +1048,14 @@ public final class RedditIsFun extends ListActivity {
     		setListAdapter(mThreadsAdapter);
     		Common.updateListDrawables(this, mSettings.theme);
     		break;
+        case R.id.inbox_menu_id:
+        	Intent inboxIntent = new Intent(this, InboxActivity.class);
+        	startActivity(inboxIntent);
+        	break;
+//        case R.id.user_profile_menu_id:
+//        	Intent profileIntent = new Intent(this, UserActivity.class);
+//        	startActivity(profileIntent);
+//        	break;
     	case R.id.preferences_menu_id:
             Intent prefsIntent = new Intent(this,
                     RedditPreferencesPage.class);
@@ -1148,23 +1125,21 @@ public final class RedditIsFun extends ListActivity {
     	case Constants.DIALOG_SORT_BY:
     		builder = new AlertDialog.Builder(this);
     		builder.setTitle("Sort by:");
-    		builder.setSingleChoiceItems(Constants.SORT_BY_CHOICES, 0, new DialogInterface.OnClickListener() {
+    		builder.setSingleChoiceItems(Constants.ThreadsSort.SORT_BY_CHOICES, 0, new DialogInterface.OnClickListener() {
     			public void onClick(DialogInterface dialog, int item) {
     				dismissDialog(Constants.DIALOG_SORT_BY);
-    				CharSequence itemCS = Constants.SORT_BY_CHOICES[item];
-    				if (Constants.SORT_BY_HOT.equals(itemCS)) {
-    					mSortByUrl = Constants.SORT_BY_HOT_URL;
+    				CharSequence itemCS = Constants.ThreadsSort.SORT_BY_CHOICES[item];
+    				if (Constants.ThreadsSort.SORT_BY_HOT.equals(itemCS)) {
+    					mSortByUrl = Constants.ThreadsSort.SORT_BY_HOT_URL;
     					mSortByUrlExtra = Constants.EMPTY_STRING;
     					resetUrlToGetHere();
     					new DownloadThreadsTask().execute(mSettings.subreddit);
-        			} else if (Constants.SORT_BY_NEW.equals(itemCS)) {
+        			} else if (Constants.ThreadsSort.SORT_BY_NEW.equals(itemCS)) {
     					showDialog(Constants.DIALOG_SORT_BY_NEW);
-    				} else if (Constants.SORT_BY_CONTROVERSIAL.equals(itemCS)) {
+    				} else if (Constants.ThreadsSort.SORT_BY_CONTROVERSIAL.equals(itemCS)) {
     					showDialog(Constants.DIALOG_SORT_BY_CONTROVERSIAL);
-    					mSortByUrl = Constants.SORT_BY_CONTROVERSIAL_URL;
-    				} else if (Constants.SORT_BY_TOP.equals(itemCS)) {
+    				} else if (Constants.ThreadsSort.SORT_BY_TOP.equals(itemCS)) {
     					showDialog(Constants.DIALOG_SORT_BY_TOP);
-    					mSortByUrl = Constants.SORT_BY_TOP_URL;
     				}
     			}
     		});
@@ -1173,15 +1148,15 @@ public final class RedditIsFun extends ListActivity {
     	case Constants.DIALOG_SORT_BY_NEW:
     		builder = new AlertDialog.Builder(this);
     		builder.setTitle("what's new");
-    		builder.setSingleChoiceItems(Constants.SORT_BY_NEW_CHOICES, 0, new DialogInterface.OnClickListener() {
+    		builder.setSingleChoiceItems(Constants.ThreadsSort.SORT_BY_NEW_CHOICES, 0, new DialogInterface.OnClickListener() {
     			public void onClick(DialogInterface dialog, int item) {
     				dismissDialog(Constants.DIALOG_SORT_BY_NEW);
-    				mSortByUrl = Constants.SORT_BY_NEW_URL;
-    				CharSequence itemCS = Constants.SORT_BY_NEW_CHOICES[item];
-    				if (Constants.SORT_BY_NEW_NEW.equals(itemCS))
-    					mSortByUrlExtra = Constants.SORT_BY_NEW_NEW_URL;
-    				else if (Constants.SORT_BY_NEW_RISING.equals(itemCS))
-    					mSortByUrlExtra = Constants.SORT_BY_NEW_RISING_URL;
+    				mSortByUrl = Constants.ThreadsSort.SORT_BY_NEW_URL;
+    				CharSequence itemCS = Constants.ThreadsSort.SORT_BY_NEW_CHOICES[item];
+    				if (Constants.ThreadsSort.SORT_BY_NEW_NEW.equals(itemCS))
+    					mSortByUrlExtra = Constants.ThreadsSort.SORT_BY_NEW_NEW_URL;
+    				else if (Constants.ThreadsSort.SORT_BY_NEW_RISING.equals(itemCS))
+    					mSortByUrlExtra = Constants.ThreadsSort.SORT_BY_NEW_RISING_URL;
     				resetUrlToGetHere();
     				new DownloadThreadsTask().execute(mSettings.subreddit);
     			}
@@ -1191,23 +1166,23 @@ public final class RedditIsFun extends ListActivity {
     	case Constants.DIALOG_SORT_BY_CONTROVERSIAL:
     		builder = new AlertDialog.Builder(this);
     		builder.setTitle("most controversial");
-    		builder.setSingleChoiceItems(Constants.SORT_BY_CONTROVERSIAL_CHOICES, 0, new DialogInterface.OnClickListener() {
+    		builder.setSingleChoiceItems(Constants.ThreadsSort.SORT_BY_CONTROVERSIAL_CHOICES, 0, new DialogInterface.OnClickListener() {
     			public void onClick(DialogInterface dialog, int item) {
     				dismissDialog(Constants.DIALOG_SORT_BY_CONTROVERSIAL);
-    				mSortByUrl = Constants.SORT_BY_CONTROVERSIAL_URL;
-    				CharSequence itemCS = Constants.SORT_BY_CONTROVERSIAL_CHOICES[item];
-    				if (Constants.SORT_BY_CONTROVERSIAL_HOUR.equals(itemCS))
-    					mSortByUrlExtra = Constants.SORT_BY_CONTROVERSIAL_HOUR_URL;
-    				else if (Constants.SORT_BY_CONTROVERSIAL_DAY.equals(itemCS))
-    					mSortByUrlExtra = Constants.SORT_BY_CONTROVERSIAL_DAY_URL;
-    				else if (Constants.SORT_BY_CONTROVERSIAL_WEEK.equals(itemCS))
-    					mSortByUrlExtra = Constants.SORT_BY_CONTROVERSIAL_WEEK_URL;
-    				else if (Constants.SORT_BY_CONTROVERSIAL_MONTH.equals(itemCS))
-    					mSortByUrlExtra = Constants.SORT_BY_CONTROVERSIAL_MONTH_URL;
-    				else if (Constants.SORT_BY_CONTROVERSIAL_YEAR.equals(itemCS))
-    					mSortByUrlExtra = Constants.SORT_BY_CONTROVERSIAL_YEAR_URL;
-    				else if (Constants.SORT_BY_CONTROVERSIAL_ALL.equals(itemCS))
-    					mSortByUrlExtra = Constants.SORT_BY_CONTROVERSIAL_ALL_URL;
+    				mSortByUrl = Constants.ThreadsSort.SORT_BY_CONTROVERSIAL_URL;
+    				CharSequence itemCS = Constants.ThreadsSort.SORT_BY_CONTROVERSIAL_CHOICES[item];
+    				if (Constants.ThreadsSort.SORT_BY_CONTROVERSIAL_HOUR.equals(itemCS))
+    					mSortByUrlExtra = Constants.ThreadsSort.SORT_BY_CONTROVERSIAL_HOUR_URL;
+    				else if (Constants.ThreadsSort.SORT_BY_CONTROVERSIAL_DAY.equals(itemCS))
+    					mSortByUrlExtra = Constants.ThreadsSort.SORT_BY_CONTROVERSIAL_DAY_URL;
+    				else if (Constants.ThreadsSort.SORT_BY_CONTROVERSIAL_WEEK.equals(itemCS))
+    					mSortByUrlExtra = Constants.ThreadsSort.SORT_BY_CONTROVERSIAL_WEEK_URL;
+    				else if (Constants.ThreadsSort.SORT_BY_CONTROVERSIAL_MONTH.equals(itemCS))
+    					mSortByUrlExtra = Constants.ThreadsSort.SORT_BY_CONTROVERSIAL_MONTH_URL;
+    				else if (Constants.ThreadsSort.SORT_BY_CONTROVERSIAL_YEAR.equals(itemCS))
+    					mSortByUrlExtra = Constants.ThreadsSort.SORT_BY_CONTROVERSIAL_YEAR_URL;
+    				else if (Constants.ThreadsSort.SORT_BY_CONTROVERSIAL_ALL.equals(itemCS))
+    					mSortByUrlExtra = Constants.ThreadsSort.SORT_BY_CONTROVERSIAL_ALL_URL;
     				resetUrlToGetHere();
     				new DownloadThreadsTask().execute(mSettings.subreddit);
     			}
@@ -1217,23 +1192,23 @@ public final class RedditIsFun extends ListActivity {
     	case Constants.DIALOG_SORT_BY_TOP:
     		builder = new AlertDialog.Builder(this);
     		builder.setTitle("top scoring");
-    		builder.setSingleChoiceItems(Constants.SORT_BY_TOP_CHOICES, 0, new DialogInterface.OnClickListener() {
+    		builder.setSingleChoiceItems(Constants.ThreadsSort.SORT_BY_TOP_CHOICES, 0, new DialogInterface.OnClickListener() {
     			public void onClick(DialogInterface dialog, int item) {
     				dismissDialog(Constants.DIALOG_SORT_BY_TOP);
-    				mSortByUrl = Constants.SORT_BY_TOP_URL;
-    				CharSequence itemCS = Constants.SORT_BY_TOP_CHOICES[item];
-    				if (Constants.SORT_BY_TOP_HOUR.equals(itemCS))
-    					mSortByUrlExtra = Constants.SORT_BY_TOP_HOUR_URL;
-    				else if (Constants.SORT_BY_TOP_DAY.equals(itemCS))
-    					mSortByUrlExtra = Constants.SORT_BY_TOP_DAY_URL;
-    				else if (Constants.SORT_BY_TOP_WEEK.equals(itemCS))
-    					mSortByUrlExtra = Constants.SORT_BY_TOP_WEEK_URL;
-    				else if (Constants.SORT_BY_TOP_MONTH.equals(itemCS))
-    					mSortByUrlExtra = Constants.SORT_BY_TOP_MONTH_URL;
-    				else if (Constants.SORT_BY_TOP_YEAR.equals(itemCS))
-    					mSortByUrlExtra = Constants.SORT_BY_TOP_YEAR_URL;
-    				else if (Constants.SORT_BY_TOP_ALL.equals(itemCS))
-    					mSortByUrlExtra = Constants.SORT_BY_TOP_ALL_URL;
+    				mSortByUrl = Constants.ThreadsSort.SORT_BY_TOP_URL;
+    				CharSequence itemCS = Constants.ThreadsSort.SORT_BY_TOP_CHOICES[item];
+    				if (Constants.ThreadsSort.SORT_BY_TOP_HOUR.equals(itemCS))
+    					mSortByUrlExtra = Constants.ThreadsSort.SORT_BY_TOP_HOUR_URL;
+    				else if (Constants.ThreadsSort.SORT_BY_TOP_DAY.equals(itemCS))
+    					mSortByUrlExtra = Constants.ThreadsSort.SORT_BY_TOP_DAY_URL;
+    				else if (Constants.ThreadsSort.SORT_BY_TOP_WEEK.equals(itemCS))
+    					mSortByUrlExtra = Constants.ThreadsSort.SORT_BY_TOP_WEEK_URL;
+    				else if (Constants.ThreadsSort.SORT_BY_TOP_MONTH.equals(itemCS))
+    					mSortByUrlExtra = Constants.ThreadsSort.SORT_BY_TOP_MONTH_URL;
+    				else if (Constants.ThreadsSort.SORT_BY_TOP_YEAR.equals(itemCS))
+    					mSortByUrlExtra = Constants.ThreadsSort.SORT_BY_TOP_YEAR_URL;
+    				else if (Constants.ThreadsSort.SORT_BY_TOP_ALL.equals(itemCS))
+    					mSortByUrlExtra = Constants.ThreadsSort.SORT_BY_TOP_ALL_URL;
     				resetUrlToGetHere();
     				new DownloadThreadsTask().execute(mSettings.subreddit);
     			}
@@ -1383,7 +1358,7 @@ public final class RedditIsFun extends ListActivity {
     	super.onSaveInstanceState(state);
     	state.putCharSequence(ThreadInfo.SUBREDDIT, mSettings.subreddit);
     	state.putCharSequence(Constants.URL_TO_GET_HERE_KEY, mUrlToGetHere);
-    	state.putCharSequence(Constants.SORT_BY_KEY, mSortByUrl);
+    	state.putCharSequence(Constants.ThreadsSort.SORT_BY_KEY, mSortByUrl);
     	state.putInt(Constants.THREAD_COUNT, mCount);
     }
     

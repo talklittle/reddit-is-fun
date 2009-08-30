@@ -2,5 +2,5 @@
 
 <transition xmlns:android="http://schemas.android.com/apk/res/android">
     <item android:drawable="@drawable/list_selector_blue_pressed"  />
-    <item android:drawable="@color/white" />
+    <item android:drawable="@drawable/list_selector_blue_longpress" />
 </transition>

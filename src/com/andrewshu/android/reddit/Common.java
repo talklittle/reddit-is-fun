@@ -40,6 +40,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.net.Uri;
+import android.os.AsyncTask;
 import android.preference.PreferenceManager;
 import android.provider.Browser;
 import android.view.LayoutInflater;
@@ -179,24 +180,7 @@ public class Common {
         	}
 
 //        	// DEBUG
-//        	int c;
-//        	boolean done = false;
-//        	StringBuilder sb = new StringBuilder();
-//        	for (int k = 0; k < line.length(); k += 80) {
-//        		for (int i = 0; i < 80; i++) {
-//        			if (k + i >= line.length()) {
-//        				done = true;
-//        				break;
-//        			}
-//        			c = line.charAt(k + i);
-//        			sb.append((char) c);
-//        		}
-//        		Log.d(TAG, "doReply response content: " + sb.toString());
-//        		sb = new StringBuilder();
-//        		if (done)
-//        			break;
-//        	}
-//	        	
+//        	Log.dLong(TAG, line);
         	
         	entity.consumeContent();
         	
@@ -277,25 +261,8 @@ public class Common {
         	}
 
 //        	// DEBUG
-//        	int c;
-//        	boolean done = false;
-//        	StringBuilder sb = new StringBuilder();
-//        	for (int k = 0; k < line.length(); k += 80) {
-//        		for (int i = 0; i < 80; i++) {
-//        			if (k + i >= line.length()) {
-//        				done = true;
-//        				break;
-//        			}
-//        			c = line.charAt(k + i);
-//        			sb.append((char) c);
-//        		}
-//        		Log.d(TAG, "doReply response content: " + sb.toString());
-//        		sb = new StringBuilder();
-//        		if (done)
-//        			break;
-//        	}
-//	        	
-
+//        	Log.dLong(TAG, line);
+        	
         	Log.d(TAG, "modhash: "+modhash);
         	return modhash;
         	
@@ -319,7 +286,7 @@ public class Common {
      * @param shortcutHtml The HTML for the page to bypass network
      * @return
      */
-    static boolean doPeekEnvelope(DefaultHttpClient client, String shortcutHtml) {
+    static boolean doPeekEnvelope(DefaultHttpClient client, String shortcutHtml) throws Exception {
     	String no;
     	String line;
     	HttpEntity entity = null;
@@ -328,11 +295,6 @@ public class Common {
 	    		HttpGet httpget = new HttpGet(Constants.MODHASH_URL);
 	    		HttpResponse response = client.execute(httpget);
 	    		
-	    		// For modhash, we don't care about the status, since the 404 page has the info we want.
-	//    		status = response.getStatusLine().toString();
-	//        	if (!status.contains("OK"))
-	//        		throw new HttpException(status);
-	        	
 	        	entity = response.getEntity();
 	
 	        	BufferedReader in = new BufferedReader(new InputStreamReader(entity.getContent()));
@@ -362,24 +324,7 @@ public class Common {
         	}
 
 //        	// DEBUG
-//        	int c;
-//        	boolean done = false;
-//        	StringBuilder sb = new StringBuilder();
-//        	for (int k = 0; k < line.length(); k += 80) {
-//        		for (int i = 0; i < 80; i++) {
-//        			if (k + i >= line.length()) {
-//        				done = true;
-//        				break;
-//        			}
-//        			c = line.charAt(k + i);
-//        			sb.append((char) c);
-//        		}
-//        		Log.d(TAG, "doReply response content: " + sb.toString());
-//        		sb = new StringBuilder();
-//        		if (done)
-//        			break;
-//        	}
-//	        	
+//        	Log.dLong(TAG, line);
 
         	return true;
         	
@@ -392,7 +337,36 @@ public class Common {
     			}
     		}
     		Log.e(TAG, e.getMessage());
-    		return false;
+    		throw e;
+    	}
+    }
+    
+    static class PeekEnvelopeTask extends AsyncTask<Void, Void, Boolean> {
+    	private Context mContext;
+    	private DefaultHttpClient mClient;
+    	private int mMailNotificationStyle;
+    	public PeekEnvelopeTask(Context context, DefaultHttpClient client, int mailNotificationStyle) {
+    		mContext = context;
+    		mClient = client;
+    	}
+    	@Override
+    	public Boolean doInBackground(Void... voidz) {
+    		try {
+    			return Common.doPeekEnvelope(mClient, null);
+    		} catch (Exception e) {
+    			return null;
+    		}
+    	}
+    	@Override
+    	public void onPostExecute(Boolean hasMail) {
+    		// hasMail == null means error. Don't do anything.
+    		if (hasMail == null)
+    			return;
+    		if (hasMail) {
+    			Common.newMailNotification(mContext, mMailNotificationStyle);
+    		} else {
+    			Common.cancelMailNotification(mContext);
+    		}
     	}
     }
     
@@ -400,7 +374,8 @@ public class Common {
     	if (mailNotificationStyle == Constants.MAIL_NOTIFICATION_STYLE_OFF)
     		return;
     	Intent nIntent = new Intent(context, InboxActivity.class);
-		PendingIntent contentIntent = PendingIntent.getActivity(context, 0, nIntent, Notification.FLAG_AUTO_CANCEL);
+		PendingIntent contentIntent = PendingIntent.getActivity(context, 0, nIntent,
+				Notification.FLAG_ONLY_ALERT_ONCE | Notification.FLAG_AUTO_CANCEL);
 		Notification notification = new Notification(R.drawable.mail, Constants.HAVE_MAIL_TICKER, System.currentTimeMillis());
 		switch (mailNotificationStyle) {
 		case Constants.MAIL_NOTIFICATION_STYLE_BIG_ENVELOPE:
@@ -413,6 +388,11 @@ public class Common {
 		notification.contentIntent = contentIntent;
 		NotificationManager notificationManager = (NotificationManager) context.getSystemService(Context.NOTIFICATION_SERVICE);
 		notificationManager.notify(Constants.NOTIFICATION_HAVE_MAIL, notification);
+    }
+    
+    static void cancelMailNotification(Context context) {
+    	NotificationManager notificationManager = (NotificationManager) context.getSystemService(Context.NOTIFICATION_SERVICE);
+		notificationManager.cancel(Constants.NOTIFICATION_HAVE_MAIL);
     }
     
 

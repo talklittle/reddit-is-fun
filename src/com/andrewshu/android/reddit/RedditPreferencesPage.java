@@ -1,5 +1,7 @@
 package com.andrewshu.android.reddit;
 
+import android.app.NotificationManager;
+import android.content.Context;
 import android.os.Bundle;
 import android.preference.Preference;
 import android.preference.PreferenceActivity;
@@ -69,6 +71,11 @@ public class RedditPreferencesPage extends PreferenceActivity
         } else if (pref.getKey().equals(Constants.PREF_MAIL_NOTIFICATION_STYLE)) {
             pref.setSummary(getVisualMailNotificationStyleName((String) objValue));
             mSettings.setMailNotificationStyle(RedditSettings.MailNotificationStyle.valueOf((String) objValue));
+            if (Constants.PREF_MAIL_NOTIFICATION_STYLE_OFF.equals(objValue)) {
+            	// Remove any current notifications
+            	NotificationManager notificationManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
+        		notificationManager.cancel(Constants.NOTIFICATION_HAVE_MAIL);
+            }
             return true;
         }
         

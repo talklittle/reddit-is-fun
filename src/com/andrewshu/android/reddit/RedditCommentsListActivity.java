@@ -51,6 +51,7 @@ import android.view.ContextMenu;
 import android.view.KeyEvent;
 import android.view.LayoutInflater;
 import android.view.Menu;
+import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
@@ -98,6 +99,7 @@ public final class RedditCommentsListActivity extends ListActivity
     private ThreadInfo mOpThreadInfo;
     private CharSequence mThreadTitle;
     private int mNumVisibleComments;
+    private CharSequence mSortByUrl = Constants.CommentsSort.SORT_BY_HOT_URL;
     
     // Keep track of the row ids of comments that user has hidden
     private HashSet<Integer> mHiddenCommentHeads = new HashSet<Integer>();
@@ -111,6 +113,8 @@ public final class RedditCommentsListActivity extends ListActivity
     
     // ProgressDialogs with percentage bars
     private AutoResetProgressDialog mLoadingCommentsProgress;
+    
+    private boolean mCanChord = false;
     
     /**
      * Called when the activity starts up. Do activity initialization
@@ -150,6 +154,10 @@ public final class RedditCommentsListActivity extends ListActivity
         	finish();
         }
         
+        if (savedInstanceState != null) {
+        	mSortByUrl = savedInstanceState.getCharSequence(Constants.CommentsSort.SORT_BY_KEY);
+        }
+        
         new DownloadCommentsTask().execute(Constants.DEFAULT_COMMENT_DOWNLOAD_LIMIT);
     }
     
@@ -164,11 +172,13 @@ public final class RedditCommentsListActivity extends ListActivity
     		setContentView(R.layout.threads_list_content);
     		registerForContextMenu(getListView());
     		setListAdapter(mCommentsAdapter);
+    		getListView().setDivider(null);
     		Common.updateListDrawables(this, mSettings.theme);
     	}
     	if (mSettings.loggedIn != previousLoggedIn) {
     		new DownloadCommentsTask().execute(Constants.DEFAULT_COMMENT_DOWNLOAD_LIMIT);
     	}
+    	new Common.PeekEnvelopeTask(this, mClient, mSettings.mailNotificationStyle).execute();
     }
     
     @Override
@@ -534,6 +544,7 @@ public final class RedditCommentsListActivity extends ListActivity
         List<CommentInfo> items = new ArrayList<CommentInfo>();
         mCommentsAdapter = new CommentsListAdapter(this, items);
         setListAdapter(mCommentsAdapter);
+        getListView().setDivider(null);
         Common.updateListDrawables(this, mSettings.theme);
         mHiddenComments.clear();
         mHiddenCommentHeads.clear();
@@ -557,7 +568,8 @@ public final class RedditCommentsListActivity extends ListActivity
             		.append(mSettings.subreddit.toString().trim())
             		.append("/comments/")
             		.append(mSettings.threadId)
-            		.append("/.json").toString());
+            		.append("/.json?")
+            		.append(mSortByUrl).append("&").toString());
             	HttpResponse response = mClient.execute(request);
             	entity = response.getEntity();
             	
@@ -988,27 +1000,8 @@ public final class RedditCommentsListActivity extends ListActivity
             		throw new Exception("User required. Huh?");
             	}
             	
-            	Log.d(TAG, line);
-
 //            	// DEBUG
-//            	int c;
-//            	boolean done = false;
-//            	StringBuilder sb = new StringBuilder();
-//            	for (int k = 0; k < line.length(); k += 80) {
-//            		for (int i = 0; i < 80; i++) {
-//            			if (k + i >= line.length()) {
-//            				done = true;
-//            				break;
-//            			}
-//            			c = line.charAt(k + i);
-//            			sb.append((char) c);
-//            		}
-//            		Log.d(TAG, "doReply response content: " + sb.toString());
-//            		sb = new StringBuilder();
-//            		if (done)
-//            			break;
-//            	}
-//    	        	
+//	    	    Log.dLong(TAG, line);
 
             	String newId, newFullname;
             	Matcher idMatcher = Constants.NEW_ID_PATTERN.matcher(line);
@@ -1179,24 +1172,7 @@ public final class RedditCommentsListActivity extends ListActivity
             	Log.d(TAG, line);
 
 //            	// DEBUG
-//            	int c;
-//            	boolean done = false;
-//            	StringBuilder sb = new StringBuilder();
-//            	for (int k = 0; k < line.length(); k += 80) {
-//            		for (int i = 0; i < 80; i++) {
-//            			if (k + i >= line.length()) {
-//            				done = true;
-//            				break;
-//            			}
-//            			c = line.charAt(k + i);
-//            			sb.append((char) c);
-//            		}
-//            		Log.d(TAG, "doReply response content: " + sb.toString());
-//            		sb = new StringBuilder();
-//            		if (done)
-//            			break;
-//            	}
-//    	        	
+//    	        Log.dLong(TAG, line);
 
             	entity.consumeContent();
             	
@@ -1367,120 +1343,129 @@ public final class RedditCommentsListActivity extends ListActivity
     public boolean onCreateOptionsMenu(Menu menu) {
         super.onCreateOptionsMenu(menu);
         
-        menu.add(0, Constants.DIALOG_OP, 0, "OP")
-        	.setOnMenuItemClickListener(new CommentsListMenu(Constants.DIALOG_OP));
-        
-        // Login and Logout need to use the same ID for menu entry so they can be swapped
-        if (mSettings.loggedIn) {
-        	menu.add(0, Constants.DIALOG_LOGIN, 1, "Logout: " + mSettings.username)
-       			.setOnMenuItemClickListener(new CommentsListMenu(Constants.DIALOG_LOGOUT));
-        } else {
-        	menu.add(0, Constants.DIALOG_LOGIN, 1, "Login")
-       			.setOnMenuItemClickListener(new CommentsListMenu(Constants.DIALOG_LOGIN));
-        }
-        
-        menu.add(0, Constants.DIALOG_REFRESH, 2, "Refresh")
-        	.setOnMenuItemClickListener(new CommentsListMenu(Constants.DIALOG_REFRESH));
-        
-        menu.add(0, Constants.DIALOG_REPLY, 3, "Reply to thread")
-    		.setOnMenuItemClickListener(new CommentsListMenu(Constants.DIALOG_REPLY));
-        
-        if (mSettings.theme == R.style.Reddit_Light) {
-        	menu.add(0, Constants.DIALOG_THEME, 4, "Dark")
-//        		.setIcon(R.drawable.dark_circle_menu_icon)
-        		.setOnMenuItemClickListener(new CommentsListMenu(Constants.DIALOG_THEME));
-        } else {
-        	menu.add(0, Constants.DIALOG_THEME, 4, "Light")
-//	    		.setIcon(R.drawable.light_circle_menu_icon)
-	    		.setOnMenuItemClickListener(new CommentsListMenu(Constants.DIALOG_THEME));
-        }
-        
-        menu.add(0, Constants.DIALOG_OPEN_BROWSER, 5, "Open in browser")
-    		.setOnMenuItemClickListener(new CommentsListMenu(Constants.DIALOG_OPEN_BROWSER));
-        
+        MenuInflater inflater = getMenuInflater();
+        inflater.inflate(R.menu.comments, menu);
         return true;
     }
-    
+        
     @Override
     public boolean onPrepareOptionsMenu(Menu menu) {
+        // This happens when the user begins to hold down the menu key, so
+        // allow them to chord to get a shortcut.
+        mCanChord = true;
+
     	super.onPrepareOptionsMenu(menu);
     	
-    	// Login/Logout
+    	MenuItem src, dest;
+    	
+        // Login/Logout
     	if (mSettings.loggedIn) {
-	        menu.findItem(Constants.DIALOG_LOGIN).setTitle("Logout: " + mSettings.username)
-	        	.setOnMenuItemClickListener(new CommentsListMenu(Constants.DIALOG_LOGOUT));
+	        menu.findItem(R.id.login_logout_menu_id).setTitle(
+	        		getResources().getString(R.string.logout)+": " + mSettings.username);
+	        menu.findItem(R.id.inbox_menu_id).setVisible(true);
     	} else {
-            menu.findItem(Constants.DIALOG_LOGIN).setTitle("Login")
-            	.setOnMenuItemClickListener(new CommentsListMenu(Constants.DIALOG_LOGIN));
+            menu.findItem(R.id.login_logout_menu_id).setTitle(getResources().getString(R.string.login));
+            menu.findItem(R.id.inbox_menu_id).setVisible(false);
     	}
     	
     	// Theme: Light/Dark
-    	if (mSettings.theme == R.style.Reddit_Light) {
-    		menu.findItem(Constants.DIALOG_THEME).setTitle("Dark");
-//    			.setIcon(R.drawable.dark_circle_menu_icon);
-    	} else {
-    		menu.findItem(Constants.DIALOG_THEME).setTitle("Light");
-//    			.setIcon(R.drawable.light_circle_menu_icon);
-    	}
+    	src = mSettings.theme == R.style.Reddit_Light ?
+        		menu.findItem(R.id.dark_menu_id) :
+        			menu.findItem(R.id.light_menu_id);
+        dest = menu.findItem(R.id.light_dark_menu_id);
+        dest.setTitle(src.getTitle());
         
+        // Sort
+        if (Constants.CommentsSort.SORT_BY_HOT_URL.equals(mSortByUrl))
+        	src = menu.findItem(R.id.sort_by_hot_menu_id);
+        else if (Constants.CommentsSort.SORT_BY_NEW_URL.equals(mSortByUrl))
+        	src = menu.findItem(R.id.sort_by_new_menu_id);
+        else if (Constants.CommentsSort.SORT_BY_CONTROVERSIAL_URL.equals(mSortByUrl))
+        	src = menu.findItem(R.id.sort_by_controversial_menu_id);
+        else if (Constants.CommentsSort.SORT_BY_TOP_URL.equals(mSortByUrl))
+        	src = menu.findItem(R.id.sort_by_top_menu_id);
+        else if (Constants.CommentsSort.SORT_BY_OLD_URL.equals(mSortByUrl))
+        	src = menu.findItem(R.id.sort_by_old_menu_id);
+        dest = menu.findItem(R.id.sort_by_menu_id);
+        dest.setTitle(src.getTitle());
+    	
+        return true;
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        if (!mCanChord) {
+            // The user has already fired a shortcut with this hold down of the
+            // menu key.
+            return false;
+        }
+        
+        switch (item.getItemId()) {
+        case R.id.op_menu_id:
+    		mVoteTargetCommentInfo = mCommentsAdapter.getItem(0);
+    		showDialog(Constants.DIALOG_THING_CLICK);
+    		break;
+    	case R.id.login_logout_menu_id:
+        	if (mSettings.loggedIn) {
+        		Common.doLogout(mSettings, mClient);
+        		Toast.makeText(this, "You have been logged out.", Toast.LENGTH_SHORT).show();
+        		new DownloadCommentsTask().execute(Constants.DEFAULT_COMMENT_DOWNLOAD_LIMIT);
+        	} else {
+        		showDialog(Constants.DIALOG_LOGIN);
+        	}
+    		break;
+    	case R.id.refresh_menu_id:
+    		new DownloadCommentsTask().execute(Constants.DEFAULT_COMMENT_DOWNLOAD_LIMIT);
+    		break;
+    	case R.id.reply_thread_menu_id:
+    		// From the menu, only used for the OP, which is a thread.
+        	mVoteTargetCommentInfo = mCommentsAdapter.getItem(0);
+            showDialog(Constants.DIALOG_REPLY);
+            break;
+    	case R.id.sort_by_menu_id:
+    		showDialog(Constants.DIALOG_SORT_BY);
+    		break;
+    	case R.id.open_browser_menu_id:
+    		String url = new StringBuilder("http://www.reddit.com/r/")
+				.append(mSettings.subreddit).append("/comments/").append(mSettings.threadId).toString();
+    		Common.launchBrowser(url, this);
+    		break;
+        case R.id.light_dark_menu_id:
+    		if (mSettings.theme == R.style.Reddit_Light) {
+    			mSettings.setTheme(R.style.Reddit_Dark);
+    		} else {
+    			mSettings.setTheme(R.style.Reddit_Light);
+    		}
+    		setTheme(mSettings.theme);
+    		setContentView(R.layout.threads_list_content);
+    		registerForContextMenu(getListView());
+    		setListAdapter(mCommentsAdapter);
+    		getListView().setDivider(null);
+    		Common.updateListDrawables(this, mSettings.theme);
+    		break;
+        case R.id.inbox_menu_id:
+        	Intent inboxIntent = new Intent(this, InboxActivity.class);
+        	startActivity(inboxIntent);
+        	break;
+//        case R.id.user_profile_menu_id:
+//        	Intent profileIntent = new Intent(this, UserActivity.class);
+//        	startActivity(profileIntent);
+//        	break;
+    	case R.id.preferences_menu_id:
+            Intent prefsIntent = new Intent(this,
+                    RedditPreferencesPage.class);
+            startActivity(prefsIntent);
+            break;
+
+    	default:
+    		throw new IllegalArgumentException("Unexpected action value "+item.getItemId());
+    	}
+    	
         return true;
     }
 
 
-    private class CommentsListMenu implements MenuItem.OnMenuItemClickListener {
-        private int mAction;
 
-        CommentsListMenu(int action) {
-            mAction = action;
-        }
-
-        public boolean onMenuItemClick(MenuItem item) {
-        	switch (mAction) {
-        	case Constants.DIALOG_OP:
-        		mVoteTargetCommentInfo = mCommentsAdapter.getItem(0);
-        		showDialog(Constants.DIALOG_THING_CLICK);
-        		break;
-        	case Constants.DIALOG_REPLY:
-        		// From the menu, only used for the OP, which is a thread.
-            	mVoteTargetCommentInfo = mCommentsAdapter.getItem(0);
-                showDialog(mAction);
-                break;
-        	case Constants.DIALOG_LOGIN:
-        		showDialog(mAction);
-        		break;
-        	case Constants.DIALOG_LOGOUT:
-        		Common.doLogout(mSettings, mClient);
-        		Toast.makeText(RedditCommentsListActivity.this, "You have been logged out.", Toast.LENGTH_SHORT).show();
-        		new DownloadCommentsTask().execute(Constants.DEFAULT_COMMENT_DOWNLOAD_LIMIT);
-        		break;
-        	case Constants.DIALOG_REFRESH:
-        		new DownloadCommentsTask().execute(Constants.DEFAULT_COMMENT_DOWNLOAD_LIMIT);
-        		break;
-        	case Constants.DIALOG_OPEN_BROWSER:
-        		String url = new StringBuilder("http://www.reddit.com/r/")
-        			.append(mSettings.subreddit).append("/comments/").append(mSettings.threadId).toString();
-        		Common.launchBrowser(url, RedditCommentsListActivity.this);
-        		break;
-        	case Constants.DIALOG_THEME:
-        		if (mSettings.theme == R.style.Reddit_Light) {
-        			mSettings.setTheme(R.style.Reddit_Dark);
-        		} else {
-        			mSettings.setTheme(R.style.Reddit_Light);
-        		}
-        		RedditCommentsListActivity.this.setTheme(mSettings.theme);
-        		RedditCommentsListActivity.this.setContentView(R.layout.comments_list_content);
-        		registerForContextMenu(getListView());
-                RedditCommentsListActivity.this.setListAdapter(mCommentsAdapter);
-                Common.updateListDrawables(RedditCommentsListActivity.this, mSettings.theme);
-        		break;
-        	default:
-        		throw new IllegalArgumentException("Unexpected action value "+mAction);
-        	}
-        	
-        	return true;
-        }
-    }
-    
     @Override
     public void onCreateContextMenu(ContextMenu menu, View v, ContextMenuInfo menuInfo) {
     	super.onCreateContextMenu(menu, v, menuInfo);
@@ -1624,6 +1609,30 @@ public final class RedditCommentsListActivity extends ListActivity
     				dismissDialog(Constants.DIALOG_REPLY);
     			}
     		});
+    		break;
+    		
+    	case Constants.DIALOG_SORT_BY:
+    		builder = new AlertDialog.Builder(this);
+    		builder.setTitle("Sort by:");
+    		builder.setSingleChoiceItems(Constants.CommentsSort.SORT_BY_CHOICES, 0, new DialogInterface.OnClickListener() {
+    			public void onClick(DialogInterface dialog, int item) {
+    				dismissDialog(Constants.DIALOG_SORT_BY);
+    				CharSequence itemCS = Constants.CommentsSort.SORT_BY_CHOICES[item];
+    				if (Constants.CommentsSort.SORT_BY_HOT.equals(itemCS)) {
+    					mSortByUrl = Constants.CommentsSort.SORT_BY_HOT_URL;
+        			} else if (Constants.CommentsSort.SORT_BY_NEW.equals(itemCS)) {
+        				mSortByUrl = Constants.CommentsSort.SORT_BY_NEW_URL;
+    				} else if (Constants.CommentsSort.SORT_BY_CONTROVERSIAL.equals(itemCS)) {
+    					mSortByUrl = Constants.CommentsSort.SORT_BY_CONTROVERSIAL_URL;
+    				} else if (Constants.CommentsSort.SORT_BY_TOP.equals(itemCS)) {
+    					mSortByUrl = Constants.CommentsSort.SORT_BY_TOP_URL;
+    				} else if (Constants.CommentsSort.SORT_BY_OLD.equals(itemCS)) {
+    					mSortByUrl = Constants.CommentsSort.SORT_BY_OLD_URL;
+    				}
+    				new DownloadCommentsTask().execute(Constants.DEFAULT_COMMENT_DOWNLOAD_LIMIT);
+    			}
+    		});
+    		dialog = builder.create();
     		break;
     		
    		// "Please wait"
@@ -1839,6 +1848,12 @@ public final class RedditCommentsListActivity extends ListActivity
 			// No preparation based on app state is required.
 			break;
     	}
+    }
+    
+    @Override
+    protected void onSaveInstanceState(Bundle state) {
+    	super.onSaveInstanceState(state);
+    	state.putCharSequence(Constants.CommentsSort.SORT_BY_KEY, mSortByUrl);
     }
     
     /**

@@ -2,14 +2,14 @@
 
 <menu xmlns:android="http://schemas.android.com/apk/res/android">
     <group android:id="@+id/MAIN_MENU">
-        <item android:id="@+id/pick_subreddit_menu_id"
-            android:title="@string/pick_subreddit" />
+        <item android:id="@+id/op_menu_id"
+            android:title="@string/op" />
         <item android:id="@+id/login_logout_menu_id" />
         <item android:id="@+id/refresh_menu_id"
             android:title="@string/refresh" 
             android:alphabeticShortcut="r" />
-        <item android:id="@+id/submit_link_menu_id"
-            android:title="@string/submit_link" />
+        <item android:id="@+id/reply_thread_menu_id"
+            android:title="@string/reply_thread" />
         <item android:id="@+id/sort_by_menu_id"
             android:alphabeticShortcut="s" />
         <item android:id="@+id/light_dark_menu_id" />
@@ -52,6 +52,9 @@
         android:visible="false" />
     <item android:id="@+id/sort_by_top_menu_id"
         android:title="@string/sort_by_top" 
+        android:visible="false" />
+    <item android:id="@+id/sort_by_old_menu_id"
+        android:title="@string/sort_by_old" 
         android:visible="false" />
 </menu>
  

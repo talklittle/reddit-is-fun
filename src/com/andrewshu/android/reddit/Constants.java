@@ -88,50 +88,65 @@ public class Constants {
     static final String SUBMIT_KIND_POLL = "poll";
     
     // Sorting things
-    static final String SORT_BY_KEY = "sort_by";
-    static final String SORT_BY_HOT = "hot";
-    static final String SORT_BY_NEW = "new";
-    static final String SORT_BY_CONTROVERSIAL = "controversial";
-    static final String SORT_BY_TOP = "top";
-    static final String SORT_BY_HOT_URL = "";
-    static final String SORT_BY_NEW_URL = "new/";
-    static final String SORT_BY_CONTROVERSIAL_URL = "controversial/";
-    static final String SORT_BY_TOP_URL = "top/";
-    static final CharSequence[] SORT_BY_CHOICES = {SORT_BY_HOT, SORT_BY_NEW, SORT_BY_CONTROVERSIAL, SORT_BY_TOP};
-    static final String SORT_BY_NEW_NEW = "new";
-    static final String SORT_BY_NEW_RISING = "rising";
-    static final String SORT_BY_NEW_NEW_URL = "sort=new";
-    static final String SORT_BY_NEW_RISING_URL = "sort=rising";
-    static final CharSequence[] SORT_BY_NEW_CHOICES = {SORT_BY_NEW_NEW, SORT_BY_NEW_RISING};
-    static final String SORT_BY_CONTROVERSIAL_HOUR = "this hour";
-    static final String SORT_BY_CONTROVERSIAL_DAY = "today";
-    static final String SORT_BY_CONTROVERSIAL_WEEK = "this week";
-    static final String SORT_BY_CONTROVERSIAL_MONTH = "this month";
-    static final String SORT_BY_CONTROVERSIAL_YEAR = "this year";
-    static final String SORT_BY_CONTROVERSIAL_ALL = "all time";
-    static final String SORT_BY_CONTROVERSIAL_HOUR_URL = "t=hour";
-    static final String SORT_BY_CONTROVERSIAL_DAY_URL = "t=day";
-    static final String SORT_BY_CONTROVERSIAL_WEEK_URL = "t=week";
-    static final String SORT_BY_CONTROVERSIAL_MONTH_URL = "t=month";
-    static final String SORT_BY_CONTROVERSIAL_YEAR_URL = "t=year";
-    static final String SORT_BY_CONTROVERSIAL_ALL_URL = "t=all";
-    static final CharSequence[] SORT_BY_CONTROVERSIAL_CHOICES = {SORT_BY_CONTROVERSIAL_HOUR, SORT_BY_CONTROVERSIAL_DAY,
-    	SORT_BY_CONTROVERSIAL_WEEK, SORT_BY_CONTROVERSIAL_MONTH, SORT_BY_CONTROVERSIAL_YEAR, SORT_BY_CONTROVERSIAL_ALL};
-    static final String SORT_BY_TOP_HOUR = "this hour";
-    static final String SORT_BY_TOP_DAY = "today";
-    static final String SORT_BY_TOP_WEEK = "this week";
-    static final String SORT_BY_TOP_MONTH = "this month";
-    static final String SORT_BY_TOP_YEAR = "this year";
-    static final String SORT_BY_TOP_ALL = "all time";
-    static final String SORT_BY_TOP_HOUR_URL = "t=hour";
-    static final String SORT_BY_TOP_DAY_URL = "t=day";
-    static final String SORT_BY_TOP_WEEK_URL = "t=week";
-    static final String SORT_BY_TOP_MONTH_URL = "t=month";
-    static final String SORT_BY_TOP_YEAR_URL = "t=year";
-    static final String SORT_BY_TOP_ALL_URL = "t=all";
-    static final CharSequence[] SORT_BY_TOP_CHOICES = {SORT_BY_TOP_HOUR, SORT_BY_TOP_DAY,
-    	SORT_BY_TOP_WEEK, SORT_BY_TOP_MONTH, SORT_BY_TOP_YEAR, SORT_BY_TOP_ALL};
-    
+    static final class ThreadsSort {
+	    static final String SORT_BY_KEY = "threads_sort_by";
+	    static final String SORT_BY_HOT = "hot";
+	    static final String SORT_BY_NEW = "new";
+	    static final String SORT_BY_CONTROVERSIAL = "controversial";
+	    static final String SORT_BY_TOP = "top";
+	    static final String SORT_BY_HOT_URL = "";
+	    static final String SORT_BY_NEW_URL = "new/";
+	    static final String SORT_BY_CONTROVERSIAL_URL = "controversial/";
+	    static final String SORT_BY_TOP_URL = "top/";
+	    static final CharSequence[] SORT_BY_CHOICES = {SORT_BY_HOT, SORT_BY_NEW, SORT_BY_CONTROVERSIAL, SORT_BY_TOP};
+	    static final String SORT_BY_NEW_NEW = "new";
+	    static final String SORT_BY_NEW_RISING = "rising";
+	    static final String SORT_BY_NEW_NEW_URL = "sort=new";
+	    static final String SORT_BY_NEW_RISING_URL = "sort=rising";
+	    static final CharSequence[] SORT_BY_NEW_CHOICES = {SORT_BY_NEW_NEW, SORT_BY_NEW_RISING};
+	    static final String SORT_BY_CONTROVERSIAL_HOUR = "this hour";
+	    static final String SORT_BY_CONTROVERSIAL_DAY = "today";
+	    static final String SORT_BY_CONTROVERSIAL_WEEK = "this week";
+	    static final String SORT_BY_CONTROVERSIAL_MONTH = "this month";
+	    static final String SORT_BY_CONTROVERSIAL_YEAR = "this year";
+	    static final String SORT_BY_CONTROVERSIAL_ALL = "all time";
+	    static final String SORT_BY_CONTROVERSIAL_HOUR_URL = "t=hour";
+	    static final String SORT_BY_CONTROVERSIAL_DAY_URL = "t=day";
+	    static final String SORT_BY_CONTROVERSIAL_WEEK_URL = "t=week";
+	    static final String SORT_BY_CONTROVERSIAL_MONTH_URL = "t=month";
+	    static final String SORT_BY_CONTROVERSIAL_YEAR_URL = "t=year";
+	    static final String SORT_BY_CONTROVERSIAL_ALL_URL = "t=all";
+	    static final CharSequence[] SORT_BY_CONTROVERSIAL_CHOICES = {SORT_BY_CONTROVERSIAL_HOUR, SORT_BY_CONTROVERSIAL_DAY,
+	    	SORT_BY_CONTROVERSIAL_WEEK, SORT_BY_CONTROVERSIAL_MONTH, SORT_BY_CONTROVERSIAL_YEAR, SORT_BY_CONTROVERSIAL_ALL};
+	    static final String SORT_BY_TOP_HOUR = "this hour";
+	    static final String SORT_BY_TOP_DAY = "today";
+	    static final String SORT_BY_TOP_WEEK = "this week";
+	    static final String SORT_BY_TOP_MONTH = "this month";
+	    static final String SORT_BY_TOP_YEAR = "this year";
+	    static final String SORT_BY_TOP_ALL = "all time";
+	    static final String SORT_BY_TOP_HOUR_URL = "t=hour";
+	    static final String SORT_BY_TOP_DAY_URL = "t=day";
+	    static final String SORT_BY_TOP_WEEK_URL = "t=week";
+	    static final String SORT_BY_TOP_MONTH_URL = "t=month";
+	    static final String SORT_BY_TOP_YEAR_URL = "t=year";
+	    static final String SORT_BY_TOP_ALL_URL = "t=all";
+	    static final CharSequence[] SORT_BY_TOP_CHOICES = {SORT_BY_TOP_HOUR, SORT_BY_TOP_DAY,
+	    	SORT_BY_TOP_WEEK, SORT_BY_TOP_MONTH, SORT_BY_TOP_YEAR, SORT_BY_TOP_ALL};
+    }
+    static final class CommentsSort {
+	    static final String SORT_BY_KEY = "comments_sort_by";
+	    static final String SORT_BY_HOT = "hot";
+	    static final String SORT_BY_NEW = "new";
+	    static final String SORT_BY_CONTROVERSIAL = "controversial";
+	    static final String SORT_BY_TOP = "top";
+	    static final String SORT_BY_OLD = "old";
+	    static final String SORT_BY_HOT_URL = "sort=hot";
+	    static final String SORT_BY_NEW_URL = "sort=new";
+	    static final String SORT_BY_CONTROVERSIAL_URL = "sort=controversial";
+	    static final String SORT_BY_TOP_URL = "sort=top";
+	    static final String SORT_BY_OLD_URL = "sort=old";
+	    static final CharSequence[] SORT_BY_CHOICES = {SORT_BY_HOT, SORT_BY_NEW, SORT_BY_CONTROVERSIAL, SORT_BY_TOP, SORT_BY_OLD};
+    }
     
     
     // JSON values

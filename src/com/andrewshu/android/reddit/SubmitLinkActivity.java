@@ -332,24 +332,7 @@ public class SubmitLinkActivity extends TabActivity {
             	Log.d(TAG, line);
 
 //            	// DEBUG
-//            	int c;
-//            	boolean done = false;
-//            	StringBuilder sb = new StringBuilder();
-//            	for (int k = 0; k < line.length(); k += 80) {
-//            		for (int i = 0; i < 80; i++) {
-//            			if (k + i >= line.length()) {
-//            				done = true;
-//            				break;
-//            			}
-//            			c = line.charAt(k + i);
-//            			sb.append((char) c);
-//            		}
-//            		Log.d(TAG, "doReply response content: " + sb.toString());
-//            		sb = new StringBuilder();
-//            		if (done)
-//            			break;
-//            	}
-//    	        	
+//    	        Log.dLong(TAG, line);
 
             	String newId, newSubreddit;
             	Matcher idMatcher = Constants.NEW_THREAD_PATTERN.matcher(line);
