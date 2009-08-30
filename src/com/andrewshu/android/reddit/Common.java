@@ -348,6 +348,7 @@ public class Common {
     	public PeekEnvelopeTask(Context context, DefaultHttpClient client, int mailNotificationStyle) {
     		mContext = context;
     		mClient = client;
+    		mMailNotificationStyle = mailNotificationStyle;
     	}
     	@Override
     	public Boolean doInBackground(Void... voidz) {
