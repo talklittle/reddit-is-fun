@@ -279,8 +279,39 @@ public class Common {
     	}
     }
     
+    static class PeekEnvelopeTask extends AsyncTask<Void, Void, Boolean> {
+    	private Context mContext;
+    	private DefaultHttpClient mClient;
+    	private int mMailNotificationStyle;
+    	public PeekEnvelopeTask(Context context, DefaultHttpClient client, int mailNotificationStyle) {
+    		mContext = context;
+    		mClient = client;
+    		mMailNotificationStyle = mailNotificationStyle;
+    	}
+    	@Override
+    	public Boolean doInBackground(Void... voidz) {
+    		try {
+    			if (mMailNotificationStyle == Constants.MAIL_NOTIFICATION_STYLE_OFF)
+    	    		return false;
+    	    	return Common.doPeekEnvelope(mClient, null);
+    		} catch (Exception e) {
+    			return null;
+    		}
+    	}
+    	@Override
+    	public void onPostExecute(Boolean hasMail) {
+    		// hasMail == null means error. Don't do anything.
+    		if (hasMail == null)
+    			return;
+    		if (hasMail) {
+    			Common.newMailNotification(mContext, mMailNotificationStyle);
+    		} else {
+    			Common.cancelMailNotification(mContext);
+    		}
+    	}
+    }
     /**
-     * Check mail
+     * Check mail. You should use PeekEnvelopeTask instead.
      * 
      * @param client
      * @param shortcutHtml The HTML for the page to bypass network
@@ -340,40 +371,7 @@ public class Common {
     		throw e;
     	}
     }
-    
-    static class PeekEnvelopeTask extends AsyncTask<Void, Void, Boolean> {
-    	private Context mContext;
-    	private DefaultHttpClient mClient;
-    	private int mMailNotificationStyle;
-    	public PeekEnvelopeTask(Context context, DefaultHttpClient client, int mailNotificationStyle) {
-    		mContext = context;
-    		mClient = client;
-    		mMailNotificationStyle = mailNotificationStyle;
-    	}
-    	@Override
-    	public Boolean doInBackground(Void... voidz) {
-    		try {
-    			return Common.doPeekEnvelope(mClient, null);
-    		} catch (Exception e) {
-    			return null;
-    		}
-    	}
-    	@Override
-    	public void onPostExecute(Boolean hasMail) {
-    		// hasMail == null means error. Don't do anything.
-    		if (hasMail == null)
-    			return;
-    		if (hasMail) {
-    			Common.newMailNotification(mContext, mMailNotificationStyle);
-    		} else {
-    			Common.cancelMailNotification(mContext);
-    		}
-    	}
-    }
-    
     static void newMailNotification(Context context, int mailNotificationStyle) {
-    	if (mailNotificationStyle == Constants.MAIL_NOTIFICATION_STYLE_OFF)
-    		return;
     	Intent nIntent = new Intent(context, InboxActivity.class);
 		PendingIntent contentIntent = PendingIntent.getActivity(context, 0, nIntent,
 				Notification.FLAG_ONLY_ALERT_ONCE | Notification.FLAG_AUTO_CANCEL);
@@ -390,7 +388,6 @@ public class Common {
 		NotificationManager notificationManager = (NotificationManager) context.getSystemService(Context.NOTIFICATION_SERVICE);
 		notificationManager.notify(Constants.NOTIFICATION_HAVE_MAIL, notification);
     }
-    
     static void cancelMailNotification(Context context) {
     	NotificationManager notificationManager = (NotificationManager) context.getSystemService(Context.NOTIFICATION_SERVICE);
 		notificationManager.cancel(Constants.NOTIFICATION_HAVE_MAIL);
