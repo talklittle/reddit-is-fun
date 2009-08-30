@@ -149,8 +149,16 @@ public final class InboxActivity extends ListActivity
     
     
     private final class MessagesListAdapter extends ArrayAdapter<MessageInfo> {
+    	public boolean mIsLoading = true;
+    	
     	private LayoutInflater mInflater;
         
+    	public boolean isEmpty() {
+    		if (mIsLoading)
+    			return false;
+    		return super.isEmpty();
+    	}
+    	
         public MessagesListAdapter(Context context, List<MessageInfo> objects) {
             super(context, 0, objects);
             mInflater = (LayoutInflater)context.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
@@ -350,11 +358,13 @@ public final class InboxActivity extends ListActivity
 		@Override
     	public void onPreExecute() {
     		resetUI();
+    		mMessagesAdapter.mIsLoading = true;
 	    	showDialog(Constants.DIALOG_LOADING_INBOX);
     	}
     	
 		@Override
     	public void onPostExecute(Void v) {
+			mMessagesAdapter.mIsLoading = false;
     		mMessagesAdapter.notifyDataSetChanged();
 			dismissDialog(Constants.DIALOG_LOADING_INBOX);
     	}

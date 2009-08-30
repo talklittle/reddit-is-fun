@@ -11,7 +11,6 @@
         <item android:id="@+id/submit_link_menu_id"
             android:title="@string/submit_link" />
         <item android:id="@+id/sort_by_menu_id"
-            android:title="@string/sort_by" 
             android:alphabeticShortcut="s" />
         <item android:id="@+id/light_dark_menu_id" />
         <item android:id="@+id/open_browser_menu_id"
@@ -70,6 +69,18 @@
     <item android:id="@+id/dark_menu_id"
         android:title="@string/dark_theme" 
         android:visible="false" />
-
+    <!-- these items are toggled in and out of @+id/sort_by_menu_id -->
+	<item android:id="@+id/sort_by_hot_menu_id"
+        android:title="@string/sort_by_hot" 
+        android:visible="false" />
+    <item android:id="@+id/sort_by_new_menu_id"
+        android:title="@string/sort_by_new" 
+        android:visible="false" />
+    <item android:id="@+id/sort_by_controversial_menu_id"
+        android:title="@string/sort_by_controversial" 
+        android:visible="false" />
+    <item android:id="@+id/sort_by_top_menu_id"
+        android:title="@string/sort_by_top" 
+        android:visible="false" />
 </menu>
  

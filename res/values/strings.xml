@@ -4,8 +4,8 @@
 
     <string name="app_name">reddit is fun</string>
     
-    <string name="noThreads">Loading...</string>
-    <string name="noComments">Loading...</string>
+    <string name="noThreads">No threads here</string>
+    <string name="noComments">No comments here</string>
     <string name="noMessages">Your inbox is empty.</string>
     
     <string name="pick_subreddit_label">Subreddit name:</string>
@@ -56,7 +56,10 @@
 	<string name="logout">Logout</string>
 	<string name="refresh">Refresh</string>
 	<string name="submit_link">Submit link</string>
-	<string name="sort_by">Sort by</string>
+	<string name="sort_by_hot">Sort by: hot</string>
+	<string name="sort_by_new">Sort by: new</string>
+	<string name="sort_by_controversial">Sort by: controversial</string>
+	<string name="sort_by_top">Sort by: top</string>
 	<string name="light_theme">Use light theme</string>
 	<string name="dark_theme">Use dark theme</string>
 	<string name="open_browser">Open in browser</string>

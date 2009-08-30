@@ -217,6 +217,8 @@ public final class RedditCommentsListActivity extends ListActivity
     	// The number of view types
     	static final int VIEW_TYPE_COUNT = 4;
     	
+    	public boolean mIsLoading = true;
+    	
     	private LayoutInflater mInflater;
         private int mFrequentSeparatorPos = ListView.INVALID_POSITION;
         
@@ -244,7 +246,13 @@ public final class RedditCommentsListActivity extends ListActivity
         public int getViewTypeCount() {
         	return VIEW_TYPE_COUNT;
         }
-
+        
+        @Override
+        public boolean isEmpty() {
+        	if (mIsLoading)
+        		return false;
+        	return super.isEmpty();
+        }
         
         @Override
         public View getView(int position, View convertView, ViewGroup parent) {
@@ -838,6 +846,7 @@ public final class RedditCommentsListActivity extends ListActivity
 	    		this.cancel(true);
     		
     		resetUI();
+    		mCommentsAdapter.mIsLoading = true;
 	    	
 	    	if ("jailbait".equals(mSettings.subreddit.toString())) {
 	    		Toast lodToast = Toast.makeText(RedditCommentsListActivity.this, "", Toast.LENGTH_LONG);
@@ -853,6 +862,7 @@ public final class RedditCommentsListActivity extends ListActivity
     	public void onPostExecute(Void v) {
     		for (Integer key : mCommentsMap.keySet())
         		mCommentsAdapter.add(mCommentsMap.get(key));
+    		mCommentsAdapter.mIsLoading = false;
     		mCommentsAdapter.notifyDataSetChanged();
 			dismissDialog(Constants.DIALOG_LOADING_COMMENTS_LIST);
     	}
