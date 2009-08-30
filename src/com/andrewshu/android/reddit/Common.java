@@ -96,10 +96,11 @@ public class Common {
     	}
     	
     	// Theme
-    	editor.putString("theme", RedditSettings.Theme.toString(rSettings.theme));
+    	editor.putString(Constants.PREF_THEME, RedditSettings.Theme.toString(rSettings.theme));
     	
     	// Notifications
-    	editor.putString("mail_notification_style", RedditSettings.MailNotificationStyle.toString(rSettings.mailNotificationStyle));
+    	editor.putString(Constants.PREF_MAIL_NOTIFICATION_STYLE, rSettings.mailNotificationStyle);
+    	editor.putString(Constants.PREF_MAIL_NOTIFICATION_SERVICE, rSettings.mailNotificationService);
     
     	editor.commit();
     }
@@ -130,11 +131,11 @@ public class Common {
         
         // Theme
         rSettings.setTheme(RedditSettings.Theme.valueOf(
-        		sessionPrefs.getString("theme", Constants.PREF_THEME_LIGHT)));
+        		sessionPrefs.getString(Constants.PREF_THEME, Constants.PREF_THEME_LIGHT)));
         
         // Notifications
-        rSettings.setMailNotificationStyle(RedditSettings.MailNotificationStyle.valueOf(
-        		sessionPrefs.getString("mail_notification_style", Constants.PREF_MAIL_NOTIFICATION_STYLE_DEFAULT)));
+        rSettings.setMailNotificationStyle(sessionPrefs.getString(Constants.PREF_MAIL_NOTIFICATION_STYLE, Constants.PREF_MAIL_NOTIFICATION_STYLE_DEFAULT));
+        rSettings.setMailNotificationService(sessionPrefs.getString(Constants.PREF_MAIL_NOTIFICATION_SERVICE, Constants.PREF_MAIL_NOTIFICATION_SERVICE_OFF));
     }
     
     /**
@@ -282,8 +283,8 @@ public class Common {
     static class PeekEnvelopeTask extends AsyncTask<Void, Void, Boolean> {
     	private Context mContext;
     	private DefaultHttpClient mClient;
-    	private int mMailNotificationStyle;
-    	public PeekEnvelopeTask(Context context, DefaultHttpClient client, int mailNotificationStyle) {
+    	private String mMailNotificationStyle;
+    	public PeekEnvelopeTask(Context context, DefaultHttpClient client, String mailNotificationStyle) {
     		mContext = context;
     		mClient = client;
     		mMailNotificationStyle = mailNotificationStyle;
@@ -291,7 +292,7 @@ public class Common {
     	@Override
     	public Boolean doInBackground(Void... voidz) {
     		try {
-    			if (mMailNotificationStyle == Constants.MAIL_NOTIFICATION_STYLE_OFF)
+    			if (Constants.PREF_MAIL_NOTIFICATION_STYLE_OFF.equals(mMailNotificationStyle))
     	    		return false;
     	    	return Common.doPeekEnvelope(mClient, null);
     		} catch (Exception e) {
@@ -371,19 +372,18 @@ public class Common {
     		throw e;
     	}
     }
-    static void newMailNotification(Context context, int mailNotificationStyle) {
+    static void newMailNotification(Context context, String mailNotificationStyle) {
     	Intent nIntent = new Intent(context, InboxActivity.class);
-		PendingIntent contentIntent = PendingIntent.getActivity(context, 0, nIntent,
-				Notification.FLAG_ONLY_ALERT_ONCE | Notification.FLAG_AUTO_CANCEL);
+		PendingIntent contentIntent = PendingIntent.getActivity(context, 0, nIntent, 0);
 		Notification notification = new Notification(R.drawable.mail, Constants.HAVE_MAIL_TICKER, System.currentTimeMillis());
-		switch (mailNotificationStyle) {
-		case Constants.MAIL_NOTIFICATION_STYLE_BIG_ENVELOPE:
+		if (Constants.PREF_MAIL_NOTIFICATION_STYLE_BIG_ENVELOPE.equals(mailNotificationStyle)) {
 			RemoteViews contentView = new RemoteViews(context.getPackageName(), R.layout.big_envelope_notification);
 			notification.contentView = contentView;
-			break;
-		default:
+		} else {
 			notification.setLatestEventInfo(context, Constants.HAVE_MAIL_TITLE, Constants.HAVE_MAIL_TEXT, contentIntent);
 		}
+		notification.defaults |= Notification.DEFAULT_SOUND;
+		notification.flags |= Notification.FLAG_ONLY_ALERT_ONCE | Notification.FLAG_AUTO_CANCEL;
 		notification.contentIntent = contentIntent;
 		NotificationManager notificationManager = (NotificationManager) context.getSystemService(Context.NOTIFICATION_SERVICE);
 		notificationManager.notify(Constants.NOTIFICATION_HAVE_MAIL, notification);

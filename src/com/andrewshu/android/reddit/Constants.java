@@ -24,6 +24,9 @@ public class Constants {
     // notifications
     static final int NOTIFICATION_HAVE_MAIL = 0;
     
+    // services
+    static final int SERVICE_ENVELOPE = 0;
+    
     // Tell PickSubredditActivity to hide the fronptage string
     static final String HIDE_FRONTPAGE_STRING = "hideFrontpage";
     
@@ -55,11 +58,6 @@ public class Constants {
     static final int DIALOG_SORT_BY_NEW = 21;
     static final int DIALOG_SORT_BY_CONTROVERSIAL = 22;
     static final int DIALOG_SORT_BY_TOP = 23;
-
-    // Expanded status bar notification style
-    static final int MAIL_NOTIFICATION_STYLE_DEFAULT = 0;
-    static final int MAIL_NOTIFICATION_STYLE_BIG_ENVELOPE = 1;
-    static final int MAIL_NOTIFICATION_STYLE_OFF = 2;
     
     // Special CSS for webviews to match themes
     static final String CSS_DARK = "<style>body{color:#c0c0c0;background-color:#191919}a:link{color:#ffffff}</style>";
@@ -174,6 +172,13 @@ public class Constants {
     static final String PREF_MAIL_NOTIFICATION_STYLE_DEFAULT = "MAIL_NOTIFICATION_STYLE_DEFAULT";
     static final String PREF_MAIL_NOTIFICATION_STYLE_BIG_ENVELOPE = "MAIL_NOTIFICATION_STYLE_BIG_ENVELOPE";
     static final String PREF_MAIL_NOTIFICATION_STYLE_OFF = "MAIL_NOTIFICATION_STYLE_OFF";
+    static final String PREF_MAIL_NOTIFICATION_SERVICE = "mail_notification_service";
+    static final String PREF_MAIL_NOTIFICATION_SERVICE_OFF = "MAIL_NOTIFICATION_SERVICE_OFF";
+    static final String PREF_MAIL_NOTIFICATION_SERVICE_5MIN = "MAIL_NOTIFICATION_SERVICE_5MIN";
+    static final String PREF_MAIL_NOTIFICATION_SERVICE_30MIN = "MAIL_NOTIFICATION_SERVICE_30MIN";
+    static final String PREF_MAIL_NOTIFICATION_SERVICE_1HOUR = "MAIL_NOTIFICATION_SERVICE_1HOUR";
+    static final String PREF_MAIL_NOTIFICATION_SERVICE_6HOURS = "MAIL_NOTIFICATION_SERVICE_6HOURS";
+    static final String PREF_MAIL_NOTIFICATION_SERVICE_1DAY = "MAIL_NOTIFICATION_SERVICE_1DAY";
     
     // A short HTML file returned by reddit, so we can get the modhash
     static final String MODHASH_URL = "http://www.reddit.com/r";

@@ -37,6 +37,12 @@
 	<string name="previous_threads">prev 25</string>
 	
 	<string name="error_voting_toast">Error voting. Please try again.</string>
+	<string name="mail_notification_unscheduled">Reddit mail notification service disabled.</string>
+	<string name="mail_notification_scheduled_5min">Reddit mail set to check every 5 minutes.</string>
+	<string name="mail_notification_scheduled_30min">Reddit mail set to check every 30 minutes.</string>
+	<string name="mail_notification_scheduled_1hour">Reddit mail set to check every 1 hour.</string>
+	<string name="mail_notification_scheduled_6hours">Reddit mail set to check every 6 hours.</string>
+	<string name="mail_notification_scheduled_1day">Reddit mail set to check every 24 hours.</string>
 	
 	<string name="submit_title_label">title</string>
 	<string name="submit_url_label">url</string>
@@ -100,6 +106,25 @@
         <item>MAIL_NOTIFICATION_STYLE_BIG_ENVELOPE</item>
         <item>MAIL_NOTIFICATION_STYLE_OFF</item>
     </string-array>
-	
+    
+    <string name="pref_mail_notification_service">Reddit mail system service</string>
+    <string name="pref_mail_notification_service_dialogtitle">Reddit mail system service</string>
+    <string-array name="pref_mail_notification_service_choices">
+    	<item>Off</item>
+    	<item>Every 5 minutes</item>
+    	<item>Every 30 minutes</item>
+    	<item>Every 1 hour</item>
+    	<item>Every 6 hours</item>
+    	<item>Every 24 hours</item>
+   	</string-array>
+    <string-array name="pref_mail_notification_service_values" translatable="false">
+    	<item>MAIL_NOTIFICATION_SERVICE_OFF</item>
+    	<item>MAIL_NOTIFICATION_SERVICE_5MIN</item>
+    	<item>MAIL_NOTIFICATION_SERVICE_30MIN</item>
+    	<item>MAIL_NOTIFICATION_SERVICE_1HOUR</item>
+    	<item>MAIL_NOTIFICATION_SERVICE_6HOURS</item>
+    	<item>MAIL_NOTIFICATION_SERVICE_1DAY</item>
+   	</string-array>
+    
 	
 </resources>

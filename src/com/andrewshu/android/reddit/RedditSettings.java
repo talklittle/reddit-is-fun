@@ -17,7 +17,8 @@ public class RedditSettings {
 	// --- Themes ---
 	int theme = R.style.Reddit_Light;
 	
-	int mailNotificationStyle = Constants.MAIL_NOTIFICATION_STYLE_DEFAULT;
+	String mailNotificationStyle = Constants.PREF_MAIL_NOTIFICATION_STYLE_DEFAULT;
+	String mailNotificationService = Constants.PREF_MAIL_NOTIFICATION_SERVICE_OFF;
 	
 	// --- States that change frequently. ---
 	CharSequence subreddit;
@@ -31,29 +32,6 @@ public class RedditSettings {
 	
 	// --- Preferences ---
 	// Don't use a HashMap because that would need to be initialized many times
-	public static class MailNotificationStyle {
-		public static int valueOf(String valueString) {
-			if (Constants.PREF_MAIL_NOTIFICATION_STYLE_DEFAULT.equals(valueString))
-				return Constants.MAIL_NOTIFICATION_STYLE_DEFAULT;
-			if (Constants.PREF_MAIL_NOTIFICATION_STYLE_BIG_ENVELOPE.equals(valueString))
-				return Constants.MAIL_NOTIFICATION_STYLE_BIG_ENVELOPE;
-			if (Constants.PREF_MAIL_NOTIFICATION_STYLE_OFF.equals(valueString))
-				return Constants.MAIL_NOTIFICATION_STYLE_OFF;
-			return Constants.MAIL_NOTIFICATION_STYLE_DEFAULT;
-		}
-		public static String toString(int value) {
-			switch (value) {
-			case Constants.MAIL_NOTIFICATION_STYLE_DEFAULT:
-				return Constants.PREF_MAIL_NOTIFICATION_STYLE_DEFAULT;
-			case Constants.MAIL_NOTIFICATION_STYLE_BIG_ENVELOPE:
-				return Constants.PREF_MAIL_NOTIFICATION_STYLE_BIG_ENVELOPE;
-			case Constants.MAIL_NOTIFICATION_STYLE_OFF:
-				return Constants.PREF_MAIL_NOTIFICATION_STYLE_OFF;
-			default:
-				return Constants.PREF_MAIL_NOTIFICATION_STYLE_DEFAULT;
-			}
-		}
-	}
 	public static class Theme {
 		public static int valueOf(String valueString) {
 			if (Constants.PREF_THEME_LIGHT.equals(valueString))
@@ -80,7 +58,12 @@ public class RedditSettings {
 		this.loggedIn = loggedIn;
 	}
 	
-	synchronized void setMailNotificationStyle(int mailNotificationStyle) {
+	synchronized void setMailNotificationService(String mailNotificationService) {
+		this.mailNotificationService = mailNotificationService;
+	}
+	
+	
+	synchronized void setMailNotificationStyle(String mailNotificationStyle) {
 		this.mailNotificationStyle = mailNotificationStyle;
 	}
 	

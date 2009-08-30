@@ -33,6 +33,14 @@
         		android:entryValues="@array/pref_mail_notification_style_values"
         		android:dialogTitle="@string/pref_mail_notification_style_dialogtitle" />
 
+        <ListPreference
+        		android:key="mail_notification_service"
+        		android:title="@string/pref_mail_notification_service"
+        		android:defaultValue="MAIL_NOTIFICATION_SERVICE_OFF"
+        		android:entries="@array/pref_mail_notification_service_choices"
+        		android:entryValues="@array/pref_mail_notification_service_values"
+        		android:dialogTitle="@string/pref_mail_notification_service_dialogtitle" />
+
 		<!-- 
         <ListPreference
                 android:key="text_size"
