@@ -315,8 +315,9 @@ public final class RedditCommentsListActivity extends ListActivity
 	                
 	                // Set the title and domain using a SpannableStringBuilder
 	                SpannableStringBuilder builder = new SpannableStringBuilder();
-	                SpannableString titleSS = new SpannableString(mOpThreadInfo.getTitle());
-	                int titleLen = mOpThreadInfo.getTitle().length();
+	                String title = mOpThreadInfo.getTitle().replaceAll("\n ", " ").replaceAll(" \n", " ").replaceAll("\n", " ");
+	                SpannableString titleSS = new SpannableString(title);
+	                int titleLen = title.length();
 	                AbsoluteSizeSpan titleASS = new AbsoluteSizeSpan(14);
 	                titleSS.setSpan(titleASS, 0, titleLen, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
 	                if (mSettings.theme == R.style.Reddit_Light) {
@@ -693,7 +694,7 @@ public final class RedditCommentsListActivity extends ListActivity
 									ti.put(Constants.JSON_MEDIA_EMBED+"/"+mediaNamefield, jp.getText());
 								}
 							} else {
-								ti.put(namefield, StringEscapeUtils.unescapeHtml(jp.getText()));
+								ti.put(namefield, StringEscapeUtils.unescapeHtml(jp.getText().trim().replaceAll("\r", "")));
 								if (Constants.JSON_NUM_COMMENTS.equals(namefield)) {
 									int numComments = Integer.valueOf(jp.getText());
 									if (numComments != _mNumComments)
@@ -854,9 +855,9 @@ public final class RedditCommentsListActivity extends ListActivity
 							} else {
 								jp.nextToken(); // move to value
 								if (Constants.JSON_BODY.equals(namefield))
-									ci.put(namefield, StringEscapeUtils.unescapeHtml(jp.getText().replaceAll("\r", "")));
+									ci.put(namefield, StringEscapeUtils.unescapeHtml(jp.getText().trim().replaceAll("\r", "")));
 								else
-									ci.put(namefield, jp.getText().replaceAll("\r", ""));
+									ci.put(namefield, jp.getText().trim().replaceAll("\r", ""));
 							}
 						}
 					} else {
@@ -897,7 +898,7 @@ public final class RedditCommentsListActivity extends ListActivity
     		for (Integer key : mCommentsMap.keySet())
         		mCommentsAdapter.add(mCommentsMap.get(key));
     		if (mThreadTitle == null) {
-    			mThreadTitle = mOpThreadInfo.getTitle();
+    			mThreadTitle = mOpThreadInfo.getTitle().replaceAll("\n ", " ").replaceAll(" \n", " ").replaceAll("\n", " ");
     			setTitle(mThreadTitle + " : " + mSettings.subreddit);
     		}
     		mCommentsAdapter.mIsLoading = false;
@@ -1733,7 +1734,7 @@ public final class RedditCommentsListActivity extends ListActivity
 			if (mVoteTargetCommentInfo.getOP() != null) {
 				likes = mVoteTargetCommentInfo.getOP().getLikes();
     			titleView.setVisibility(View.VISIBLE);
-    			titleView.setText(mOpThreadInfo.getTitle());
+    			titleView.setText(mOpThreadInfo.getTitle().replaceAll("\n ", " ").replaceAll(" \n", " ").replaceAll("\n", " "));
     			urlView.setVisibility(View.VISIBLE);
     			urlView.setText(mOpThreadInfo.getURL());
     			submissionStuffView.setVisibility(View.VISIBLE);

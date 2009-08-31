@@ -287,8 +287,9 @@ public final class RedditIsFun extends ListActivity {
 	            
 	            // Set the title and domain using a SpannableStringBuilder
 	            SpannableStringBuilder builder = new SpannableStringBuilder();
-	            SpannableString titleSS = new SpannableString(item.getTitle());
-	            int titleLen = item.getTitle().length();
+	            String title = item.getTitle().replaceAll("\n ", " ").replaceAll(" \n", " ").replaceAll("\n", " ");
+	            SpannableString titleSS = new SpannableString(title);
+	            int titleLen = title.length();
 	            AbsoluteSizeSpan titleASS = new AbsoluteSizeSpan(14);
 	            titleSS.setSpan(titleASS, 0, titleLen, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
 	            if (mSettings.theme == R.style.Reddit_Light) {
@@ -1271,7 +1272,7 @@ public final class RedditIsFun extends ListActivity {
     		final Button linkButton = (Button) dialog.findViewById(R.id.thread_link_button);
     		final Button commentsButton = (Button) dialog.findViewById(R.id.thread_comments_button);
     		
-    		titleView.setText(mVoteTargetThreadInfo.getTitle());
+    		titleView.setText(mVoteTargetThreadInfo.getTitle().replaceAll("\n ", " ").replaceAll(" \n", " ").replaceAll("\n", " "));
     		urlView.setText(mVoteTargetThreadInfo.getURL());
     		sb = new StringBuilder(Util.getTimeAgo(Double.valueOf(mVoteTargetThreadInfo.getCreatedUtc())))
     			.append(" by ").append(mVoteTargetThreadInfo.getAuthor());
