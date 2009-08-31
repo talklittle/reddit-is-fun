@@ -916,7 +916,7 @@ public final class RedditCommentsListActivity extends ListActivity
     	
     	public void onProgressUpdate(Integer... progress) {
     		// The number of comments may have been unknown before, and now found during parsing.
-    		if (_mNumComments != mNumVisibleComments) {
+    		if (_mNumComments < mNumVisibleComments) {
     			mNumVisibleComments = _mNumComments;
     			mLoadingCommentsProgress.setMax(_mNumComments);
     		}
