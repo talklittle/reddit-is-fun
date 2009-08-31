@@ -95,6 +95,9 @@ public class Common {
 	    	}
     	}
     	
+    	// Default subreddit
+    	editor.putString(Constants.PREF_HOMEPAGE, rSettings.homepage.toString());
+    	
     	// Theme
     	editor.putString(Constants.PREF_THEME, RedditSettings.Theme.toString(rSettings.theme));
     	
@@ -128,6 +131,13 @@ public class Common {
         } else {
         	rSettings.setLoggedIn(false);
         }
+        
+        // Default subreddit
+        String homepage = sessionPrefs.getString(Constants.PREF_HOMEPAGE, Constants.FRONTPAGE_STRING).trim();
+        if (Constants.EMPTY_STRING.equals(homepage))
+        	rSettings.setHomepage(Constants.FRONTPAGE_STRING);
+        else
+        	rSettings.setHomepage(homepage);
         
         // Theme
         rSettings.setTheme(RedditSettings.Theme.valueOf(

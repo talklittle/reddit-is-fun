@@ -11,6 +11,7 @@ public class RedditSettings {
 	boolean loggedIn = false;
 	CharSequence username = null;
 	Cookie redditSessionCookie = null;
+	CharSequence homepage = Constants.FRONTPAGE_STRING;
 	
 	int threadDownloadLimit = Constants.DEFAULT_THREAD_DOWNLOAD_LIMIT;
 	
@@ -53,6 +54,10 @@ public class RedditSettings {
 	}
 	
 	// --- Synchronized Setters ---
+	
+	synchronized void setHomepage(CharSequence homepage) {
+		this.homepage = homepage;
+	}
 	
 	synchronized void setLoggedIn(boolean loggedIn) {
 		this.loggedIn = loggedIn;

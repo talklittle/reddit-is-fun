@@ -6,16 +6,12 @@
     <PreferenceCategory
             android:title="@string/pref_general_title">
         
-        <!-- TODO XXX How to populate entries?
-        <ListPreference
+        <EditTextPreference
         		android:key="homepage"
         		android:title="@string/pref_homepage"
-        		android:defaultValue="@string/frontpage"
-        		
-        		android:entries="@array/pref_theme_choices"
-        		android:entryValues="@array/pref_theme_values"
-        		android:dialogTitle="@string/pref_theme_dialogtitle" />
-        -->
+        		android:hint="@string/pref_homepage_hint"
+                android:inputType="text"
+                android:singleLine="true" />
         
         <ListPreference
         		android:key="theme"

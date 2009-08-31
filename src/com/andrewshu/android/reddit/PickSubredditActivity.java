@@ -42,34 +42,6 @@ public final class PickSubredditActivity extends ListActivity {
 	private PickSubredditAdapter mAdapter;
 	private EditText mEt;
 	
-    public static final String[] SUBREDDITS = {
-    	Constants.FRONTPAGE_STRING,
-    	"reddit.com",
-    	"pics",
-    	"politics",
-    	"wtf",
-    	"funny",
-    	"technology",
-    	"askreddit",
-    	"science",
-    	"programming",
-    	"gaming",
-    	"worldnews",
-    	"comics",
-    	"offbeat",
-    	"videos",
-    	"environment",
-    	"iama",
-    	"business",
-    	"entertainment",
-    	"bestof",
-    	"economics",
-    	"marijuana",
-    	"todayilearned",
-    	"linux",
-    	"android"
-    };
-    
     public static final String[] SUBREDDITS_MINUS_FRONTPAGE = {
     	"reddit.com",
     	"pics",
@@ -104,7 +76,7 @@ public final class PickSubredditActivity extends ListActivity {
     protected void onCreate(Bundle savedInstanceState) {
     	super.onCreate(savedInstanceState);
         
-    	Common.loadRedditPreferences(this, mSettings, null);
+    	Common.loadRedditPreferences(this, mSettings, mClient);
     	setTheme(mSettings.theme);
     	
         setContentView(R.layout.pick_subreddit_view);
@@ -196,19 +168,19 @@ public final class PickSubredditActivity extends ListActivity {
     		dismissDialog(Constants.DIALOG_LOADING_REDDITS_LIST);
 			List<String> items;
     		if (reddits == null || reddits.size() == 0) {
-    	        Bundle extras = getIntent().getExtras();
-    	        if (extras != null) {
-    	        	boolean shouldHideFrontpage = extras.getBoolean(Constants.EXTRA_HIDE_FRONTPAGE_STRING, false);
-    	        	if (shouldHideFrontpage)
-    	        		items = Arrays.asList(SUBREDDITS_MINUS_FRONTPAGE);
-    	        	else
-    	        		items = Arrays.asList(SUBREDDITS);
-    	        } else {
-    	        	items = Arrays.asList(SUBREDDITS);
-    	        }
+    	        items = Arrays.asList(SUBREDDITS_MINUS_FRONTPAGE);
     		} else {
     			items = reddits;
     		}
+    	    // Insert front page into subreddits list, unless suppressed by Intent extras
+    		Bundle extras = getIntent().getExtras();
+    	    if (extras != null) {
+	        	boolean shouldHideFrontpage = extras.getBoolean(Constants.EXTRA_HIDE_FRONTPAGE_STRING, false);
+	        	if (!shouldHideFrontpage)
+	        		items.add(0, Constants.FRONTPAGE_STRING);
+	        } else {
+	        	items.add(0, Constants.FRONTPAGE_STRING);
+	        }
 	        mAdapter = new PickSubredditAdapter(PickSubredditActivity.this, items);
 	        getListView().setAdapter(mAdapter);
 	        Common.updateListDrawables(PickSubredditActivity.this, mSettings.theme);

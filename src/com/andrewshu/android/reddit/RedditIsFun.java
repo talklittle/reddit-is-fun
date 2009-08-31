@@ -123,12 +123,12 @@ public final class RedditIsFun extends ListActivity {
 	        if (subreddit != null)
 	        	mSettings.setSubreddit(subreddit);
 	        else
-	        	mSettings.setSubreddit(Constants.FRONTPAGE_STRING);
-		    mUrlToGetHere = savedInstanceState.getCharSequence(Constants.URL_TO_GET_HERE_KEY);
+	        	mSettings.setSubreddit(mSettings.homepage);
+	        mUrlToGetHere = savedInstanceState.getCharSequence(Constants.URL_TO_GET_HERE_KEY);
 		    mCount = savedInstanceState.getInt(Constants.THREAD_COUNT);
 		    mSortByUrl = savedInstanceState.getCharSequence(Constants.ThreadsSort.SORT_BY_KEY);
         } else {
-        	mSettings.setSubreddit(Constants.FRONTPAGE_STRING);
+        	mSettings.setSubreddit(mSettings.homepage);
         }
         
         new DownloadThreadsTask().execute(mSettings.subreddit);

@@ -171,6 +171,7 @@ public class Constants {
     static final String TAB_TEXT = "tab_text";
     
     // Preference keys and values
+    static final String PREF_HOMEPAGE = "homepage";
     static final String PREF_THEME = "theme";
     static final String PREF_THEME_LIGHT = "THEME_LIGHT";
     static final String PREF_THEME_DARK	 = "THEME_DARK";

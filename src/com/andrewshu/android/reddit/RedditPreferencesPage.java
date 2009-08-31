@@ -32,6 +32,10 @@ public class RedditPreferencesPage extends PreferenceActivity
 
         Preference e;
         
+        e = findPreference(Constants.PREF_HOMEPAGE);
+        e.setOnPreferenceChangeListener(this);
+        e.setSummary(getPreferenceScreen().getSharedPreferences().getString(Constants.PREF_HOMEPAGE, null));
+        
         e = findPreference(Constants.PREF_THEME);
         e.setOnPreferenceChangeListener(this);
         e.setSummary(getVisualThemeName(
@@ -81,7 +85,11 @@ public class RedditPreferencesPage extends PreferenceActivity
 //                finish();
 //            }
 //        }
-        if (pref.getKey().equals(Constants.PREF_THEME)) {
+    	if (pref.getKey().equals(Constants.PREF_HOMEPAGE)) {
+    		pref.setSummary((String) objValue);
+            mSettings.setHomepage((String) objValue);
+            return true;
+    	} else if (pref.getKey().equals(Constants.PREF_THEME)) {
             pref.setSummary(getVisualThemeName((String) objValue));
             mSettings.setTheme(RedditSettings.Theme.valueOf((String) objValue));
             return true;
