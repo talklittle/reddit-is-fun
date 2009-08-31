@@ -12,6 +12,8 @@ import org.apache.http.HttpEntity;
 import org.apache.http.HttpResponse;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.impl.client.DefaultHttpClient;
+import org.apache.http.params.HttpConnectionParams;
+import org.apache.http.params.HttpParams;
 
 import android.app.Dialog;
 import android.app.ListActivity;
@@ -125,7 +127,12 @@ public final class PickSubredditActivity extends ListActivity {
     		HttpEntity entity = null;
             try {
             	HttpGet request = new HttpGet("http://www.reddit.com/reddits");
-            	HttpResponse response = mClient.execute(request);
+            	// Set timeout to 15 seconds
+                HttpParams params = request.getParams();
+    	        HttpConnectionParams.setConnectionTimeout(params, 15000);
+    	        HttpConnectionParams.setSoTimeout(params, 15000);
+    	        
+    	        HttpResponse response = mClient.execute(request);
             	entity = response.getEntity();
             	BufferedReader in = new BufferedReader(new InputStreamReader(entity.getContent()));
                 
