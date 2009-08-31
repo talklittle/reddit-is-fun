@@ -1465,8 +1465,12 @@ public final class RedditCommentsListActivity extends ListActivity
     		break;
     	case R.id.reply_thread_menu_id:
     		// From the menu, only used for the OP, which is a thread.
-        	mVoteTargetCommentInfo = mCommentsAdapter.getItem(0);
-            showDialog(Constants.DIALOG_REPLY);
+        	if (mSettings.loggedIn) {
+	    		mVoteTargetCommentInfo = mCommentsAdapter.getItem(0);
+	            showDialog(Constants.DIALOG_REPLY);
+        	} else {
+        		Common.showErrorToast("You must be logged in to reply.", Toast.LENGTH_LONG, this);
+        	}
             break;
     	case R.id.sort_by_menu_id:
     		showDialog(Constants.DIALOG_SORT_BY);
