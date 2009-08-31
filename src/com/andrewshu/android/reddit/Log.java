@@ -7,6 +7,7 @@ public class Log {
      */
 	static int d(String tag, String msg) {
 		return android.util.Log.d(tag, msg);
+//		return 0;
 	}
 	
     /**
@@ -14,6 +15,7 @@ public class Log {
      */
 	static int e(String tag, String msg) {
 		return android.util.Log.e(tag, msg);
+//		return 0;
 	}
 	
 	
