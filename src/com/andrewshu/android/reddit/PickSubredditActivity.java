@@ -1,11 +1,24 @@
 package com.andrewshu.android.reddit;
 
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.regex.Matcher;
 
+import org.apache.http.HttpEntity;
+import org.apache.http.HttpResponse;
+import org.apache.http.client.methods.HttpGet;
+import org.apache.http.impl.client.DefaultHttpClient;
+
+import android.app.Dialog;
 import android.app.ListActivity;
+import android.app.ProgressDialog;
 import android.content.Context;
 import android.content.Intent;
+import android.os.AsyncTask;
 import android.os.Bundle;
 import android.view.KeyEvent;
 import android.view.LayoutInflater;
@@ -20,8 +33,11 @@ import android.widget.ListView;
 import android.widget.TextView;
 
 public final class PickSubredditActivity extends ListActivity {
+	
+	private static final String TAG = "PickSubredditActivity";
 
 	private RedditSettings mSettings = new RedditSettings();
+	private DefaultHttpClient mClient = Common.createGzipHttpClient();
 	
 	private PickSubredditAdapter mAdapter;
 	private EditText mEt;
@@ -111,29 +127,7 @@ public final class PickSubredditActivity extends ListActivity {
         	}
         });
 
-        // TODO: use the logged in user info to get his favorite reddits
-        // to populate the list.
-        // For now, use a predefined list.
-        
-        List<String> items;
-        Bundle extras = getIntent().getExtras();
-        if (extras != null) {
-        	boolean shouldHideFrontpage = extras.getBoolean(Constants.EXTRA_HIDE_FRONTPAGE_STRING, false);
-        	if (shouldHideFrontpage)
-        		items = Arrays.asList(SUBREDDITS_MINUS_FRONTPAGE);
-        	else
-        		items = Arrays.asList(SUBREDDITS);
-        } else {
-        	items = Arrays.asList(SUBREDDITS);
-        }
-        
-        mAdapter = new PickSubredditAdapter(this, items);
-        getListView().setAdapter(mAdapter);
-        Common.updateListDrawables(this, mSettings.theme);
-
-//        // Need one of these to post things back to the UI thread.
-//        mHandler = new Handler();
-        
+        new DownloadRedditsTask().execute();
     }
     
     
@@ -150,6 +144,75 @@ public final class PickSubredditActivity extends ListActivity {
        	mIntent.putExtras(bundle);
        	setResult(RESULT_OK, mIntent);
        	finish();	
+    }
+    
+    class DownloadRedditsTask extends AsyncTask<Void, Void, ArrayList<String>> {
+    	@Override
+    	public ArrayList<String> doInBackground(Void... voidz) {
+    		ArrayList<String> reddits = new ArrayList<String>();
+    		HttpEntity entity = null;
+            try {
+            	HttpGet request = new HttpGet("http://www.reddit.com/reddits");
+            	HttpResponse response = mClient.execute(request);
+            	entity = response.getEntity();
+            	BufferedReader in = new BufferedReader(new InputStreamReader(entity.getContent()));
+                
+                String line = in.readLine();
+                in.close();
+                entity.consumeContent();
+                
+                Matcher outer = Constants.MY_SUBREDDITS_OUTER.matcher(line);
+                if (outer.find()) {
+                	Matcher inner = Constants.MY_SUBREDDITS_INNER.matcher(outer.group(1));
+                	while (inner.find()) {
+                		reddits.add(inner.group(3));
+                	}
+                } else {
+                	return null;
+                }
+                
+                return reddits;
+                
+            } catch (Exception e) {
+                Log.e(TAG, "failed:" + e.getMessage());
+                if (entity != null) {
+	                try {
+	                	entity.consumeContent();
+	                } catch (IOException e2) {
+	                	// Ignore.
+	                }
+                }
+            }
+            return null;
+	    }
+    	
+    	@Override
+    	public void onPreExecute() {
+    		showDialog(Constants.DIALOG_LOADING_REDDITS_LIST);
+    	}
+    	
+    	@Override
+    	public void onPostExecute(ArrayList<String> reddits) {
+    		dismissDialog(Constants.DIALOG_LOADING_REDDITS_LIST);
+			List<String> items;
+    		if (reddits == null || reddits.size() == 0) {
+    	        Bundle extras = getIntent().getExtras();
+    	        if (extras != null) {
+    	        	boolean shouldHideFrontpage = extras.getBoolean(Constants.EXTRA_HIDE_FRONTPAGE_STRING, false);
+    	        	if (shouldHideFrontpage)
+    	        		items = Arrays.asList(SUBREDDITS_MINUS_FRONTPAGE);
+    	        	else
+    	        		items = Arrays.asList(SUBREDDITS);
+    	        } else {
+    	        	items = Arrays.asList(SUBREDDITS);
+    	        }
+    		} else {
+    			items = reddits;
+    		}
+	        mAdapter = new PickSubredditAdapter(PickSubredditActivity.this, items);
+	        getListView().setAdapter(mAdapter);
+	        Common.updateListDrawables(PickSubredditActivity.this, mSettings.theme);
+    	}
     }
 
     private final class PickSubredditAdapter extends ArrayAdapter<String> {
@@ -204,5 +267,24 @@ public final class PickSubredditActivity extends ListActivity {
             
             return view;
         }
+    }
+    
+    protected Dialog onCreateDialog(int id) {
+    	Dialog dialog;
+    	ProgressDialog pdialog;
+    	
+    	switch (id) {
+	    	// "Please wait"
+		case Constants.DIALOG_LOADING_REDDITS_LIST:
+			pdialog = new ProgressDialog(this);
+			pdialog.setMessage("Loading your reddits...");
+			pdialog.setIndeterminate(true);
+			pdialog.setCancelable(false);
+			dialog = pdialog;
+			break;
+		default:
+			throw new IllegalArgumentException("Unexpected dialog id "+id);
+    	}
+    	return dialog;
     }
 }

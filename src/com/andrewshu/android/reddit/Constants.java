@@ -62,6 +62,7 @@ public class Constants {
     static final int DIALOG_COMMENT_CLICK = 24;
     static final int DIALOG_MESSAGE_CLICK = 25;
     static final int DIALOG_REPLYING = 26;
+    static final int DIALOG_LOADING_REDDITS_LIST = 27;
     
     // Special CSS for webviews to match themes
     static final String CSS_DARK = "<style>body{color:#c0c0c0;background-color:#191919}a:link{color:#ffffff}</style>";
@@ -204,4 +205,8 @@ public class Constants {
     static final Pattern CAPTCHA_IMAGE_PATTERN = Pattern.compile("<img class=\"capimage\"( alt=\".*?\")? src=\"(.+?)\"");
     // Group 1: "no" if no mail, "" if yes mail
     static final Pattern HAVE_MAIL_PATTERN = Pattern.compile("class=\"(no)?havemail\"");
+    // Group 1: inner
+    static final Pattern MY_SUBREDDITS_OUTER = Pattern.compile("your front page reddits.*?<ul>(.*?)</ul>");
+    // Group 3: subreddit name. Repeat the matcher.find() until it fails.
+    static final Pattern MY_SUBREDDITS_INNER = Pattern.compile("<a(.*?)/r/(.*?)>(.+?)</a>");
 }
