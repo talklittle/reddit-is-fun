@@ -1611,7 +1611,7 @@ public final class RedditCommentsListActivity extends ListActivity
     		loginPasswordInput.setOnKeyListener(new OnKeyListener() {
     			public boolean onKey(View v, int keyCode, KeyEvent event) {
     		        if ((event.getAction() == KeyEvent.ACTION_DOWN) && (keyCode == KeyEvent.KEYCODE_ENTER)) {
-        				CharSequence user = loginUsernameInput.getText();
+        				CharSequence user = loginUsernameInput.getText().toString().trim();
         				CharSequence password = loginPasswordInput.getText();
         				dismissDialog(Constants.DIALOG_LOGIN);
     		        	new LoginTask(user, password).execute();
@@ -1623,7 +1623,7 @@ public final class RedditCommentsListActivity extends ListActivity
     		final Button loginButton = (Button) dialog.findViewById(R.id.login_button);
     		loginButton.setOnClickListener(new OnClickListener() {
     			public void onClick(View v) {
-    				CharSequence user = loginUsernameInput.getText();
+    				CharSequence user = loginUsernameInput.getText().toString().trim();
     				CharSequence password = loginPasswordInput.getText();
     				dismissDialog(Constants.DIALOG_LOGIN);
     				new LoginTask(user, password).execute();
