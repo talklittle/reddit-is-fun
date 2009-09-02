@@ -1,7 +1,6 @@
 package com.andrewshu.android.reddit;
 
 import java.io.BufferedReader;
-import java.io.IOException;
 import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -157,7 +156,7 @@ public final class PickSubredditActivity extends ListActivity {
                 if (entity != null) {
 	                try {
 	                	entity.consumeContent();
-	                } catch (IOException e2) {
+	                } catch (Exception e2) {
 	                	// Ignore.
 	                }
                 }

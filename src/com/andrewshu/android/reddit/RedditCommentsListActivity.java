@@ -602,7 +602,7 @@ public final class RedditCommentsListActivity extends ListActivity
                 if (entity != null) {
                 	try {
                 		entity.consumeContent();
-                	} catch (IOException e2) {
+                	} catch (Exception e2) {
                 		// Ignore.
                 	}
                 }
@@ -1092,7 +1092,7 @@ public final class RedditCommentsListActivity extends ListActivity
         		if (entity != null) {
         			try {
         				entity.consumeContent();
-        			} catch (IOException e2) {
+        			} catch (Exception e2) {
         				Log.e(TAG, e.getMessage());
         			}
         		}
@@ -1227,7 +1227,7 @@ public final class RedditCommentsListActivity extends ListActivity
         		if (entity != null) {
         			try {
         				entity.consumeContent();
-        			} catch (IOException e2) {
+        			} catch (Exception e2) {
         				Log.e(TAG, e.getMessage());
         			}
         		}

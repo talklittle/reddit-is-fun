@@ -208,7 +208,7 @@ public class Common {
     		if (entity != null) {
     			try {
     				entity.consumeContent();
-    			} catch (IOException e2) {
+    			} catch (Exception e2) {
     				Log.e(TAG, e.getMessage());
     			}
     		}
@@ -281,7 +281,7 @@ public class Common {
     		if (entity != null) {
     			try {
     				entity.consumeContent();
-    			} catch (IOException e2) {
+    			} catch (Exception e2) {
     				Log.e(TAG, e.getMessage());
     			}
     		}
@@ -374,7 +374,7 @@ public class Common {
     		if (entity != null) {
     			try {
     				entity.consumeContent();
-    			} catch (IOException e2) {
+    			} catch (Exception e2) {
     				Log.e(TAG, e.getMessage());
     			}
     		}

@@ -537,7 +537,7 @@ public final class RedditIsFun extends ListActivity {
                 	if (entity != null) {
                 		try {
                 			entity.consumeContent();
-                		} catch (IOException e2) {
+                		} catch (Exception e2) {
                 			// Ignore.
                 		}
                 	}
@@ -832,7 +832,7 @@ public final class RedditIsFun extends ListActivity {
         		if (entity != null) {
         			try {
         				entity.consumeContent();
-        			} catch (IOException e2) {
+        			} catch (Exception e2) {
         				Log.e(TAG, e.getMessage());
         			}
         		}
