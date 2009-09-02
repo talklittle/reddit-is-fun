@@ -174,7 +174,9 @@ public final class PickSubredditActivity extends ListActivity {
     		dismissDialog(Constants.DIALOG_LOADING_REDDITS_LIST);
 			List<String> items;
     		if (reddits == null || reddits.size() == 0) {
-    	        items = Arrays.asList(SUBREDDITS_MINUS_FRONTPAGE);
+    			// Need to make a copy because Arrays.asList returns List backed by original array
+    	        items = new ArrayList<String>();
+    			items.addAll(Arrays.asList(SUBREDDITS_MINUS_FRONTPAGE));
     		} else {
     			items = reddits;
     		}
