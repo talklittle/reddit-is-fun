@@ -63,6 +63,7 @@ public class Constants {
     static final int DIALOG_MESSAGE_CLICK = 25;
     static final int DIALOG_REPLYING = 26;
     static final int DIALOG_LOADING_REDDITS_LIST = 27;
+    static final int DIALOG_GOTO_PARENT = 28;
     
     // Special CSS for webviews to match themes
     static final String CSS_DARK = "<style>body{color:#c0c0c0;background-color:#191919}a:link{color:#ffffff}</style>";

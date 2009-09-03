@@ -87,7 +87,7 @@ public class RedditCommentsListActivity extends ListActivity
     private HashSet<Integer> mMorePositions = new HashSet<Integer>(); 
 	
     /** Custom list adapter that fits our threads data into the list. */
-    private CommentsListAdapter mCommentsAdapter;
+    protected CommentsListAdapter mCommentsAdapter;
     
     protected final DefaultHttpClient mClient = Common.createGzipHttpClient();
     volatile private String mModhash;
@@ -100,7 +100,7 @@ public class RedditCommentsListActivity extends ListActivity
     protected CharSequence mThreadTitle = null;
     protected int mNumVisibleComments = Constants.DEFAULT_COMMENT_DOWNLOAD_LIMIT;
     protected CharSequence mSortByUrl = Constants.CommentsSort.SORT_BY_HOT_URL;
-    protected Integer mJumpToCommentPosition = null;
+    protected int mJumpToCommentPosition = 0;
     protected CharSequence mJumpToCommentId = null;
     
     // Keep track of the row ids of comments that user has hidden
@@ -109,14 +109,14 @@ public class RedditCommentsListActivity extends ListActivity
     private HashSet<Integer> mHiddenComments = new HashSet<Integer>();
 
     // UI State
-    private View mVoteTargetView = null;
-    private CommentInfo mVoteTargetCommentInfo = null;
+    protected View mVoteTargetView = null;
+    protected CommentInfo mVoteTargetCommentInfo = null;
     private URLSpan[] mVoteTargetSpans = null;
     
     // ProgressDialogs with percentage bars
     private AutoResetProgressDialog mLoadingCommentsProgress;
     
-    private boolean mCanChord = false;
+    protected boolean mCanChord = false;
     
     /**
      * Called when the activity starts up. Do activity initialization
@@ -197,6 +197,12 @@ public class RedditCommentsListActivity extends ListActivity
     		new DownloadCommentsTask().execute(Constants.DEFAULT_COMMENT_DOWNLOAD_LIMIT);
     	}
     	new Common.PeekEnvelopeTask(this, mClient, mSettings.mailNotificationStyle).execute();
+    	
+    	// comments list stuff
+    	if (mJumpToCommentPosition != 0) {
+    		getListView().setSelectionFromTop(mJumpToCommentPosition, 10);
+    		mJumpToCommentPosition = 0;
+    	}
     }
     
     @Override
@@ -910,13 +916,12 @@ public class RedditCommentsListActivity extends ListActivity
     		}
     		mCommentsAdapter.mIsLoading = false;
     		mCommentsAdapter.notifyDataSetChanged();
-    		if (mJumpToCommentPosition != null) {
-    			getListView().setSelection(mJumpToCommentPosition);
-    			mJumpToCommentPosition = null;
-    		} else if (mJumpToCommentId != null) {
+			if (mJumpToCommentPosition != 0) {
+				getListView().setSelectionFromTop(mJumpToCommentPosition, 10);
+			} else if (mJumpToCommentId != null) {
     			for (int k = 0; k < mCommentsAdapter.getCount(); k++) {
     				if (mJumpToCommentId.equals(mCommentsAdapter.getItem(k).getId())) {
-    					getListView().setSelection(k);
+    					getListView().setSelectionFromTop(k, 10);
     					mJumpToCommentId = null;
     					break;
     				}
@@ -1524,12 +1529,17 @@ public class RedditCommentsListActivity extends ListActivity
     	AdapterContextMenuInfo info = (AdapterContextMenuInfo) menuInfo;
     	int rowId = (int) info.id;
     	
-    	if (rowId == 0 || mMorePositions.contains(rowId))
+    	if (rowId == 0) {
     		;
-    	else if (mHiddenCommentHeads.contains(rowId))
-    		menu.add(0, Constants.DIALOG_SHOW_COMMENT, 0, "Show comment");
-    	else
-    		menu.add(0, Constants.DIALOG_HIDE_COMMENT, 0, "Hide comment");
+    	} else if (mMorePositions.contains(rowId)) {
+    		menu.add(0, Constants.DIALOG_GOTO_PARENT, Menu.NONE, "Go to parent");
+    	} else if (mHiddenCommentHeads.contains(rowId)) {
+    		menu.add(0, Constants.DIALOG_SHOW_COMMENT, Menu.NONE, "Show comment");
+    		menu.add(0, Constants.DIALOG_GOTO_PARENT, Menu.NONE, "Go to parent");
+    	} else {
+    		menu.add(0, Constants.DIALOG_HIDE_COMMENT, Menu.NONE, "Hide comment");
+    		menu.add(0, Constants.DIALOG_GOTO_PARENT, Menu.NONE, "Go to parent");
+    	}
     }
     
     @Override
@@ -1543,6 +1553,14 @@ public class RedditCommentsListActivity extends ListActivity
     		return true;
     	case Constants.DIALOG_SHOW_COMMENT:
     		showComment(rowId);
+    		return true;
+    	case Constants.DIALOG_GOTO_PARENT:
+    		int myIndent = mCommentsAdapter.getItem(rowId).getIndent();
+    		int parentRowId;
+    		for (parentRowId = rowId - 1; parentRowId >= 0; parentRowId--)
+    			if (mCommentsAdapter.getItem(parentRowId).getIndent() < myIndent)
+    				break;
+    		getListView().setSelectionFromTop(parentRowId, 10);
     		return true;
 		default:
     		return super.onContextItemSelected(item);	

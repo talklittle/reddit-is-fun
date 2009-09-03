@@ -7,10 +7,14 @@ import org.apache.http.HttpResponse;
 import org.apache.http.client.methods.HttpGet;
 
 import android.os.Bundle;
+import android.view.MenuItem;
+import android.widget.Toast;
 
 public class MoreChildrenActivity extends RedditCommentsListActivity {
 
 	private static final String TAG = "MoreChildrenActivity";
+	
+	private String mMoreChildrenFullname;
 	
 	@Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -23,9 +27,12 @@ public class MoreChildrenActivity extends RedditCommentsListActivity {
         	Log.e(TAG, "Quitting because no subreddit and thread id data was passed into the Intent.");
         	finish();
         }
-    	String thingFullname = extras.getString(CommentInfo.NAME);
+    	if (savedInstanceState == null)
+    		mMoreChildrenFullname = extras.getString(CommentInfo.NAME);
+    	else
+    		mMoreChildrenFullname = savedInstanceState.getString(CommentInfo.NAME);
             
-        new LoadMoreCommentsTask(thingFullname, mSettings.subreddit).execute();
+        new LoadMoreCommentsTask(mMoreChildrenFullname, mSettings.subreddit).execute();
     }
 	
     private class LoadMoreCommentsTask extends RedditCommentsListActivity.DownloadCommentsTask {
@@ -69,6 +76,47 @@ public class MoreChildrenActivity extends RedditCommentsListActivity {
     		}
     		return null;
     	}
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        if (!mCanChord) {
+            // The user has already fired a shortcut with this hold down of the
+            // menu key.
+            return false;
+        }
+        
+        switch (item.getItemId()) {
+        case R.id.login_logout_menu_id:
+        	if (mSettings.loggedIn) {
+        		Common.doLogout(mSettings, mClient);
+        		Toast.makeText(this, "You have been logged out.", Toast.LENGTH_SHORT).show();
+        		new LoadMoreCommentsTask(mMoreChildrenFullname, mSettings.subreddit).execute();
+        	} else {
+        		showDialog(Constants.DIALOG_LOGIN);
+        	}
+    		break;
+    	case R.id.refresh_menu_id:
+    		new LoadMoreCommentsTask(mMoreChildrenFullname, mSettings.subreddit).execute();
+    		break;
+    	case R.id.open_browser_menu_id:
+    		// XXX still using hack to get id from fullname (substring(3))
+    		String url = new StringBuilder("http://www.reddit.com/r/")
+				.append(mSettings.subreddit).append("/comments/").append(mSettings.threadId)
+				.append("/z/").append(mMoreChildrenFullname.substring(3)).toString();
+    		Common.launchBrowser(url, this);
+    		break;
+        default:
+    		super.onOptionsItemSelected(item);
+    	}
+    	
+        return true;
+    }
+
+    @Override
+    protected void onSaveInstanceState(Bundle icicle) {
+    	super.onSaveInstanceState(icicle);
+    	icicle.putString(CommentInfo.NAME, mMoreChildrenFullname);
     }
 
 
