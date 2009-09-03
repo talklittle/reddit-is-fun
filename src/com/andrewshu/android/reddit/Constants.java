@@ -83,7 +83,11 @@ public class Constants {
     static final String HAVE_MAIL_TITLE = "reddit is fun";
     static final String HAVE_MAIL_TEXT = "You have reddit mail.";
     
+    // save instance state Bundle keys
     static final String URL_TO_GET_HERE_KEY = "url_to_get_here";
+    static final String JUMP_TO_COMMENT_POSITION_KEY = "jump_to_comment_position";
+    static final String IS_SUBCLASS_KEY = "is_subclass";
+    
     static final String THREAD_COUNT = "threadCount";
     
     static final String SUBMIT_KIND_LINK = "link";
