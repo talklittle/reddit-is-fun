@@ -176,6 +176,7 @@ public class Constants {
     
     // JSON values
     static final String JSON_AFTER = "after";
+    static final String JSON_AUTHOR = "author";
     static final String JSON_BEFORE = "before";
     static final String JSON_BODY = "body";
     static final String JSON_CHILDREN = "children";
@@ -187,6 +188,7 @@ public class Constants {
     static final String JSON_MORE = "more";
     static final String JSON_NUM_COMMENTS = "num_comments";
 	static final String JSON_REPLIES = "replies";
+	static final String JSON_SUBJECT = "subject";
     
     // TabSpec tags
     static final String TAB_LINK = "tab_link";

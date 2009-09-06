@@ -27,6 +27,7 @@ import java.util.List;
 import java.util.regex.Matcher;
 import java.util.zip.GZIPInputStream;
 
+import org.apache.commons.lang.StringEscapeUtils;
 import org.apache.http.Header;
 import org.apache.http.HeaderElement;
 import org.apache.http.HttpEntity;
@@ -47,6 +48,10 @@ import org.apache.http.params.HttpConnectionParams;
 import org.apache.http.params.HttpParams;
 import org.apache.http.protocol.HTTP;
 import org.apache.http.protocol.HttpContext;
+import org.codehaus.jackson.JsonFactory;
+import org.codehaus.jackson.JsonParseException;
+import org.codehaus.jackson.JsonParser;
+import org.codehaus.jackson.JsonToken;
 
 import android.app.Activity;
 import android.app.ListActivity;
@@ -307,97 +312,140 @@ public class Common {
     	}
     }
     
-    static class PeekEnvelopeTask extends AsyncTask<Void, Void, Boolean> {
+    static class PeekEnvelopeTask extends AsyncTask<Void, Void, String[]> {
     	private Context mContext;
     	private DefaultHttpClient mClient;
     	private String mMailNotificationStyle;
+    	private final JsonFactory jsonFactory = new JsonFactory();
+    	static final String[] EMPTY_INBOX = new String[0]; 
+    	
     	public PeekEnvelopeTask(Context context, DefaultHttpClient client, String mailNotificationStyle) {
     		mContext = context;
     		mClient = client;
     		mMailNotificationStyle = mailNotificationStyle;
     	}
     	@Override
-    	public Boolean doInBackground(Void... voidz) {
+    	public String[] doInBackground(Void... voidz) {
+    		HttpEntity entity = null;
     		try {
     			if (Constants.PREF_MAIL_NOTIFICATION_STYLE_OFF.equals(mMailNotificationStyle))
-    	    		return false;
-    	    	return Common.doPeekEnvelope(mClient, null);
-    		} catch (Exception e) {
-    			return null;
-    		}
+    	    		return EMPTY_INBOX;
+    			HttpGet request = new HttpGet("http://www.reddit.com/message/inbox/.json?mark=false");
+	        	HttpResponse response = mClient.execute(request);
+	        	entity = response.getEntity();
+	        	
+	        	InputStream in = entity.getContent();
+	            
+	        	String[] authorSubjectBody = processFirstInboxJSON(in);
+	            
+	            in.close();
+	            entity.consumeContent();
+	            
+	            return authorSubjectBody;
+	            
+	        } catch (Exception e) {
+	            Log.e(TAG, "failed:" + e.getMessage());
+	            if (entity != null) {
+	            	try {
+	            		entity.consumeContent();
+	            	} catch (Exception e2) {
+	            		// Ignore.
+	            	}
+	            }
+	        }
+	        return null;
     	}
     	@Override
-    	public void onPostExecute(Boolean hasMail) {
-    		// hasMail == null means error. Don't do anything.
-    		if (hasMail == null)
+    	public void onPostExecute(String[] authorSubjectBody) {
+    		// null means error. Don't do anything.
+    		if (authorSubjectBody == null)
     			return;
-    		if (hasMail) {
+    		if (authorSubjectBody.length == 3) {
     			Common.newMailNotification(mContext, mMailNotificationStyle);
     		} else {
     			Common.cancelMailNotification(mContext);
     		}
     	}
-    }
-    /**
-     * Check mail. You should use PeekEnvelopeTask instead.
-     * 
-     * @param client
-     * @param shortcutHtml The HTML for the page to bypass network
-     * @return
-     */
-    static boolean doPeekEnvelope(DefaultHttpClient client, String shortcutHtml) throws Exception {
-    	String no;
-    	String line;
-    	HttpEntity entity = null;
-    	try {
-    		if (shortcutHtml == null) {
-	    		HttpGet httpget = new HttpGet(Constants.MODHASH_URL);
-	    		HttpResponse response = client.execute(httpget);
-	    		
-	        	entity = response.getEntity();
-	
-	        	BufferedReader in = new BufferedReader(new InputStreamReader(entity.getContent()));
-	        	line = in.readLine();
-	        	in.close();
-	        	entity.consumeContent();
-    		} else {
-    			line = shortcutHtml;
-    		}
-        	
-        	if (line == null || Constants.EMPTY_STRING.equals(line)) {
-        		throw new HttpException("No content returned from doPeekEnvelope GET to "+Constants.MODHASH_URL);
-        	}
-        	if (line.contains("USER_REQUIRED")) {
-        		throw new Exception("User session error: USER_REQUIRED");
-        	}
-        	
-        	Matcher haveMailMatcher = Constants.HAVE_MAIL_PATTERN.matcher(line);
-        	if (haveMailMatcher.find()) {
-        		no = haveMailMatcher.group(1);
-        		if (Constants.NO_STRING.equals(no)) {
-        			// No mail.
-        			return false;
-        		}
-        	} else {
-        		throw new Exception("No envelope found at URL "+Constants.MODHASH_URL);
-        	}
+    	
+    	/**
+    	 * Gets the author, title, body of the first inbox entry.
+    	 */
+    	private String[] processFirstInboxJSON(InputStream in)
+				throws IOException, JsonParseException, IllegalStateException {
+			String genericListingError = "Not a valid listing";
+			
+			JsonParser jp = jsonFactory.createJsonParser(in);
+			
+			/* The comments JSON file is a JSON array with 2 elements. First element is a thread JSON object,
+			 * equivalent to the thread object you get from a subreddit .json file.
+			 * Second element is a similar JSON object, but the "children" array is an array of comments
+			 * instead of threads. 
+			 */
+			if (jp.nextToken() != JsonToken.START_ARRAY)
+				throw new IllegalStateException("Unexpected non-JSON-array in the comments");
+			
+			// The thread, copied from above but instead of ThreadsListAdapter, use CommentsListAdapter.
+			
+			if (JsonToken.START_OBJECT != jp.nextToken()) // starts with "{"
+				throw new IllegalStateException(genericListingError);
+			jp.nextToken();
+			if (!Constants.JSON_KIND.equals(jp.getCurrentName()))
+				throw new IllegalStateException(genericListingError);
+			jp.nextToken();
+			if (!Constants.JSON_LISTING.equals(jp.getText()))
+				throw new IllegalStateException(genericListingError);
+			jp.nextToken();
+			if (!Constants.JSON_DATA.equals(jp.getCurrentName()))
+				throw new IllegalStateException(genericListingError);
+			jp.nextToken();
+			if (JsonToken.START_OBJECT != jp.getCurrentToken())
+				throw new IllegalStateException(genericListingError);
+			jp.nextToken();
+			while (!Constants.JSON_CHILDREN.equals(jp.getCurrentName())) {
+				// Don't care
+				jp.nextToken();
+			}
+			jp.nextToken();
+			if (jp.getCurrentToken() != JsonToken.START_ARRAY)
+				throw new IllegalStateException(genericListingError);
+			
+			if (jp.nextToken() != JsonToken.START_OBJECT) {
+		    	// The inbox ("children" key) might be empty array.
+		    	if (JsonToken.END_ARRAY == jp.getCurrentToken())
+		    		return EMPTY_INBOX;
+		    	else
+		    		throw new IllegalStateException(genericListingError);
+			}
 
-//        	// DEBUG
-//        	Log.dLong(TAG, line);
-
-        	return true;
-        	
-    	} catch (Exception e) {
-    		if (entity != null) {
-    			try {
-    				entity.consumeContent();
-    			} catch (Exception e2) {
-    				Log.e(TAG, e.getMessage());
-    			}
-    		}
-    		Log.e(TAG, e.getMessage());
-    		throw e;
-    	}
+			if (jp.getCurrentToken() != JsonToken.START_OBJECT)
+				throw new IllegalStateException("Unexpected non-JSON-object in the children array");
+			
+			// --- Process JSON representing one regular comment or message ---
+			String[] authorSubjectBody = new String[3];
+			while (jp.nextToken() != JsonToken.END_OBJECT) {
+	//			more = false;
+				String fieldname = jp.getCurrentName();
+				jp.nextToken(); // move to value, or START_OBJECT/START_ARRAY
+			
+				if (Constants.JSON_DATA.equals(fieldname)) { // contains an object
+					while (jp.nextToken() != JsonToken.END_OBJECT) {
+						String namefield = jp.getCurrentName();
+						// Should validate each field but I'm lazy
+						jp.nextToken(); // move to value
+						if (Constants.JSON_AUTHOR.equals(namefield))
+							authorSubjectBody[0] = StringEscapeUtils.unescapeHtml(jp.getText().trim().replaceAll("\r", ""));
+						else if (Constants.JSON_SUBJECT.equals(namefield))
+							authorSubjectBody[1] = StringEscapeUtils.unescapeHtml(jp.getText().trim().replaceAll("\r", ""));
+						else if (Constants.JSON_BODY.equals(namefield))
+							authorSubjectBody[2] = StringEscapeUtils.unescapeHtml(jp.getText().trim().replaceAll("\r", ""));
+					}
+				} else {
+					throw new IllegalStateException("Unrecognized field '"+fieldname+"'!");
+				}
+			}
+			// Finished parsing first child
+			return authorSubjectBody;
+		}
     }
     static void newMailNotification(Context context, String mailNotificationStyle) {
     	Intent nIntent = new Intent(context, InboxActivity.class);
