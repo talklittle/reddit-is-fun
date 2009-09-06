@@ -1,0 +1,19 @@
+<head>
+<style type="text/css">
+table.markhelp {
+    background-color: white;
+    margin: 5px 0px;
+    width: 100%;
+}
+.markhelp,
+.markhelp td,
+.markhelp tr {
+    border: 1px solid #C0C0C0;
+    padding: 4px;
+    margin: 0px;
+}
+.markhelp .spaces {background-color: #c0c0c0}
+</style>
+</head>
+<body>
+<table class="markhelp md"><tr style="background-color: #ffff99; text-align: center"><td><em>you type:</em></td><td><em>you see:</em></td></tr><tr><td>*italics*</td><td><em>italics</em></td></tr><tr><td>**bold**</td><td><b>bold</b></td></tr><tr><td>[reddit!](http://reddit.com)</td><td><a href="http://reddit.com">reddit!</a></td></tr><tr><td>* item 1<br/>* item 2<br/>* item 3</td><td><ul><li>item 1</li><li>item 2</li><li>item 3</li></ul></td></tr><tr><td>&gt; quoted text</td><td><blockquote>quoted text</blockquote></td></tr><tr><td>Lines starting with four spaces<br/>are treated like code:<br/><br/><span class="spaces">&nbsp;&nbsp;&nbsp;&nbsp;</span>if 1 * 2 &lt 3:<br/><span class="spaces">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span>print "hello, world!"<br/></td><td>Lines starting with four spaces<br/>are treated like code:<br/><pre>if 1 * 2 &lt 3:<br/>&nbsp;&nbsp;&nbsp;&nbsp;print "hello, world!"</pre></td></tr></table>
