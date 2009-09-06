@@ -186,6 +186,7 @@ public class Constants {
     static final String JSON_MEDIA = "media";
     static final String JSON_MEDIA_EMBED = "media_embed";
     static final String JSON_MORE = "more";
+    static final String JSON_NEW = "new";
     static final String JSON_NUM_COMMENTS = "num_comments";
 	static final String JSON_REPLIES = "replies";
 	static final String JSON_SUBJECT = "subject";
@@ -228,8 +229,6 @@ public class Constants {
     static final Pattern CAPTCHA_IDEN_PATTERN = Pattern.compile("name=\"iden\" value=\"(.*?)\"");
     // Group 2: Captcha image absolute path
     static final Pattern CAPTCHA_IMAGE_PATTERN = Pattern.compile("<img class=\"capimage\"( alt=\".*?\")? src=\"(.+?)\"");
-    // Group 1: "no" if no mail, "" if yes mail
-    static final Pattern HAVE_MAIL_PATTERN = Pattern.compile("class=\"(no)?havemail\"");
     // Group 1: inner
     static final Pattern MY_SUBREDDITS_OUTER = Pattern.compile("your front page reddits.*?<ul>(.*?)</ul>");
     // Group 3: subreddit name. Repeat the matcher.find() until it fails.

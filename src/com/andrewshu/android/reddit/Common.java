@@ -27,7 +27,6 @@ import java.util.List;
 import java.util.regex.Matcher;
 import java.util.zip.GZIPInputStream;
 
-import org.apache.commons.lang.StringEscapeUtils;
 import org.apache.http.Header;
 import org.apache.http.HeaderElement;
 import org.apache.http.HttpEntity;
@@ -312,12 +311,11 @@ public class Common {
     	}
     }
     
-    static class PeekEnvelopeTask extends AsyncTask<Void, Void, String[]> {
+    static class PeekEnvelopeTask extends AsyncTask<Void, Void, Integer> {
     	private Context mContext;
     	private DefaultHttpClient mClient;
     	private String mMailNotificationStyle;
     	private final JsonFactory jsonFactory = new JsonFactory();
-    	static final String[] EMPTY_INBOX = new String[0]; 
     	
     	public PeekEnvelopeTask(Context context, DefaultHttpClient client, String mailNotificationStyle) {
     		mContext = context;
@@ -325,23 +323,23 @@ public class Common {
     		mMailNotificationStyle = mailNotificationStyle;
     	}
     	@Override
-    	public String[] doInBackground(Void... voidz) {
+    	public Integer doInBackground(Void... voidz) {
     		HttpEntity entity = null;
     		try {
     			if (Constants.PREF_MAIL_NOTIFICATION_STYLE_OFF.equals(mMailNotificationStyle))
-    	    		return EMPTY_INBOX;
+    	    		return 0;
     			HttpGet request = new HttpGet("http://www.reddit.com/message/inbox/.json?mark=false");
 	        	HttpResponse response = mClient.execute(request);
 	        	entity = response.getEntity();
 	        	
 	        	InputStream in = entity.getContent();
 	            
-	        	String[] authorSubjectBody = processFirstInboxJSON(in);
+	        	Integer count = processInboxJSON(in);
 	            
 	            in.close();
 	            entity.consumeContent();
 	            
-	            return authorSubjectBody;
+	            return count;
 	            
 	        } catch (Exception e) {
 	            Log.e(TAG, "failed:" + e.getMessage());
@@ -356,12 +354,12 @@ public class Common {
 	        return null;
     	}
     	@Override
-    	public void onPostExecute(String[] authorSubjectBody) {
+    	public void onPostExecute(Integer count) {
     		// null means error. Don't do anything.
-    		if (authorSubjectBody == null)
+    		if (count == null)
     			return;
-    		if (authorSubjectBody.length == 3) {
-    			Common.newMailNotification(mContext, mMailNotificationStyle);
+    		if (count > 0) {
+    			Common.newMailNotification(mContext, mMailNotificationStyle, count);
     		} else {
     			Common.cancelMailNotification(mContext);
     		}
@@ -370,9 +368,10 @@ public class Common {
     	/**
     	 * Gets the author, title, body of the first inbox entry.
     	 */
-    	private String[] processFirstInboxJSON(InputStream in)
+    	private Integer processInboxJSON(InputStream in)
 				throws IOException, JsonParseException, IllegalStateException {
 			String genericListingError = "Not a valid listing";
+			Integer count = 0;
 			
 			JsonParser jp = jsonFactory.createJsonParser(in);
 			
@@ -381,26 +380,9 @@ public class Common {
 			 * Second element is a similar JSON object, but the "children" array is an array of comments
 			 * instead of threads. 
 			 */
-			if (jp.nextToken() != JsonToken.START_ARRAY)
-				throw new IllegalStateException("Unexpected non-JSON-array in the comments");
+			if (jp.nextToken() != JsonToken.START_OBJECT)
+				throw new IllegalStateException("Non-JSON-object in inbox (not logged in?)");
 			
-			// The thread, copied from above but instead of ThreadsListAdapter, use CommentsListAdapter.
-			
-			if (JsonToken.START_OBJECT != jp.nextToken()) // starts with "{"
-				throw new IllegalStateException(genericListingError);
-			jp.nextToken();
-			if (!Constants.JSON_KIND.equals(jp.getCurrentName()))
-				throw new IllegalStateException(genericListingError);
-			jp.nextToken();
-			if (!Constants.JSON_LISTING.equals(jp.getText()))
-				throw new IllegalStateException(genericListingError);
-			jp.nextToken();
-			if (!Constants.JSON_DATA.equals(jp.getCurrentName()))
-				throw new IllegalStateException(genericListingError);
-			jp.nextToken();
-			if (JsonToken.START_OBJECT != jp.getCurrentToken())
-				throw new IllegalStateException(genericListingError);
-			jp.nextToken();
 			while (!Constants.JSON_CHILDREN.equals(jp.getCurrentName())) {
 				// Don't care
 				jp.nextToken();
@@ -409,45 +391,25 @@ public class Common {
 			if (jp.getCurrentToken() != JsonToken.START_ARRAY)
 				throw new IllegalStateException(genericListingError);
 			
-			if (jp.nextToken() != JsonToken.START_OBJECT) {
-		    	// The inbox ("children" key) might be empty array.
-		    	if (JsonToken.END_ARRAY == jp.getCurrentToken())
-		    		return EMPTY_INBOX;
-		    	else
-		    		throw new IllegalStateException(genericListingError);
-			}
-
-			if (jp.getCurrentToken() != JsonToken.START_OBJECT)
-				throw new IllegalStateException("Unexpected non-JSON-object in the children array");
-			
-			// --- Process JSON representing one regular comment or message ---
-			String[] authorSubjectBody = new String[3];
-			while (jp.nextToken() != JsonToken.END_OBJECT) {
-	//			more = false;
-				String fieldname = jp.getCurrentName();
-				jp.nextToken(); // move to value, or START_OBJECT/START_ARRAY
-			
-				if (Constants.JSON_DATA.equals(fieldname)) { // contains an object
-					while (jp.nextToken() != JsonToken.END_OBJECT) {
-						String namefield = jp.getCurrentName();
-						// Should validate each field but I'm lazy
-						jp.nextToken(); // move to value
-						if (Constants.JSON_AUTHOR.equals(namefield))
-							authorSubjectBody[0] = StringEscapeUtils.unescapeHtml(jp.getText().trim().replaceAll("\r", ""));
-						else if (Constants.JSON_SUBJECT.equals(namefield))
-							authorSubjectBody[1] = StringEscapeUtils.unescapeHtml(jp.getText().trim().replaceAll("\r", ""));
-						else if (Constants.JSON_BODY.equals(namefield))
-							authorSubjectBody[2] = StringEscapeUtils.unescapeHtml(jp.getText().trim().replaceAll("\r", ""));
-					}
-				} else {
-					throw new IllegalStateException("Unrecognized field '"+fieldname+"'!");
+			while (jp.nextToken() != JsonToken.END_ARRAY) {
+				if (JsonToken.FIELD_NAME != jp.getCurrentToken())
+					continue;
+				String namefield = jp.getCurrentName();
+				// Should validate each field but I'm lazy
+				jp.nextToken(); // move to value
+				if (Constants.JSON_NEW.equals(namefield)) {
+					if (Constants.TRUE_STRING.equals(jp.getText()))
+						count++;
+					else
+						// Stop parsing on first old message
+						break;
 				}
 			}
 			// Finished parsing first child
-			return authorSubjectBody;
+			return count;
 		}
     }
-    static void newMailNotification(Context context, String mailNotificationStyle) {
+    static void newMailNotification(Context context, String mailNotificationStyle, int count) {
     	Intent nIntent = new Intent(context, InboxActivity.class);
 		PendingIntent contentIntent = PendingIntent.getActivity(context, 0, nIntent, 0);
 		Notification notification = new Notification(R.drawable.mail, Constants.HAVE_MAIL_TICKER, System.currentTimeMillis());
@@ -455,7 +417,8 @@ public class Common {
 			RemoteViews contentView = new RemoteViews(context.getPackageName(), R.layout.big_envelope_notification);
 			notification.contentView = contentView;
 		} else {
-			notification.setLatestEventInfo(context, Constants.HAVE_MAIL_TITLE, Constants.HAVE_MAIL_TEXT, contentIntent);
+			notification.setLatestEventInfo(context, Constants.HAVE_MAIL_TITLE,
+					count + (count == 1 ? " unread message" : " unread messages"), contentIntent);
 		}
 		notification.defaults |= Notification.DEFAULT_SOUND;
 		notification.flags |= Notification.FLAG_ONLY_ALERT_ONCE | Notification.FLAG_AUTO_CANCEL;
