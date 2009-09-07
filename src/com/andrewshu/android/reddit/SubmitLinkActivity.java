@@ -690,9 +690,9 @@ public class SubmitLinkActivity extends TabActivity {
     	super.onPrepareOptionsMenu(menu);
     	
     	if (mCaptchaUrl == null)
-    		menu.getItem(Constants.DIALOG_DOWNLOAD_CAPTCHA).setVisible(false);
+    		menu.findItem(Constants.DIALOG_DOWNLOAD_CAPTCHA).setVisible(false);
     	else
-    		menu.getItem(Constants.DIALOG_DOWNLOAD_CAPTCHA).setVisible(true);
+    		menu.findItem(Constants.DIALOG_DOWNLOAD_CAPTCHA).setVisible(true);
     	
     	return true;
     }
