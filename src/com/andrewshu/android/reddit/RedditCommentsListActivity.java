@@ -988,6 +988,8 @@ public class RedditCommentsListActivity extends ListActivity
             	mSettings.setUsername(mUsername);
             	mSettings.setLoggedIn(true);
     			Toast.makeText(RedditCommentsListActivity.this, "Logged in as "+mUsername, Toast.LENGTH_SHORT).show();
+    			// Check mail
+    			new Common.PeekEnvelopeTask(RedditCommentsListActivity.this, mClient, mSettings.mailNotificationStyle).execute();
 	    		// Refresh the threads list
     			new DownloadCommentsTask().execute(Constants.DEFAULT_COMMENT_DOWNLOAD_LIMIT);
     		} else {

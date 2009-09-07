@@ -743,6 +743,8 @@ public final class RedditIsFun extends ListActivity {
             	mSettings.setUsername(mUsername);
             	mSettings.setLoggedIn(true);
     			Toast.makeText(RedditIsFun.this, "Logged in as "+mUsername, Toast.LENGTH_SHORT).show();
+    			// Check mail
+    			new Common.PeekEnvelopeTask(RedditIsFun.this, mClient, mSettings.mailNotificationStyle).execute();
     			// Refresh the threads list
     			new DownloadThreadsTask().execute(mSettings.subreddit);
         	} else {
