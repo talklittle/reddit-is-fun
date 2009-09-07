@@ -1,4 +1,6 @@
 /*
+ * Copyright 2009 Andrew Shu
+ *
  * This file is part of "reddit is fun".
  *
  * "reddit is fun" is free software: you can redistribute it and/or modify
