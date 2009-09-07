@@ -393,6 +393,7 @@ public final class InboxActivity extends ListActivity
 			mMessagesAdapter.mIsLoading = false;
 			mMessagesAdapter.notifyDataSetChanged();
 			dismissDialog(Constants.DIALOG_LOADING_INBOX);
+			Common.cancelMailNotification(InboxActivity.this.getApplicationContext());
     	}
     }
     
