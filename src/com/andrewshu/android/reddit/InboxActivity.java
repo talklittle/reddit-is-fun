@@ -798,8 +798,13 @@ public final class InboxActivity extends ListActivity
     		final Button replyCancelButton = (Button) dialog.findViewById(R.id.reply_cancel_button);
     		replySaveButton.setOnClickListener(new OnClickListener() {
     			public void onClick(View v) {
-    				new MessageReplyTask(mVoteTargetMessageInfo.getName(), mVoteTargetMessageInfo).execute(replyBody.getText());
-    				dismissDialog(Constants.DIALOG_REPLY);
+    				if(mVoteTargetMessageInfo != null){
+        				new MessageReplyTask(mVoteTargetMessageInfo.getName(), mVoteTargetMessageInfo).execute(replyBody.getText());
+        				dismissDialog(Constants.DIALOG_REPLY);
+    				}
+    				else{
+    					Toast.makeText(InboxActivity.this, "mVoteTargetMessageInfo was null.", Toast.LENGTH_SHORT).show();
+    				}
     			}
     		});
     		replyCancelButton.setOnClickListener(new OnClickListener() {
