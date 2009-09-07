@@ -1682,12 +1682,17 @@ public class RedditCommentsListActivity extends ListActivity
     		final Button replyCancelButton = (Button) dialog.findViewById(R.id.reply_cancel_button);
     		replySaveButton.setOnClickListener(new OnClickListener() {
     			public void onClick(View v) {
-    				if (mVoteTargetCommentInfo.getOP() != null) {
-    					new CommentReplyTask(mVoteTargetCommentInfo.getOP().getName(), mVoteTargetCommentInfo).execute(replyBody.getText());
-    				} else {
-    					new CommentReplyTask(mVoteTargetCommentInfo.getName(), mVoteTargetCommentInfo).execute(replyBody.getText());
+    				if (mVoteTargetCommentInfo != null){
+	    				if (mVoteTargetCommentInfo.getOP() != null) {
+	    					new CommentReplyTask(mVoteTargetCommentInfo.getOP().getName(), mVoteTargetCommentInfo).execute(replyBody.getText());
+	    				} else {
+	    					new CommentReplyTask(mVoteTargetCommentInfo.getName(), mVoteTargetCommentInfo).execute(replyBody.getText());
+	    				}
+	    				dismissDialog(Constants.DIALOG_REPLY);
     				}
-    				dismissDialog(Constants.DIALOG_REPLY);
+    				else{
+    					Common.showErrorToast("Error replying. Please try again.", Toast.LENGTH_SHORT, RedditCommentsListActivity.this);
+    				}
     			}
     		});
     		replyCancelButton.setOnClickListener(new OnClickListener() {
