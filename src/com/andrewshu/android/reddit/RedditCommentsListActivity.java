@@ -64,6 +64,7 @@ import android.text.Spanned;
 import android.text.style.AbsoluteSizeSpan;
 import android.text.style.ForegroundColorSpan;
 import android.text.style.URLSpan;
+import android.util.Log;
 import android.view.ContextMenu;
 import android.view.KeyEvent;
 import android.view.LayoutInflater;
@@ -158,7 +159,7 @@ public class RedditCommentsListActivity extends ListActivity
         Bundle extras = getIntent().getExtras();
         if (extras == null) {
         	// Quit, because the Comments List requires subreddit and thread id from Intent.
-        	Log.e(TAG, "Quitting because no subreddit and thread id data was passed into the Intent.");
+        	if (Constants.LOGGING) Log.e(TAG, "Quitting because no subreddit and thread id data was passed into the Intent.");
         	finish();
         }
     	String commentContext = extras.getString(Constants.EXTRA_COMMENT_CONTEXT);
@@ -170,7 +171,7 @@ public class RedditCommentsListActivity extends ListActivity
     			mJumpToCommentId = commentContextMatcher.group(4);
     		} else {
     			// Quit, because the Comments List requires subreddit and thread id from Intent.
-            	Log.e(TAG, "Quitting because of bad comment context.");
+    			if (Constants.LOGGING) Log.e(TAG, "Quitting because of bad comment context.");
             	finish();
     		}
     	} else {
@@ -434,7 +435,7 @@ public class RedditCommentsListActivity extends ListActivity
 		            } catch (NumberFormatException e) {
 		            	// This happens because "ups" comes after the potentially long "replies" object,
 		            	// so the ListView might try to display the View before "ups" in JSON has been parsed.
-		            	Log.e(TAG, e.getMessage());
+		            	if (Constants.LOGGING) Log.e(TAG, e.getMessage());
 		            }
 		            submitterView.setText(item.getAuthor());
 		            submissionTimeView.setText(Util.getTimeAgo(Double.valueOf(item.getCreatedUtc())));
@@ -496,7 +497,7 @@ public class RedditCommentsListActivity extends ListActivity
 		            } catch (NumberFormatException e) {
 		            	// This happens because "ups" comes after the potentially long "replies" object,
 		            	// so the ListView might try to display the View before "ups" in JSON has been parsed.
-		            	Log.e(TAG, e.getMessage());
+		            	if (Constants.LOGGING) Log.e(TAG, e.getMessage());
 		            }
 		            submitterView.setText(item.getAuthor());
 		            submissionTimeView.setText(Util.getTimeAgo(Double.valueOf(item.getCreatedUtc())));
@@ -628,7 +629,7 @@ public class RedditCommentsListActivity extends ListActivity
                 entity.consumeContent();
                 
             } catch (Exception e) {
-                Log.e(TAG, "failed:" + e.getMessage());
+            	if (Constants.LOGGING) Log.e(TAG, "failed:" + e.getMessage());
                 if (entity != null) {
                 	try {
                 		entity.consumeContent();
@@ -1032,7 +1033,7 @@ public class RedditCommentsListActivity extends ListActivity
         		if ((mModhash = Common.doUpdateModhash(mClient)) == null) {
         			// doUpdateModhash should have given an error about credentials
         			Common.doLogout(mSettings, mClient);
-        			Log.e(TAG, "Reply failed because doUpdateModhash() failed");
+        			if (Constants.LOGGING) Log.e(TAG, "Reply failed because doUpdateModhash() failed");
         			return null;
         		}
         	}
@@ -1050,7 +1051,7 @@ public class RedditCommentsListActivity extends ListActivity
     			HttpPost httppost = new HttpPost("http://www.reddit.com/api/comment");
     	        httppost.setEntity(new UrlEncodedFormEntity(nvps, HTTP.UTF_8));
     	        
-    	        Log.d(TAG, nvps.toString());
+    	        if (Constants.LOGGING) Log.d(TAG, nvps.toString());
     	        
                 // Perform the HTTP POST request
     	    	HttpResponse response = mClient.execute(httppost);
@@ -1075,8 +1076,7 @@ public class RedditCommentsListActivity extends ListActivity
             		throw new Exception("User required. Huh?");
             	}
             	
-//            	// DEBUG
-//	    	    Log.dLong(TAG, line);
+            	if (Constants.LOGGING) Common.logDLong(TAG, line);
 
             	String newId, newFullname;
             	Matcher idMatcher = Constants.NEW_ID_PATTERN.matcher(line);
@@ -1127,10 +1127,10 @@ public class RedditCommentsListActivity extends ListActivity
         			try {
         				entity.consumeContent();
         			} catch (Exception e2) {
-        				Log.e(TAG, e.getMessage());
+        				if (Constants.LOGGING) Log.e(TAG, e.getMessage());
         			}
         		}
-                Log.e(TAG, e.getMessage());
+        		if (Constants.LOGGING) Log.e(TAG, e.getMessage());
         	}
         	return null;
         }
@@ -1203,7 +1203,7 @@ public class RedditCommentsListActivity extends ListActivity
         		if ((mModhash = Common.doUpdateModhash(mClient)) == null) {
         			// doUpdateModhash should have given an error about credentials
         			Common.doLogout(mSettings, mClient);
-        			Log.e(TAG, "Vote failed because doUpdateModhash() failed");
+        			if (Constants.LOGGING) Log.e(TAG, "Vote failed because doUpdateModhash() failed");
         			return false;
         		}
         	}
@@ -1221,7 +1221,7 @@ public class RedditCommentsListActivity extends ListActivity
     			HttpPost httppost = new HttpPost("http://www.reddit.com/api/vote");
     	        httppost.setEntity(new UrlEncodedFormEntity(nvps, HTTP.UTF_8));
     	        
-    	        Log.d(TAG, nvps.toString());
+    	        if (Constants.LOGGING) Log.d(TAG, nvps.toString());
     	        
                 // Perform the HTTP POST request
     	    	HttpResponse response = mClient.execute(httppost);
@@ -1249,10 +1249,7 @@ public class RedditCommentsListActivity extends ListActivity
             		throw new Exception("User required. Huh?");
             	}
             	
-            	Log.d(TAG, line);
-
-//            	// DEBUG
-//    	        Log.dLong(TAG, line);
+            	if (Constants.LOGGING) Common.logDLong(TAG, line);
 
             	entity.consumeContent();
             	
@@ -1262,10 +1259,10 @@ public class RedditCommentsListActivity extends ListActivity
         			try {
         				entity.consumeContent();
         			} catch (Exception e2) {
-        				Log.e(TAG, e.getMessage());
+        				if (Constants.LOGGING) Log.e(TAG, e.getMessage());
         			}
         		}
-                Log.e(TAG, e.getMessage());
+        		if (Constants.LOGGING) Log.e(TAG, e.getMessage());
         	}
         	return false;
         }
@@ -1277,7 +1274,7 @@ public class RedditCommentsListActivity extends ListActivity
         		return;
         	}
         	if (_mDirection < -1 || _mDirection > 1) {
-        		Log.e(TAG, "WTF: _mDirection = " + _mDirection);
+        		if (Constants.LOGGING) Log.e(TAG, "WTF: _mDirection = " + _mDirection);
         		throw new RuntimeException("How the hell did you vote something besides -1, 0, or 1?");
         	}
 

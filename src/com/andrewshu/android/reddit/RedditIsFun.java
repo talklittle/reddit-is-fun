@@ -57,6 +57,7 @@ import android.text.SpannableStringBuilder;
 import android.text.Spanned;
 import android.text.style.AbsoluteSizeSpan;
 import android.text.style.ForegroundColorSpan;
+import android.util.Log;
 import android.view.KeyEvent;
 import android.view.LayoutInflater;
 import android.view.Menu;
@@ -548,9 +549,9 @@ public final class RedditIsFun extends ListActivity {
                 	return true;
                 } catch (IllegalStateException e) {
                 	_mUserError = "Invalid subreddit.";
-                	Log.e(TAG, e.getMessage());
+                	if (Constants.LOGGING) Log.e(TAG, e.getMessage());
                 } catch (Exception e) {
-                	Log.e(TAG, e.getMessage());
+                	if (Constants.LOGGING) Log.e(TAG, e.getMessage());
                 	if (entity != null) {
                 		try {
                 			entity.consumeContent();
@@ -560,7 +561,7 @@ public final class RedditIsFun extends ListActivity {
                 	}
                 }
             } catch (IOException e) {
-            	Log.e(TAG, "failed:" + e.getMessage());
+            	if (Constants.LOGGING) Log.e(TAG, "failed:" + e.getMessage());
             }
             return false;
 	    }
@@ -793,7 +794,7 @@ public final class RedditIsFun extends ListActivity {
         		if ((mModhash = Common.doUpdateModhash(mClient)) == null) {
         			// doUpdateModhash should have given an error about credentials
         			Common.doLogout(mSettings, mClient);
-        			Log.e(TAG, "Vote failed because doUpdateModhash() failed");
+        			if (Constants.LOGGING) Log.e(TAG, "Vote failed because doUpdateModhash() failed");
         			return false;
         		}
         	}
@@ -811,7 +812,7 @@ public final class RedditIsFun extends ListActivity {
     			HttpPost httppost = new HttpPost("http://www.reddit.com/api/vote");
     	        httppost.setEntity(new UrlEncodedFormEntity(nvps, HTTP.UTF_8));
     	        
-    	        Log.d(TAG, nvps.toString());
+    	        if (Constants.LOGGING) Log.d(TAG, nvps.toString());
     	        
                 // Perform the HTTP POST request
     	    	HttpResponse response = mClient.execute(httppost);
@@ -839,10 +840,7 @@ public final class RedditIsFun extends ListActivity {
             		throw new Exception("User required. Huh?");
             	}
             	
-            	Log.d(TAG, line);
-
-//            	// DEBUG
-//            	Log.dLong(TAG, line);
+            	if (Constants.LOGGING) Common.logDLong(TAG, line);
             	
             	entity.consumeContent();
             	return true;
@@ -852,10 +850,10 @@ public final class RedditIsFun extends ListActivity {
         			try {
         				entity.consumeContent();
         			} catch (Exception e2) {
-        				Log.e(TAG, e.getMessage());
+        				if (Constants.LOGGING) Log.e(TAG, e.getMessage());
         			}
         		}
-                Log.e(TAG, e.getMessage());
+        		if (Constants.LOGGING) Log.e(TAG, e.getMessage());
         	}
         	return false;
         }
@@ -867,7 +865,7 @@ public final class RedditIsFun extends ListActivity {
         		return;
         	}
         	if (_mDirection < -1 || _mDirection > 1) {
-        		Log.e(TAG, "WTF: _mDirection = " + _mDirection);
+        		if (Constants.LOGGING) Log.e(TAG, "WTF: _mDirection = " + _mDirection);
         		throw new RuntimeException("How the hell did you vote something besides -1, 0, or 1?");
         	}
     		final ImageView ivUp = (ImageView) _mTargetView.findViewById(R.id.vote_up_image);

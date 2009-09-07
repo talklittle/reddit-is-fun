@@ -38,6 +38,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.os.AsyncTask;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.KeyEvent;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -169,7 +170,7 @@ public final class PickSubredditActivity extends ListActivity {
                 return reddits;
                 
             } catch (Exception e) {
-                Log.e(TAG, "failed:" + e.getMessage());
+            	if (Constants.LOGGING) Log.e(TAG, "failed:" + e.getMessage());
                 if (entity != null) {
 	                try {
 	                	entity.consumeContent();

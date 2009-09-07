@@ -48,6 +48,7 @@ import android.content.DialogInterface.OnCancelListener;
 import android.graphics.drawable.Drawable;
 import android.os.AsyncTask;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.KeyEvent;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -282,7 +283,7 @@ public class SubmitLinkActivity extends TabActivity {
         		if ((mModhash = Common.doUpdateModhash(mClient)) == null) {
         			// doUpdateModhash should have given an error about credentials
         			Common.doLogout(mSettings, mClient);
-        			Log.e(TAG, "Reply failed because doUpdateModhash() failed");
+        			if (Constants.LOGGING) Log.e(TAG, "Reply failed because doUpdateModhash() failed");
         			return null;
         		}
         	}
@@ -314,7 +315,7 @@ public class SubmitLinkActivity extends TabActivity {
     	        HttpConnectionParams.setConnectionTimeout(params, 30000);
     	        HttpConnectionParams.setSoTimeout(params, 30000);
     	        
-    	        Log.d(TAG, nvps.toString());
+    	        if (Constants.LOGGING) Log.d(TAG, nvps.toString());
     	        
                 // Perform the HTTP POST request
     	    	HttpResponse response = mClient.execute(httppost);
@@ -347,10 +348,7 @@ public class SubmitLinkActivity extends TabActivity {
             		throw new Exception("SUBREDDIT_NOTALLOWED: " + _mSubreddit);
             	}
             	
-            	Log.d(TAG, line);
-
-//            	// DEBUG
-//    	        Log.dLong(TAG, line);
+            	if (Constants.LOGGING) Common.logDLong(TAG, line);
 
             	String newId, newSubreddit;
             	Matcher idMatcher = Constants.NEW_THREAD_PATTERN.matcher(line);
@@ -390,10 +388,10 @@ public class SubmitLinkActivity extends TabActivity {
         			try {
         				entity.consumeContent();
         			} catch (Exception e2) {
-        				Log.e(TAG, e.getMessage());
+        				if (Constants.LOGGING) Log.e(TAG, e.getMessage());
         			}
         		}
-                Log.e(TAG, e.getMessage());
+        		if (Constants.LOGGING) Log.e(TAG, e.getMessage());
         	}
         	return null;
         }
@@ -451,10 +449,10 @@ public class SubmitLinkActivity extends TabActivity {
 					try {
 						entity.consumeContent();
 					} catch (Exception e2) {
-						Log.e(TAG, e.getMessage());
+						if (Constants.LOGGING) Log.e(TAG, e.getMessage());
 					}
 				}
-				Log.e(TAG, "Error accessing "+mSubmitUrl+" to check for CAPTCHA");
+				if (Constants.LOGGING) Log.e(TAG, "Error accessing "+mSubmitUrl+" to check for CAPTCHA");
 			}
 			return null;
 		}

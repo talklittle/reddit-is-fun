@@ -24,6 +24,7 @@ import org.apache.http.HttpResponse;
 import org.apache.http.client.methods.HttpGet;
 
 import android.os.Bundle;
+import android.util.Log;
 import android.view.MenuItem;
 import android.widget.Toast;
 
@@ -41,7 +42,7 @@ public class MoreChildrenActivity extends RedditCommentsListActivity {
         Bundle extras = getIntent().getExtras();
         if (extras == null) {
         	// Quit, because the Comments List requires subreddit and thread id from Intent.
-        	Log.e(TAG, "Quitting because no subreddit and thread id data was passed into the Intent.");
+        	if (Constants.LOGGING) Log.e(TAG, "Quitting because no subreddit and thread id data was passed into the Intent.");
         	finish();
         }
     	if (savedInstanceState == null)

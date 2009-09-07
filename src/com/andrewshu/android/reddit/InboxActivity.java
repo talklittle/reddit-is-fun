@@ -60,6 +60,7 @@ import android.text.Spanned;
 import android.text.style.ForegroundColorSpan;
 import android.text.style.StyleSpan;
 import android.text.style.URLSpan;
+import android.util.Log;
 import android.view.KeyEvent;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -290,7 +291,7 @@ public final class InboxActivity extends ListActivity
                 entity.consumeContent();
                 
             } catch (Exception e) {
-                Log.e(TAG, "failed:" + e.getMessage());
+            	if (Constants.LOGGING) Log.e(TAG, "failed:" + e.getMessage());
                 if (entity != null) {
 	                try {
 	                	entity.consumeContent();
@@ -470,7 +471,7 @@ public final class InboxActivity extends ListActivity
         		if ((mModhash = Common.doUpdateModhash(mClient)) == null) {
         			// doUpdateModhash should have given an error about credentials
         			Common.doLogout(mSettings, mClient);
-        			Log.e(TAG, "Reply failed because doUpdateModhash() failed");
+        			if (Constants.LOGGING) Log.e(TAG, "Reply failed because doUpdateModhash() failed");
         			return false;
         		}
         	}
@@ -487,7 +488,7 @@ public final class InboxActivity extends ListActivity
     			HttpPost httppost = new HttpPost("http://www.reddit.com/api/comment");
     	        httppost.setEntity(new UrlEncodedFormEntity(nvps, HTTP.UTF_8));
     	        
-    	        Log.d(TAG, nvps.toString());
+    	        if (Constants.LOGGING) Log.d(TAG, nvps.toString());
     	        
                 // Perform the HTTP POST request
     	    	HttpResponse response = mClient.execute(httppost);
@@ -512,10 +513,7 @@ public final class InboxActivity extends ListActivity
             		throw new Exception("User required. Huh?");
             	}
             	
-            	Log.d(TAG, line);
-
-//            	// DEBUG
-//    	        Log.dLong(TAG, line);
+            	if (Constants.LOGGING) Common.logDLong(TAG, line);
 
             	Matcher idMatcher = Constants.NEW_ID_PATTERN.matcher(line);
             	if (idMatcher.find()) {
@@ -544,10 +542,10 @@ public final class InboxActivity extends ListActivity
         			try {
         				entity.consumeContent();
         			} catch (IOException e2) {
-        				Log.e(TAG, e.getMessage());
+        				if (Constants.LOGGING) Log.e(TAG, e.getMessage());
         			}
         		}
-                Log.e(TAG, e.getMessage());
+        		if (Constants.LOGGING) Log.e(TAG, e.getMessage());
         	}
         	return false;
         }

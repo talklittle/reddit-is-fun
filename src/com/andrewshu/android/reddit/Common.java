@@ -64,6 +64,7 @@ import android.net.Uri;
 import android.os.AsyncTask;
 import android.preference.PreferenceManager;
 import android.provider.Browser;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.widget.ListView;
@@ -211,8 +212,7 @@ public class Common {
         		throw new Exception("Wrong password");
         	}
 
-//        	// DEBUG
-//        	Log.dLong(TAG, line);
+        	if (Constants.LOGGING) Common.logDLong(TAG, line);
         	
         	entity.consumeContent();
         	
@@ -230,10 +230,10 @@ public class Common {
     			try {
     				entity.consumeContent();
     			} catch (Exception e2) {
-    				Log.e(TAG, e.getMessage());
+    				if (Constants.LOGGING) Log.e(TAG, e.getMessage());
     			}
     		}
-        	Log.e(TAG, e.getMessage());
+    		if (Constants.LOGGING) Log.e(TAG, e.getMessage());
         }
         return userError;
     }
@@ -292,10 +292,9 @@ public class Common {
         		throw new Exception("No modhash found at URL "+Constants.MODHASH_URL);
         	}
 
-//        	// DEBUG
-//        	Log.dLong(TAG, line);
+        	if (Constants.LOGGING) Common.logDLong(TAG, line);
         	
-        	Log.d(TAG, "modhash: "+modhash);
+        	if (Constants.LOGGING) Log.d(TAG, "modhash: "+modhash);
         	return modhash;
         	
     	} catch (Exception e) {
@@ -303,10 +302,10 @@ public class Common {
     			try {
     				entity.consumeContent();
     			} catch (Exception e2) {
-    				Log.e(TAG, e.getMessage());
+    				if (Constants.LOGGING) Log.e(TAG, e.getMessage());
     			}
     		}
-    		Log.e(TAG, e.getMessage());
+    		if (Constants.LOGGING) Log.e(TAG, e.getMessage());
     		return null;
     	}
     }
@@ -342,7 +341,7 @@ public class Common {
 	            return count;
 	            
 	        } catch (Exception e) {
-	            Log.e(TAG, "failed:" + e.getMessage());
+	        	if (Constants.LOGGING) Log.e(TAG, "failed:" + e.getMessage());
 	            if (entity != null) {
 	            	try {
 	            		entity.consumeContent();
@@ -491,5 +490,25 @@ public class Common {
             // length of ungzipped content is not known
             return -1;
         }
-    } 
+    }
+	
+    static void logDLong(String tag, String msg) {
+		int c;
+		boolean done = false;
+		StringBuilder sb = new StringBuilder();
+		for (int k = 0; k < msg.length(); k += 80) {
+			for (int i = 0; i < 80; i++) {
+				if (k + i >= msg.length()) {
+					done = true;
+					break;
+				}
+				c = msg.charAt(k + i);
+				sb.append((char) c);
+			}
+			if (Constants.LOGGING) Log.d(tag, "doReply response content: " + sb.toString());
+			sb = new StringBuilder();
+			if (done)
+				break;
+		}
+	} 
 }
