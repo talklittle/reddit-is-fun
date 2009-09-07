@@ -804,7 +804,7 @@ public final class InboxActivity extends ListActivity
         				dismissDialog(Constants.DIALOG_REPLY);
     				}
     				else{
-    					Toast.makeText(InboxActivity.this, "mVoteTargetMessageInfo was null.", Toast.LENGTH_SHORT).show();
+    					Common.showErrorToast("Error replying. Please try again.", Toast.LENGTH_SHORT, InboxActivity.this);
     				}
     			}
     		});
