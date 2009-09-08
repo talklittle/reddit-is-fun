@@ -32,7 +32,6 @@
             </intent-filter>
         </activity>
 	    <activity android:name=".RedditCommentsListActivity"></activity>
-	    <activity android:name=".MoreChildrenActivity"></activity>
 	    <activity android:name=".PickSubredditActivity"></activity>
 	    <activity android:name=".SubmitLinkActivity">
 	        <intent-filter>

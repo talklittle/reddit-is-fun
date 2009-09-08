@@ -106,35 +106,38 @@ public class RedditCommentsListActivity extends ListActivity
     private HashSet<Integer> mMorePositions = new HashSet<Integer>(); 
 	
     /** Custom list adapter that fits our threads data into the list. */
-    protected CommentsListAdapter mCommentsAdapter;
+    private CommentsListAdapter mCommentsAdapter;
     
-    protected final DefaultHttpClient mClient = Common.createGzipHttpClient();
+    private final DefaultHttpClient mClient = Common.createGzipHttpClient();
     
     
     // Common settings are stored here
-    protected final RedditSettings mSettings = new RedditSettings();
+    private final RedditSettings mSettings = new RedditSettings();
     
-    protected ThreadInfo mOpThreadInfo;
-    protected CharSequence mThreadTitle = null;
-    protected int mNumVisibleComments = Constants.DEFAULT_COMMENT_DOWNLOAD_LIMIT;
-    protected CharSequence mSortByUrl = Constants.CommentsSort.SORT_BY_HOT_URL;
-    protected int mJumpToCommentPosition = 0;
-    protected CharSequence mJumpToCommentId = null;
+    private ThreadInfo mOpThreadInfo;
+    private CharSequence mThreadTitle = null;
+    private int mNumVisibleComments = Constants.DEFAULT_COMMENT_DOWNLOAD_LIMIT;
+    private CharSequence mSortByUrl = Constants.CommentsSort.SORT_BY_HOT_URL;
+    private int mJumpToCommentPosition = 0;
+    private CharSequence mJumpToCommentId = null;
     
+	private CharSequence mMoreChildrenId = null;
+	
     // Keep track of the row ids of comments that user has hidden
     private HashSet<Integer> mHiddenCommentHeads = new HashSet<Integer>();
     // Keep track of the row ids of descendants of hidden comment heads
     private HashSet<Integer> mHiddenComments = new HashSet<Integer>();
 
     // UI State
-    protected View mVoteTargetView = null;
-    protected CommentInfo mVoteTargetCommentInfo = null;
+    private View mVoteTargetView = null;
+    private CommentInfo mVoteTargetCommentInfo = null;
     private URLSpan[] mVoteTargetSpans = null;
+    private CharSequence mReplyTargetName = null;
     
     // ProgressDialogs with percentage bars
     private AutoResetProgressDialog mLoadingCommentsProgress;
     
-    protected boolean mCanChord = false;
+    private boolean mCanChord = false;
     
     /**
      * Called when the activity starts up. Do activity initialization
@@ -186,15 +189,19 @@ public class RedditCommentsListActivity extends ListActivity
         	else
         		mNumVisibleComments = Constants.DEFAULT_COMMENT_DOWNLOAD_LIMIT;
     	}
+    	
+    	// More children: displaying something that's not the root of comments list.
+    	mMoreChildrenId = extras.getCharSequence(Constants.EXTRA_MORE_CHILDREN_ID);
+    	
     	mJumpToCommentPosition = extras.getInt(Constants.JUMP_TO_COMMENT_POSITION_KEY);
-    	boolean isSubclass = extras.getBoolean(Constants.IS_SUBCLASS_KEY);
-        
-        if (savedInstanceState != null) {
+    	mJumpToCommentId = extras.getCharSequence(Constants.JUMP_TO_COMMENT_ID_KEY);
+    	mReplyTargetName = extras.getCharSequence(Constants.REPLY_TARGET_NAME_KEY);
+    	
+    	if (savedInstanceState != null) {
         	mSortByUrl = savedInstanceState.getCharSequence(Constants.CommentsSort.SORT_BY_KEY);
         }
         
-        if (!isSubclass)
-        	new DownloadCommentsTask().execute(Constants.DEFAULT_COMMENT_DOWNLOAD_LIMIT);
+        new DownloadCommentsTask().execute(Constants.DEFAULT_COMMENT_DOWNLOAD_LIMIT);
     }
     
     @Override
@@ -567,17 +574,21 @@ public class RedditCommentsListActivity extends ListActivity
         // Mark the OP post/regular comment as selected
         mVoteTargetCommentInfo = item;
         mVoteTargetView = v;
-        
+        if (mVoteTargetCommentInfo.getOP() != null) {
+        	mReplyTargetName = mVoteTargetCommentInfo.getOP().getName();
+		} else {
+			mReplyTargetName = mVoteTargetCommentInfo.getName();
+		}
+		
         if (mMorePositions.contains(position)) {
         	mJumpToCommentPosition = position;
-        	Intent moreChildrenIntent = new Intent(this, MoreChildrenActivity.class);
+        	Intent moreChildrenIntent = new Intent(this, RedditCommentsListActivity.class);
         	moreChildrenIntent.putExtra(ThreadInfo.SUBREDDIT, mOpThreadInfo.getSubreddit());
         	moreChildrenIntent.putExtra(ThreadInfo.ID, mOpThreadInfo.getId());
         	moreChildrenIntent.putExtra(ThreadInfo.TITLE, mOpThreadInfo.getTitle());
         	moreChildrenIntent.putExtra(ThreadInfo.NUM_COMMENTS, Integer.valueOf(mOpThreadInfo.getNumComments()));
-        	moreChildrenIntent.putExtra(CommentInfo.NAME, item.getName());
-        	moreChildrenIntent.putExtra(Constants.IS_SUBCLASS_KEY, true);
-			startActivity(moreChildrenIntent);
+        	moreChildrenIntent.putExtra(Constants.EXTRA_MORE_CHILDREN_ID, item.getId());
+        	startActivity(moreChildrenIntent);
         } else {
         	showDialog(Constants.DIALOG_THING_CLICK);
         }
@@ -612,13 +623,17 @@ public class RedditCommentsListActivity extends ListActivity
     	public Void doInBackground(Integer... maxComments) {
     		HttpEntity entity = null;
             try {
-            	HttpGet request = new HttpGet(new StringBuilder("http://www.reddit.com/r/")
-            		.append(mSettings.subreddit.toString().trim())
-            		.append("/comments/")
-            		.append(mSettings.threadId)
-            		.append("/.json?")
-            		.append(mSortByUrl).append("&").toString());
-            	HttpResponse response = mClient.execute(request);
+            	StringBuilder sb = new StringBuilder("http://www.reddit.com/r/")
+	        		.append(mSettings.subreddit.toString().trim())
+	        		.append("/comments/")
+	        		.append(mSettings.threadId);
+            	if (mMoreChildrenId == null) {
+            		sb = sb.append("/.json?").append(mSortByUrl).append("&");
+            	} else {
+            		sb = sb.append("/z/").append(mMoreChildrenId).append(".json?").append(mSortByUrl).append("&");
+            	}
+            	HttpGet request = new HttpGet(sb.toString());
+                HttpResponse response = mClient.execute(request);
             	entity = response.getEntity();
             	
             	InputStream in = entity.getContent();
@@ -936,6 +951,7 @@ public class RedditCommentsListActivity extends ListActivity
     		mCommentsAdapter.notifyDataSetChanged();
 			if (mJumpToCommentPosition != 0) {
 				getListView().setSelectionFromTop(mJumpToCommentPosition, 10);
+				mJumpToCommentPosition = 0;
 			} else if (mJumpToCommentId != null) {
     			for (int k = 0; k < mCommentsAdapter.getCount(); k++) {
     				if (mJumpToCommentId.equals(mCommentsAdapter.getItem(k).getId())) {
@@ -993,22 +1009,16 @@ public class RedditCommentsListActivity extends ListActivity
     
     
     
-    
-    
-    
-    private class CommentReplyTask extends AsyncTask<CharSequence, Void, CommentInfo> {
+    private class CommentReplyTask extends AsyncTask<CharSequence, Void, CharSequence> {
     	private CharSequence _mParentThingId;
-    	CommentInfo _mTargetCommentInfo;
     	String _mUserError = "Error submitting reply. Please try again.";
     	
-    	CommentReplyTask(CharSequence parentThingId, CommentInfo targetCommentInfo) {
+    	CommentReplyTask(CharSequence parentThingId) {
     		_mParentThingId = parentThingId;
-    		_mTargetCommentInfo = targetCommentInfo;
     	}
     	
     	@Override
-        public CommentInfo doInBackground(CharSequence... text) {
-        	CommentInfo newlyCreatedComment = null;
+        public CharSequence doInBackground(CharSequence... text) {
         	String userError = "Error replying. Please try again.";
         	HttpEntity entity = null;
         	
@@ -1070,10 +1080,9 @@ public class RedditCommentsListActivity extends ListActivity
             	
             	if (Constants.LOGGING) Common.logDLong(TAG, line);
 
-            	String newId, newFullname;
+            	String newId;
             	Matcher idMatcher = Constants.NEW_ID_PATTERN.matcher(line);
             	if (idMatcher.find()) {
-            		newFullname = idMatcher.group(1);
             		newId = idMatcher.group(3);
             	} else {
             		if (line.contains("RATELIMIT")) {
@@ -1091,28 +1100,7 @@ public class RedditCommentsListActivity extends ListActivity
             	entity.consumeContent();
             	
             	// Getting here means success. Create a new CommentInfo.
-            	newlyCreatedComment = new CommentInfo(
-            			mSettings.username.toString(),     /* author */
-            			text[0].toString(),          /* body */
-            			null,                     /* body_html */
-            			null,                     /* created */
-            			String.valueOf(System.currentTimeMillis()), /* created_utc */
-            			"0",                      /* downs */
-            			newId,                    /* id */
-            			Constants.TRUE_STRING,              /* likes */
-            			null,                     /* link_id */
-            			newFullname,              /* name */
-            			_mParentThingId.toString(), /* parent_id */
-            			null,                     /* sr_id */
-            			"1"                       /* ups */
-            			);
-            	newlyCreatedComment.setListOrder(_mTargetCommentInfo.getListOrder()+1);
-            	if (_mTargetCommentInfo.getListOrder() == 0)
-            		newlyCreatedComment.setIndent(0);
-            	else
-            		newlyCreatedComment.setIndent(_mTargetCommentInfo.getIndent()+1);
-            	
-            	return newlyCreatedComment;
+            	return newId;
             	
         	} catch (Exception e) {
         		if (entity != null) {
@@ -1133,24 +1121,14 @@ public class RedditCommentsListActivity extends ListActivity
     	}
     	
     	@Override
-    	public void onPostExecute(CommentInfo newlyCreatedComment) {
+    	public void onPostExecute(CharSequence newId) {
     		dismissDialog(Constants.DIALOG_REPLYING);
-    		if (newlyCreatedComment == null) {
+    		if (newId == null) {
     			Common.showErrorToast(_mUserError, Toast.LENGTH_LONG, RedditCommentsListActivity.this);
     		} else {
-        		// Success. OK to clear the reply draft.
-        		_mTargetCommentInfo.setReplyDraft("");
-        		// Increment op thread's number comments
-        		mOpThreadInfo.setNumComments(String.valueOf(Integer.valueOf(mOpThreadInfo.getNumComments())+1));
-        		
-    			// Bump the list order of everything starting from where new comment will go.
-    			int count = mCommentsAdapter.getCount();
-    			for (int i = newlyCreatedComment.getListOrder(); i < count; i++) {
-    				mCommentsAdapter.getItem(i).setListOrder(i+1);
-    			}
-    			// Finally, insert the new comment where it should go.
-    			mCommentsAdapter.insert(newlyCreatedComment, newlyCreatedComment.getListOrder());
-    			mCommentsAdapter.notifyDataSetChanged();
+    			// Refresh
+    			mJumpToCommentId = newId;
+    			new DownloadCommentsTask().execute(Constants.DEFAULT_COMMENT_DOWNLOAD_LIMIT);
     		}
     	}
 
@@ -1675,22 +1653,17 @@ public class RedditCommentsListActivity extends ListActivity
     		final Button replyCancelButton = (Button) dialog.findViewById(R.id.reply_cancel_button);
     		replySaveButton.setOnClickListener(new OnClickListener() {
     			public void onClick(View v) {
-    				if (mVoteTargetCommentInfo != null){
-	    				if (mVoteTargetCommentInfo.getOP() != null) {
-	    					new CommentReplyTask(mVoteTargetCommentInfo.getOP().getName(), mVoteTargetCommentInfo).execute(replyBody.getText());
-	    				} else {
-	    					new CommentReplyTask(mVoteTargetCommentInfo.getName(), mVoteTargetCommentInfo).execute(replyBody.getText());
-	    				}
+    				if (mReplyTargetName != null) {
+	    				new CommentReplyTask(mReplyTargetName).execute(replyBody.getText());
 	    				dismissDialog(Constants.DIALOG_REPLY);
     				}
-    				else{
+    				else {
     					Common.showErrorToast("Error replying. Please try again.", Toast.LENGTH_SHORT, RedditCommentsListActivity.this);
     				}
     			}
     		});
     		replyCancelButton.setOnClickListener(new OnClickListener() {
     			public void onClick(View v) {
-    				mVoteTargetCommentInfo.setReplyDraft(replyBody.getText().toString());
     				dismissDialog(Constants.DIALOG_REPLY);
     			}
     		});
@@ -1947,6 +1920,8 @@ public class RedditCommentsListActivity extends ListActivity
     	super.onSaveInstanceState(state);
     	state.putCharSequence(Constants.CommentsSort.SORT_BY_KEY, mSortByUrl);
     	state.putInt(Constants.JUMP_TO_COMMENT_POSITION_KEY, mJumpToCommentPosition);
+    	state.putCharSequence(Constants.JUMP_TO_COMMENT_ID_KEY, mJumpToCommentId);
+    	state.putCharSequence(Constants.REPLY_TARGET_NAME_KEY, mReplyTargetName);
     }
     
     /**
