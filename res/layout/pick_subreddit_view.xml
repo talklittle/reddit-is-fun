@@ -41,10 +41,12 @@
 	    	android:layout_alignParentRight="true"
 	    	android:text="@string/pick_subreddit_button"
 	    	/>
+	    <!-- Disable focus initially so soft keyboard doesn't pop up -->
 	    <EditText android:id="@+id/pick_subreddit_input"
 	    	android:layout_width="fill_parent"
 	    	android:layout_height="fill_parent"
 	    	android:layout_toLeftOf="@id/pick_subreddit_button"
+	    	android:focusable="false"
 	    	/>
    	</RelativeLayout>
 

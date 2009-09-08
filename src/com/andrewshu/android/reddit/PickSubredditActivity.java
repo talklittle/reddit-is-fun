@@ -212,6 +212,11 @@ public final class PickSubredditActivity extends ListActivity {
 	        mAdapter = new PickSubredditAdapter(PickSubredditActivity.this, items);
 	        getListView().setAdapter(mAdapter);
 	        Common.updateListDrawables(PickSubredditActivity.this, mSettings.theme);
+	        
+	        // Enable EditText focus, but set focus to ListView, so soft keyboard doesn't pop up.
+	        final EditText pickSubredditInput = (EditText) findViewById(R.id.pick_subreddit_input);
+	        pickSubredditInput.setFocusableInTouchMode(true);
+	        getListView().requestFocus();
     	}
     }
 
