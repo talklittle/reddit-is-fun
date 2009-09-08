@@ -194,7 +194,9 @@ public class RedditCommentsListActivity extends ListActivity
     	mMoreChildrenId = extras.getCharSequence(Constants.EXTRA_MORE_CHILDREN_ID);
     	
     	mJumpToCommentPosition = extras.getInt(Constants.JUMP_TO_COMMENT_POSITION_KEY);
-    	mJumpToCommentId = extras.getCharSequence(Constants.JUMP_TO_COMMENT_ID_KEY);
+    	// JumpToCommentId from Intent takes precedence over savedInstanceState.
+    	if (mJumpToCommentId == null)
+    		mJumpToCommentId = extras.getCharSequence(Constants.JUMP_TO_COMMENT_ID_KEY);
     	mReplyTargetName = extras.getCharSequence(Constants.REPLY_TARGET_NAME_KEY);
     	
     	if (savedInstanceState != null) {
