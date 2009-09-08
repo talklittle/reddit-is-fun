@@ -874,22 +874,21 @@ public final class InboxActivity extends ListActivity
     @Override
     protected void onRestoreInstanceState(Bundle state) {
         super.onRestoreInstanceState(state);
-        try {
-        	dismissDialog(Constants.DIALOG_LOGIN);
-	    } catch (IllegalArgumentException e) {
-	    	// Ignore.
-	    }
-        try {
-	        dismissDialog(Constants.DIALOG_LOGGING_IN);
-	    } catch (IllegalArgumentException e) {
-        	// Ignore.
-        }
-        try {
-	        dismissDialog(Constants.DIALOG_LOADING_INBOX);
-        } catch (IllegalArgumentException e) {
-        	// Ignore.
+        final int[] myDialogs = {
+        	Constants.DIALOG_COMMENT_CLICK,
+        	Constants.DIALOG_LOADING_INBOX,
+        	Constants.DIALOG_LOGGING_IN,
+        	Constants.DIALOG_LOGIN,
+        	Constants.DIALOG_MESSAGE_CLICK,
+        	Constants.DIALOG_REPLY,
+        	Constants.DIALOG_REPLYING,
+        };
+        for (int dialog : myDialogs) {
+	        try {
+	        	dismissDialog(dialog);
+		    } catch (IllegalArgumentException e) {
+		    	// Ignore.
+		    }
         }
     }
-
-
 }

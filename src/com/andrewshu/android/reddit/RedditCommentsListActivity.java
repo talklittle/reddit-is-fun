@@ -1957,22 +1957,21 @@ public class RedditCommentsListActivity extends ListActivity
     @Override
     protected void onRestoreInstanceState(Bundle state) {
         super.onRestoreInstanceState(state);
-        try {
-        	dismissDialog(Constants.DIALOG_LOGIN);
-	    } catch (IllegalArgumentException e) {
-	    	// Ignore.
-	    }
-        try {
-	        dismissDialog(Constants.DIALOG_LOGGING_IN);
-	    } catch (IllegalArgumentException e) {
-        	// Ignore.
-        }
-        try {
-	        dismissDialog(Constants.DIALOG_LOADING_COMMENTS_LIST);
-        } catch (IllegalArgumentException e) {
-        	// Ignore.
+        final int[] myDialogs = {
+        	Constants.DIALOG_LOADING_COMMENTS_LIST,
+        	Constants.DIALOG_LOGGING_IN,
+        	Constants.DIALOG_LOGIN,
+        	Constants.DIALOG_REPLY,
+        	Constants.DIALOG_REPLYING,
+        	Constants.DIALOG_SORT_BY,
+        	Constants.DIALOG_THING_CLICK,
+        };
+        for (int dialog : myDialogs) {
+	        try {
+	        	dismissDialog(dialog);
+		    } catch (IllegalArgumentException e) {
+		    	// Ignore.
+		    }
         }
     }
-
-
 }

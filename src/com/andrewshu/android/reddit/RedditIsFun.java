@@ -1380,20 +1380,23 @@ public final class RedditIsFun extends ListActivity {
     @Override
     protected void onRestoreInstanceState(Bundle state) {
         super.onRestoreInstanceState(state);
-        try {
-        	dismissDialog(Constants.DIALOG_LOGIN);
-	    } catch (IllegalArgumentException e) {
-	    	// Ignore.
-	    }
-        try {
-        	dismissDialog(Constants.DIALOG_LOGGING_IN);
-	    } catch (IllegalArgumentException e) {
-	    	// Ignore.
-	    }
-	    try {
-	    	dismissDialog(Constants.DIALOG_LOADING_THREADS_LIST);
-	    } catch (IllegalArgumentException e) {
-	    	// Ignore.
-	    }
+        final int[] myDialogs = {
+        	Constants.DIALOG_LOADING_LOOK_OF_DISAPPROVAL,
+        	Constants.DIALOG_LOADING_THREADS_LIST,
+        	Constants.DIALOG_LOGGING_IN,
+        	Constants.DIALOG_LOGIN,
+        	Constants.DIALOG_SORT_BY,
+        	Constants.DIALOG_SORT_BY_CONTROVERSIAL,
+        	Constants.DIALOG_SORT_BY_NEW,
+        	Constants.DIALOG_SORT_BY_TOP,
+        	Constants.DIALOG_THING_CLICK,
+        };
+        for (int dialog : myDialogs) {
+	        try {
+	        	dismissDialog(dialog);
+		    } catch (IllegalArgumentException e) {
+		    	// Ignore.
+		    }
+        }
     }
 }

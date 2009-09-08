@@ -296,10 +296,15 @@ public final class PickSubredditActivity extends ListActivity {
     @Override
     protected void onRestoreInstanceState(Bundle state) {
     	super.onRestoreInstanceState(state);
-        try {
-        	dismissDialog(Constants.DIALOG_LOADING_REDDITS_LIST);
-	    } catch (IllegalArgumentException e) {
-	    	// Ignore.
-	    }
+        final int[] myDialogs = {
+        	Constants.DIALOG_LOADING_REDDITS_LIST,
+        };
+        for (int dialog : myDialogs) {
+	        try {
+	        	dismissDialog(dialog);
+		    } catch (IllegalArgumentException e) {
+		    	// Ignore.
+		    }
+        }
     }
 }
