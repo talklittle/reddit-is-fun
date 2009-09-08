@@ -35,7 +35,6 @@ import org.apache.http.NameValuePair;
 import org.apache.http.client.entity.UrlEncodedFormEntity;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPost;
-import org.apache.http.cookie.Cookie;
 import org.apache.http.impl.client.DefaultHttpClient;
 import org.apache.http.message.BasicNameValuePair;
 import org.apache.http.protocol.HTTP;
@@ -93,8 +92,7 @@ public final class InboxActivity extends ListActivity
     private MessagesListAdapter mMessagesAdapter;
     
     private final DefaultHttpClient mClient = Common.createGzipHttpClient();
-    volatile private String mModhash;
-   
+    
     
     // Common settings are stored here
     private final RedditSettings mSettings = new RedditSettings();
@@ -411,7 +409,7 @@ public final class InboxActivity extends ListActivity
     	
     	@Override
     	public String doInBackground(Void... v) {
-    		return Common.doLogin(mUsername, mPassword, mClient);
+    		return Common.doLogin(mUsername, mPassword, mClient, mSettings);
         }
     	
     	protected void onPreExecute() {
@@ -421,21 +419,11 @@ public final class InboxActivity extends ListActivity
     	protected void onPostExecute(String errorMessage) {
     		dismissDialog(Constants.DIALOG_LOGGING_IN);
     		if (errorMessage == null) {
-    			List<Cookie> cookies = mClient.getCookieStore().getCookies();
-            	for (Cookie c : cookies) {
-            		if (c.getName().equals("reddit_session")) {
-            			mSettings.setRedditSessionCookie(c);
-            			break;
-            		}
-            	}
-            	mSettings.setUsername(mUsername);
-            	mSettings.setLoggedIn(true);
     			Toast.makeText(InboxActivity.this, "Logged in as "+mUsername, Toast.LENGTH_SHORT).show();
 	    		// Refresh the threads list
     			new DownloadMessagesTask().execute(Constants.DEFAULT_COMMENT_DOWNLOAD_LIMIT);
     		} else {
-            	mSettings.setLoggedIn(false);
-    			Common.showErrorToast(mUserError, Toast.LENGTH_LONG, InboxActivity.this);
+            	Common.showErrorToast(mUserError, Toast.LENGTH_LONG, InboxActivity.this);
     			returnStatus(Constants.RESULT_LOGIN_REQUIRED);
     		}
     	}
@@ -469,13 +457,15 @@ public final class InboxActivity extends ListActivity
         		return false;
         	}
         	// Update the modhash if necessary
-        	if (mModhash == null) {
-        		if ((mModhash = Common.doUpdateModhash(mClient)) == null) {
+        	if (mSettings.modhash == null) {
+        		CharSequence modhash = Common.doUpdateModhash(mClient);
+        		if (modhash == null) {
         			// doUpdateModhash should have given an error about credentials
         			Common.doLogout(mSettings, mClient);
         			if (Constants.LOGGING) Log.e(TAG, "Reply failed because doUpdateModhash() failed");
         			return false;
         		}
+        		mSettings.setModhash(modhash);
         	}
         	
         	try {
@@ -483,7 +473,7 @@ public final class InboxActivity extends ListActivity
     			List<NameValuePair> nvps = new ArrayList<NameValuePair>();
     			nvps.add(new BasicNameValuePair("thing_id", _mParentThingId.toString()));
     			nvps.add(new BasicNameValuePair("text", text[0].toString()));
-    			nvps.add(new BasicNameValuePair("uh", mModhash.toString()));
+    			nvps.add(new BasicNameValuePair("uh", mSettings.modhash.toString()));
     			// Votehash is currently unused by reddit 
 //    				nvps.add(new BasicNameValuePair("vh", "0d4ab0ffd56ad0f66841c15609e9a45aeec6b015"));
     			
@@ -511,7 +501,7 @@ public final class InboxActivity extends ListActivity
             	}
             	if (line.contains("USER_REQUIRED")) {
             		// The modhash probably expired
-            		mModhash = null;
+            		mSettings.setModhash(null);
             		throw new Exception("User required. Huh?");
             	}
             	

@@ -37,7 +37,6 @@ import org.apache.http.NameValuePair;
 import org.apache.http.client.entity.UrlEncodedFormEntity;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPost;
-import org.apache.http.cookie.Cookie;
 import org.apache.http.impl.client.DefaultHttpClient;
 import org.apache.http.message.BasicNameValuePair;
 import org.apache.http.protocol.HTTP;
@@ -110,8 +109,7 @@ public class RedditCommentsListActivity extends ListActivity
     protected CommentsListAdapter mCommentsAdapter;
     
     protected final DefaultHttpClient mClient = Common.createGzipHttpClient();
-    volatile private String mModhash;
-   
+    
     
     // Common settings are stored here
     protected final RedditSettings mSettings = new RedditSettings();
@@ -971,7 +969,7 @@ public class RedditCommentsListActivity extends ListActivity
     	
     	@Override
     	public String doInBackground(Void... v) {
-    		return Common.doLogin(mUsername, mPassword, mClient);
+    		return Common.doLogin(mUsername, mPassword, mClient, mSettings);
         }
     	
     	protected void onPreExecute() {
@@ -981,23 +979,13 @@ public class RedditCommentsListActivity extends ListActivity
     	protected void onPostExecute(String errorMessage) {
     		dismissDialog(Constants.DIALOG_LOGGING_IN);
     		if (errorMessage == null) {
-    			List<Cookie> cookies = mClient.getCookieStore().getCookies();
-            	for (Cookie c : cookies) {
-            		if (c.getName().equals("reddit_session")) {
-            			mSettings.setRedditSessionCookie(c);
-            			break;
-            		}
-            	}
-            	mSettings.setUsername(mUsername);
-            	mSettings.setLoggedIn(true);
     			Toast.makeText(RedditCommentsListActivity.this, "Logged in as "+mUsername, Toast.LENGTH_SHORT).show();
     			// Check mail
     			new Common.PeekEnvelopeTask(RedditCommentsListActivity.this, mClient, mSettings.mailNotificationStyle).execute();
 	    		// Refresh the threads list
     			new DownloadCommentsTask().execute(Constants.DEFAULT_COMMENT_DOWNLOAD_LIMIT);
     		} else {
-            	mSettings.setLoggedIn(false);
-    			Common.showErrorToast(mUserError, Toast.LENGTH_LONG, RedditCommentsListActivity.this);
+            	Common.showErrorToast(mUserError, Toast.LENGTH_LONG, RedditCommentsListActivity.this);
     		}
     	}
     }
@@ -1031,13 +1019,15 @@ public class RedditCommentsListActivity extends ListActivity
         		return null;
         	}
         	// Update the modhash if necessary
-        	if (mModhash == null) {
-        		if ((mModhash = Common.doUpdateModhash(mClient)) == null) {
+        	if (mSettings.modhash == null) {
+        		CharSequence modhash = Common.doUpdateModhash(mClient);
+        		if (modhash == null) {
         			// doUpdateModhash should have given an error about credentials
         			Common.doLogout(mSettings, mClient);
         			if (Constants.LOGGING) Log.e(TAG, "Reply failed because doUpdateModhash() failed");
         			return null;
         		}
+        		mSettings.setModhash(modhash);
         	}
         	
         	try {
@@ -1046,7 +1036,7 @@ public class RedditCommentsListActivity extends ListActivity
     			nvps.add(new BasicNameValuePair("thing_id", _mParentThingId.toString()));
     			nvps.add(new BasicNameValuePair("text", text[0].toString()));
     			nvps.add(new BasicNameValuePair("r", mSettings.subreddit.toString()));
-    			nvps.add(new BasicNameValuePair("uh", mModhash.toString()));
+    			nvps.add(new BasicNameValuePair("uh", mSettings.modhash.toString()));
     			// Votehash is currently unused by reddit 
 //    				nvps.add(new BasicNameValuePair("vh", "0d4ab0ffd56ad0f66841c15609e9a45aeec6b015"));
     			
@@ -1074,7 +1064,7 @@ public class RedditCommentsListActivity extends ListActivity
             	}
             	if (line.contains("USER_REQUIRED")) {
             		// The modhash probably expired
-            		mModhash = null;
+            		mSettings.setModhash(null);
             		throw new Exception("User required. Huh?");
             	}
             	
@@ -1201,13 +1191,15 @@ public class RedditCommentsListActivity extends ListActivity
         	}
         	
         	// Update the modhash if necessary
-        	if (mModhash == null) {
-        		if ((mModhash = Common.doUpdateModhash(mClient)) == null) {
+        	if (mSettings.modhash == null) {
+        		CharSequence modhash = Common.doUpdateModhash(mClient); 
+        		if (modhash == null) {
         			// doUpdateModhash should have given an error about credentials
         			Common.doLogout(mSettings, mClient);
         			if (Constants.LOGGING) Log.e(TAG, "Vote failed because doUpdateModhash() failed");
         			return false;
         		}
+        		mSettings.setModhash(modhash);
         	}
         	
         	try {
@@ -1216,7 +1208,7 @@ public class RedditCommentsListActivity extends ListActivity
     			nvps.add(new BasicNameValuePair("id", _mThingFullname.toString()));
     			nvps.add(new BasicNameValuePair("dir", String.valueOf(_mDirection)));
     			nvps.add(new BasicNameValuePair("r", mSettings.subreddit.toString()));
-    			nvps.add(new BasicNameValuePair("uh", mModhash.toString()));
+    			nvps.add(new BasicNameValuePair("uh", mSettings.modhash.toString()));
     			// Votehash is currently unused by reddit 
 //    				nvps.add(new BasicNameValuePair("vh", "0d4ab0ffd56ad0f66841c15609e9a45aeec6b015"));
     			

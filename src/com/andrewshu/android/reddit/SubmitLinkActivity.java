@@ -33,7 +33,6 @@ import org.apache.http.NameValuePair;
 import org.apache.http.client.entity.UrlEncodedFormEntity;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPost;
-import org.apache.http.cookie.Cookie;
 import org.apache.http.impl.client.DefaultHttpClient;
 import org.apache.http.message.BasicNameValuePair;
 import org.apache.http.params.HttpConnectionParams;
@@ -75,7 +74,6 @@ public class SubmitLinkActivity extends TabActivity {
 	private RedditSettings mSettings = new RedditSettings();
 	private final DefaultHttpClient mClient = Common.createGzipHttpClient();
 	
-	private String mModhash = null;
 	private String mSubmitUrl;
 	private volatile String mCaptchaIden = null;
 	private volatile String mCaptchaUrl = null;
@@ -220,7 +218,7 @@ public class SubmitLinkActivity extends TabActivity {
     	
     	@Override
     	public String doInBackground(Void... v) {
-    		return Common.doLogin(mUsername, mPassword, mClient);
+    		return Common.doLogin(mUsername, mPassword, mClient, mSettings);
         }
     	
     	@Override
@@ -232,23 +230,13 @@ public class SubmitLinkActivity extends TabActivity {
     	protected void onPostExecute(String errorMessage) {
     		dismissDialog(Constants.DIALOG_LOGGING_IN);
 			if (errorMessage == null) {
-    			List<Cookie> cookies = mClient.getCookieStore().getCookies();
-            	for (Cookie c : cookies) {
-            		if (c.getName().equals("reddit_session")) {
-            			mSettings.setRedditSessionCookie(c);
-            			break;
-            		}
-            	}
-            	mSettings.setUsername(mUsername);
-            	mSettings.setLoggedIn(true);
     			Toast.makeText(SubmitLinkActivity.this, "Logged in as "+mUsername, Toast.LENGTH_SHORT).show();
     			// Check mail
     			new Common.PeekEnvelopeTask(SubmitLinkActivity.this, mClient, mSettings.mailNotificationStyle).execute();
     			// Show the UI and allow user to proceed
     			start();
         	} else {
-            	mSettings.setLoggedIn(false);
-    			Common.showErrorToast(errorMessage, Toast.LENGTH_LONG, SubmitLinkActivity.this);
+            	Common.showErrorToast(errorMessage, Toast.LENGTH_LONG, SubmitLinkActivity.this);
     			returnStatus(Constants.RESULT_LOGIN_REQUIRED);
         	}
     	}
@@ -281,13 +269,15 @@ public class SubmitLinkActivity extends TabActivity {
         		return null;
         	}
         	// Update the modhash if necessary
-        	if (mModhash == null) {
-        		if ((mModhash = Common.doUpdateModhash(mClient)) == null) {
+        	if (mSettings.modhash == null) {
+        		CharSequence modhash = Common.doUpdateModhash(mClient);
+        		if (modhash == null) {
         			// doUpdateModhash should have given an error about credentials
         			Common.doLogout(mSettings, mClient);
         			if (Constants.LOGGING) Log.e(TAG, "Reply failed because doUpdateModhash() failed");
         			return null;
         		}
+        		mSettings.setModhash(modhash);
         	}
         	
         	try {
@@ -302,7 +292,7 @@ public class SubmitLinkActivity extends TabActivity {
     				nvps.add(new BasicNameValuePair("url", _mUrlOrText.toString()));
     			else // if (Constants.SUBMIT_KIND_SELF.equals(_mKind))
     				nvps.add(new BasicNameValuePair("text", _mUrlOrText.toString()));
-    			nvps.add(new BasicNameValuePair("uh", mModhash.toString()));
+    			nvps.add(new BasicNameValuePair("uh", mSettings.modhash.toString()));
     			if (mCaptchaIden != null) {
     				nvps.add(new BasicNameValuePair("iden", mCaptchaIden));
     				nvps.add(new BasicNameValuePair("captcha", _mCaptcha.toString()));
@@ -338,7 +328,7 @@ public class SubmitLinkActivity extends TabActivity {
             	}
             	if (line.contains("USER_REQUIRED")) {
             		// The modhash probably expired
-            		mModhash = null;
+            		mSettings.setModhash(null);
             		throw new Exception("User required. Huh?");
             	}
             	if (line.contains("SUBREDDIT_NOEXIST")) {

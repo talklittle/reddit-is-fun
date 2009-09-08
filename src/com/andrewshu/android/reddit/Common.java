@@ -41,6 +41,7 @@ import org.apache.http.NameValuePair;
 import org.apache.http.client.entity.UrlEncodedFormEntity;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPost;
+import org.apache.http.cookie.Cookie;
 import org.apache.http.entity.HttpEntityWrapper;
 import org.apache.http.impl.client.DefaultHttpClient;
 import org.apache.http.impl.cookie.BasicClientCookie;
@@ -117,6 +118,8 @@ public class Common {
 	    		if (rSettings.redditSessionCookie.getExpiryDate() != null)
 	    			editor.putLong("reddit_sessionExpiryDate", rSettings.redditSessionCookie.getExpiryDate().getTime());
 	    	}
+	    	if (rSettings.modhash != null)
+	    		editor.putString("modhash", rSettings.modhash.toString());
     	}
     	
     	// Default subreddit
@@ -136,6 +139,7 @@ public class Common {
         // Session
     	SharedPreferences sessionPrefs = PreferenceManager.getDefaultSharedPreferences(context);
         rSettings.setUsername(sessionPrefs.getString("username", null));
+        rSettings.setModhash(sessionPrefs.getString("modhash", null));
         String cookieValue = sessionPrefs.getString("reddit_sessionValue", null);
         String cookieDomain = sessionPrefs.getString("reddit_sessionDomain", null);
         String cookiePath = sessionPrefs.getString("reddit_sessionPath", null);
@@ -173,10 +177,12 @@ public class Common {
     }
     
     /**
+     * On success stores the session cookie and modhash in your RedditSettings.
+     * On failure does not modify RedditSettings. 
      * Should be called from a background thread.
      * @return Error message, or null on success
      */
-    static String doLogin(CharSequence username, CharSequence password, DefaultHttpClient client) {
+    static String doLogin(CharSequence username, CharSequence password, DefaultHttpClient client, RedditSettings settings) {
 		String status = "";
     	String userError = "Error logging in. Please try again.";
     	HttpEntity entity = null;
@@ -185,6 +191,7 @@ public class Common {
     		List<NameValuePair> nvps = new ArrayList<NameValuePair>();
     		nvps.add(new BasicNameValuePair("user", username.toString()));
     		nvps.add(new BasicNameValuePair("passwd", password.toString()));
+    		nvps.add(new BasicNameValuePair("api_type", "json"));
     		
             HttpPost httppost = new HttpPost("http://www.reddit.com/api/login/"+username);
             httppost.setEntity(new UrlEncodedFormEntity(nvps, HTTP.UTF_8));
@@ -206,25 +213,55 @@ public class Common {
         	BufferedReader in = new BufferedReader(new InputStreamReader(entity.getContent()));
         	String line = in.readLine();
         	in.close();
+        	entity.consumeContent();
         	if (line == null || Constants.EMPTY_STRING.equals(line)) {
         		throw new HttpException("No content returned from login POST");
         	}
-        	if (line.contains("WRONG_PASSWORD")) {
-        		userError = "Bad password.";
-        		throw new Exception("Wrong password");
-        	}
-
-        	if (Constants.LOGGING) Common.logDLong(TAG, line);
         	
-        	entity.consumeContent();
+        	if (Constants.LOGGING) Common.logDLong(TAG, line);
         	
         	if (client.getCookieStore().getCookies().isEmpty())
         		throw new HttpException("Failed to login: No cookies");
         	
+        	final JsonFactory jsonFactory = new JsonFactory();
+        	final JsonParser jp = jsonFactory.createJsonParser(line);
+        	
+        	// Go to the errors
+        	while (jp.nextToken() != JsonToken.FIELD_NAME || !Constants.JSON_ERRORS.equals(jp.getCurrentName()))
+        		;
+        	if (jp.nextToken() != JsonToken.START_ARRAY)
+        		throw new IllegalStateException("Login: expecting errors START_ARRAY");
+        	if (jp.nextToken() != JsonToken.END_ARRAY) {
+	        	if (line.contains("WRONG_PASSWORD")) {
+	        		userError = "Bad password.";
+	        		throw new Exception("Wrong password");
+	        	} else {
+	        		// Could parse for error code and error description but using whole line is easier.
+	        		throw new Exception(line);
+	        	}
+        	}
+
         	// Getting here means you successfully logged in.
         	// Congratulations!
         	// You are a true reddit master!
-        
+        	
+        	// Get modhash
+        	while (jp.nextToken() != JsonToken.FIELD_NAME || !Constants.JSON_MODHASH.equals(jp.getCurrentName()))
+        		;
+        	jp.nextToken();
+        	settings.setModhash(jp.getText());
+
+        	// Could grab cookie from JSON too, but it lacks expiration date and stuff. So grab from HttpClient.
+			List<Cookie> cookies = client.getCookieStore().getCookies();
+        	for (Cookie c : cookies) {
+        		if (c.getName().equals("reddit_session")) {
+        			settings.setRedditSessionCookie(c);
+        			break;
+        		}
+        	}
+        	settings.setUsername(username);
+        	settings.setLoggedIn(true);
+        	
         	return null;
 
     	} catch (Exception e) {
@@ -237,6 +274,7 @@ public class Common {
     		}
     		if (Constants.LOGGING) Log.e(TAG, e.getMessage());
         }
+    	settings.setLoggedIn(false);
         return userError;
     }
     
@@ -249,7 +287,7 @@ public class Common {
     
     
     /**
-     * Get a new modhash and return it
+     * Get a new modhash by scraping and return it
      * 
      * @param client
      * @return

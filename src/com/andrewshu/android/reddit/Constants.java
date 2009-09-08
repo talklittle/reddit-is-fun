@@ -185,10 +185,13 @@ public class Constants {
     static final String JSON_BODY = "body";
     static final String JSON_CHILDREN = "children";
     static final String JSON_DATA = "data";
+    static final String JSON_ERRORS = "errors";
+    static final String JSON_JSON = "json";
     static final String JSON_KIND = "kind";
     static final String JSON_LISTING = "Listing";
     static final String JSON_MEDIA = "media";
     static final String JSON_MEDIA_EMBED = "media_embed";
+    static final String JSON_MODHASH = "modhash";
     static final String JSON_MORE = "more";
     static final String JSON_NEW = "new";
     static final String JSON_NUM_COMMENTS = "num_comments";

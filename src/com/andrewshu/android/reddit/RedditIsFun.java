@@ -34,7 +34,6 @@ import org.apache.http.NameValuePair;
 import org.apache.http.client.entity.UrlEncodedFormEntity;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPost;
-import org.apache.http.cookie.Cookie;
 import org.apache.http.impl.client.DefaultHttpClient;
 import org.apache.http.message.BasicNameValuePair;
 import org.apache.http.protocol.HTTP;
@@ -96,7 +95,6 @@ public final class RedditIsFun extends ListActivity {
     private ThreadsListAdapter mThreadsAdapter;
 
     private final DefaultHttpClient mClient = Common.createGzipHttpClient();
-	String mModhash = null;
 	
    
     private final RedditSettings mSettings = new RedditSettings();
@@ -726,7 +724,7 @@ public final class RedditIsFun extends ListActivity {
     	
     	@Override
     	public String doInBackground(Void... v) {
-    		return Common.doLogin(mUsername, mPassword, mClient);
+    		return Common.doLogin(mUsername, mPassword, mClient, mSettings);
         }
     	
     	protected void onPreExecute() {
@@ -736,23 +734,13 @@ public final class RedditIsFun extends ListActivity {
     	protected void onPostExecute(String errorMessage) {
     		dismissDialog(Constants.DIALOG_LOGGING_IN);
     		if (errorMessage == null) {
-    			List<Cookie> cookies = mClient.getCookieStore().getCookies();
-            	for (Cookie c : cookies) {
-            		if (c.getName().equals("reddit_session")) {
-            			mSettings.setRedditSessionCookie(c);
-            			break;
-            		}
-            	}
-            	mSettings.setUsername(mUsername);
-            	mSettings.setLoggedIn(true);
     			Toast.makeText(RedditIsFun.this, "Logged in as "+mUsername, Toast.LENGTH_SHORT).show();
     			// Check mail
     			new Common.PeekEnvelopeTask(RedditIsFun.this, mClient, mSettings.mailNotificationStyle).execute();
     			// Refresh the threads list
     			new DownloadThreadsTask().execute(mSettings.subreddit);
         	} else {
-            	mSettings.setLoggedIn(false);
-    			Common.showErrorToast(errorMessage, Toast.LENGTH_LONG, RedditIsFun.this);
+            	Common.showErrorToast(errorMessage, Toast.LENGTH_LONG, RedditIsFun.this);
     		}
     	}
     }
@@ -792,13 +780,15 @@ public final class RedditIsFun extends ListActivity {
         	}
         	
         	// Update the modhash if necessary
-        	if (mModhash == null) {
-        		if ((mModhash = Common.doUpdateModhash(mClient)) == null) {
+        	if (mSettings.modhash == null) {
+        		CharSequence modhash = Common.doUpdateModhash(mClient);
+        		if (modhash == null) {
         			// doUpdateModhash should have given an error about credentials
         			Common.doLogout(mSettings, mClient);
         			if (Constants.LOGGING) Log.e(TAG, "Vote failed because doUpdateModhash() failed");
         			return false;
         		}
+        		mSettings.setModhash(modhash);
         	}
         	
         	try {
@@ -807,7 +797,7 @@ public final class RedditIsFun extends ListActivity {
     			nvps.add(new BasicNameValuePair("id", _mThingFullname.toString()));
     			nvps.add(new BasicNameValuePair("dir", String.valueOf(_mDirection)));
     			nvps.add(new BasicNameValuePair("r", _mSubreddit.toString()));
-    			nvps.add(new BasicNameValuePair("uh", mModhash.toString()));
+    			nvps.add(new BasicNameValuePair("uh", mSettings.modhash.toString()));
     			// Votehash is currently unused by reddit 
 //    				nvps.add(new BasicNameValuePair("vh", "0d4ab0ffd56ad0f66841c15609e9a45aeec6b015"));
     			

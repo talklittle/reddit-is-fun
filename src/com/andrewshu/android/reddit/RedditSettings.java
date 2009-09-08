@@ -30,6 +30,7 @@ public class RedditSettings {
 	boolean loggedIn = false;
 	CharSequence username = null;
 	Cookie redditSessionCookie = null;
+	CharSequence modhash = null;
 	CharSequence homepage = Constants.FRONTPAGE_STRING;
 	
 	int threadDownloadLimit = Constants.DEFAULT_THREAD_DOWNLOAD_LIMIT;
@@ -89,6 +90,10 @@ public class RedditSettings {
 	
 	synchronized void setMailNotificationStyle(String mailNotificationStyle) {
 		this.mailNotificationStyle = mailNotificationStyle;
+	}
+	
+	synchronized void setModhash(CharSequence modhash) {
+		this.modhash = modhash;
 	}
 	
 	synchronized void setUsername(CharSequence username) {
