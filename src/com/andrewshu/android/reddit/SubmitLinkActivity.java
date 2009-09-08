@@ -734,5 +734,18 @@ public class SubmitLinkActivity extends TabActivity {
     	}
     }
     
-
+    @Override
+    protected void onRestoreInstanceState(Bundle state) {
+    	super.onRestoreInstanceState(state);
+    	try {
+        	dismissDialog(Constants.DIALOG_LOGIN);
+	    } catch (IllegalArgumentException e) {
+	    	// Ignore.
+	    }
+	    try {
+        	dismissDialog(Constants.DIALOG_LOGGING_IN);
+	    } catch (IllegalArgumentException e) {
+	    	// Ignore.
+	    }
+    }
 }
