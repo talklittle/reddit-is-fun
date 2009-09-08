@@ -18,6 +18,9 @@
  * along with "reddit is fun".  If not, see <http://www.gnu.org/licenses/>.
 -->
 <selector xmlns:android="http://schemas.android.com/apk/res/android">
+	<item android:state_checked="true" android:state_focused="true" android:drawable="@drawable/vote_down_blue_focus_big" />
+	<item android:state_checked="false" android:state_focused="true" android:drawable="@drawable/vote_down_gray_focus_big" />
+	
 	<item android:state_checked="true" android:drawable="@drawable/vote_down_blue_big" />
-	<item android:drawable="@drawable/vote_down_gray_big" />
+	<item android:state_checked="false" android:drawable="@drawable/vote_down_gray_big" />
 </selector>

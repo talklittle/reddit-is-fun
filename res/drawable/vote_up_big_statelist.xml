@@ -17,8 +17,10 @@
  * You should have received a copy of the GNU General Public License
  * along with "reddit is fun".  If not, see <http://www.gnu.org/licenses/>.
 -->
-
 <selector xmlns:android="http://schemas.android.com/apk/res/android">
+	<item android:state_checked="true" android:state_focused="true" android:drawable="@drawable/vote_up_red_focus_big" />
+	<item android:state_checked="false" android:state_focused="true" android:drawable="@drawable/vote_up_gray_focus_big" />
+	
 	<item android:state_checked="true" android:drawable="@drawable/vote_up_red_big" />
-	<item android:drawable="@drawable/vote_up_gray_big" />
+	<item android:state_checked="false" android:drawable="@drawable/vote_up_gray_big" />
 </selector>
