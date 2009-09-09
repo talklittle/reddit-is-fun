@@ -1670,13 +1670,15 @@ public class RedditCommentsListActivity extends ListActivity
     	
     	// Edit and delete
     	if (mSettings.username != null && mSettings.username.equals(mOpThreadInfo.getAuthor())) {
-			if (!Constants.NULL_STRING.equals(mOpThreadInfo.getSelftext()))
+			/* XXX: No op edit until we can get plaintext selftext (currently HTML-only)
+    		if (!Constants.NULL_STRING.equals(mOpThreadInfo.getSelftext()))
 				menu.findItem(R.id.op_edit_menu_id).setVisible(true);
 			else
 				menu.findItem(R.id.op_edit_menu_id).setVisible(false);
+			*/
 			menu.findItem(R.id.op_delete_menu_id).setVisible(true);
 		} else {
-			menu.findItem(R.id.op_edit_menu_id).setVisible(false);
+//			menu.findItem(R.id.op_edit_menu_id).setVisible(false);
 			menu.findItem(R.id.op_delete_menu_id).setVisible(false);
 		}
     	
@@ -1751,11 +1753,13 @@ public class RedditCommentsListActivity extends ListActivity
     		mDeleteTargetKind = Constants.THREAD_KIND;
     		showDialog(Constants.DIALOG_DELETE);
     		break;
+    	/* XXX: No op edit until we can get plaintext selftext (currently HTML-only)
     	case R.id.op_edit_menu_id:
     		mReplyTargetName = mOpThreadInfo.getName();
     		mEditTargetBody = mOpThreadInfo.getSelftext();
     		showDialog(Constants.DIALOG_EDIT);
     		break;
+    	*/
         case R.id.light_dark_menu_id:
     		if (mSettings.theme == R.style.Reddit_Light) {
     			mSettings.setTheme(R.style.Reddit_Dark);

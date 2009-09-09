@@ -246,7 +246,7 @@ public class SubmitLinkActivity extends TabActivity {
 
 	private class SubmitLinkTask extends AsyncTask<Void, Void, ThreadInfo> {
     	CharSequence _mTitle, _mUrlOrText, _mSubreddit, _mKind, _mCaptcha;
-		String _mUserError = "Error submitting reply. Please try again.";
+		String _mUserError = "Error creating submission. Please try again.";
     	
     	SubmitLinkTask(CharSequence title, CharSequence urlOrText, CharSequence subreddit, CharSequence kind, CharSequence captcha) {
     		_mTitle = title;
@@ -259,7 +259,6 @@ public class SubmitLinkActivity extends TabActivity {
     	@Override
         public ThreadInfo doInBackground(Void... voidz) {
         	ThreadInfo newlyCreatedThread = null;
-        	String userError = "Error creating submission. Please try again.";
         	HttpEntity entity = null;
         	
         	String status = "";
@@ -352,13 +351,13 @@ public class SubmitLinkActivity extends TabActivity {
                 		// Try to find the # of minutes using regex
                     	Matcher rateMatcher = Constants.RATELIMIT_RETRY_PATTERN.matcher(line);
                     	if (rateMatcher.find())
-                    		userError = rateMatcher.group(1);
+                    		_mUserError = rateMatcher.group(1);
                     	else
-                    		userError = "you are trying to submit too fast. try again in a few minutes.";
-                		throw new Exception(userError);
+                    		_mUserError = "you are trying to submit too fast. try again in a few minutes.";
+                		throw new Exception(_mUserError);
                 	}
             		if (line.contains("BAD_CAPTCHA")) {
-            			userError = "Bad CAPTCHA. Try again.";
+            			_mUserError = "Bad CAPTCHA. Try again.";
             			new DownloadCaptchaTask().execute();
             		}
                 	throw new Exception("No id returned by reply POST.");
