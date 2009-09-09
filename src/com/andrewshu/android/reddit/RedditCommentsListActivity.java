@@ -165,6 +165,9 @@ public class RedditCommentsListActivity extends ListActivity
         	if (Constants.LOGGING) Log.e(TAG, "Quitting because no subreddit and thread id data was passed into the Intent.");
         	finish();
         }
+    	// More children: displaying something that's not the root of comments list.
+    	mMoreChildrenId = extras.getCharSequence(Constants.EXTRA_MORE_CHILDREN_ID);
+    	// Comment context: a URL pointing directly at a comment, versus a thread
     	String commentContext = extras.getString(Constants.EXTRA_COMMENT_CONTEXT);
     	if (commentContext != null) {
     		Matcher commentContextMatcher = Constants.COMMENT_CONTEXT_PATTERN.matcher(commentContext);
@@ -190,17 +193,12 @@ public class RedditCommentsListActivity extends ListActivity
         		mNumVisibleComments = Constants.DEFAULT_COMMENT_DOWNLOAD_LIMIT;
     	}
     	
-    	// More children: displaying something that's not the root of comments list.
-    	mMoreChildrenId = extras.getCharSequence(Constants.EXTRA_MORE_CHILDREN_ID);
-    	
-    	mJumpToCommentPosition = extras.getInt(Constants.JUMP_TO_COMMENT_POSITION_KEY);
-    	// JumpToCommentId from Intent takes precedence over savedInstanceState.
-    	if (mJumpToCommentId == null)
-    		mJumpToCommentId = extras.getCharSequence(Constants.JUMP_TO_COMMENT_ID_KEY);
-    	mReplyTargetName = extras.getCharSequence(Constants.REPLY_TARGET_NAME_KEY);
     	
     	if (savedInstanceState != null) {
         	mSortByUrl = savedInstanceState.getCharSequence(Constants.CommentsSort.SORT_BY_KEY);
+       		mJumpToCommentId = savedInstanceState.getCharSequence(Constants.JUMP_TO_COMMENT_ID_KEY);
+        	mReplyTargetName = savedInstanceState.getCharSequence(Constants.REPLY_TARGET_NAME_KEY);
+        	mJumpToCommentPosition = savedInstanceState.getInt(Constants.JUMP_TO_COMMENT_POSITION_KEY);
         }
         
         new DownloadCommentsTask().execute(Constants.DEFAULT_COMMENT_DOWNLOAD_LIMIT);
