@@ -39,6 +39,8 @@ import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.impl.client.DefaultHttpClient;
 import org.apache.http.message.BasicNameValuePair;
+import org.apache.http.params.HttpConnectionParams;
+import org.apache.http.params.HttpParams;
 import org.apache.http.protocol.HTTP;
 import org.codehaus.jackson.JsonFactory;
 import org.codehaus.jackson.JsonParseException;
@@ -133,6 +135,8 @@ public class RedditCommentsListActivity extends ListActivity
     private CommentInfo mVoteTargetCommentInfo = null;
     private URLSpan[] mVoteTargetSpans = null;
     private CharSequence mReplyTargetName = null;
+    private CharSequence mEditTargetBody = null;
+    private String mDeleteTargetKind = null;
     
     // ProgressDialogs with percentage bars
     private AutoResetProgressDialog mLoadingCommentsProgress;
@@ -198,6 +202,8 @@ public class RedditCommentsListActivity extends ListActivity
         	mSortByUrl = savedInstanceState.getCharSequence(Constants.CommentsSort.SORT_BY_KEY);
        		mJumpToCommentId = savedInstanceState.getCharSequence(Constants.JUMP_TO_COMMENT_ID_KEY);
         	mReplyTargetName = savedInstanceState.getCharSequence(Constants.REPLY_TARGET_NAME_KEY);
+        	mEditTargetBody = savedInstanceState.getCharSequence(Constants.EDIT_TARGET_BODY_KEY);
+        	mDeleteTargetKind = savedInstanceState.getString(Constants.DELETE_TARGET_KIND_KEY);
         	mJumpToCommentPosition = savedInstanceState.getInt(Constants.JUMP_TO_COMMENT_POSITION_KEY);
         }
         
@@ -529,8 +535,14 @@ public class RedditCommentsListActivity extends ListActivity
 		            default: leftIndent.setText("wwwwwww"); break;
 		            }
 		            
+		            if ("[deleted]".equals(item.getAuthor())) {
+		            	voteUpView.setVisibility(View.INVISIBLE);
+		            	voteDownView.setVisibility(View.INVISIBLE);
+		            }
 		            // Set the up and down arrow colors based on whether user likes
-		            if (mSettings.loggedIn) {
+		            else if (mSettings.loggedIn) {
+		            	voteUpView.setVisibility(View.VISIBLE);
+		            	voteDownView.setVisibility(View.VISIBLE);
 		            	if (Constants.TRUE_STRING.equals(item.getLikes())) {
 		            		voteUpView.setImageResource(R.drawable.vote_up_red);
 		            		voteDownView.setImageResource(R.drawable.vote_down_gray);
@@ -545,7 +557,9 @@ public class RedditCommentsListActivity extends ListActivity
 //		            		votesView.setTextColor(res.getColor(R.color.gray));
 		            	}
 		            } else {
-		        		voteUpView.setImageResource(R.drawable.vote_up_gray);
+		            	voteUpView.setVisibility(View.VISIBLE);
+		            	voteDownView.setVisibility(View.VISIBLE);
+		            	voteUpView.setImageResource(R.drawable.vote_up_gray);
 		        		voteDownView.setImageResource(R.drawable.vote_down_gray);
 //		        		votesView.setTextColor(res.getColor(R.color.gray));
 		            }
@@ -597,7 +611,7 @@ public class RedditCommentsListActivity extends ListActivity
         	moreChildrenIntent.putExtra(ThreadInfo.NUM_COMMENTS, Integer.valueOf(mOpThreadInfo.getNumComments()));
         	moreChildrenIntent.putExtra(Constants.EXTRA_MORE_CHILDREN_ID, item.getId());
         	startActivity(moreChildrenIntent);
-        } else {
+        } else if (!"[deleted]".equals(item.getAuthor())) {
         	showDialog(Constants.DIALOG_THING_CLICK);
         }
     }
@@ -1027,7 +1041,6 @@ public class RedditCommentsListActivity extends ListActivity
     	
     	@Override
         public CharSequence doInBackground(CharSequence... text) {
-        	String userError = "Error replying. Please try again.";
         	HttpEntity entity = null;
         	
         	String status = "";
@@ -1060,6 +1073,10 @@ public class RedditCommentsListActivity extends ListActivity
     			
     			HttpPost httppost = new HttpPost("http://www.reddit.com/api/comment");
     	        httppost.setEntity(new UrlEncodedFormEntity(nvps, HTTP.UTF_8));
+    	        
+    	        HttpParams params = httppost.getParams();
+    	        HttpConnectionParams.setConnectionTimeout(params, 40000);
+    	        HttpConnectionParams.setSoTimeout(params, 40000);
     	        
     	        if (Constants.LOGGING) Log.d(TAG, nvps.toString());
     	        
@@ -1097,10 +1114,10 @@ public class RedditCommentsListActivity extends ListActivity
                 		// Try to find the # of minutes using regex
                     	Matcher rateMatcher = Constants.RATELIMIT_RETRY_PATTERN.matcher(line);
                     	if (rateMatcher.find())
-                    		userError = rateMatcher.group(1);
+                    		_mUserError = rateMatcher.group(1);
                     	else
-                    		userError = "you are trying to submit too fast. try again in a few minutes.";
-                		throw new Exception(userError);
+                    		_mUserError = "you are trying to submit too fast. try again in a few minutes.";
+                		throw new Exception(_mUserError);
                 	}
                 	throw new Exception("No id returned by reply POST.");
             	}
@@ -1139,9 +1156,243 @@ public class RedditCommentsListActivity extends ListActivity
     			new DownloadCommentsTask().execute(Constants.DEFAULT_COMMENT_DOWNLOAD_LIMIT);
     		}
     	}
-
     }
     
+    private class EditTask extends AsyncTask<CharSequence, Void, CharSequence> {
+    	private CharSequence _mThingId;
+    	String _mUserError = "Error submitting edit. Please try again.";
+    	
+    	EditTask(CharSequence thingId) {
+    		_mThingId = thingId;
+    	}
+    	
+    	@Override
+        public CharSequence doInBackground(CharSequence... text) {
+        	HttpEntity entity = null;
+        	
+        	String status = "";
+        	if (!mSettings.loggedIn) {
+        		_mUserError = "You must be logged in to edit.";
+        		return null;
+        	}
+        	// Update the modhash if necessary
+        	if (mSettings.modhash == null) {
+        		CharSequence modhash = Common.doUpdateModhash(mClient);
+        		if (modhash == null) {
+        			// doUpdateModhash should have given an error about credentials
+        			Common.doLogout(mSettings, mClient);
+        			if (Constants.LOGGING) Log.e(TAG, "Reply failed because doUpdateModhash() failed");
+        			return null;
+        		}
+        		mSettings.setModhash(modhash);
+        	}
+        	
+        	try {
+        		// Construct data
+    			List<NameValuePair> nvps = new ArrayList<NameValuePair>();
+    			nvps.add(new BasicNameValuePair("thing_id", _mThingId.toString()));
+    			nvps.add(new BasicNameValuePair("text", text[0].toString()));
+    			nvps.add(new BasicNameValuePair("r", mSettings.subreddit.toString()));
+    			nvps.add(new BasicNameValuePair("uh", mSettings.modhash.toString()));
+    			
+    			HttpPost httppost = new HttpPost("http://www.reddit.com/api/editusertext");
+    	        httppost.setEntity(new UrlEncodedFormEntity(nvps, HTTP.UTF_8));
+    	        
+    	        HttpParams params = httppost.getParams();
+    	        HttpConnectionParams.setConnectionTimeout(params, 40000);
+    	        HttpConnectionParams.setSoTimeout(params, 40000);
+    	        
+    	        if (Constants.LOGGING) Log.d(TAG, nvps.toString());
+    	        
+                // Perform the HTTP POST request
+    	    	HttpResponse response = mClient.execute(httppost);
+    	    	status = response.getStatusLine().toString();
+            	if (!status.contains("OK"))
+            		throw new HttpException(status);
+            	
+            	entity = response.getEntity();
+
+            	BufferedReader in = new BufferedReader(new InputStreamReader(entity.getContent()));
+            	String line = in.readLine();
+            	in.close();
+            	if (line == null || Constants.EMPTY_STRING.equals(line)) {
+            		throw new HttpException("No content returned from reply POST");
+            	}
+            	if (line.contains("WRONG_PASSWORD")) {
+            		throw new Exception("Wrong password");
+            	}
+            	if (line.contains("USER_REQUIRED")) {
+            		// The modhash probably expired
+            		mSettings.setModhash(null);
+            		throw new Exception("User required. Huh?");
+            	}
+            	
+            	if (Constants.LOGGING) Common.logDLong(TAG, line);
+
+            	String newId;
+            	Matcher idMatcher = Constants.NEW_ID_PATTERN.matcher(line);
+            	if (idMatcher.find()) {
+            		newId = idMatcher.group(3);
+            	} else {
+            		if (line.contains("RATELIMIT")) {
+                		// Try to find the # of minutes using regex
+                    	Matcher rateMatcher = Constants.RATELIMIT_RETRY_PATTERN.matcher(line);
+                    	if (rateMatcher.find())
+                    		_mUserError = rateMatcher.group(1);
+                    	else
+                    		_mUserError = "you are trying to submit too fast. try again in a few minutes.";
+                		throw new Exception(_mUserError);
+                	}
+                	throw new Exception("No id returned by reply POST.");
+            	}
+            	
+            	entity.consumeContent();
+            	
+            	// Getting here means success. Create a new CommentInfo.
+            	return newId;
+            	
+        	} catch (Exception e) {
+        		if (entity != null) {
+        			try {
+        				entity.consumeContent();
+        			} catch (Exception e2) {
+        				if (Constants.LOGGING) Log.e(TAG, e.getMessage());
+        			}
+        		}
+        		if (Constants.LOGGING) Log.e(TAG, e.getMessage());
+        	}
+        	return null;
+        }
+    	
+    	@Override
+    	public void onPreExecute() {
+    		showDialog(Constants.DIALOG_EDITING);
+    	}
+    	
+    	@Override
+    	public void onPostExecute(CharSequence newId) {
+    		dismissDialog(Constants.DIALOG_EDITING);
+    		if (newId == null) {
+    			Common.showErrorToast(_mUserError, Toast.LENGTH_LONG, RedditCommentsListActivity.this);
+    		} else {
+    			// Refresh
+    			mJumpToCommentId = newId;
+    			new DownloadCommentsTask().execute(Constants.DEFAULT_COMMENT_DOWNLOAD_LIMIT);
+    		}
+    	}
+    }
+    
+    private class DeleteTask extends AsyncTask<CharSequence, Void, Boolean> {
+    	private String _mUserError = "Error deleting. Please try again.";
+    	private String _mKind;
+    	
+    	public DeleteTask(String kind) {
+    		_mKind = kind;
+    	}
+    	
+    	@Override
+    	public Boolean doInBackground(CharSequence... thingFullname) {
+//    		POSTDATA=id=t1_c0cxa7l&executed=deleted&r=test&uh=f7jb1yjwfqd4ffed8356eb63fcfbeeadad142f57c56e9cbd9e
+    		
+    		HttpEntity entity = null;
+        	
+        	String status = "";
+        	if (!mSettings.loggedIn) {
+        		_mUserError = "You must be logged in to delete.";
+        		return false;
+        	}
+        	// Update the modhash if necessary
+        	if (mSettings.modhash == null) {
+        		CharSequence modhash = Common.doUpdateModhash(mClient);
+        		if (modhash == null) {
+        			// doUpdateModhash should have given an error about credentials
+        			Common.doLogout(mSettings, mClient);
+        			if (Constants.LOGGING) Log.e(TAG, "Reply failed because doUpdateModhash() failed");
+        			return false;
+        		}
+        		mSettings.setModhash(modhash);
+        	}
+        	
+        	try {
+        		// Construct data
+    			List<NameValuePair> nvps = new ArrayList<NameValuePair>();
+    			nvps.add(new BasicNameValuePair("id", thingFullname[0].toString()));
+    			nvps.add(new BasicNameValuePair("executed", "deleted"));
+    			nvps.add(new BasicNameValuePair("r", mSettings.subreddit.toString()));
+    			nvps.add(new BasicNameValuePair("uh", mSettings.modhash.toString()));
+    			
+    			HttpPost httppost = new HttpPost("http://www.reddit.com/api/del");
+    	        httppost.setEntity(new UrlEncodedFormEntity(nvps, HTTP.UTF_8));
+    	        
+    	        HttpParams params = httppost.getParams();
+    	        HttpConnectionParams.setConnectionTimeout(params, 40000);
+    	        HttpConnectionParams.setSoTimeout(params, 40000);
+    	        
+    	        if (Constants.LOGGING) Log.d(TAG, nvps.toString());
+    	        
+                // Perform the HTTP POST request
+    	    	HttpResponse response = mClient.execute(httppost);
+    	    	status = response.getStatusLine().toString();
+            	if (!status.contains("OK"))
+            		throw new HttpException(status);
+            	
+            	entity = response.getEntity();
+
+            	BufferedReader in = new BufferedReader(new InputStreamReader(entity.getContent()));
+            	String line = in.readLine();
+            	in.close();
+            	if (line == null || Constants.EMPTY_STRING.equals(line)) {
+            		throw new HttpException("No content returned from reply POST");
+            	}
+            	if (line.contains("WRONG_PASSWORD")) {
+            		throw new Exception("Wrong password");
+            	}
+            	if (line.contains("USER_REQUIRED")) {
+            		// The modhash probably expired
+            		mSettings.setModhash(null);
+            		throw new Exception("User required. Huh?");
+            	}
+            	
+            	if (Constants.LOGGING) Common.logDLong(TAG, line);
+
+            	// Success
+            	return true;
+            	
+        	} catch (Exception e) {
+        		if (entity != null) {
+        			try {
+        				entity.consumeContent();
+        			} catch (Exception e2) {
+        				if (Constants.LOGGING) Log.e(TAG, e.getMessage());
+        			}
+        		}
+        		if (Constants.LOGGING) Log.e(TAG, e.getMessage());
+        	}
+        	return false;
+    	}
+    	
+    	@Override
+    	public void onPreExecute() {
+    		showDialog(Constants.DIALOG_DELETING);
+    	}
+    	
+    	@Override
+    	public void onPostExecute(Boolean success) {
+    		dismissDialog(Constants.DIALOG_DELETING);
+    		if (success) {
+    			if (Constants.THREAD_KIND.equals(_mKind)) {
+    				Toast.makeText(RedditCommentsListActivity.this, "Deleted thread.", Toast.LENGTH_LONG).show();
+    				finish();
+    			} else {
+    				Toast.makeText(RedditCommentsListActivity.this, "Deleted comment.", Toast.LENGTH_SHORT).show();
+    				new DownloadCommentsTask().execute(Constants.DEFAULT_COMMENT_DOWNLOAD_LIMIT);
+    			}
+    		} else {
+    			Common.showErrorToast(_mUserError, Toast.LENGTH_LONG, RedditCommentsListActivity.this);
+    		}
+    	}
+    }
+
         
     
     private class VoteTask extends AsyncTask<Void, Void, Boolean> {
@@ -1417,6 +1668,18 @@ public class RedditCommentsListActivity extends ListActivity
             menu.findItem(R.id.inbox_menu_id).setVisible(false);
     	}
     	
+    	// Edit and delete
+    	if (mSettings.username != null && mSettings.username.equals(mOpThreadInfo.getAuthor())) {
+			if (!Constants.NULL_STRING.equals(mOpThreadInfo.getSelftext()))
+				menu.findItem(R.id.op_edit_menu_id).setVisible(true);
+			else
+				menu.findItem(R.id.op_edit_menu_id).setVisible(false);
+			menu.findItem(R.id.op_delete_menu_id).setVisible(true);
+		} else {
+			menu.findItem(R.id.op_edit_menu_id).setVisible(false);
+			menu.findItem(R.id.op_delete_menu_id).setVisible(false);
+		}
+    	
     	// Theme: Light/Dark
     	src = mSettings.theme == R.style.Reddit_Light ?
         		menu.findItem(R.id.dark_menu_id) :
@@ -1483,6 +1746,16 @@ public class RedditCommentsListActivity extends ListActivity
 				.append(mSettings.subreddit).append("/comments/").append(mSettings.threadId).toString();
     		Common.launchBrowser(url, this);
     		break;
+    	case R.id.op_delete_menu_id:
+    		mReplyTargetName = mOpThreadInfo.getName();
+    		mDeleteTargetKind = Constants.THREAD_KIND;
+    		showDialog(Constants.DIALOG_DELETE);
+    		break;
+    	case R.id.op_edit_menu_id:
+    		mReplyTargetName = mOpThreadInfo.getName();
+    		mEditTargetBody = mOpThreadInfo.getSelftext();
+    		showDialog(Constants.DIALOG_EDIT);
+    		break;
         case R.id.light_dark_menu_id:
     		if (mSettings.theme == R.style.Reddit_Light) {
     			mSettings.setTheme(R.style.Reddit_Dark);
@@ -1533,6 +1806,10 @@ public class RedditCommentsListActivity extends ListActivity
     		menu.add(0, Constants.DIALOG_SHOW_COMMENT, Menu.NONE, "Show comment");
     		menu.add(0, Constants.DIALOG_GOTO_PARENT, Menu.NONE, "Go to parent");
     	} else {
+    		if (mSettings.username != null && mSettings.username.equals(mCommentsAdapter.getItem(rowId).getAuthor())) {
+    			menu.add(0, Constants.DIALOG_EDIT, Menu.NONE, "Edit");
+    			menu.add(0, Constants.DIALOG_DELETE, Menu.NONE, "Delete");
+    		}
     		menu.add(0, Constants.DIALOG_HIDE_COMMENT, Menu.NONE, "Hide comment");
     		menu.add(0, Constants.DIALOG_GOTO_PARENT, Menu.NONE, "Go to parent");
     	}
@@ -1557,6 +1834,17 @@ public class RedditCommentsListActivity extends ListActivity
     			if (mCommentsAdapter.getItem(parentRowId).getIndent() < myIndent)
     				break;
     		getListView().setSelectionFromTop(parentRowId, 10);
+    		return true;
+    	case Constants.DIALOG_EDIT:
+    		mReplyTargetName = mCommentsAdapter.getItem(rowId).getName();
+    		mEditTargetBody = mCommentsAdapter.getItem(rowId).getBody();
+    		showDialog(Constants.DIALOG_EDIT);
+    		return true;
+    	case Constants.DIALOG_DELETE:
+    		mReplyTargetName = mCommentsAdapter.getItem(rowId).getName();
+    		// It must be a comment, since the OP selftext is reached via options menu, not context menu
+    		mDeleteTargetKind = Constants.COMMENT_KIND;
+    		showDialog(Constants.DIALOG_DELETE);
     		return true;
 		default:
     		return super.onContextItemSelected(item);	
@@ -1654,27 +1942,65 @@ public class RedditCommentsListActivity extends ListActivity
     		break;
 
     	case Constants.DIALOG_REPLY:
+    	case Constants.DIALOG_EDIT:
     		dialog = new Dialog(this);
     		dialog.setContentView(R.layout.compose_reply_dialog);
     		final EditText replyBody = (EditText) dialog.findViewById(R.id.body);
     		final Button replySaveButton = (Button) dialog.findViewById(R.id.reply_save_button);
     		final Button replyCancelButton = (Button) dialog.findViewById(R.id.reply_cancel_button);
-    		replySaveButton.setOnClickListener(new OnClickListener() {
-    			public void onClick(View v) {
-    				if (mReplyTargetName != null) {
-	    				new CommentReplyTask(mReplyTargetName).execute(replyBody.getText());
+    		if (id == Constants.DIALOG_REPLY) {
+	    		replySaveButton.setOnClickListener(new OnClickListener() {
+	    			public void onClick(View v) {
+	    				if (mReplyTargetName != null) {
+		    				new CommentReplyTask(mReplyTargetName).execute(replyBody.getText());
+		    				dismissDialog(Constants.DIALOG_REPLY);
+	    				}
+	    				else {
+	    					Common.showErrorToast("Error replying. Please try again.", Toast.LENGTH_SHORT, RedditCommentsListActivity.this);
+	    				}
+	    			}
+	    		});
+	    		replyCancelButton.setOnClickListener(new OnClickListener() {
+	    			public void onClick(View v) {
 	    				dismissDialog(Constants.DIALOG_REPLY);
-    				}
-    				else {
-    					Common.showErrorToast("Error replying. Please try again.", Toast.LENGTH_SHORT, RedditCommentsListActivity.this);
-    				}
+	    			}
+	    		});
+    		} else /* if (id == Constants.DIALOG_EDIT) */ {
+    			replyBody.setText(mEditTargetBody);
+    			replySaveButton.setOnClickListener(new OnClickListener() {
+	    			public void onClick(View v) {
+	    				if (mReplyTargetName != null) {
+		    				new EditTask(mReplyTargetName).execute(replyBody.getText());
+		    				dismissDialog(Constants.DIALOG_EDIT);
+	    				}
+	    				else {
+	    					Common.showErrorToast("Error editing. Please try again.", Toast.LENGTH_SHORT, RedditCommentsListActivity.this);
+	    				}
+	    			}
+	    		});
+    			replyCancelButton.setOnClickListener(new OnClickListener() {
+        			public void onClick(View v) {
+        				dismissDialog(Constants.DIALOG_EDIT);
+        			}
+        		});
+    		}
+    		break;
+    		
+    	case Constants.DIALOG_DELETE:
+    		builder = new AlertDialog.Builder(this);
+    		builder.setTitle("Really delete this?");
+    		builder.setPositiveButton("Yes", new DialogInterface.OnClickListener() {
+    			public void onClick(DialogInterface dialog, int item) {
+    				dismissDialog(Constants.DIALOG_DELETE);
+    				new DeleteTask(mDeleteTargetKind).execute(mReplyTargetName);
     			}
-    		});
-    		replyCancelButton.setOnClickListener(new OnClickListener() {
-    			public void onClick(View v) {
-    				dismissDialog(Constants.DIALOG_REPLY);
-    			}
-    		});
+    		})
+    		.setNegativeButton("No", new DialogInterface.OnClickListener() {
+				public void onClick(DialogInterface dialog, int id) {
+					dialog.cancel();
+				}
+			});
+    		dialog = builder.create();
     		break;
     		
     	case Constants.DIALOG_SORT_BY:
@@ -1702,6 +2028,20 @@ public class RedditCommentsListActivity extends ListActivity
     		break;
     		
    		// "Please wait"
+    	case Constants.DIALOG_DELETING:
+    		pdialog = new ProgressDialog(this);
+    		pdialog.setMessage("Deleting...");
+    		pdialog.setIndeterminate(true);
+    		pdialog.setCancelable(false);
+    		dialog = pdialog;
+    		break;
+    	case Constants.DIALOG_EDITING:
+    		pdialog = new ProgressDialog(this);
+    		pdialog.setMessage("Submitting edit...");
+    		pdialog.setIndeterminate(true);
+    		pdialog.setCancelable(false);
+    		dialog = pdialog;
+    		break;
     	case Constants.DIALOG_LOGGING_IN:
     		pdialog = new ProgressDialog(this);
     		pdialog.setMessage("Logging in...");
@@ -1930,6 +2270,8 @@ public class RedditCommentsListActivity extends ListActivity
     	state.putInt(Constants.JUMP_TO_COMMENT_POSITION_KEY, mJumpToCommentPosition);
     	state.putCharSequence(Constants.JUMP_TO_COMMENT_ID_KEY, mJumpToCommentId);
     	state.putCharSequence(Constants.REPLY_TARGET_NAME_KEY, mReplyTargetName);
+    	state.putCharSequence(Constants.EDIT_TARGET_BODY_KEY, mEditTargetBody);
+    	state.putString(Constants.DELETE_TARGET_KIND_KEY, mDeleteTargetKind);
     }
     
     /**
@@ -1941,6 +2283,10 @@ public class RedditCommentsListActivity extends ListActivity
     protected void onRestoreInstanceState(Bundle state) {
         super.onRestoreInstanceState(state);
         final int[] myDialogs = {
+        	Constants.DIALOG_DELETE,
+        	Constants.DIALOG_DELETING,
+        	Constants.DIALOG_EDIT,
+        	Constants.DIALOG_EDITING,
         	Constants.DIALOG_LOADING_COMMENTS_LIST,
         	Constants.DIALOG_LOGGING_IN,
         	Constants.DIALOG_LOGIN,

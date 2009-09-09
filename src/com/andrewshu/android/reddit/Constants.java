@@ -65,28 +65,33 @@ public class Constants {
     static final int DIALOG_REFRESH = 4;
     static final int DIALOG_SUBMIT_LINK = 5;
     static final int DIALOG_THING_CLICK = 6;
-    static final int DIALOG_LOGGING_IN = 7;
-    static final int DIALOG_LOADING_THREADS_LIST = 8;
-    static final int DIALOG_LOADING_COMMENTS_LIST = 9;
-    static final int DIALOG_LOADING_LOOK_OF_DISAPPROVAL = 10;
     static final int DIALOG_OPEN_BROWSER = 11;
     static final int DIALOG_THEME = 12;
     static final int DIALOG_OP = 13;
     static final int DIALOG_REPLY = 14;
-    static final int DIALOG_SUBMITTING = 15;
     static final int DIALOG_DOWNLOAD_CAPTCHA = 16;
     static final int DIALOG_HIDE_COMMENT = 17;
     static final int DIALOG_SHOW_COMMENT = 18;
-    static final int DIALOG_LOADING_INBOX = 19;
     static final int DIALOG_SORT_BY = 20;
     static final int DIALOG_SORT_BY_NEW = 21;
     static final int DIALOG_SORT_BY_CONTROVERSIAL = 22;
     static final int DIALOG_SORT_BY_TOP = 23;
     static final int DIALOG_COMMENT_CLICK = 24;
     static final int DIALOG_MESSAGE_CLICK = 25;
-    static final int DIALOG_REPLYING = 26;
-    static final int DIALOG_LOADING_REDDITS_LIST = 27;
     static final int DIALOG_GOTO_PARENT = 28;
+    static final int DIALOG_EDIT = 29;
+    static final int DIALOG_DELETE = 30;
+    // progress dialogs
+    static final int DIALOG_LOGGING_IN = 1000;
+    static final int DIALOG_LOADING_THREADS_LIST = 1001;
+    static final int DIALOG_LOADING_COMMENTS_LIST = 1002;
+    static final int DIALOG_LOADING_LOOK_OF_DISAPPROVAL = 1003;
+    static final int DIALOG_SUBMITTING = 1004;
+    static final int DIALOG_REPLYING = 1005;
+    static final int DIALOG_LOADING_REDDITS_LIST = 1006;
+    static final int DIALOG_LOADING_INBOX = 1007;
+    static final int DIALOG_DELETING = 1008;
+    static final int DIALOG_EDITING = 1009;
     
     // Special CSS for webviews to match themes
     static final String CSS_DARK = "<style>body{color:#c0c0c0;background-color:#191919}a:link{color:#ffffff}</style>";
@@ -113,6 +118,8 @@ public class Constants {
     static final String JUMP_TO_COMMENT_ID_KEY = "jump_to_comment_id";
     static final String JUMP_TO_THREAD_ID_KEY = "jump_to_thread_id";
     static final String REPLY_TARGET_NAME_KEY = "reply_target_name";
+    static final String EDIT_TARGET_BODY_KEY = "edit_target_body";
+    static final String DELETE_TARGET_KIND_KEY = "delete_target_kind";
     
     static final String THREAD_COUNT = "threadCount";
     

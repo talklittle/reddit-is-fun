@@ -82,6 +82,8 @@
 	<string name="refresh">Refresh</string>
 	<string name="submit_link">Submit link</string>
 	<string name="op">OP</string>
+	<string name="op_edit">Edit OP Selftext</string>
+	<string name="op_delete">Delete thread</string>
 	<string name="reply_thread">Reply to thread</string>
 	<string name="sort_by_hot">Sort by: hot</string>
 	<string name="sort_by_new">Sort by: new</string>
