@@ -227,7 +227,15 @@ public class RedditCommentsListActivity extends ListActivity
     	if (mJumpToCommentPosition != 0) {
     		getListView().setSelectionFromTop(mJumpToCommentPosition, 10);
     		mJumpToCommentPosition = 0;
-    	}
+    	} else if (mJumpToCommentId != null) {
+			for (int k = 0; k < mCommentsAdapter.getCount(); k++) {
+				if (mJumpToCommentId.equals(mCommentsAdapter.getItem(k).getId())) {
+					getListView().setSelectionFromTop(k, 10);
+					mJumpToCommentId = null;
+					break;
+				}
+			}
+		}
     }
     
     @Override

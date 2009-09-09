@@ -111,6 +111,8 @@ public final class RedditIsFun extends ListActivity {
     private CharSequence mSortByUrlExtra = Constants.EMPTY_STRING;
     private volatile int mCount = Constants.DEFAULT_THREAD_DOWNLOAD_LIMIT;
     
+    private CharSequence mJumpToThreadId = null;
+    
     // ProgressDialogs with percentage bars
     private AutoResetProgressDialog mLoadingThreadsProgress;
     
@@ -145,6 +147,7 @@ public final class RedditIsFun extends ListActivity {
 	        mUrlToGetHere = savedInstanceState.getCharSequence(Constants.URL_TO_GET_HERE_KEY);
 		    mCount = savedInstanceState.getInt(Constants.THREAD_COUNT);
 		    mSortByUrl = savedInstanceState.getCharSequence(Constants.ThreadsSort.SORT_BY_KEY);
+		    mJumpToThreadId = savedInstanceState.getCharSequence(Constants.JUMP_TO_THREAD_ID_KEY);
         } else {
         	mSettings.setSubreddit(mSettings.homepage);
         }
@@ -168,6 +171,17 @@ public final class RedditIsFun extends ListActivity {
     		new DownloadThreadsTask().execute(mSettings.subreddit);
     	}
     	new Common.PeekEnvelopeTask(this, mClient, mSettings.mailNotificationStyle).execute();
+    	
+    	// threads list stuff
+    	if (mJumpToThreadId != null) {
+			for (int k = 0; k < mThreadsAdapter.getCount(); k++) {
+				if (mJumpToThreadId.equals(mThreadsAdapter.getItem(k).getId())) {
+					getListView().setSelection(k);
+					mJumpToThreadId = null;
+					break;
+				}
+			}
+		}
     }
     
     @Override
@@ -464,7 +478,7 @@ public final class RedditIsFun extends ListActivity {
 	        // Mark the thread as selected
 	        mVoteTargetThreadInfo = item;
 	        mVoteTargetView = v;
-	        
+	        mJumpToThreadId = item.getId();
 	        showDialog(Constants.DIALOG_THING_CLICK);
         } else {
         	// 25 more. Use buttons.
@@ -703,6 +717,15 @@ public final class RedditIsFun extends ListActivity {
 	    			mThreadsAdapter.add(new ThreadInfo());
 	    		mThreadsAdapter.mIsLoading = false;
 	    		mThreadsAdapter.notifyDataSetChanged();
+	    		if (mJumpToThreadId != null) {
+	    			for (int k = 0; k < mThreadsAdapter.getCount(); k++) {
+	    				if (mJumpToThreadId.equals(mThreadsAdapter.getItem(k).getId())) {
+	    					getListView().setSelection(k);
+	    					mJumpToThreadId = null;
+	    					break;
+	    				}
+	    			}
+	    		}
     		} else {
     			Common.showErrorToast(_mUserError, Toast.LENGTH_LONG, RedditIsFun.this);
     		}
@@ -1369,6 +1392,7 @@ public final class RedditIsFun extends ListActivity {
     	state.putCharSequence(ThreadInfo.SUBREDDIT, mSettings.subreddit);
     	state.putCharSequence(Constants.URL_TO_GET_HERE_KEY, mUrlToGetHere);
     	state.putCharSequence(Constants.ThreadsSort.SORT_BY_KEY, mSortByUrl);
+    	state.putCharSequence(Constants.JUMP_TO_THREAD_ID_KEY, mJumpToThreadId);
     	state.putInt(Constants.THREAD_COUNT, mCount);
     }
     

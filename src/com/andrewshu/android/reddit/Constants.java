@@ -51,7 +51,7 @@ public class Constants {
     // --- Intent extras ---
     // Tell PickSubredditActivity to hide the fronptage string
     static final String EXTRA_HIDE_FRONTPAGE_STRING = "hideFrontpage";
-    // Tell RedditCommentsListActivity to jump to a comment context (from inbox. pattern match)
+    // Tell RedditCommentsListActivity to jump to a comment context (a URL. pattern match)
     static final String EXTRA_COMMENT_CONTEXT = "jumpToComment";
     // Tell RedditCommentsListActivity to show "more children"
     static final String EXTRA_MORE_CHILDREN_ID = "moreChildrenId";
@@ -111,6 +111,7 @@ public class Constants {
     static final String URL_TO_GET_HERE_KEY = "url_to_get_here";
     static final String JUMP_TO_COMMENT_POSITION_KEY = "jump_to_comment_position";
     static final String JUMP_TO_COMMENT_ID_KEY = "jump_to_comment_id";
+    static final String JUMP_TO_THREAD_ID_KEY = "jump_to_thread_id";
     static final String REPLY_TARGET_NAME_KEY = "reply_target_name";
     
     static final String THREAD_COUNT = "threadCount";
