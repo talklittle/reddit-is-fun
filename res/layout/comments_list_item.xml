@@ -121,7 +121,7 @@
 		        android:layout_marginRight="5dip"
 		        android:text="Loading..."
 		        android:textSize="12dip"
-				android:autoLink="all"
+				android:autoLink="web|email"
 				android:linksClickable="false"
 		    />
 		    
