@@ -30,11 +30,8 @@
             android:title="@string/reply_thread" />
         <item android:id="@+id/sort_by_menu_id"
             android:alphabeticShortcut="s" />
-        <!-- XXX: No op edit until we can get plaintext selftext (currently HTML-only) -->
-        <!--
         <item android:id="@+id/op_edit_menu_id"
         	android:title="@string/op_edit" />
-        -->
         <item android:id="@+id/op_delete_menu_id"
         	android:title="@string/op_delete" />
         <item android:id="@+id/light_dark_menu_id" />

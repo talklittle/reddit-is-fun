@@ -417,7 +417,7 @@ public class RedditCommentsListActivity extends ListActivity
 	                // --- End part copied from ThreadsListAdapter ---
 	                
 	                // Selftext is rendered in a WebView
-	            	if (!Constants.NULL_STRING.equals(mOpThreadInfo.getSelftext())) {
+	            	if (!Constants.NULL_STRING.equals(mOpThreadInfo.getSelftextHtml())) {
 	            		selftextView.getSettings().setTextSize(TextSize.SMALLER);
 	            		String baseURL = new StringBuilder("http://www.reddit.com/r/")
 	            				.append(mSettings.subreddit).append("/comments/").append(item.getId()).toString();
@@ -426,7 +426,7 @@ public class RedditCommentsListActivity extends ListActivity
 	            			selftextHtml = Constants.CSS_DARK;
 	            		else
 	            			selftextHtml = "";
-	            		selftextHtml += mOpThreadInfo.getSelftext(); 
+	            		selftextHtml += mOpThreadInfo.getSelftextHtml(); 
 	            		selftextView.loadDataWithBaseURL(baseURL, selftextHtml, "text/html", "UTF-8", null);
 	            	} else {
 	            		selftextView.setVisibility(View.GONE);
@@ -1670,15 +1670,13 @@ public class RedditCommentsListActivity extends ListActivity
     	
     	// Edit and delete
     	if (mSettings.username != null && mSettings.username.equals(mOpThreadInfo.getAuthor())) {
-			/* XXX: No op edit until we can get plaintext selftext (currently HTML-only)
-    		if (!Constants.NULL_STRING.equals(mOpThreadInfo.getSelftext()))
+			if (!Constants.NULL_STRING.equals(mOpThreadInfo.getSelftextHtml()))
 				menu.findItem(R.id.op_edit_menu_id).setVisible(true);
 			else
 				menu.findItem(R.id.op_edit_menu_id).setVisible(false);
-			*/
 			menu.findItem(R.id.op_delete_menu_id).setVisible(true);
 		} else {
-//			menu.findItem(R.id.op_edit_menu_id).setVisible(false);
+			menu.findItem(R.id.op_edit_menu_id).setVisible(false);
 			menu.findItem(R.id.op_delete_menu_id).setVisible(false);
 		}
     	
@@ -1753,14 +1751,12 @@ public class RedditCommentsListActivity extends ListActivity
     		mDeleteTargetKind = Constants.THREAD_KIND;
     		showDialog(Constants.DIALOG_DELETE);
     		break;
-    	/* XXX: No op edit until we can get plaintext selftext (currently HTML-only)
     	case R.id.op_edit_menu_id:
     		mReplyTargetName = mOpThreadInfo.getName();
     		mEditTargetBody = mOpThreadInfo.getSelftext();
     		showDialog(Constants.DIALOG_EDIT);
     		break;
-    	*/
-        case R.id.light_dark_menu_id:
+    	case R.id.light_dark_menu_id:
     		if (mSettings.theme == R.style.Reddit_Light) {
     			mSettings.setTheme(R.style.Reddit_Dark);
     		} else {

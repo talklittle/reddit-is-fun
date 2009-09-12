@@ -30,30 +30,31 @@ import org.codehaus.jackson.JsonNode;
  *
  */
 public class ThreadInfo {
-	public static final String AUTHOR       = "author";
-	public static final String CLICKED      = "clicked";
-	public static final String CREATED      = "created";
-	public static final String CREATED_UTC  = "created_utc";
-	public static final String DOMAIN       = "domain";
-	public static final String DOWNS        = "downs";
-	public static final String HIDDEN       = "hidden";
-	public static final String ID           = "id";
-	public static final String KIND         = "kind";
-	public static final String LIKES        = "likes";
-	public static final String MEDIA        = "media";
-	public static final String MEDIA_EMBED  = "media_embed";
-	public static final String NAME         = "name";
-	public static final String NUM_COMMENTS = "num_comments";
-	public static final String SAVED        = "saved";
-	public static final String SCORE        = "score";
-	public static final String SELFTEXT     = "selftext";
-	public static final String SUBREDDIT    = "subreddit";
-	public static final String SUBREDDIT_ID = "subreddit_id";
-	public static final String THEN         = "then";
-	public static final String THUMBNAIL    = "thumbnail";
-	public static final String TITLE        = "title";
-	public static final String UPS          = "ups";
-	public static final String URL          = "url";
+	public static final String AUTHOR        = "author";
+	public static final String CLICKED       = "clicked";
+	public static final String CREATED       = "created";
+	public static final String CREATED_UTC   = "created_utc";
+	public static final String DOMAIN        = "domain";
+	public static final String DOWNS         = "downs";
+	public static final String HIDDEN        = "hidden";
+	public static final String ID            = "id";
+	public static final String KIND          = "kind";
+	public static final String LIKES         = "likes";
+	public static final String MEDIA         = "media";
+	public static final String MEDIA_EMBED   = "media_embed";
+	public static final String NAME          = "name";
+	public static final String NUM_COMMENTS  = "num_comments";
+	public static final String SAVED         = "saved";
+	public static final String SCORE         = "score";
+	public static final String SELFTEXT      = "selftext";
+	public static final String SELFTEXT_HTML = "selftext_html";
+	public static final String SUBREDDIT     = "subreddit";
+	public static final String SUBREDDIT_ID  = "subreddit_id";
+	public static final String THEN          = "then";
+	public static final String THUMBNAIL     = "thumbnail";
+	public static final String TITLE         = "title";
+	public static final String UPS           = "ups";
+	public static final String URL           = "url";
 	
 	public static final String[] _KEYS = {
 		AUTHOR, CLICKED, CREATED, CREATED_UTC, DOMAIN, DOWNS, HIDDEN,
@@ -138,6 +139,10 @@ public class ThreadInfo {
 	
 	public String getSelftext() {
 		return mValues.get(SELFTEXT);
+	}
+	
+	public String getSelftextHtml() {
+		return mValues.get(SELFTEXT_HTML);
 	}
 	
 	public String getSubreddit() {
