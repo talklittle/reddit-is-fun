@@ -19,8 +19,8 @@
 -->
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
       package="com.andrewshu.android.reddit"
-      android:versionCode="23"
-      android:versionName="0.7.9">
+      android:versionCode="24"
+      android:versionName="0.7.10">
     <uses-permission android:name="android.permission.INTERNET" />
     <application android:icon="@drawable/icon" android:label="@string/app_name">
         <activity android:name=".RedditIsFun"
