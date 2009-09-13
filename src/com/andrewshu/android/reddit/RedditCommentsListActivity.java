@@ -66,7 +66,6 @@ import android.text.SpannableStringBuilder;
 import android.text.Spanned;
 import android.text.style.AbsoluteSizeSpan;
 import android.text.style.ForegroundColorSpan;
-import android.text.style.URLSpan;
 import android.util.Log;
 import android.view.ContextMenu;
 import android.view.KeyEvent;
@@ -103,7 +102,8 @@ public class RedditCommentsListActivity extends ListActivity
 
 	private static final String TAG = "RedditCommentsListActivity";
 	
-    private final JsonFactory jsonFactory = new JsonFactory(); 
+    private final JsonFactory jsonFactory = new JsonFactory();
+    private final Markdown markdown = new Markdown();
     private int mNestedCommentsJSONOrder = 0;
     private HashSet<Integer> mMorePositions = new HashSet<Integer>(); 
 	
@@ -133,7 +133,6 @@ public class RedditCommentsListActivity extends ListActivity
     // UI State
     private View mVoteTargetView = null;
     private CommentInfo mVoteTargetCommentInfo = null;
-    private URLSpan[] mVoteTargetSpans = null;
     private CharSequence mReplyTargetName = null;
     private CharSequence mEditTargetBody = null;
     private String mDeleteTargetKind = null;
@@ -522,7 +521,7 @@ public class RedditCommentsListActivity extends ListActivity
 		            }
 		            submitterView.setText(item.getAuthor());
 		            submissionTimeView.setText(Util.getTimeAgo(Double.valueOf(item.getCreatedUtc())));
-		            bodyView.setText(item.getBody());
+		            bodyView.setText(item.mSSBBody);
 		            switch (item.getIndent()) {
 		            case 0:  leftIndent.setText(""); break;
 		            case 1:  leftIndent.setText("w"); break;
@@ -922,10 +921,12 @@ public class RedditCommentsListActivity extends ListActivity
 								processNestedCommentsJSON(jp, commentsNested + 1);
 							} else {
 								jp.nextToken(); // move to value
-								if (Constants.JSON_BODY.equals(namefield))
+								if (Constants.JSON_BODY.equals(namefield)) {
 									ci.put(namefield, StringEscapeUtils.unescapeHtml(jp.getText().trim().replaceAll("\r", "")));
-								else
+									ci.mSSBBody = markdown.markdown(ci.getBody().trim(), new SpannableStringBuilder(), ci.mUrls);
+								} else {
 									ci.put(namefield, jp.getText().trim().replaceAll("\r", ""));
+								}
 							}
 						}
 					} else {
@@ -2119,28 +2120,17 @@ public class RedditCommentsListActivity extends ListActivity
     			urlView.setVisibility(View.INVISIBLE);
     			submissionStuffView.setVisibility(View.INVISIBLE);
 
-    			// Look for embedded URLs
-    			final TextView commentBody = (TextView) mVoteTargetView.findViewById(R.id.body);
-    	        mVoteTargetSpans = commentBody.getUrls();
-    	        if (mVoteTargetSpans.length == 0) {
+    			// Get embedded URLs
+    			final ArrayList<String> urls = mVoteTargetCommentInfo.mUrls;
+    	        if (urls.size() == 0) {
         			linkButton.setVisibility(View.INVISIBLE);
-    	        } else if (mVoteTargetSpans.length == 1) {
-    	        	linkButton.setVisibility(View.VISIBLE);
-    	        	linkButton.setText("link");
-    	        	linkButton.setOnClickListener(new OnClickListener() {
-    	        		public void onClick(View v) {
-    	        			dismissDialog(Constants.DIALOG_THING_CLICK);
-    	        			Common.launchBrowser(mVoteTargetSpans[0].getURL(), RedditCommentsListActivity.this);
-    	        		}
-    	        	});
     	        } else {
     	        	linkButton.setVisibility(View.VISIBLE);
     	        	linkButton.setText("links");
     	        	linkButton.setOnClickListener(new OnClickListener() {
     	        		public void onClick(View v) {
     	        			dismissDialog(Constants.DIALOG_THING_CLICK);
-    	        			final java.util.ArrayList<String> urls = Util.extractUris(mVoteTargetSpans);
-
+    	        			
     	    	            ArrayAdapter<String> adapter = 
     	    	                new ArrayAdapter<String>(RedditCommentsListActivity.this, android.R.layout.select_dialog_item, urls) {
     	    	                public View getView(int position, View convertView, ViewGroup parent) {

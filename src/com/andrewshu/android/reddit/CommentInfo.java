@@ -19,9 +19,12 @@
 
 package com.andrewshu.android.reddit;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 
 import org.codehaus.jackson.JsonNode;
+
+import android.text.SpannableStringBuilder;
 
 /**
  * Class representing a single comment in reddit API.
@@ -49,7 +52,9 @@ public class CommentInfo {
 		AUTHOR, BODY, BODY_HTML, CREATED, CREATED_UTC, DOWNS, ID, LIKES, LINK_ID, NAME, PARENT_ID, REPLIES, SR_ID, UPS
 	};
 	
-	public HashMap<String, String> mValues = new HashMap<String, String>();
+	public final HashMap<String, String> mValues = new HashMap<String, String>();
+	public final ArrayList<String> mUrls = new ArrayList<String>();
+	public SpannableStringBuilder mSSBBody = null;
 	public JsonNode mReplies;  // Unused. use another JSON GET if necessary
 	public ThreadInfo mOpInfo = null;
 	public int mIndent = 0;
