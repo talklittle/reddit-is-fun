@@ -53,7 +53,7 @@ public class CommentInfo {
 	};
 	
 	public final HashMap<String, String> mValues = new HashMap<String, String>();
-	public final ArrayList<String> mUrls = new ArrayList<String>();
+	public final ArrayList<MarkdownURL> mUrls = new ArrayList<MarkdownURL>();
 	public SpannableStringBuilder mSSBBody = null;
 	public JsonNode mReplies;  // Unused. use another JSON GET if necessary
 	public ThreadInfo mOpInfo = null;

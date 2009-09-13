@@ -19,6 +19,7 @@
 package com.andrewshu.android.reddit;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -66,7 +67,7 @@ public class Markdown {
 	* @param txt - input in markdown format
 	* @return HTML block corresponding to txt passed in.
 	*/
-    public SpannableStringBuilder markdown(String txt, SpannableStringBuilder ssb, ArrayList<String> urls) {
+    public SpannableStringBuilder markdown(String txt, SpannableStringBuilder ssb, ArrayList<MarkdownURL> urls) {
     	if (txt == null) {
             txt = "";
         }
@@ -96,11 +97,13 @@ public class Markdown {
 //	        unEscapeSpecialChars(text);
  
 //	        text.append("\n");
+        
+        Collections.sort(urls);
         return ssb;
     }
 	
 	/** Adapted from MarkdownJ. Convert links, return URL */
-    private SpannableStringBuilder doAnchors(SpannableStringBuilder ssb, ArrayList<String> urls) {
+    private SpannableStringBuilder doAnchors(SpannableStringBuilder ssb, ArrayList<MarkdownURL> urls) {
     	// Inline-style links: [link text](url "optional title")
         Matcher m = inlineLink.matcher(ssb);
         int start = 0;
@@ -112,7 +115,7 @@ public class Markdown {
 	        // protect emphasis (* and _) within urls
 //	        url = url.replaceAll("\\*", CHAR_PROTECTOR.encode("*"));
 //	        url = url.replaceAll("_", CHAR_PROTECTOR.encode("_"));
-	        urls.add(url);
+	        urls.add(new MarkdownURL(m.start(), url));
 //	        StringBuffer result = new StringBuffer();
 	        // TODO: Show title (if any) alongside url in popup menu
 	        if (title != null) {
@@ -139,13 +142,13 @@ public class Markdown {
         return ssb;
     }
 
-    private SpannableStringBuilder doAutoLinks(SpannableStringBuilder ssb, ArrayList<String> urls) {
+    private SpannableStringBuilder doAutoLinks(SpannableStringBuilder ssb, ArrayList<MarkdownURL> urls) {
         // Colorize URLs
         Matcher m = autoLinkUrl.matcher(ssb);
         while (m.find()) {
         	ForegroundColorSpan fcs = new ForegroundColorSpan(Constants.MARKDOWN_LINK_COLOR);
         	ssb.setSpan(fcs, m.start(), m.end(), Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
-	        urls.add(m.group(1));
+	        urls.add(new MarkdownURL(m.start(), m.group(1)));
         }
         // Don't autolink emails for now. Neither does reddit.com
 //        m = autoLinkEmail.matcher(ssb);
