@@ -1864,6 +1864,7 @@ public class RedditCommentsListActivity extends ListActivity
     		mHiddenComments.add(i);
     	}
     	mCommentsAdapter.notifyDataSetChanged();
+    	getListView().setSelectionFromTop(rowId, 10);
     }
     
     private void showComment(int rowId) {
@@ -1888,6 +1889,7 @@ public class RedditCommentsListActivity extends ListActivity
     			mHiddenComments.remove(i);
     	}
     	mCommentsAdapter.notifyDataSetChanged();
+    	getListView().setSelectionFromTop(rowId, 10);
     }
 
     @Override
