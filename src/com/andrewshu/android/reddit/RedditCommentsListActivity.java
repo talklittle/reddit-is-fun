@@ -2121,7 +2121,11 @@ public class RedditCommentsListActivity extends ListActivity
     			submissionStuffView.setVisibility(View.INVISIBLE);
 
     			// Get embedded URLs
-    			final ArrayList<String> urls = mVoteTargetCommentInfo.mUrls;
+    			final ArrayList<String> urls = new ArrayList<String>();
+    			final ArrayList<MarkdownURL> vtUrls = mVoteTargetCommentInfo.mUrls;
+    			int urlsCount = vtUrls.size();
+    			for (int i = 0; i < urlsCount; i++)
+    				urls.add(vtUrls.get(i).url);
     	        if (urls.size() == 0) {
         			linkButton.setVisibility(View.INVISIBLE);
     	        } else {
