@@ -922,8 +922,9 @@ public class RedditCommentsListActivity extends ListActivity
 							} else {
 								jp.nextToken(); // move to value
 								if (Constants.JSON_BODY.equals(namefield)) {
-									ci.put(namefield, StringEscapeUtils.unescapeHtml(jp.getText().trim().replaceAll("\r", "")));
-									ci.mSSBBody = markdown.markdown(ci.getBody().trim(), new SpannableStringBuilder(), ci.mUrls);
+//									ci.put(namefield, StringEscapeUtils.unescapeHtml(jp.getText().trim().replaceAll("\r", "")));
+									ci.mSSBBody = markdown.markdown(StringEscapeUtils.unescapeHtml(jp.getText().trim()),
+											new SpannableStringBuilder(), ci.mUrls);
 								} else {
 									ci.put(namefield, jp.getText().trim().replaceAll("\r", ""));
 								}
@@ -2126,7 +2127,7 @@ public class RedditCommentsListActivity extends ListActivity
     			int urlsCount = vtUrls.size();
     			for (int i = 0; i < urlsCount; i++)
     				urls.add(vtUrls.get(i).url);
-    	        if (urls.size() == 0) {
+    	        if (urlsCount == 0) {
         			linkButton.setVisibility(View.INVISIBLE);
     	        } else {
     	        	linkButton.setVisibility(View.VISIBLE);
