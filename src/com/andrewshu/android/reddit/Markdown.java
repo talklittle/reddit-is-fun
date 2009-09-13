@@ -19,7 +19,6 @@
 package com.andrewshu.android.reddit;
 
 import java.util.ArrayList;
-import java.util.Random;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -42,7 +41,7 @@ import com.petebevin.markdown.TextEditor;
 	All rights reserved.
  */
 public class Markdown {
-    private Random rnd = new Random();
+//    private Random rnd = new Random();
     private static final MarkdownCharacterProtector CHAR_PROTECTOR = new MarkdownCharacterProtector();
     
     static final Pattern inlineLink = Pattern.compile("(" + // Whole match = $1
@@ -59,7 +58,7 @@ public class Markdown {
             "\\)" +
             ")", Pattern.DOTALL);
     static final Pattern autoLinkUrl = Pattern.compile("((https?|ftp):[^'\">\\s]+)");
-    static final Pattern autoLinkEmail = Pattern.compile("([-.\\w]+\\@[-a-z0-9]+(\\.[-a-z0-9]+)*\\.[a-z]+)");
+//    static final Pattern autoLinkEmail = Pattern.compile("<([-.\\w]+\\@[-a-z0-9]+(\\.[-a-z0-9]+)*\\.[a-z]+)>");
 	
     /**
 	* Perform the conversion from Markdown to HTML.
@@ -148,50 +147,51 @@ public class Markdown {
         	ssb.setSpan(fcs, m.start(), m.end(), Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
 	        urls.add(m.group(1));
         }
-        m = autoLinkEmail.matcher(ssb);
-        int start = 0;
-        while (m.find(start)) {
-        	String address = m.group(1);
-            TextEditor ed = new TextEditor(address);
-            unEscapeSpecialChars(ed);
-            String addr = encodeEmail(ed.toString());
-            String url = encodeEmail("mailto:" + ed.toString());
-        	
-        	urls.add(url);
-        	ssb.replace(m.start(), m.end(), addr);
-        	ForegroundColorSpan fcs = new ForegroundColorSpan(Constants.MARKDOWN_LINK_COLOR);
-        	ssb.setSpan(fcs, m.start(), m.end(), Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
-        	// Skip what we just replaced
-        	m = autoLinkEmail.matcher(ssb);
-        	start = m.start() + addr.length();
-        }
+        // Don't autolink emails for now. Neither does reddit.com
+//        m = autoLinkEmail.matcher(ssb);
+//        int start = 0;
+//        while (m.find(start)) {
+//        	String address = m.group(1);
+//            TextEditor ed = new TextEditor(address);
+//            unEscapeSpecialChars(ed);
+//            String addr = encodeEmail(ed.toString());
+//            String url = encodeEmail("mailto:" + ed.toString());
+//        	
+//        	urls.add(url);
+//        	ssb.replace(m.start(), m.end(), addr);
+//        	ForegroundColorSpan fcs = new ForegroundColorSpan(Constants.MARKDOWN_LINK_COLOR);
+//        	ssb.setSpan(fcs, m.start(), m.end(), Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
+//        	// Skip what we just replaced
+//        	m = autoLinkEmail.matcher(ssb);
+//        	start = m.start() + addr.length();
+//        }
         return ssb;
     }
     
-    private String encodeEmail(String s) {
-        StringBuffer sb = new StringBuffer();
-        char[] email = s.toCharArray();
-        for (char ch : email) {
-            double r = rnd.nextDouble();
-            if (r < 0.45) { // Decimal
-                sb.append("&#");
-                sb.append((int) ch);
-                sb.append(';');
-            } else if (r < 0.9) { // Hex
-                sb.append("&#x");
-                sb.append(Integer.toString((int) ch, 16));
-                sb.append(';');
-            } else {
-                sb.append(ch);
-            }
-        }
-        return sb.toString();
-    }
-    
-    private void unEscapeSpecialChars(TextEditor ed) {
-        for (String hash : CHAR_PROTECTOR.getAllEncodedTokens()) {
-            String plaintext = CHAR_PROTECTOR.decode(hash);
-            ed.replaceAllLiteral(hash, plaintext);
-        }
-    }
+//    private String encodeEmail(String s) {
+//        StringBuffer sb = new StringBuffer();
+//        char[] email = s.toCharArray();
+//        for (char ch : email) {
+//            double r = rnd.nextDouble();
+//            if (r < 0.45) { // Decimal
+//                sb.append("&#");
+//                sb.append((int) ch);
+//                sb.append(';');
+//            } else if (r < 0.9) { // Hex
+//                sb.append("&#x");
+//                sb.append(Integer.toString((int) ch, 16));
+//                sb.append(';');
+//            } else {
+//                sb.append(ch);
+//            }
+//        }
+//        return sb.toString();
+//    }
+//    
+//    private void unEscapeSpecialChars(TextEditor ed) {
+//        for (String hash : CHAR_PROTECTOR.getAllEncodedTokens()) {
+//            String plaintext = CHAR_PROTECTOR.decode(hash);
+//            ed.replaceAllLiteral(hash, plaintext);
+//        }
+//    }
 }
