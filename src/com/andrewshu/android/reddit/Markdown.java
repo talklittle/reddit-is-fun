@@ -30,6 +30,10 @@ import android.text.style.ForegroundColorSpan;
 
 import com.petebevin.markdown.TextEditor;
 
+import dk.brics.automaton.AutomatonMatcher;
+import dk.brics.automaton.RegExp;
+import dk.brics.automaton.RunAutomaton;
+
 /**
   	This class taken and adapted from MarkdownJ. See lib/MarkdownJ.txt for license.
 
@@ -45,6 +49,19 @@ public class Markdown {
 //    private Random rnd = new Random();
     private static final MarkdownCharacterProtector CHAR_PROTECTOR = new MarkdownCharacterProtector();
     
+    static final RunAutomaton inlineLinkAutomaton = new RunAutomaton(new RegExp("(" + // Whole match = $1
+            "\\[([^\\]]*)\\]" + // Link text = $2
+            "\\(" +
+            "[ \t]*" +
+            "<?([^>]*)>?" + // href = $3
+            "[ \t]*" +
+            "(" +
+            "('[^']*'|\\\"[^\"]*\\\")" + // Quoted title = $5
+            ")?" +
+            "\\)" +
+            ")",
+            RegExp.NONE).toAutomaton());
+    // Use inlineLinkAutomaton to check for whole match, then use inlineLink to capture groups
     static final Pattern inlineLink = Pattern.compile("(" + // Whole match = $1
             "\\[(.*?)\\]" + // Link text = $2
             "\\(" +
@@ -58,7 +75,8 @@ public class Markdown {
             ")?" +
             "\\)" +
             ")", Pattern.DOTALL);
-    static final Pattern autoLinkUrl = Pattern.compile("((https?|ftp):[^'\">\\s]+)");
+    
+    static final RunAutomaton autoLinkUrlAutomaton = new RunAutomaton(new RegExp("((https?|ftp):([^'\"> \t\r\n])+)", RegExp.NONE).toAutomaton());
 //    static final Pattern autoLinkEmail = Pattern.compile("<([-.\\w]+\\@[-a-z0-9]+(\\.[-a-z0-9]+)*\\.[a-z]+)>");
 	
     /**
@@ -81,7 +99,7 @@ public class Markdown {
 //        // Make sure $text ends with a couple of newlines:
 //        text.append("\n\n");
  
-        text.detabify();
+//        text.detabify();
         text.deleteAll("^[ ]+$");
         
         String updatedTxt = text.toString();
@@ -105,9 +123,14 @@ public class Markdown {
 	/** Adapted from MarkdownJ. Convert links, return URL */
     private SpannableStringBuilder doAnchors(SpannableStringBuilder ssb, ArrayList<MarkdownURL> urls) {
     	// Inline-style links: [link text](url "optional title")
-        Matcher m = inlineLink.matcher(ssb);
+        AutomatonMatcher am = inlineLinkAutomaton.newMatcher(ssb);
         int start = 0;
-        while (m.find(start)) {
+        while (am.find()) {
+        	int anchorStart = am.start();
+        	int anchorEnd = am.end();
+        	Matcher m = inlineLink.matcher(am.group());
+        	if (!m.find())
+        		continue;
         	String linkText = m.group(2);
 	        String url = m.group(3);
 	        String title = m.group(6);
@@ -115,7 +138,7 @@ public class Markdown {
 	        // protect emphasis (* and _) within urls
 //	        url = url.replaceAll("\\*", CHAR_PROTECTOR.encode("*"));
 //	        url = url.replaceAll("_", CHAR_PROTECTOR.encode("_"));
-	        urls.add(new MarkdownURL(m.start(), url));
+	        urls.add(new MarkdownURL(anchorStart, url));
 //	        StringBuffer result = new StringBuffer();
 	        // TODO: Show title (if any) alongside url in popup menu
 	        if (title != null) {
@@ -132,23 +155,21 @@ public class Markdown {
 	        SpannableString ss = new SpannableString(linkText);
 	        ForegroundColorSpan fcs = new ForegroundColorSpan(Constants.MARKDOWN_LINK_COLOR);
         	ss.setSpan(fcs, 0, linkTextLength, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
-        	int anchorStart = m.start();
-        	int anchorEnd = m.end();
         	ssb = ssb.replace(anchorStart, anchorEnd, ss);
         	// Skip past what we just replaced
-        	m = inlineLink.matcher(ssb);
         	start = anchorStart + linkText.length();
+        	am = inlineLinkAutomaton.newMatcher(ssb, start, ssb.length());
         }
         return ssb;
     }
 
     private SpannableStringBuilder doAutoLinks(SpannableStringBuilder ssb, ArrayList<MarkdownURL> urls) {
         // Colorize URLs
-        Matcher m = autoLinkUrl.matcher(ssb);
-        while (m.find()) {
+        AutomatonMatcher am = autoLinkUrlAutomaton.newMatcher(ssb);
+        while (am.find()) {
         	ForegroundColorSpan fcs = new ForegroundColorSpan(Constants.MARKDOWN_LINK_COLOR);
-        	ssb.setSpan(fcs, m.start(), m.end(), Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
-	        urls.add(new MarkdownURL(m.start(), m.group(1)));
+        	ssb.setSpan(fcs, am.start(), am.end(), Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
+	        urls.add(new MarkdownURL(am.start(), am.group()));
         }
         // Don't autolink emails for now. Neither does reddit.com
 //        m = autoLinkEmail.matcher(ssb);
