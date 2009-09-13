@@ -22,6 +22,8 @@
     
     <color name="error_toast_background">#ECCC</color>
     
+    <color name="markdown_link_color">#ff2288cc</color>
+    
     <color name="white">#ffffffff</color>
     <color name="black">#ff000000</color>
     <color name="gray">#ffbbbbbb</color>

@@ -36,7 +36,7 @@
         android:text="@string/more_comments"
         android:textSize="10dip"
         android:textStyle="bold"
-        android:textColor="@color/blue"
+        android:textColor="@color/markdown_link_color"
         />
     
 </RelativeLayout>
