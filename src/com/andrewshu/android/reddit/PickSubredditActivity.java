@@ -192,7 +192,7 @@ public final class PickSubredditActivity extends ListActivity {
     	@Override
     	public void onPostExecute(ArrayList<String> reddits) {
     		dismissDialog(Constants.DIALOG_LOADING_REDDITS_LIST);
-			List<String> items;
+			ArrayList<String> items;
     		if (reddits == null || reddits.size() == 0) {
     			// Need to make a copy because Arrays.asList returns List backed by original array
     	        items = new ArrayList<String>();
