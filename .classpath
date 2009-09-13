@@ -6,7 +6,6 @@
 	<classpathentry kind="lib" path="lib/jackson-core-asl-1.1.1.jar"/>
 	<classpathentry kind="lib" path="lib/jackson-mapper-asl-1.1.1.jar"/>
 	<classpathentry kind="lib" path="lib/commons-lang-2.4.jar"/>
-	<classpathentry kind="lib" path="lib/markdownj-1.0.2b4-0.3.0.jar"/>
 	<classpathentry kind="lib" path="lib/automaton.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>

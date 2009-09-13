@@ -27,9 +27,6 @@ import android.text.SpannableString;
 import android.text.SpannableStringBuilder;
 import android.text.Spanned;
 import android.text.style.ForegroundColorSpan;
-
-import com.petebevin.markdown.TextEditor;
-
 import dk.brics.automaton.AutomatonMatcher;
 import dk.brics.automaton.RegExp;
 import dk.brics.automaton.RunAutomaton;
@@ -47,7 +44,7 @@ import dk.brics.automaton.RunAutomaton;
  */
 public class Markdown {
 //    private Random rnd = new Random();
-    private static final MarkdownCharacterProtector CHAR_PROTECTOR = new MarkdownCharacterProtector();
+//    private static final MarkdownCharacterProtector CHAR_PROTECTOR = new MarkdownCharacterProtector();
     
     static final RunAutomaton inlineLinkAutomaton = new RunAutomaton(new RegExp("(" + // Whole match = $1
             "\\[([^\\]]*)\\]" + // Link text = $2
@@ -89,21 +86,19 @@ public class Markdown {
     	if (txt == null) {
             txt = "";
         }
-        TextEditor text = new TextEditor(txt);
- 
+        
         // Standardize line endings:
-        text.replaceAll("\\r\\n", "\n"); // DOS to Unix
-        text.replaceAll("\\r", "\n"); // Mac to Unix
-        text.replaceAll("^[ \\t]+$", "");
+        txt.replaceAll("\\r\\n", "\n"); // DOS to Unix
+        txt.replaceAll("\\r", "\n"); // Mac to Unix
+        txt.replaceAll("^[ \\t]+$", "");
  
 //        // Make sure $text ends with a couple of newlines:
 //        text.append("\n\n");
  
 //        text.detabify();
-        text.deleteAll("^[ ]+$");
+        txt.replaceAll("^[ ]+$", "");
         
-        String updatedTxt = text.toString();
-        ssb.append(updatedTxt);
+        ssb.append(txt);
         // doAnchors originally called from runBlockGamut -> formParagraphs -> runSpanGamut 
         urls.clear();
         doAnchors(ssb, urls);
@@ -141,15 +136,15 @@ public class Markdown {
 	        urls.add(new MarkdownURL(anchorStart, url));
 //	        StringBuffer result = new StringBuffer();
 	        // TODO: Show title (if any) alongside url in popup menu
-	        if (title != null) {
-	            // protect emphasis (* and _) within urls
-	            title = title.replaceAll("\\*", CHAR_PROTECTOR.encode("*"));
-	            title = title.replaceAll("_", CHAR_PROTECTOR.encode("_"));
-	            title.replaceAll("\"", "&quot;");
+//	        if (title != null) {
+//	            // protect emphasis (* and _) within urls
+//	            title = title.replaceAll("\\*", CHAR_PROTECTOR.encode("*"));
+//	            title = title.replaceAll("_", CHAR_PROTECTOR.encode("_"));
+//	            title.replaceAll("\"", "&quot;");
 //	            result.append(" title=\"");
 //	            result.append(title);
 //	            result.append("\"");
-	        }
+//	        }
 	        
 	        // Replace whole anchor thing with just linkText, colored different color
 	        SpannableString ss = new SpannableString(linkText);
