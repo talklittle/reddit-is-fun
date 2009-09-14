@@ -27,6 +27,7 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.zip.GZIPInputStream;
 
 import org.apache.http.Header;
@@ -293,8 +294,10 @@ public class Common {
      * @return
      */
     static String doUpdateModhash(DefaultHttpClient client) {
+        final Pattern MODHASH_PATTERN = Pattern.compile("modhash: '(.*?)'");
     	String modhash;
     	HttpEntity entity = null;
+        // The pattern to find modhash from HTML javascript area
     	try {
     		HttpGet httpget = new HttpGet(Constants.MODHASH_URL);
     		HttpResponse response = client.execute(httpget);
@@ -321,7 +324,7 @@ public class Common {
         		throw new Exception("User session error: USER_REQUIRED");
         	}
         	
-        	Matcher modhashMatcher = Constants.MODHASH_PATTERN.matcher(line);
+        	Matcher modhashMatcher = MODHASH_PATTERN.matcher(line);
         	if (modhashMatcher.find()) {
         		modhash = modhashMatcher.group(1);
         		if (Constants.EMPTY_STRING.equals(modhash)) {

@@ -25,6 +25,7 @@ import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpException;
@@ -68,6 +69,15 @@ import android.widget.TabHost.OnTabChangeListener;
 public class SubmitLinkActivity extends TabActivity {
 	
 	private static final String TAG = "SubmitLinkActivity";
+	
+	// Captcha "iden"
+    private final Pattern CAPTCHA_IDEN_PATTERN = Pattern.compile("name=\"iden\" value=\"(.*?)\"");
+    // Group 2: Captcha image absolute path
+    private final Pattern CAPTCHA_IMAGE_PATTERN = Pattern.compile("<img class=\"capimage\"( alt=\".*?\")? src=\"(.+?)\"");
+    // Group 1: Subreddit. Group 2: thread id (no t3_ prefix)
+    static final Pattern NEW_THREAD_PATTERN = Pattern.compile("\"http://www.reddit.com/r/(.+?)/comments/(.+?)/.*?/\"");
+    // Group 1: whole error. Group 2: the time part
+    static final Pattern RATELIMIT_RETRY_PATTERN = Pattern.compile("(you are trying to submit too fast. try again in (.+?)\\.)");
 
 	TabHost mTabHost;
 	
@@ -342,14 +352,14 @@ public class SubmitLinkActivity extends TabActivity {
             	if (Constants.LOGGING) Common.logDLong(TAG, line);
 
             	String newId, newSubreddit;
-            	Matcher idMatcher = Constants.NEW_THREAD_PATTERN.matcher(line);
+            	Matcher idMatcher = NEW_THREAD_PATTERN.matcher(line);
             	if (idMatcher.find()) {
             		newSubreddit = idMatcher.group(1);
             		newId = idMatcher.group(2);
             	} else {
             		if (line.contains("RATELIMIT")) {
                 		// Try to find the # of minutes using regex
-                    	Matcher rateMatcher = Constants.RATELIMIT_RETRY_PATTERN.matcher(line);
+                    	Matcher rateMatcher = RATELIMIT_RETRY_PATTERN.matcher(line);
                     	if (rateMatcher.find())
                     		_mUserError = rateMatcher.group(1);
                     	else
@@ -422,8 +432,8 @@ public class SubmitLinkActivity extends TabActivity {
             	String line = in.readLine();
             	in.close();
 
-            	Matcher idenMatcher = Constants.CAPTCHA_IDEN_PATTERN.matcher(line);
-            	Matcher urlMatcher = Constants.CAPTCHA_IMAGE_PATTERN.matcher(line);
+            	Matcher idenMatcher = CAPTCHA_IDEN_PATTERN.matcher(line);
+            	Matcher urlMatcher = CAPTCHA_IMAGE_PATTERN.matcher(line);
             	if (idenMatcher.find() && urlMatcher.find()) {
             		mCaptchaIden = idenMatcher.group(1);
             		mCaptchaUrl = urlMatcher.group(2);

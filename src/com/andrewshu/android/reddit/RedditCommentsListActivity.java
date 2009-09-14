@@ -28,6 +28,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.TreeMap;
 import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import org.apache.commons.lang.StringEscapeUtils;
 import org.apache.http.HttpEntity;
@@ -102,6 +103,13 @@ public class RedditCommentsListActivity extends ListActivity
 
 	private static final String TAG = "RedditCommentsListActivity";
 	
+    // Group 1: fullname. Group 2: kind. Group 3: id36.
+    private final Pattern NEW_ID_PATTERN = Pattern.compile("\"id\": \"((.+?)_(.+?))\"");
+    // Group 2: subreddit name. Group 3: thread id36. Group 4: Comment id36.
+    private final Pattern COMMENT_CONTEXT_PATTERN = Pattern.compile("(http://www.reddit.com)?/r/(.+?)/comments/(.+?)/.+?/([a-zA-Z0-9]+)");
+    // Group 1: whole error. Group 2: the time part
+    private final Pattern RATELIMIT_RETRY_PATTERN = Pattern.compile("(you are trying to submit too fast. try again in (.+?)\\.)");
+
     private final JsonFactory jsonFactory = new JsonFactory();
     private final Markdown markdown = new Markdown();
     private int mNestedCommentsJSONOrder = 0;
@@ -173,7 +181,7 @@ public class RedditCommentsListActivity extends ListActivity
     	// Comment context: a URL pointing directly at a comment, versus a thread
     	String commentContext = extras.getString(Constants.EXTRA_COMMENT_CONTEXT);
     	if (commentContext != null) {
-    		Matcher commentContextMatcher = Constants.COMMENT_CONTEXT_PATTERN.matcher(commentContext);
+    		Matcher commentContextMatcher = COMMENT_CONTEXT_PATTERN.matcher(commentContext);
     		if (commentContextMatcher.find()) {
         		mSettings.setSubreddit(commentContextMatcher.group(2));
     			mSettings.setThreadId(commentContextMatcher.group(3));
@@ -1108,13 +1116,13 @@ public class RedditCommentsListActivity extends ListActivity
             	if (Constants.LOGGING) Common.logDLong(TAG, line);
 
             	String newId;
-            	Matcher idMatcher = Constants.NEW_ID_PATTERN.matcher(line);
+            	Matcher idMatcher = NEW_ID_PATTERN.matcher(line);
             	if (idMatcher.find()) {
             		newId = idMatcher.group(3);
             	} else {
             		if (line.contains("RATELIMIT")) {
                 		// Try to find the # of minutes using regex
-                    	Matcher rateMatcher = Constants.RATELIMIT_RETRY_PATTERN.matcher(line);
+                    	Matcher rateMatcher = RATELIMIT_RETRY_PATTERN.matcher(line);
                     	if (rateMatcher.find())
                     		_mUserError = rateMatcher.group(1);
                     	else
@@ -1232,13 +1240,13 @@ public class RedditCommentsListActivity extends ListActivity
             	if (Constants.LOGGING) Common.logDLong(TAG, line);
 
             	String newId;
-            	Matcher idMatcher = Constants.NEW_ID_PATTERN.matcher(line);
+            	Matcher idMatcher = NEW_ID_PATTERN.matcher(line);
             	if (idMatcher.find()) {
             		newId = idMatcher.group(3);
             	} else {
             		if (line.contains("RATELIMIT")) {
                 		// Try to find the # of minutes using regex
-                    	Matcher rateMatcher = Constants.RATELIMIT_RETRY_PATTERN.matcher(line);
+                    	Matcher rateMatcher = RATELIMIT_RETRY_PATTERN.matcher(line);
                     	if (rateMatcher.find())
                     		_mUserError = rateMatcher.group(1);
                     	else

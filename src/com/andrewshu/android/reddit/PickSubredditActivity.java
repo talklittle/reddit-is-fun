@@ -25,6 +25,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpResponse;
@@ -56,6 +57,11 @@ import android.widget.TextView;
 public final class PickSubredditActivity extends ListActivity {
 	
 	private static final String TAG = "PickSubredditActivity";
+	
+	// Group 1: inner
+    private final Pattern MY_SUBREDDITS_OUTER = Pattern.compile("your front page reddits.*?<ul>(.*?)</ul>", Pattern.CASE_INSENSITIVE);
+    // Group 3: subreddit name. Repeat the matcher.find() until it fails.
+    private final Pattern MY_SUBREDDITS_INNER = Pattern.compile("<a(.*?)/r/(.*?)>(.+?)</a>");
 
 	private RedditSettings mSettings = new RedditSettings();
 	private DefaultHttpClient mClient = Common.createGzipHttpClient();
@@ -159,9 +165,9 @@ public final class PickSubredditActivity extends ListActivity {
                 in.close();
                 entity.consumeContent();
                 
-                Matcher outer = Constants.MY_SUBREDDITS_OUTER.matcher(line);
+                Matcher outer = MY_SUBREDDITS_OUTER.matcher(line);
                 if (outer.find()) {
-                	Matcher inner = Constants.MY_SUBREDDITS_INNER.matcher(outer.group(1));
+                	Matcher inner = MY_SUBREDDITS_INNER.matcher(outer.group(1));
                 	while (inner.find()) {
                 		reddits.add(inner.group(3));
                 	}

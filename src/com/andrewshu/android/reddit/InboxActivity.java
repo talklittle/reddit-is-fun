@@ -26,6 +26,7 @@ import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import org.apache.commons.lang.StringEscapeUtils;
 import org.apache.http.HttpEntity;
@@ -86,6 +87,11 @@ public final class InboxActivity extends ListActivity
 
 	private static final String TAG = "InboxActivity";
 	
+    // Group 1: fullname. Group 2: kind. Group 3: id36.
+    private final Pattern NEW_ID_PATTERN = Pattern.compile("\"id\": \"((.+?)_(.+?))\"");
+    // Group 1: whole error. Group 2: the time part
+    private final Pattern RATELIMIT_RETRY_PATTERN = Pattern.compile("(you are trying to submit too fast. try again in (.+?)\\.)");
+
     private final JsonFactory jsonFactory = new JsonFactory(); 
     
     /** Custom list adapter that fits our threads data into the list. */
@@ -507,7 +513,7 @@ public final class InboxActivity extends ListActivity
             	
             	if (Constants.LOGGING) Common.logDLong(TAG, line);
 
-            	Matcher idMatcher = Constants.NEW_ID_PATTERN.matcher(line);
+            	Matcher idMatcher = NEW_ID_PATTERN.matcher(line);
             	if (idMatcher.find()) {
             		// Don't need id since reply isn't posted to inbox
 //            		newFullname = idMatcher.group(1);
@@ -515,7 +521,7 @@ public final class InboxActivity extends ListActivity
             	} else {
             		if (line.contains("RATELIMIT")) {
                 		// Try to find the # of minutes using regex
-                    	Matcher rateMatcher = Constants.RATELIMIT_RETRY_PATTERN.matcher(line);
+                    	Matcher rateMatcher = RATELIMIT_RETRY_PATTERN.matcher(line);
                     	if (rateMatcher.find())
                     		userError = rateMatcher.group(1);
                     	else

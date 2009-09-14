@@ -19,8 +19,6 @@
 
 package com.andrewshu.android.reddit;
 
-import java.util.regex.Pattern;
-
 import android.app.Activity;
 
 public class Constants {
@@ -235,23 +233,4 @@ public class Constants {
     
     // A short HTML file returned by reddit, so we can get the modhash
     static final String MODHASH_URL = "http://www.reddit.com/r";
-    
-    // The pattern to find modhash from HTML javascript area
-    static final Pattern MODHASH_PATTERN = Pattern.compile("modhash: '(.*?)'");
-    // Group 1: fullname. Group 2: kind. Group 3: id36.
-    static final Pattern NEW_ID_PATTERN = Pattern.compile("\"id\": \"((.+?)_(.+?))\"");
-    // Group 1: Subreddit. Group 2: thread id (no t3_ prefix)
-    static final Pattern NEW_THREAD_PATTERN = Pattern.compile("\"http://www.reddit.com/r/(.+?)/comments/(.+?)/.*?/\"");
-    // Group 2: subreddit name. Group 3: thread id36. Group 4: Comment id36.
-    static final Pattern COMMENT_CONTEXT_PATTERN = Pattern.compile("(http://www.reddit.com)?/r/(.+?)/comments/(.+?)/.+?/([a-zA-Z0-9]+)");
-    // Group 1: whole error. Group 2: the time part
-    static final Pattern RATELIMIT_RETRY_PATTERN = Pattern.compile("(you are trying to submit too fast. try again in (.+?)\\.)");
-    // Captcha "iden"
-    static final Pattern CAPTCHA_IDEN_PATTERN = Pattern.compile("name=\"iden\" value=\"(.*?)\"");
-    // Group 2: Captcha image absolute path
-    static final Pattern CAPTCHA_IMAGE_PATTERN = Pattern.compile("<img class=\"capimage\"( alt=\".*?\")? src=\"(.+?)\"");
-    // Group 1: inner
-    static final Pattern MY_SUBREDDITS_OUTER = Pattern.compile("your front page reddits.*?<ul>(.*?)</ul>", Pattern.CASE_INSENSITIVE);
-    // Group 3: subreddit name. Repeat the matcher.find() until it fails.
-    static final Pattern MY_SUBREDDITS_INNER = Pattern.compile("<a(.*?)/r/(.*?)>(.+?)</a>");
 }
