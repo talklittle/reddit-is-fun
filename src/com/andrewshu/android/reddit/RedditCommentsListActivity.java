@@ -2097,6 +2097,8 @@ public class RedditCommentsListActivity extends ListActivity
     		break;
     		
     	case Constants.DIALOG_THING_CLICK:
+    		if (mVoteTargetCommentInfo == null)
+    			break;
     		String likes;
     		final TextView titleView = (TextView) dialog.findViewById(R.id.title);
     		final TextView urlView = (TextView) dialog.findViewById(R.id.url);
@@ -2251,7 +2253,7 @@ public class RedditCommentsListActivity extends ListActivity
     		break;
     		
     	case Constants.DIALOG_REPLY:
-    		if (mVoteTargetCommentInfo.getReplyDraft() != null) {
+    		if (mVoteTargetCommentInfo != null && mVoteTargetCommentInfo.getReplyDraft() != null) {
     			EditText replyBodyView = (EditText) dialog.findViewById(R.id.body); 
     			replyBodyView.setText(mVoteTargetCommentInfo.getReplyDraft());
     		}

@@ -130,7 +130,7 @@ public final class RedditIsFun extends ListActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
                 
-        Common.loadRedditPreferences(this, mSettings, mClient);
+        Common.loadRedditPreferences(getApplicationContext(), mSettings, mClient);
         setTheme(mSettings.theme);
         
         setContentView(R.layout.threads_list_content);
@@ -160,7 +160,7 @@ public final class RedditIsFun extends ListActivity {
     	super.onResume();
     	int previousTheme = mSettings.theme;
     	boolean previousLoggedIn = mSettings.loggedIn;
-    	Common.loadRedditPreferences(this, mSettings, mClient);
+    	Common.loadRedditPreferences(getApplicationContext(), mSettings, mClient);
     	if (mSettings.theme != previousTheme) {
     		setTheme(mSettings.theme);
     		setContentView(R.layout.threads_list_content);
@@ -187,7 +187,7 @@ public final class RedditIsFun extends ListActivity {
     @Override
     protected void onPause() {
     	super.onPause();
-    	Common.saveRedditPreferences(this, mSettings);
+    	Common.saveRedditPreferences(getApplicationContext(), mSettings);
     }
     
 
@@ -726,7 +726,7 @@ public final class RedditIsFun extends ListActivity {
     		if (errorMessage == null) {
     			Toast.makeText(RedditIsFun.this, "Logged in as "+mUsername, Toast.LENGTH_SHORT).show();
     			// Check mail
-    			new Common.PeekEnvelopeTask(RedditIsFun.this, mClient, mSettings.mailNotificationStyle).execute();
+    			new Common.PeekEnvelopeTask(getApplicationContext(), mClient, mSettings.mailNotificationStyle).execute();
     			// Refresh the threads list
     			new DownloadThreadsTask().execute(mSettings.subreddit);
         	} else {
@@ -1261,6 +1261,8 @@ public final class RedditIsFun extends ListActivity {
     		break;
     		
     	case Constants.DIALOG_THING_CLICK:
+    		if (mVoteTargetThreadInfo == null)
+    			break;
     		final CheckBox voteUpButton = (CheckBox) dialog.findViewById(R.id.vote_up_button);
     		final CheckBox voteDownButton = (CheckBox) dialog.findViewById(R.id.vote_down_button);
     		final TextView titleView = (TextView) dialog.findViewById(R.id.title);
@@ -1324,7 +1326,7 @@ public final class RedditIsFun extends ListActivity {
             		public void onClick(View v) {
             			dismissDialog(Constants.DIALOG_THING_CLICK);
             			// Launch Intent to goto the URL
-            			Common.launchBrowser(mVoteTargetThreadInfo.getURL(), RedditIsFun.this);
+            			Common.launchBrowser(mVoteTargetThreadInfo.getURL(), getApplicationContext());
             		}
             	});
             }

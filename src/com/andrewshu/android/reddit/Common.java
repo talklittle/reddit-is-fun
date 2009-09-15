@@ -62,7 +62,6 @@ import org.codehaus.jackson.JsonParseException;
 import org.codehaus.jackson.JsonParser;
 import org.codehaus.jackson.JsonToken;
 
-import android.app.Activity;
 import android.app.ListActivity;
 import android.app.Notification;
 import android.app.NotificationManager;
@@ -483,10 +482,10 @@ public class Common {
     
 
     
-    static void launchBrowser(CharSequence url, Activity act) {
+    static void launchBrowser(CharSequence url, Context context) {
 		Intent browser = new Intent(Intent.ACTION_VIEW, Uri.parse(url.toString()));
-		browser.putExtra(Browser.EXTRA_APPLICATION_ID, act.getPackageName());
-		act.startActivity(browser);
+		browser.putExtra(Browser.EXTRA_APPLICATION_ID, context.getPackageName());
+		context.startActivity(browser);
     }
     
     
