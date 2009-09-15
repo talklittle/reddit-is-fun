@@ -25,20 +25,15 @@
               android:padding="30dip"
               >
     
-    <View android:id="@+id/center"
-    	android:layout_width="0dip"
-    	android:layout_height="0dip"
-    	android:layout_centerInParent="true"
-    	/>
-    
     <!-- Up/down/login -->
         
 	<CheckBox android:id="@+id/vote_up_button"
 		android:layout_width="100dip"
 		android:layout_height="50dip"
+		android:layout_marginTop="20dip"
 		android:layout_marginBottom="10dip"
+		android:layout_alignParentTop="true"
 		android:layout_alignParentLeft="true"
-		android:layout_above="@id/center"
 		android:background="@android:color/transparent"
 		android:button="@drawable/vote_up_big_statelist"
 		/>
@@ -47,7 +42,7 @@
 		android:layout_width="100dip"
 		android:layout_height="50dip"
 		android:layout_marginTop="10dip"
-		android:layout_below="@id/center"
+		android:layout_below="@id/vote_up_button"
 		android:layout_alignParentLeft="true"
 		android:background="@android:color/transparent"
 		android:button="@drawable/vote_down_big_statelist"

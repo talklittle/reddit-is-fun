@@ -23,7 +23,7 @@ import android.app.Activity;
 
 public class Constants {
 	
-	static final boolean LOGGING = true;
+	static final boolean LOGGING = false;
 
 	static final String COMMENT_KIND = "t1";
 	static final String THREAD_KIND = "t3";

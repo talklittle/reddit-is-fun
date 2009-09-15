@@ -1322,13 +1322,14 @@ public final class RedditIsFun extends ListActivity {
             	// It's a self post. Both buttons do the same thing.
             	linkButton.setOnClickListener(commentsOnClickListener);
             } else {
+            	final String url = mVoteTargetThreadInfo.getURL();
             	linkButton.setOnClickListener(new OnClickListener() {
-            		public void onClick(View v) {
-            			dismissDialog(Constants.DIALOG_THING_CLICK);
-            			// Launch Intent to goto the URL
-            			Common.launchBrowser(mVoteTargetThreadInfo.getURL(), getApplicationContext());
-            		}
-            	});
+    				public void onClick(View v) {
+    					dismissDialog(Constants.DIALOG_THING_CLICK);
+    					// Launch Intent to goto the URL
+    					Common.launchBrowser(url, RedditIsFun.this);
+    				}
+    			});
             }
     		break;
     		
@@ -1384,8 +1385,8 @@ public final class RedditIsFun extends ListActivity {
 			startActivity(i);
 		}
 	};
-	    
-    
+	
+	
     
     @Override
     protected void onSaveInstanceState(Bundle state) {

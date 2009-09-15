@@ -257,37 +257,6 @@ public class RedditCommentsListActivity extends ListActivity
     	Common.saveRedditPreferences(this, mSettings);
     }
     
-    public class VoteUpOnCheckedChangeListener implements CompoundButton.OnCheckedChangeListener {
-    	public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
-	    	dismissDialog(Constants.DIALOG_THING_CLICK);
-	    	String thingFullname;
-	    	if (mVoteTargetCommentInfo.getOP() != null)
-	    		thingFullname = mVoteTargetCommentInfo.getOP().getName();
-	    	else
-	    		thingFullname = mVoteTargetCommentInfo.getName();
-			if (isChecked)
-				new VoteTask(thingFullname, 1).execute();
-			else
-				new VoteTask(thingFullname, 0).execute();
-		}
-    }
-    
-    public class VoteDownOnCheckedChangeListener implements CompoundButton.OnCheckedChangeListener {
-	    public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
-	    	dismissDialog(Constants.DIALOG_THING_CLICK);
-	    	String thingFullname;
-	    	if (mVoteTargetCommentInfo.getOP() != null)
-	    		thingFullname = mVoteTargetCommentInfo.getOP().getName();
-	    	else
-	    		thingFullname = mVoteTargetCommentInfo.getName();
-			if (isChecked)
-				new VoteTask(thingFullname, -1).execute();
-			else
-				new VoteTask(thingFullname, 0).execute();
-		}
-    }
-    
-
 
     private final class CommentsListAdapter extends ArrayAdapter<CommentInfo> {
     	static final int OP_ITEM_VIEW_TYPE = 0;
@@ -618,8 +587,10 @@ public class RedditCommentsListActivity extends ListActivity
         	moreChildrenIntent.putExtra(ThreadInfo.NUM_COMMENTS, Integer.valueOf(mOpThreadInfo.getNumComments()));
         	moreChildrenIntent.putExtra(Constants.EXTRA_MORE_CHILDREN_ID, item.getId());
         	startActivity(moreChildrenIntent);
-        } else if (!"[deleted]".equals(item.getAuthor())) {
-        	showDialog(Constants.DIALOG_THING_CLICK);
+        } else {
+        	mJumpToCommentId = item.getId();
+        	if (!"[deleted]".equals(item.getAuthor()))
+        		showDialog(Constants.DIALOG_THING_CLICK);
         }
     }
 
@@ -2118,10 +2089,12 @@ public class RedditCommentsListActivity extends ListActivity
     			if (("self.").toLowerCase().equals(mOpThreadInfo.getDomain().substring(0, 5).toLowerCase())) {
     				linkButton.setVisibility(View.INVISIBLE);
     			} else {
+    				final String url = mOpThreadInfo.getURL();
 	    			linkButton.setOnClickListener(new OnClickListener() {
 	    				public void onClick(View v) {
 	    					dismissDialog(Constants.DIALOG_THING_CLICK);
-	    					Common.launchBrowser(mOpThreadInfo.getURL(), RedditCommentsListActivity.this);
+	    					// Launch Intent to goto the URL
+	    					Common.launchBrowser(url, RedditCommentsListActivity.this);
 	    				}
 	    			});
 	    			linkButton.setVisibility(View.VISIBLE);
@@ -2228,8 +2201,8 @@ public class RedditCommentsListActivity extends ListActivity
 	    			voteDownButton.setChecked(false);
 	    		}
 	    		// Now we want the user to be able to vote.
-	    		voteUpButton.setOnCheckedChangeListener(new VoteUpOnCheckedChangeListener());
-	    		voteDownButton.setOnCheckedChangeListener(new VoteDownOnCheckedChangeListener());
+	    		voteUpButton.setOnCheckedChangeListener(voteUpOnCheckedChangeListener);
+	    		voteDownButton.setOnCheckedChangeListener(voteDownOnCheckedChangeListener);
 
 	    		// The "reply" button
     			replyButton.setOnClickListener(new OnClickListener() {
@@ -2268,6 +2241,36 @@ public class RedditCommentsListActivity extends ListActivity
 			break;
     	}
     }
+    
+    private final CompoundButton.OnCheckedChangeListener voteUpOnCheckedChangeListener = new CompoundButton.OnCheckedChangeListener() {
+    	public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
+	    	dismissDialog(Constants.DIALOG_THING_CLICK);
+	    	String thingFullname;
+	    	if (mVoteTargetCommentInfo.getOP() != null)
+	    		thingFullname = mVoteTargetCommentInfo.getOP().getName();
+	    	else
+	    		thingFullname = mVoteTargetCommentInfo.getName();
+			if (isChecked)
+				new VoteTask(thingFullname, 1).execute();
+			else
+				new VoteTask(thingFullname, 0).execute();
+		}
+    };
+    private final CompoundButton.OnCheckedChangeListener voteDownOnCheckedChangeListener = new CompoundButton.OnCheckedChangeListener() {
+	    public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
+	    	dismissDialog(Constants.DIALOG_THING_CLICK);
+	    	String thingFullname;
+	    	if (mVoteTargetCommentInfo.getOP() != null)
+	    		thingFullname = mVoteTargetCommentInfo.getOP().getName();
+	    	else
+	    		thingFullname = mVoteTargetCommentInfo.getName();
+			if (isChecked)
+				new VoteTask(thingFullname, -1).execute();
+			else
+				new VoteTask(thingFullname, 0).execute();
+		}
+    };
+    
     
     @Override
     protected void onSaveInstanceState(Bundle state) {
