@@ -611,7 +611,7 @@ public class RedditCommentsListActivity extends ListActivity
 		
         if (mMorePositions.contains(position)) {
         	mJumpToCommentPosition = position;
-        	Intent moreChildrenIntent = new Intent(this, RedditCommentsListActivity.class);
+        	Intent moreChildrenIntent = new Intent(getApplicationContext(), RedditCommentsListActivity.class);
         	moreChildrenIntent.putExtra(ThreadInfo.SUBREDDIT, mOpThreadInfo.getSubreddit());
         	moreChildrenIntent.putExtra(ThreadInfo.ID, mOpThreadInfo.getId());
         	moreChildrenIntent.putExtra(ThreadInfo.TITLE, mOpThreadInfo.getTitle());
@@ -1780,16 +1780,15 @@ public class RedditCommentsListActivity extends ListActivity
     		Common.updateListDrawables(this, mSettings.theme);
     		break;
         case R.id.inbox_menu_id:
-        	Intent inboxIntent = new Intent(this, InboxActivity.class);
+        	Intent inboxIntent = new Intent(getApplicationContext(), InboxActivity.class);
         	startActivity(inboxIntent);
         	break;
 //        case R.id.user_profile_menu_id:
-//        	Intent profileIntent = new Intent(this, UserActivity.class);
+//        	Intent profileIntent = new Intent(getApplicationContext(), UserActivity.class);
 //        	startActivity(profileIntent);
 //        	break;
     	case R.id.preferences_menu_id:
-            Intent prefsIntent = new Intent(this,
-                    RedditPreferencesPage.class);
+            Intent prefsIntent = new Intent(getApplicationContext(), RedditPreferencesPage.class);
             startActivity(prefsIntent);
             break;
 

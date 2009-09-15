@@ -706,7 +706,7 @@ public class SubmitLinkActivity extends TabActivity {
         public boolean onMenuItemClick(MenuItem item) {
         	switch (mAction) {
         	case R.id.pick_subreddit_menu_id:
-        		Intent pickSubredditIntent = new Intent(SubmitLinkActivity.this, PickSubredditActivity.class);
+        		Intent pickSubredditIntent = new Intent(getApplicationContext(), PickSubredditActivity.class);
         		pickSubredditIntent.putExtra(Constants.EXTRA_HIDE_FRONTPAGE_STRING, true);
         		startActivityForResult(pickSubredditIntent, Constants.ACTIVITY_PICK_SUBREDDIT);
         		break;

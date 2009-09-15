@@ -215,7 +215,7 @@ public final class RedditIsFun extends ListActivity {
 	    		String newTitle = extras.getString(ThreadInfo.TITLE);
 	    		mSettings.setSubreddit(newSubreddit);
 	    		// Start up comments list with the new thread
-	    		Intent i = new Intent(RedditIsFun.this, RedditCommentsListActivity.class);
+	    		Intent i = new Intent(getApplicationContext(), RedditCommentsListActivity.class);
 				i.putExtra(ThreadInfo.SUBREDDIT, newSubreddit);
 				i.putExtra(ThreadInfo.ID, newId);
 				i.putExtra(ThreadInfo.TITLE, newTitle);
@@ -687,9 +687,6 @@ public final class RedditIsFun extends ListActivity {
     	}
     	
     	public void onPreExecute() {
-    		if (mSettings.subreddit == null)
-	    		this.cancel(true);
-	    	
     		resetUI();
     		mThreadsAdapter.mIsLoading = true;
     		
@@ -1039,7 +1036,7 @@ public final class RedditIsFun extends ListActivity {
         
         switch (item.getItemId()) {
         case R.id.pick_subreddit_menu_id:
-    		Intent pickSubredditIntent = new Intent(this, PickSubredditActivity.class);
+    		Intent pickSubredditIntent = new Intent(getApplicationContext(), PickSubredditActivity.class);
     		startActivityForResult(pickSubredditIntent, Constants.ACTIVITY_PICK_SUBREDDIT);
     		break;
     	case R.id.login_logout_menu_id:
@@ -1055,7 +1052,7 @@ public final class RedditIsFun extends ListActivity {
     		new DownloadThreadsTask().execute(mSettings.subreddit);
     		break;
     	case R.id.submit_link_menu_id:
-    		Intent submitLinkIntent = new Intent(this, SubmitLinkActivity.class);
+    		Intent submitLinkIntent = new Intent(getApplicationContext(), SubmitLinkActivity.class);
     		submitLinkIntent.putExtra(ThreadInfo.SUBREDDIT, mSettings.subreddit);
     		startActivityForResult(submitLinkIntent, Constants.ACTIVITY_SUBMIT_LINK);
     		break;
@@ -1082,16 +1079,15 @@ public final class RedditIsFun extends ListActivity {
     		Common.updateListDrawables(this, mSettings.theme);
     		break;
         case R.id.inbox_menu_id:
-        	Intent inboxIntent = new Intent(this, InboxActivity.class);
+        	Intent inboxIntent = new Intent(getApplicationContext(), InboxActivity.class);
         	startActivity(inboxIntent);
         	break;
 //        case R.id.user_profile_menu_id:
-//        	Intent profileIntent = new Intent(this, UserActivity.class);
+//        	Intent profileIntent = new Intent(getApplicationContext(), UserActivity.class);
 //        	startActivity(profileIntent);
 //        	break;
     	case R.id.preferences_menu_id:
-            Intent prefsIntent = new Intent(this,
-                    RedditPreferencesPage.class);
+            Intent prefsIntent = new Intent(getApplicationContext(), RedditPreferencesPage.class);
             startActivity(prefsIntent);
             break;
 
@@ -1352,7 +1348,7 @@ public final class RedditIsFun extends ListActivity {
     			public void onClick(View v) {
     				dismissDialog(Constants.DIALOG_THING_CLICK);
     				// Launch an Intent for RedditCommentsListActivity
-    				Intent i = new Intent(RedditIsFun.this, RedditCommentsListActivity.class);
+    				Intent i = new Intent(getApplicationContext(), RedditCommentsListActivity.class);
     				i.putExtra(ThreadInfo.SUBREDDIT, mVoteTargetThreadInfo.getSubreddit());
     				i.putExtra(ThreadInfo.ID, mVoteTargetThreadInfo.getId());
     				i.putExtra(ThreadInfo.TITLE, mVoteTargetThreadInfo.getTitle());

@@ -43,7 +43,7 @@ public class RedditPreferencesPage extends PreferenceActivity
         
         // Create an IntentSender that will launch our service, to be scheduled
         // with the alarm manager.
-        mAlarmSender = PendingIntent.getService(this, 0, new Intent(this, EnvelopeService.class), 0);
+        mAlarmSender = PendingIntent.getService(this, 0, new Intent(getApplicationContext(), EnvelopeService.class), 0);
 
         
         // Load the XML preferences file

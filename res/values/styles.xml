@@ -18,16 +18,7 @@
  * along with "reddit is fun".  If not, see <http://www.gnu.org/licenses/>.
 -->
 <resources>
-    <style name="VoteUpButton">
-		<item name="android:background">#00000000</item>
-		<item name="android:button">@drawable/vote_up_big_statelist</item>
-	</style>
-	<style name="VoteDownButton">
-		<item name="android:background">#00000000</item>
-		<item name="android:button">@drawable/vote_down_big_statelist</item>
-	</style>
-	
-	<style name="Reddit_Light" parent="@android:style/Theme.Light">
+    <style name="Reddit_Light" parent="@android:style/Theme.Light">
 		<item name="android:listSelector">@drawable/list_selector_blue</item>
 		<item name="android:cacheColorHint">@color/white</item>
 	</style>

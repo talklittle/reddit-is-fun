@@ -62,21 +62,23 @@
     <!-- Left column -->
         
 	<CheckBox android:id="@+id/vote_up_button"
-		style="@style/VoteUpButton"
 		android:layout_width="100dip"
 		android:layout_height="50dip"
 		android:layout_marginBottom="10dip"
 		android:layout_below="@id/submissionTime_submitter_subreddit"
 		android:layout_alignParentLeft="true"
+		android:background="@android:color/transparent"
+		android:button="@drawable/vote_up_big_statelist"
 		/>
 				
 	<CheckBox android:id="@+id/vote_down_button"
-		style="@style/VoteDownButton"
-	   	android:layout_width="100dip"
+		android:layout_width="100dip"
 		android:layout_height="50dip"
 		android:layout_marginTop="10dip"
 		android:layout_below="@id/vote_up_button"
 		android:layout_alignParentLeft="true"
+		android:background="@android:color/transparent"
+		android:button="@drawable/vote_down_big_statelist"
 		/>
 	<Button android:id="@+id/login_button"
 		android:layout_width="100dip"

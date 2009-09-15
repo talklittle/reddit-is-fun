@@ -42,7 +42,7 @@ public class RedditSettings {
 	String mailNotificationService = Constants.PREF_MAIL_NOTIFICATION_SERVICE_OFF;
 	
 	// --- States that change frequently. ---
-	CharSequence subreddit;
+	CharSequence subreddit = Constants.FRONTPAGE_STRING;
 	boolean isFrontpage = false;
 	CharSequence threadId;  // Does not change for a given commentslist (OP is static)
 	
