@@ -21,6 +21,8 @@ package com.andrewshu.android.reddit;
 
 import java.util.HashMap;
 
+import android.text.SpannableStringBuilder;
+
 /**
  * Class representing a single comment in reddit API.
  * 
@@ -46,7 +48,7 @@ public class MessageInfo {
 	};
 	
 	public HashMap<String, String> mValues = new HashMap<String, String>();
-	
+	public SpannableStringBuilder mSSBBody = null;
 	public String mReplyDraft = null;
 	
 	// TODO?: Make setters for everything instead... or not.

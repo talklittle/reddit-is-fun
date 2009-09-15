@@ -93,6 +93,7 @@ public final class InboxActivity extends ListActivity
     private final Pattern RATELIMIT_RETRY_PATTERN = Pattern.compile("(you are trying to submit too fast. try again in (.+?)\\.)");
 
     private final JsonFactory jsonFactory = new JsonFactory(); 
+    private final Markdown markdown = new Markdown();
     
     /** Custom list adapter that fits our threads data into the list. */
     private MessagesListAdapter mMessagesAdapter;
@@ -236,7 +237,7 @@ public final class InboxActivity extends ListActivity
             fromInfoView.setText(builder);
             
             subjectView.setText(item.getSubject());
-            bodyView.setText(item.getBody());
+            bodyView.setText(item.mSSBBody);
     
 	        return view;
         }
@@ -367,7 +368,12 @@ public final class InboxActivity extends ListActivity
 							String namefield = jp.getCurrentName();
 							jp.nextToken(); // move to value
 							// Should validate each field but I'm lazy
-							mi.put(namefield, StringEscapeUtils.unescapeHtml(jp.getText().replaceAll("\r", "")));
+							if (Constants.JSON_BODY.equals(namefield))
+								// Throw away the last argument (ArrayList<MarkdownURL>)
+								mi.mSSBBody = markdown.markdown(StringEscapeUtils.unescapeHtml(jp.getText().trim()),
+										new SpannableStringBuilder(), new ArrayList<MarkdownURL>());
+							else
+								mi.put(namefield, StringEscapeUtils.unescapeHtml(jp.getText().replaceAll("\r", "")));
 						}
 					} else {
 						throw new IllegalStateException("Unrecognized field '"+fieldname+"'!");
