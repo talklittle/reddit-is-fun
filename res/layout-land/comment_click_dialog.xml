@@ -103,16 +103,7 @@
     />
     
    	
-   	<View android:id="@+id/center"
-		android:layout_width="0dp"
-		android:layout_height="0dp"
-		android:layout_centerInParent="true"
-		/>
-		
-		
-    
-	
-	<!-- Right column -->
+   	<!-- Right column -->
 	
    	<Button android:id="@+id/reply_button"
    		android:layout_width="110dip"

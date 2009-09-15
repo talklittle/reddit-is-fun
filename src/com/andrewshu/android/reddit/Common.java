@@ -85,7 +85,7 @@ public class Common {
 	
 	private static final String TAG = "Common";
 	
-	private static DefaultHttpClient mGzipHttpClient = null;
+	private static final DefaultHttpClient mGzipHttpClient = createGzipHttpClient();
 	
 	static void showErrorToast(CharSequence error, int duration, Context context) {
 		LayoutInflater inflater = (LayoutInflater) context.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
@@ -494,8 +494,6 @@ public class Common {
 	 * @return a Gzip-enabled DefaultHttpClient
 	 */
 	static DefaultHttpClient getGzipHttpClient() {
-		if (mGzipHttpClient == null)
-			mGzipHttpClient = createGzipHttpClient();
 		return mGzipHttpClient;
 	}
 	
