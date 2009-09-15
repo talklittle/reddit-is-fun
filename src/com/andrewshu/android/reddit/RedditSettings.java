@@ -75,49 +75,49 @@ public class RedditSettings {
 	
 	// --- Synchronized Setters ---
 	
-	synchronized void setHomepage(CharSequence homepage) {
+	void setHomepage(CharSequence homepage) {
 		this.homepage = homepage;
 	}
 	
-	synchronized void setLoggedIn(boolean loggedIn) {
+	void setLoggedIn(boolean loggedIn) {
 		this.loggedIn = loggedIn;
 	}
 	
-	synchronized void setMailNotificationService(String mailNotificationService) {
+	void setMailNotificationService(String mailNotificationService) {
 		this.mailNotificationService = mailNotificationService;
 	}
 	
 	
-	synchronized void setMailNotificationStyle(String mailNotificationStyle) {
+	void setMailNotificationStyle(String mailNotificationStyle) {
 		this.mailNotificationStyle = mailNotificationStyle;
 	}
 	
-	synchronized void setModhash(CharSequence modhash) {
+	void setModhash(CharSequence modhash) {
 		this.modhash = modhash;
 	}
 	
-	synchronized void setUsername(CharSequence username) {
+	void setUsername(CharSequence username) {
 		this.username = username;
 	}
 	
-	synchronized void setRedditSessionCookie(Cookie redditSessionCookie) {
+	void setRedditSessionCookie(Cookie redditSessionCookie) {
 		this.redditSessionCookie = redditSessionCookie;
 	}
 	
-	synchronized void setThreadDownloadLimit(int threadDownloadLimit) {
+	void setThreadDownloadLimit(int threadDownloadLimit) {
 		this.threadDownloadLimit = threadDownloadLimit;
 	}
 
-	synchronized void setTheme(int theme) {
+	void setTheme(int theme) {
 		this.theme = theme;
 	}
 	
-	synchronized void setSubreddit(CharSequence subreddit) {
+	void setSubreddit(CharSequence subreddit) {
 		this.subreddit = subreddit;
 		isFrontpage = Constants.FRONTPAGE_STRING.equals(subreddit);
 	}
 	
-	synchronized void setThreadId(CharSequence threadId) {
+	void setThreadId(CharSequence threadId) {
 		this.threadId = threadId;
 	}
 }

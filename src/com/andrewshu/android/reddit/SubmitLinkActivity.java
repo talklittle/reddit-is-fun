@@ -82,7 +82,7 @@ public class SubmitLinkActivity extends TabActivity {
 	TabHost mTabHost;
 	
 	private RedditSettings mSettings = new RedditSettings();
-	private final DefaultHttpClient mClient = Common.createGzipHttpClient();
+	private final DefaultHttpClient mClient = Common.getGzipHttpClient();
 	
 	private String mSubmitUrl;
 	private volatile String mCaptchaIden = null;

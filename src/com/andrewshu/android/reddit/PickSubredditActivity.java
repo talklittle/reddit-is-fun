@@ -64,7 +64,7 @@ public final class PickSubredditActivity extends ListActivity {
     private final Pattern MY_SUBREDDITS_INNER = Pattern.compile("<a(.*?)/r/(.*?)>(.+?)</a>");
 
 	private RedditSettings mSettings = new RedditSettings();
-	private DefaultHttpClient mClient = Common.createGzipHttpClient();
+	private DefaultHttpClient mClient = Common.getGzipHttpClient();
 	
 	private PickSubredditAdapter mAdapter;
 	private EditText mEt;

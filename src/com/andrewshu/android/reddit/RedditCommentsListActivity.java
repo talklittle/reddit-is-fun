@@ -118,7 +118,7 @@ public class RedditCommentsListActivity extends ListActivity
     /** Custom list adapter that fits our threads data into the list. */
     private CommentsListAdapter mCommentsAdapter;
     
-    private final DefaultHttpClient mClient = Common.createGzipHttpClient();
+    private final DefaultHttpClient mClient = Common.getGzipHttpClient();
     
     
     // Common settings are stored here

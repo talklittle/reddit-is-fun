@@ -41,7 +41,7 @@ import android.os.RemoteException;
 public class EnvelopeService extends Service {
     NotificationManager mNM;
     private RedditSettings mSettings = new RedditSettings();
-    private DefaultHttpClient mClient = Common.createGzipHttpClient();
+    private DefaultHttpClient mClient = Common.getGzipHttpClient();
 
     @Override
     public void onCreate() {
