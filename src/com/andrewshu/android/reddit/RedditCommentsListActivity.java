@@ -144,6 +144,8 @@ public class RedditCommentsListActivity extends ListActivity
     private CharSequence mReplyTargetName = null;
     private CharSequence mEditTargetBody = null;
     private String mDeleteTargetKind = null;
+    private DownloadCommentsTask mCurrentDownloadCommentsTask = null;
+    private final Object mCurrentDownloadCommentsTaskLock = new Object();
     
     // ProgressDialogs with percentage bars
     private AutoResetProgressDialog mLoadingCommentsProgress;
@@ -614,13 +616,13 @@ public class RedditCommentsListActivity extends ListActivity
      * Task takes in a subreddit name string and thread id, downloads its data, parses
      * out the comments, and communicates them back to the UI as they are read.
      */
-    class DownloadCommentsTask extends AsyncTask<Integer, Integer, Void> {
+    class DownloadCommentsTask extends AsyncTask<Integer, Integer, Boolean> {
     	
     	private TreeMap<Integer, CommentInfo> mCommentsMap = new TreeMap<Integer, CommentInfo>();
     	private int _mNumComments = mNumVisibleComments;
        
     	// XXX: maxComments is unused for now
-    	public Void doInBackground(Integer... maxComments) {
+    	public Boolean doInBackground(Integer... maxComments) {
     		HttpEntity entity = null;
             try {
             	StringBuilder sb = new StringBuilder("http://www.reddit.com/r/")
@@ -643,6 +645,8 @@ public class RedditCommentsListActivity extends ListActivity
                 in.close();
                 entity.consumeContent();
                 
+                return true;
+                
             } catch (Exception e) {
             	if (Constants.LOGGING) Log.e(TAG, "failed:" + e.getMessage());
                 if (entity != null) {
@@ -653,7 +657,7 @@ public class RedditCommentsListActivity extends ListActivity
                 	}
                 }
             }
-            return null;
+            return false;
 	    }
     	
         void parseCommentsJSON(InputStream in) throws IOException,
@@ -927,7 +931,11 @@ public class RedditCommentsListActivity extends ListActivity
     	public void onPreExecute() {
     		if (mSettings.subreddit == null || mSettings.threadId == null)
 	    		this.cancel(true);
-    		
+    		synchronized (mCurrentDownloadCommentsTaskLock) {
+	    		if (mCurrentDownloadCommentsTask != null)
+	    			mCurrentDownloadCommentsTask.cancel(true);
+	    		mCurrentDownloadCommentsTask = this;
+    		}
     		resetUI();
     		mCommentsAdapter.mIsLoading = true;
 	    	
@@ -943,28 +951,36 @@ public class RedditCommentsListActivity extends ListActivity
 	    		setTitle(mThreadTitle + " : " + mSettings.subreddit);
     	}
     	
-    	public void onPostExecute(Void v) {
-    		for (Integer key : mCommentsMap.keySet())
-        		mCommentsAdapter.add(mCommentsMap.get(key));
-    		if (mThreadTitle == null) {
-    			mThreadTitle = mOpThreadInfo.getTitle().replaceAll("\n ", " ").replaceAll(" \n", " ").replaceAll("\n", " ");
-    			setTitle(mThreadTitle + " : " + mSettings.subreddit);
-    		}
-    		mCommentsAdapter.mIsLoading = false;
-    		mCommentsAdapter.notifyDataSetChanged();
-			if (mJumpToCommentPosition != 0) {
-				getListView().setSelectionFromTop(mJumpToCommentPosition, 10);
-				mJumpToCommentPosition = 0;
-			} else if (mJumpToCommentId != null) {
-    			for (int k = 0; k < mCommentsAdapter.getCount(); k++) {
-    				if (mJumpToCommentId.equals(mCommentsAdapter.getItem(k).getId())) {
-    					getListView().setSelectionFromTop(k, 10);
-    					mJumpToCommentId = null;
-    					break;
-    				}
-    			}
+    	public void onPostExecute(Boolean success) {
+    		synchronized (mCurrentDownloadCommentsTaskLock) {
+    			mCurrentDownloadCommentsTask = null;
     		}
 			dismissDialog(Constants.DIALOG_LOADING_COMMENTS_LIST);
+    		if (success) {
+	    		for (Integer key : mCommentsMap.keySet())
+	        		mCommentsAdapter.add(mCommentsMap.get(key));
+	    		if (mThreadTitle == null) {
+	    			mThreadTitle = mOpThreadInfo.getTitle().replaceAll("\n ", " ").replaceAll(" \n", " ").replaceAll("\n", " ");
+	    			setTitle(mThreadTitle + " : " + mSettings.subreddit);
+	    		}
+	    		mCommentsAdapter.mIsLoading = false;
+	    		mCommentsAdapter.notifyDataSetChanged();
+				if (mJumpToCommentPosition != 0) {
+					getListView().setSelectionFromTop(mJumpToCommentPosition, 10);
+					mJumpToCommentPosition = 0;
+				} else if (mJumpToCommentId != null) {
+	    			for (int k = 0; k < mCommentsAdapter.getCount(); k++) {
+	    				if (mJumpToCommentId.equals(mCommentsAdapter.getItem(k).getId())) {
+	    					getListView().setSelectionFromTop(k, 10);
+	    					mJumpToCommentId = null;
+	    					break;
+	    				}
+	    			}
+	    		}
+    		} else {
+    			if (!isCancelled())
+    				Common.showErrorToast("Error downloading comments. Please try again.", Toast.LENGTH_LONG, RedditCommentsListActivity.this);
+    		}
     	}
     	
     	public void onProgressUpdate(Integer... progress) {

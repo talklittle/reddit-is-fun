@@ -102,6 +102,8 @@ public final class RedditIsFun extends ListActivity {
     // UI State
     private View mVoteTargetView = null;
     private ThreadInfo mVoteTargetThreadInfo = null;
+    private DownloadThreadsTask mCurrentDownloadThreadsTask = null;
+    private final Object mCurrentDownloadThreadsTaskLock = new Object();
     
     private CharSequence mAfter = null;
     private CharSequence mBefore = null;
@@ -657,6 +659,11 @@ public final class RedditIsFun extends ListActivity {
     	}
     	
     	public void onPreExecute() {
+    		synchronized (mCurrentDownloadThreadsTaskLock) {
+	    		if (mCurrentDownloadThreadsTask != null)
+	    			mCurrentDownloadThreadsTask.cancel(true);
+	    		mCurrentDownloadThreadsTask = this;
+    		}
     		resetUI();
     		mThreadsAdapter.mIsLoading = true;
     		
@@ -675,6 +682,9 @@ public final class RedditIsFun extends ListActivity {
     	}
     	
     	public void onPostExecute(Boolean success) {
+    		synchronized (mCurrentDownloadThreadsTaskLock) {
+    			mCurrentDownloadThreadsTask = null;
+    		}
     		dismissDialog(Constants.DIALOG_LOADING_THREADS_LIST);
     		if (success) {
 	    		for (ThreadInfo ti : mThreadInfos)
@@ -694,7 +704,8 @@ public final class RedditIsFun extends ListActivity {
 	    			}
 	    		}
     		} else {
-    			Common.showErrorToast(_mUserError, Toast.LENGTH_LONG, RedditIsFun.this);
+    			if (!isCancelled())
+    				Common.showErrorToast(_mUserError, Toast.LENGTH_LONG, RedditIsFun.this);
     		}
     	}
     	

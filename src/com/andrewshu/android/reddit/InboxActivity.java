@@ -108,6 +108,8 @@ public final class InboxActivity extends ListActivity
     private View mVoteTargetView = null;
     private MessageInfo mVoteTargetMessageInfo = null;
     private URLSpan[] mVoteTargetSpans = null;
+    private DownloadMessagesTask mCurrentDownloadMessagesTask = null;
+    private final Object mCurrentDownloadMessagesTaskLock = new Object();
     
     private String mAfter = null;
     private String mBefore = null;
@@ -394,6 +396,11 @@ public final class InboxActivity extends ListActivity
 
 		@Override
     	public void onPreExecute() {
+			synchronized (mCurrentDownloadMessagesTaskLock) {
+				if (mCurrentDownloadMessagesTask != null)
+					mCurrentDownloadMessagesTask.cancel(true);
+				mCurrentDownloadMessagesTask = this;
+			}
     		resetUI();
     		mMessagesAdapter.mIsLoading = true;
 	    	showDialog(Constants.DIALOG_LOADING_INBOX);
@@ -401,6 +408,9 @@ public final class InboxActivity extends ListActivity
     	
 		@Override
     	public void onPostExecute(Void v) {
+			synchronized (mCurrentDownloadMessagesTaskLock) {
+				mCurrentDownloadMessagesTask = null;
+			}
 			for (MessageInfo mi : mMessageInfos)
         		mMessagesAdapter.add(mi);
 			mMessagesAdapter.mIsLoading = false;
