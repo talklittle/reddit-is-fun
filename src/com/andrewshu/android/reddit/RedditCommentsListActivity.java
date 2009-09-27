@@ -1712,6 +1712,7 @@ public class RedditCommentsListActivity extends ListActivity
         switch (item.getItemId()) {
         case R.id.op_menu_id:
     		mVoteTargetCommentInfo = mCommentsAdapter.getItem(0);
+    		mReplyTargetName = mVoteTargetCommentInfo.getOP().getName();
     		showDialog(Constants.DIALOG_THING_CLICK);
     		break;
     	case R.id.login_logout_menu_id:
@@ -1730,6 +1731,7 @@ public class RedditCommentsListActivity extends ListActivity
     		// From the menu, only used for the OP, which is a thread.
         	if (mSettings.loggedIn) {
 	    		mVoteTargetCommentInfo = mCommentsAdapter.getItem(0);
+	    		mReplyTargetName = mVoteTargetCommentInfo.getOP().getName();
 	            showDialog(Constants.DIALOG_REPLY);
         	} else {
         		Common.showErrorToast("You must be logged in to reply.", Toast.LENGTH_LONG, this);
