@@ -85,6 +85,7 @@
 	<string name="op_edit">Edit OP</string>
 	<string name="op_delete">Delete thread</string>
 	<string name="reply_thread">Reply to thread</string>
+	<string name="sort_by_best">Sort by: best</string>
 	<string name="sort_by_hot">Sort by: hot</string>
 	<string name="sort_by_new">Sort by: new</string>
 	<string name="sort_by_controversial">Sort by: controversial</string>

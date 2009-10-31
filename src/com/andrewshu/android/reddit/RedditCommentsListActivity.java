@@ -127,7 +127,7 @@ public class RedditCommentsListActivity extends ListActivity
     private ThreadInfo mOpThreadInfo;
     private CharSequence mThreadTitle = null;
     private int mNumVisibleComments = Constants.DEFAULT_COMMENT_DOWNLOAD_LIMIT;
-    private CharSequence mSortByUrl = Constants.CommentsSort.SORT_BY_HOT_URL;
+    private CharSequence mSortByUrl = Constants.CommentsSort.SORT_BY_BEST_URL;
     private int mJumpToCommentPosition = 0;
     private CharSequence mJumpToCommentId = null;
     
@@ -1685,7 +1685,9 @@ public class RedditCommentsListActivity extends ListActivity
         dest.setTitle(src.getTitle());
         
         // Sort
-        if (Constants.CommentsSort.SORT_BY_HOT_URL.equals(mSortByUrl))
+        if (Constants.CommentsSort.SORT_BY_BEST_URL.equals(mSortByUrl))
+        	src = menu.findItem(R.id.sort_by_best_menu_id);
+        else if (Constants.CommentsSort.SORT_BY_HOT_URL.equals(mSortByUrl))
         	src = menu.findItem(R.id.sort_by_hot_menu_id);
         else if (Constants.CommentsSort.SORT_BY_NEW_URL.equals(mSortByUrl))
         	src = menu.findItem(R.id.sort_by_new_menu_id);
@@ -2010,7 +2012,9 @@ public class RedditCommentsListActivity extends ListActivity
     			public void onClick(DialogInterface dialog, int item) {
     				dismissDialog(Constants.DIALOG_SORT_BY);
     				CharSequence itemCS = Constants.CommentsSort.SORT_BY_CHOICES[item];
-    				if (Constants.CommentsSort.SORT_BY_HOT.equals(itemCS)) {
+    				if (Constants.CommentsSort.SORT_BY_BEST.equals(itemCS)) {
+    					mSortByUrl = Constants.CommentsSort.SORT_BY_BEST_URL;
+        			} else if (Constants.CommentsSort.SORT_BY_HOT.equals(itemCS)) {
     					mSortByUrl = Constants.CommentsSort.SORT_BY_HOT_URL;
         			} else if (Constants.CommentsSort.SORT_BY_NEW.equals(itemCS)) {
         				mSortByUrl = Constants.CommentsSort.SORT_BY_NEW_URL;

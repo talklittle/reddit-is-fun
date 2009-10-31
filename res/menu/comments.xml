@@ -63,7 +63,10 @@
         android:title="@string/dark_theme" 
         android:visible="false" />
     <!-- these items are toggled in and out of @+id/sort_by_menu_id -->
-	<item android:id="@+id/sort_by_hot_menu_id"
+	<item android:id="@+id/sort_by_best_menu_id"
+        android:title="@string/sort_by_best" 
+        android:visible="false" />
+    <item android:id="@+id/sort_by_hot_menu_id"
         android:title="@string/sort_by_hot" 
         android:visible="false" />
     <item android:id="@+id/sort_by_new_menu_id"

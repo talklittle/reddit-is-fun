@@ -176,17 +176,21 @@ public class Constants {
     }
     static final class CommentsSort {
 	    static final String SORT_BY_KEY = "comments_sort_by";
+	    static final String SORT_BY_BEST = "best";
 	    static final String SORT_BY_HOT = "hot";
 	    static final String SORT_BY_NEW = "new";
 	    static final String SORT_BY_CONTROVERSIAL = "controversial";
 	    static final String SORT_BY_TOP = "top";
 	    static final String SORT_BY_OLD = "old";
+	    static final String SORT_BY_BEST_URL = "sort=confidence";
 	    static final String SORT_BY_HOT_URL = "sort=hot";
 	    static final String SORT_BY_NEW_URL = "sort=new";
 	    static final String SORT_BY_CONTROVERSIAL_URL = "sort=controversial";
 	    static final String SORT_BY_TOP_URL = "sort=top";
 	    static final String SORT_BY_OLD_URL = "sort=old";
-	    static final CharSequence[] SORT_BY_CHOICES = {SORT_BY_HOT, SORT_BY_NEW, SORT_BY_CONTROVERSIAL, SORT_BY_TOP, SORT_BY_OLD};
+	    static final CharSequence[] SORT_BY_CHOICES =
+	    	{SORT_BY_BEST, SORT_BY_HOT, SORT_BY_NEW,
+	    	SORT_BY_CONTROVERSIAL, SORT_BY_TOP, SORT_BY_OLD};
     }
     
     
