@@ -107,6 +107,9 @@ public final class PickSubredditActivity extends ListActivity {
     	setTheme(mSettings.theme);
     	
         setContentView(R.layout.pick_subreddit_view);
+        // HACK: set background color directly for android 2.0
+        if (mSettings.theme == R.style.Reddit_Light)
+        	getListView().setBackgroundResource(R.color.white);
         
         // Set the EditText to do same thing as onListItemClick
         mEt = (EditText) findViewById(R.id.pick_subreddit_input);

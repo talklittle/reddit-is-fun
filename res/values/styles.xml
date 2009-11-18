@@ -18,7 +18,24 @@
  * along with "reddit is fun".  If not, see <http://www.gnu.org/licenses/>.
 -->
 <resources>
+	<!-- XXX: Broken attempt to fix Android 2.0 background color bug.
+	     instead, need to explicitly set ListView bgcolor in code
+	     
+	<style name="Reddit_Light.ListView" parent="@android:style/Theme.Light">
+		<item name="android:listSelector">@drawable/list_selector_blue</item>
+		<item name="android:background">@color/white</item>
+	</style>
+	
     <style name="Reddit_Light" parent="@android:style/Theme.Light">
+    	<item name="android:windowBackground">@color/white</item>
+    	<item name="android:itemBackground">@color/white</item>
+		<item name="android:cacheColorHint">@color/white</item>
+		<item name="android:listViewStyle">?style/Reddit_Light.ListView</item>
+		<item name="android:listViewWhiteStyle">?style/Reddit_Light.ListView</item>
+	</style>
+	-->
+	
+	<style name="Reddit_Light" parent="@android:style/Theme.Light">
 		<item name="android:listSelector">@drawable/list_selector_blue</item>
 		<item name="android:cacheColorHint">@color/white</item>
 	</style>
