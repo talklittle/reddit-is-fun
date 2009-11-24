@@ -483,10 +483,16 @@ public class Common {
     
 
     
-    static void launchBrowser(CharSequence url, Activity act) {
-		Intent browser = new Intent(Intent.ACTION_VIEW, Uri.parse(url.toString()));
-		browser.putExtra(Browser.EXTRA_APPLICATION_ID, act.getPackageName());
-		act.startActivity(browser);
+    static void launchBrowser(Activity act, CharSequence url, boolean useExternal) {
+		if (useExternal) {
+	    	Intent browser = new Intent(Intent.ACTION_VIEW, Uri.parse(url.toString()));
+			browser.putExtra(Browser.EXTRA_APPLICATION_ID, act.getPackageName());
+			act.startActivity(browser);
+		} else {
+			Intent webViewIntent = new Intent(act, WebViewActivity.class);
+			webViewIntent.putExtra(Constants.EXTRA_URL, url.toString());
+			act.startActivity(webViewIntent);
+		}
     }
     
     

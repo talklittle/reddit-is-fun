@@ -55,6 +55,10 @@ public class RedditPreferencesPage extends PreferenceActivity
         e.setOnPreferenceChangeListener(this);
         e.setSummary(getPreferenceScreen().getSharedPreferences().getString(Constants.PREF_HOMEPAGE, null));
         
+        e = findPreference(Constants.PREF_USE_EXTERNAL_BROWSER);
+        e.setOnPreferenceChangeListener(this);
+        e.setSummary(getPreferenceScreen().getSharedPreferences().getString(Constants.PREF_USE_EXTERNAL_BROWSER, null));
+        
         e = findPreference(Constants.PREF_THEME);
         e.setOnPreferenceChangeListener(this);
         e.setSummary(getVisualThemeName(
@@ -108,7 +112,10 @@ public class RedditPreferencesPage extends PreferenceActivity
     		pref.setSummary((String) objValue);
             mSettings.setHomepage((String) objValue);
             return true;
-    	} else if (pref.getKey().equals(Constants.PREF_THEME)) {
+    	} else if (pref.getKey().equals(Constants.PREF_USE_EXTERNAL_BROWSER)) {
+            mSettings.setUseExternalBrowser((Boolean) objValue);
+            return true;
+        } else if (pref.getKey().equals(Constants.PREF_THEME)) {
             pref.setSummary(getVisualThemeName((String) objValue));
             mSettings.setTheme(RedditSettings.Theme.valueOf((String) objValue));
             return true;

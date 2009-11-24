@@ -31,6 +31,10 @@
                 android:inputType="text"
                 android:singleLine="true" />
         
+        <CheckBoxPreference
+        		android:key="use_external_browser"
+        		android:title="@string/pref_use_external_browser" />
+        
         <ListPreference
         		android:key="theme"
         		android:title="@string/pref_theme"

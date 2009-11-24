@@ -139,9 +139,6 @@ public final class RedditIsFun extends ListActivity {
         // HACK: set background color directly for android 2.0
         if (mSettings.theme == R.style.Reddit_Light)
         	getListView().setBackgroundResource(R.color.white);
-        // The above layout contains a list id "android:list"
-        // which ListActivity adopts as its list -- we can
-        // access it with getListView().
 
         if (savedInstanceState != null) {
 	        CharSequence subreddit = savedInstanceState.getCharSequence(ThreadInfo.SUBREDDIT);
@@ -1052,7 +1049,7 @@ public final class RedditIsFun extends ListActivity {
     			url = "http://www.reddit.com";
     		else
         		url = new StringBuilder("http://www.reddit.com/r/").append(mSettings.subreddit).toString();
-    		Common.launchBrowser(url, this);
+    		Common.launchBrowser(this, url, mSettings.useExternalBrowser);
     		break;
         case R.id.light_dark_menu_id:
     		if (mSettings.theme == R.style.Reddit_Light) {
@@ -1347,7 +1344,7 @@ public final class RedditIsFun extends ListActivity {
     				public void onClick(View v) {
     					dismissDialog(Constants.DIALOG_THING_CLICK);
     					// Launch Intent to goto the URL
-    					Common.launchBrowser(url, RedditIsFun.this);
+    					Common.launchBrowser(RedditIsFun.this, url, mSettings.useExternalBrowser);
     				}
     			});
             }

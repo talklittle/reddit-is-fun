@@ -41,6 +41,8 @@ public class RedditSettings {
 	String mailNotificationStyle = Constants.PREF_MAIL_NOTIFICATION_STYLE_DEFAULT;
 	String mailNotificationService = Constants.PREF_MAIL_NOTIFICATION_SERVICE_OFF;
 	
+	boolean useExternalBrowser = false;
+	
 	// --- States that change frequently. ---
 	CharSequence subreddit = Constants.FRONTPAGE_STRING;
 	boolean isFrontpage = false;
@@ -73,10 +75,14 @@ public class RedditSettings {
 		}
 	}
 	
-	// --- Synchronized Setters ---
+	// --- Setters ---
 	
 	void setHomepage(CharSequence homepage) {
 		this.homepage = homepage;
+	}
+	
+	void setUseExternalBrowser(boolean useExternalBrowser) {
+		this.useExternalBrowser = useExternalBrowser;
 	}
 	
 	void setLoggedIn(boolean loggedIn) {
