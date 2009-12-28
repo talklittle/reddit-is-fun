@@ -53,8 +53,6 @@ public class Constants {
     static final String EXTRA_COMMENT_CONTEXT = "jumpToComment";
     // Tell RedditCommentsListActivity to show "more children"
     static final String EXTRA_MORE_CHILDREN_ID = "moreChildrenId";
-    // A URL.
-    static final String EXTRA_URL = "url";
     
     // User-defined result codes
     static final int RESULT_LOGIN_REQUIRED = Activity.RESULT_FIRST_USER;
@@ -222,7 +220,6 @@ public class Constants {
     
     // Preference keys and values
     static final String PREF_HOMEPAGE = "homepage";
-    static final String PREF_USE_EXTERNAL_BROWSER = "use_external_browser";
     static final String PREF_THEME = "theme";
     static final String PREF_THEME_LIGHT = "THEME_LIGHT";
     static final String PREF_THEME_DARK	 = "THEME_DARK";
