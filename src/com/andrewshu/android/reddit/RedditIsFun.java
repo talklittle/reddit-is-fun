@@ -549,7 +549,6 @@ public final class RedditIsFun extends ListActivity {
 		    			mCount -= Constants.DEFAULT_THREAD_DOWNLOAD_LIMIT;
 		    		}
 	
-		    		mLastRefreshTime = System.currentTimeMillis();
 		    		mUrlToGetHere = url = sb.toString();
 		    		mUrlToGetHereChanged = false;
 	    		}
@@ -724,8 +723,11 @@ public final class RedditIsFun extends ListActivity {
 	    		// "25 more" button.
 	    		if (mThreadsAdapter.getCount() >= Constants.DEFAULT_THREAD_DOWNLOAD_LIMIT)
 	    			mThreadsAdapter.add(new ThreadInfo());
+	    		// Remember this time for caching purposes
+	    		mLastRefreshTime = System.currentTimeMillis();
 	    		mThreadsAdapter.mIsLoading = false;
 	    		mThreadsAdapter.notifyDataSetChanged();
+	    		// Point the list to last thread user was looking at, if any
 	    		jumpToThread();
     		} else {
     			if (!isCancelled())
@@ -993,7 +995,7 @@ public final class RedditIsFun extends ListActivity {
     			reader.close();
     			fis.close();
     		    // Restore previous session from cache, if the cache isn't too old
-    		    if (isFreshCacheExists()) {
+    		    if (Common.isFreshCache(mLastRefreshTime)) {
         			// read the mThreadsList
         			fis = openFileInput(fileName[0]);
         			ObjectInputStream in = new ObjectInputStream(fis);
@@ -1020,6 +1022,16 @@ public final class RedditIsFun extends ListActivity {
     	
     	@Override
     	public void onPreExecute() {
+    		// If there are comments in the cache, open CommentsListActivity
+    		for (String file : fileList()) {
+        		if (file.equals(Constants.FILENAME_COMMENTS_CACHE)) {
+        			Intent i = new Intent(getApplicationContext(), CommentsListActivity.class);
+        			startActivity(i);
+        			// Stop reading the cache for subreddit
+        			cancel(true);
+        			return;
+        		}
+    		}
     		showDialog(Constants.DIALOG_LOADING_THREADS_CACHE);
     	}
     	
@@ -1062,6 +1074,7 @@ public final class RedditIsFun extends ListActivity {
     			out = new ObjectOutputStream(fos);
     			out.writeObject(threadsList[0]);
     			out.close();
+    			fos.close();
     			// write the time
     			fos = openFileOutput(Constants.FILENAME_LAST_REFRESH_TIME, MODE_PRIVATE);
     			fos.write(Long.toString(mLastRefreshTime).getBytes("UTF-8"));
@@ -1071,6 +1084,11 @@ public final class RedditIsFun extends ListActivity {
     			ex.printStackTrace();
     		}
     		return false;
+    	}
+    	
+    	@Override
+    	public void onPreExecute() {
+    		Common.deleteCaches(getApplicationContext());
     	}
     }
     
@@ -1527,13 +1545,7 @@ public final class RedditIsFun extends ListActivity {
 	};
 
 	
-	private boolean isFreshCacheExists() {
-		long time = System.currentTimeMillis();
-		return time - mLastRefreshTime <= Constants.DEFAULT_FRESH_DURATION;
-	}
-	
-    
-    @Override
+	@Override
     protected void onSaveInstanceState(Bundle state) {
     	super.onSaveInstanceState(state);
     	state.putCharSequence(ThreadInfo.SUBREDDIT, mSettings.subreddit);
@@ -1541,7 +1553,6 @@ public final class RedditIsFun extends ListActivity {
     	state.putCharSequence(Constants.ThreadsSort.SORT_BY_KEY, mSortByUrl);
     	state.putCharSequence(Constants.JUMP_TO_THREAD_ID_KEY, mJumpToThreadId);
     	state.putInt(Constants.THREAD_COUNT, mCount);
-    	
     	// Cache
     	new WriteCacheTask().execute(mThreadsList);
     }
@@ -1556,6 +1567,7 @@ public final class RedditIsFun extends ListActivity {
         super.onRestoreInstanceState(state);
         final int[] myDialogs = {
         	Constants.DIALOG_LOADING_LOOK_OF_DISAPPROVAL,
+        	Constants.DIALOG_LOADING_THREADS_CACHE,
         	Constants.DIALOG_LOADING_THREADS_LIST,
         	Constants.DIALOG_LOGGING_IN,
         	Constants.DIALOG_LOGIN,

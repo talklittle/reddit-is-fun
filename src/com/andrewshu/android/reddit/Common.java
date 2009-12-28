@@ -490,6 +490,18 @@ public class Common {
     }
     
     
+    static boolean isFreshCache(long cacheTime) {
+		long time = System.currentTimeMillis();
+		return time - cacheTime <= Constants.DEFAULT_FRESH_DURATION;
+	}
+    
+    static void deleteCaches(Context context) {
+    	for (String fileName : context.fileList()) {
+    		context.deleteFile(fileName);
+    	}
+    }
+	
+    
 	/**
 	 * http://hc.apache.org/httpcomponents-client/examples.html
 	 * @return a Gzip-enabled DefaultHttpClient
