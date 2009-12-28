@@ -73,7 +73,7 @@ public class RedditSettings {
 		}
 	}
 	
-	// --- Synchronized Setters ---
+	// --- Setters ---
 	
 	void setHomepage(CharSequence homepage) {
 		this.homepage = homepage;

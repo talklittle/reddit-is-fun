@@ -98,10 +98,10 @@ import android.widget.AdapterView.AdapterContextMenuInfo;
  * @author TalkLittle
  *
  */
-public class RedditCommentsListActivity extends ListActivity
+public class CommentsListActivity extends ListActivity
 		implements View.OnCreateContextMenuListener {
 
-	private static final String TAG = "RedditCommentsListActivity";
+	private static final String TAG = "CommentsListActivity";
 	
     // Group 1: fullname. Group 2: kind. Group 3: id36.
     private final Pattern NEW_ID_PATTERN = Pattern.compile("\"id\": \"((.+?)_(.+?))\"");
@@ -588,7 +588,7 @@ public class RedditCommentsListActivity extends ListActivity
 		
         if (mMorePositions.contains(position)) {
         	mJumpToCommentPosition = position;
-        	Intent moreChildrenIntent = new Intent(getApplicationContext(), RedditCommentsListActivity.class);
+        	Intent moreChildrenIntent = new Intent(getApplicationContext(), CommentsListActivity.class);
         	moreChildrenIntent.putExtra(ThreadInfo.SUBREDDIT, mOpThreadInfo.getSubreddit());
         	moreChildrenIntent.putExtra(ThreadInfo.ID, mOpThreadInfo.getId());
         	moreChildrenIntent.putExtra(ThreadInfo.TITLE, mOpThreadInfo.getTitle());
@@ -946,7 +946,7 @@ public class RedditCommentsListActivity extends ListActivity
     		mCommentsAdapter.mIsLoading = true;
 	    	
 	    	if ("jailbait".equals(mSettings.subreddit.toString())) {
-	    		Toast lodToast = Toast.makeText(RedditCommentsListActivity.this, "", Toast.LENGTH_LONG);
+	    		Toast lodToast = Toast.makeText(CommentsListActivity.this, "", Toast.LENGTH_LONG);
 	    		View lodView = ((LayoutInflater) getSystemService(Context.LAYOUT_INFLATER_SERVICE))
 	    			.inflate(R.layout.look_of_disapproval_view, null);
 	    		lodToast.setView(lodView);
@@ -985,7 +985,7 @@ public class RedditCommentsListActivity extends ListActivity
 	    		}
     		} else {
     			if (!isCancelled())
-    				Common.showErrorToast("Error downloading comments. Please try again.", Toast.LENGTH_LONG, RedditCommentsListActivity.this);
+    				Common.showErrorToast("Error downloading comments. Please try again.", Toast.LENGTH_LONG, CommentsListActivity.this);
     		}
     	}
     	
@@ -1020,13 +1020,13 @@ public class RedditCommentsListActivity extends ListActivity
     	protected void onPostExecute(String errorMessage) {
     		dismissDialog(Constants.DIALOG_LOGGING_IN);
     		if (errorMessage == null) {
-    			Toast.makeText(RedditCommentsListActivity.this, "Logged in as "+mUsername, Toast.LENGTH_SHORT).show();
+    			Toast.makeText(CommentsListActivity.this, "Logged in as "+mUsername, Toast.LENGTH_SHORT).show();
     			// Check mail
-    			new Common.PeekEnvelopeTask(RedditCommentsListActivity.this, mClient, mSettings.mailNotificationStyle).execute();
+    			new Common.PeekEnvelopeTask(CommentsListActivity.this, mClient, mSettings.mailNotificationStyle).execute();
 	    		// Refresh the threads list
     			new DownloadCommentsTask().execute(Constants.DEFAULT_COMMENT_DOWNLOAD_LIMIT);
     		} else {
-            	Common.showErrorToast(mUserError, Toast.LENGTH_LONG, RedditCommentsListActivity.this);
+            	Common.showErrorToast(mUserError, Toast.LENGTH_LONG, CommentsListActivity.this);
     		}
     	}
     }
@@ -1048,7 +1048,7 @@ public class RedditCommentsListActivity extends ListActivity
         	
         	String status = "";
         	if (!mSettings.loggedIn) {
-        		Common.showErrorToast("You must be logged in to reply.", Toast.LENGTH_LONG, RedditCommentsListActivity.this);
+        		Common.showErrorToast("You must be logged in to reply.", Toast.LENGTH_LONG, CommentsListActivity.this);
         		_mUserError = "Not logged in";
         		return null;
         	}
@@ -1152,7 +1152,7 @@ public class RedditCommentsListActivity extends ListActivity
     	public void onPostExecute(CharSequence newId) {
     		dismissDialog(Constants.DIALOG_REPLYING);
     		if (newId == null) {
-    			Common.showErrorToast(_mUserError, Toast.LENGTH_LONG, RedditCommentsListActivity.this);
+    			Common.showErrorToast(_mUserError, Toast.LENGTH_LONG, CommentsListActivity.this);
     		} else {
     			// Refresh
     			mJumpToCommentId = newId;
@@ -1276,7 +1276,7 @@ public class RedditCommentsListActivity extends ListActivity
     	public void onPostExecute(CharSequence newId) {
     		dismissDialog(Constants.DIALOG_EDITING);
     		if (newId == null) {
-    			Common.showErrorToast(_mUserError, Toast.LENGTH_LONG, RedditCommentsListActivity.this);
+    			Common.showErrorToast(_mUserError, Toast.LENGTH_LONG, CommentsListActivity.this);
     		} else {
     			// Refresh
     			mJumpToCommentId = newId;
@@ -1384,14 +1384,14 @@ public class RedditCommentsListActivity extends ListActivity
     		dismissDialog(Constants.DIALOG_DELETING);
     		if (success) {
     			if (Constants.THREAD_KIND.equals(_mKind)) {
-    				Toast.makeText(RedditCommentsListActivity.this, "Deleted thread.", Toast.LENGTH_LONG).show();
+    				Toast.makeText(CommentsListActivity.this, "Deleted thread.", Toast.LENGTH_LONG).show();
     				finish();
     			} else {
-    				Toast.makeText(RedditCommentsListActivity.this, "Deleted comment.", Toast.LENGTH_SHORT).show();
+    				Toast.makeText(CommentsListActivity.this, "Deleted comment.", Toast.LENGTH_SHORT).show();
     				new DownloadCommentsTask().execute(Constants.DEFAULT_COMMENT_DOWNLOAD_LIMIT);
     			}
     		} else {
-    			Common.showErrorToast(_mUserError, Toast.LENGTH_LONG, RedditCommentsListActivity.this);
+    			Common.showErrorToast(_mUserError, Toast.LENGTH_LONG, CommentsListActivity.this);
     		}
     	}
     }
@@ -1503,7 +1503,7 @@ public class RedditCommentsListActivity extends ListActivity
     	
     	public void onPreExecute() {
         	if (!mSettings.loggedIn) {
-        		Common.showErrorToast("You must be logged in to vote.", Toast.LENGTH_LONG, RedditCommentsListActivity.this);
+        		Common.showErrorToast("You must be logged in to vote.", Toast.LENGTH_LONG, CommentsListActivity.this);
         		cancel(true);
         		return;
         	}
@@ -1634,7 +1634,7 @@ public class RedditCommentsListActivity extends ListActivity
         		}
         		mCommentsAdapter.notifyDataSetChanged();
         		
-    			Common.showErrorToast(_mUserError, Toast.LENGTH_LONG, RedditCommentsListActivity.this);
+    			Common.showErrorToast(_mUserError, Toast.LENGTH_LONG, CommentsListActivity.this);
     		}
     	}
     }
@@ -1967,7 +1967,7 @@ public class RedditCommentsListActivity extends ListActivity
 		    				dismissDialog(Constants.DIALOG_REPLY);
 	    				}
 	    				else {
-	    					Common.showErrorToast("Error replying. Please try again.", Toast.LENGTH_SHORT, RedditCommentsListActivity.this);
+	    					Common.showErrorToast("Error replying. Please try again.", Toast.LENGTH_SHORT, CommentsListActivity.this);
 	    				}
 	    			}
 	    		});
@@ -1985,7 +1985,7 @@ public class RedditCommentsListActivity extends ListActivity
 		    				dismissDialog(Constants.DIALOG_EDIT);
 	    				}
 	    				else {
-	    					Common.showErrorToast("Error editing. Please try again.", Toast.LENGTH_SHORT, RedditCommentsListActivity.this);
+	    					Common.showErrorToast("Error editing. Please try again.", Toast.LENGTH_SHORT, CommentsListActivity.this);
 	    				}
 	    			}
 	    		});
@@ -2125,7 +2125,7 @@ public class RedditCommentsListActivity extends ListActivity
 	    				public void onClick(View v) {
 	    					dismissDialog(Constants.DIALOG_THING_CLICK);
 	    					// Launch Intent to goto the URL
-	    					Common.launchBrowser(url, RedditCommentsListActivity.this);
+	    					Common.launchBrowser(url, CommentsListActivity.this);
 	    				}
 	    			});
 	    			linkButton.setVisibility(View.VISIBLE);
@@ -2152,7 +2152,7 @@ public class RedditCommentsListActivity extends ListActivity
     	        			dismissDialog(Constants.DIALOG_THING_CLICK);
     	        			
     	    	            ArrayAdapter<String> adapter = 
-    	    	                new ArrayAdapter<String>(RedditCommentsListActivity.this, android.R.layout.select_dialog_item, urls) {
+    	    	                new ArrayAdapter<String>(CommentsListActivity.this, android.R.layout.select_dialog_item, urls) {
     	    	                public View getView(int position, View convertView, ViewGroup parent) {
     	    	                    View v = super.getView(position, convertView, parent);
     	    	                    try {
@@ -2176,12 +2176,12 @@ public class RedditCommentsListActivity extends ListActivity
     	    	                }
     	    	            };
 
-    	    	            AlertDialog.Builder b = new AlertDialog.Builder(RedditCommentsListActivity.this);
+    	    	            AlertDialog.Builder b = new AlertDialog.Builder(CommentsListActivity.this);
 
     	    	            DialogInterface.OnClickListener click = new DialogInterface.OnClickListener() {
     	    	                public final void onClick(DialogInterface dialog, int which) {
     	    	                    if (which >= 0) {
-    	    	                        Common.launchBrowser(urls.get(which), RedditCommentsListActivity.this);
+    	    	                        Common.launchBrowser(urls.get(which), CommentsListActivity.this);
     	    	                    }
     	    	                }
     	    	            };

@@ -223,7 +223,7 @@ public final class RedditIsFun extends ListActivity {
 	    		String newTitle = extras.getString(ThreadInfo.TITLE);
 	    		mSettings.setSubreddit(newSubreddit);
 	    		// Start up comments list with the new thread
-	    		Intent i = new Intent(getApplicationContext(), RedditCommentsListActivity.class);
+	    		Intent i = new Intent(getApplicationContext(), CommentsListActivity.class);
 				i.putExtra(ThreadInfo.SUBREDDIT, newSubreddit);
 				i.putExtra(ThreadInfo.ID, newId);
 				i.putExtra(ThreadInfo.TITLE, newTitle);
@@ -1396,8 +1396,8 @@ public final class RedditIsFun extends ListActivity {
     private final OnClickListener commentsOnClickListener = new OnClickListener() {
 		public void onClick(View v) {
 			dismissDialog(Constants.DIALOG_THING_CLICK);
-			// Launch an Intent for RedditCommentsListActivity
-			Intent i = new Intent(getApplicationContext(), RedditCommentsListActivity.class);
+			// Launch an Intent for CommentsListActivity
+			Intent i = new Intent(getApplicationContext(), CommentsListActivity.class);
 			i.putExtra(ThreadInfo.SUBREDDIT, mVoteTargetThreadInfo.getSubreddit());
 			i.putExtra(ThreadInfo.ID, mVoteTargetThreadInfo.getId());
 			i.putExtra(ThreadInfo.TITLE, mVoteTargetThreadInfo.getTitle());

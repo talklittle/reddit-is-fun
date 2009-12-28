@@ -31,7 +31,7 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
-	    <activity android:name=".RedditCommentsListActivity"></activity>
+	    <activity android:name=".CommentsListActivity"></activity>
 	    <activity android:name=".PickSubredditActivity"></activity>
 	    <activity android:name=".SubmitLinkActivity">
 	        <intent-filter>

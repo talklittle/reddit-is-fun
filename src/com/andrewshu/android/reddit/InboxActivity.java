@@ -778,7 +778,7 @@ public final class InboxActivity extends ListActivity
     			.setPositiveButton("Go to thread", new DialogInterface.OnClickListener() {
     				public void onClick(DialogInterface dialog, int id) {
     					dialog.dismiss();
-    					Intent i = new Intent(getApplicationContext(), RedditCommentsListActivity.class);
+    					Intent i = new Intent(getApplicationContext(), CommentsListActivity.class);
     					i.putExtra(Constants.EXTRA_COMMENT_CONTEXT, mVoteTargetMessageInfo.getContext());
     					startActivity(i);
     				}

@@ -49,9 +49,9 @@ public class Constants {
     // --- Intent extras ---
     // Tell PickSubredditActivity to hide the fronptage string
     static final String EXTRA_HIDE_FRONTPAGE_STRING = "hideFrontpage";
-    // Tell RedditCommentsListActivity to jump to a comment context (a URL. pattern match)
+    // Tell CommentsListActivity to jump to a comment context (a URL. pattern match)
     static final String EXTRA_COMMENT_CONTEXT = "jumpToComment";
-    // Tell RedditCommentsListActivity to show "more children"
+    // Tell CommentsListActivity to show "more children"
     static final String EXTRA_MORE_CHILDREN_ID = "moreChildrenId";
     
     // User-defined result codes
