@@ -25,11 +25,14 @@ public class Constants {
 	
 	static final boolean LOGGING = false;
 	
-	// File containing the last subreddit viewed, along with the JSON in it
-	static final String SERIAL_SUBREDDIT_CACHE = "subreddit.ser";
-	static final String SERIAL_COMMENTS_CACHE = "comments.ser";
-	
-	static final String LAST_REFRESH_TIME = "last_refresh";
+	// File containing the ArrayList<ThreadInfo> of last subreddit viewed
+	static final String FILENAME_SUBREDDIT_CACHE = "subreddit.ser";
+	// File containing the ArrayList<CommentInfo> of last comments viewed
+	static final String FILENAME_COMMENTS_CACHE = "comments.ser";
+	// File containing a string of System.currentTimeMillis()
+	static final String FILENAME_LAST_REFRESH_TIME = "lastrefresh.dat";
+	// File containing a string of subreddit minus "/r/" prefix
+	static final String FILENAME_LAST_SUBREDDIT = "lastsubreddit.dat";
 	
 	static final String COMMENT_KIND = "t1";
 	static final String THREAD_KIND = "t3";
@@ -97,6 +100,7 @@ public class Constants {
     static final int DIALOG_LOADING_INBOX = 1007;
     static final int DIALOG_DELETING = 1008;
     static final int DIALOG_EDITING = 1009;
+    static final int DIALOG_LOADING_THREADS_CACHE = 1010;
     
     // Special CSS for webviews to match themes
     static final String CSS_DARK = "<style>body{color:#c0c0c0;background-color:#191919}a:link{color:#ffffff}</style>";

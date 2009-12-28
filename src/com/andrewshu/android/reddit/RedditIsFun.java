@@ -20,9 +20,15 @@
 package com.andrewshu.android.reddit;
 
 import java.io.BufferedReader;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -153,18 +159,10 @@ public final class RedditIsFun extends ListActivity {
 		    mCount = savedInstanceState.getInt(Constants.THREAD_COUNT);
 		    mSortByUrl = savedInstanceState.getCharSequence(Constants.ThreadsSort.SORT_BY_KEY);
 		    mJumpToThreadId = savedInstanceState.getCharSequence(Constants.JUMP_TO_THREAD_ID_KEY);
-		    mLastRefreshTime = savedInstanceState.getLong(Constants.LAST_REFRESH_TIME);
-		    // Restore previous session from cache, if the cache isn't too old
-		    if (isFreshCacheExists() && savedInstanceState.containsKey(Constants.SERIAL_SUBREDDIT_CACHE)) {
-		    	mThreadsList = (ArrayList<ThreadInfo>) savedInstanceState.getSerializable(Constants.SERIAL_SUBREDDIT_CACHE);
-		    	resetUI(new ThreadsListAdapter(this, mThreadsList));
-		    	jumpToThread();
-		    	return;
-		    }
         } else {
         	mSettings.setSubreddit(mSettings.homepage);
         }
-        new DownloadThreadsTask().execute(mSettings.subreddit);
+        new ReadCacheTask().execute(Constants.FILENAME_SUBREDDIT_CACHE);
     }
     
     @Override
@@ -185,8 +183,7 @@ public final class RedditIsFun extends ListActivity {
     	new Common.PeekEnvelopeTask(this, mClient, mSettings.mailNotificationStyle).execute();
     	
     	// threads list stuff
-    	if (mJumpToThreadId != null)
-    		jumpToThread();
+    	jumpToThread();
     }
     
     /**
@@ -454,6 +451,8 @@ public final class RedditIsFun extends ListActivity {
      * Jump to thread whose id is mJumpToThreadId. Then clear mJumpToThreadId.
      */
     private void jumpToThread() {
+    	if (mJumpToThreadId == null)
+    		return;
 		for (int k = 0; k < mThreadsAdapter.getCount(); k++) {
 			if (mJumpToThreadId.equals(mThreadsAdapter.getItem(k).getId())) {
 				getListView().setSelection(k);
@@ -713,6 +712,7 @@ public final class RedditIsFun extends ListActivity {
 	    		setTitle("/r/"+mSettings.subreddit.toString().trim());
     	}
     	
+    	@Override
     	public void onPostExecute(Boolean success) {
     		synchronized (mCurrentDownloadThreadsTaskLock) {
     			mCurrentDownloadThreadsTask = null;
@@ -726,14 +726,14 @@ public final class RedditIsFun extends ListActivity {
 	    			mThreadsAdapter.add(new ThreadInfo());
 	    		mThreadsAdapter.mIsLoading = false;
 	    		mThreadsAdapter.notifyDataSetChanged();
-	    		if (mJumpToThreadId != null)
-	    			jumpToThread();
+	    		jumpToThread();
     		} else {
     			if (!isCancelled())
     				Common.showErrorToast(_mUserError, Toast.LENGTH_LONG, RedditIsFun.this);
     		}
     	}
     	
+    	@Override
     	public void onProgressUpdate(Integer... progress) {
     		mLoadingThreadsProgress.setProgress(progress[0]);
     	}
@@ -753,10 +753,12 @@ public final class RedditIsFun extends ListActivity {
     		return Common.doLogin(mUsername, mPassword, mClient, mSettings);
         }
     	
+    	@Override
     	protected void onPreExecute() {
     		showDialog(Constants.DIALOG_LOGGING_IN);
     	}
     	
+    	@Override
     	protected void onPostExecute(String errorMessage) {
     		dismissDialog(Constants.DIALOG_LOGGING_IN);
     		if (errorMessage == null) {
@@ -876,6 +878,7 @@ public final class RedditIsFun extends ListActivity {
         	return false;
         }
     	
+    	@Override
     	public void onPreExecute() {
     		if (!mSettings.loggedIn) {
         		Common.showErrorToast("You must be logged in to vote.", Toast.LENGTH_LONG, RedditIsFun.this);
@@ -948,6 +951,7 @@ public final class RedditIsFun extends ListActivity {
     		mThreadsAdapter.notifyDataSetChanged();
     	}
     	
+    	@Override
     	public void onPostExecute(Boolean success) {
     		if (!success) {
     			// Vote failed. Undo the arrow and score.
@@ -974,6 +978,99 @@ public final class RedditIsFun extends ListActivity {
         		
     			Common.showErrorToast(_mUserError, Toast.LENGTH_LONG, RedditIsFun.this);
     		}
+    	}
+    }
+    
+    private class ReadCacheTask extends AsyncTask<String, Void, Boolean> {
+    	@Override
+    	public Boolean doInBackground(String... fileName) {
+    		try {
+    			// read the time
+    			FileInputStream fis = openFileInput(Constants.FILENAME_LAST_REFRESH_TIME);
+    			BufferedReader reader = new BufferedReader(new InputStreamReader(fis));
+    			String timeString = reader.readLine().trim();
+    			mLastRefreshTime = Long.valueOf(timeString);
+    			reader.close();
+    			fis.close();
+    		    // Restore previous session from cache, if the cache isn't too old
+    		    if (isFreshCacheExists()) {
+        			// read the mThreadsList
+        			fis = openFileInput(fileName[0]);
+        			ObjectInputStream in = new ObjectInputStream(fis);
+        			mThreadsList = (ArrayList<ThreadInfo>) in.readObject();
+        			in.close();
+        			fis.close();
+    		    	// read the subreddit
+    		    	fis = openFileInput(Constants.FILENAME_LAST_SUBREDDIT);
+    		    	reader = new BufferedReader(new InputStreamReader(fis));
+    		    	mSettings.setSubreddit(reader.readLine().trim());
+    		    	reader.close();
+    		    	fis.close();
+        			return true;
+    		    }
+    		} catch (FileNotFoundException ex) {
+    			if (Constants.LOGGING) Log.e(TAG, ex.getLocalizedMessage());
+    		} catch (IOException ex) {
+    			if (Constants.LOGGING) Log.e(TAG, ex.getLocalizedMessage());
+    		} catch (ClassNotFoundException ex) {
+    			if (Constants.LOGGING) Log.e(TAG, ex.getLocalizedMessage());
+    		}
+    		return false;
+    	}
+    	
+    	@Override
+    	public void onPreExecute() {
+    		showDialog(Constants.DIALOG_LOADING_THREADS_CACHE);
+    	}
+    	
+    	@Override
+    	public void onPostExecute(Boolean success) {
+    		dismissDialog(Constants.DIALOG_LOADING_THREADS_CACHE);
+    		if (success) {
+    			// Use the cached threads list
+		    	resetUI(new ThreadsListAdapter(RedditIsFun.this, mThreadsList));
+		    	// Set the title based on subreddit
+		    	if (Constants.FRONTPAGE_STRING.equals(mSettings.subreddit))
+		    		setTitle("reddit.com: what's new online!");
+		    	else
+		    		setTitle("/r/"+mSettings.subreddit.toString().trim());
+		    	// Point the list to whichever thread the user was looking at
+		    	jumpToThread();
+    		} else {
+    			//Common.showErrorToast("Reading subreddit cache failed.", Toast.LENGTH_SHORT, RedditIsFun.this);
+    			// Since it didn't read from cache, download normally from Internet.
+    			new DownloadThreadsTask().execute(mSettings.subreddit);
+    		}
+    	}
+    }
+    
+    private class WriteCacheTask extends AsyncTask<Serializable, Void, Boolean> {
+    	// XXX: is passing threadsList to doInBackground thread-safe?
+    	@Override
+    	public Boolean doInBackground(Serializable... threadsList) {
+    		if (threadsList[0] == null)
+				return false;
+			try {
+				FileOutputStream fos;
+				ObjectOutputStream out;
+				// write the subreddit
+				fos = openFileOutput(Constants.FILENAME_LAST_SUBREDDIT, MODE_PRIVATE);
+				fos.write(mSettings.subreddit.toString().getBytes("UTF-8"));
+				fos.close();
+    			// write the serialized mThreadsList
+				fos = openFileOutput(Constants.FILENAME_SUBREDDIT_CACHE, MODE_PRIVATE);
+    			out = new ObjectOutputStream(fos);
+    			out.writeObject(threadsList[0]);
+    			out.close();
+    			// write the time
+    			fos = openFileOutput(Constants.FILENAME_LAST_REFRESH_TIME, MODE_PRIVATE);
+    			fos.write(Long.toString(mLastRefreshTime).getBytes("UTF-8"));
+    			fos.close();
+    			return true;
+    		} catch (IOException ex) {
+    			ex.printStackTrace();
+    		}
+    		return false;
     	}
     }
     
@@ -1266,6 +1363,13 @@ public final class RedditIsFun extends ListActivity {
     		mLoadingThreadsProgress.setCancelable(true);
     		dialog = mLoadingThreadsProgress;
     		break;
+    	case Constants.DIALOG_LOADING_THREADS_CACHE:
+    		pdialog = new ProgressDialog(this);
+    		pdialog.setMessage("Loading cached subreddit...");
+    		pdialog.setIndeterminate(true);
+    		pdialog.setCancelable(false);
+    		dialog = pdialog;
+    		break;
     	case Constants.DIALOG_LOADING_LOOK_OF_DISAPPROVAL:
     		pdialog = new ProgressDialog(this);
     		pdialog.setIndeterminate(true);
@@ -1437,9 +1541,9 @@ public final class RedditIsFun extends ListActivity {
     	state.putCharSequence(Constants.ThreadsSort.SORT_BY_KEY, mSortByUrl);
     	state.putCharSequence(Constants.JUMP_TO_THREAD_ID_KEY, mJumpToThreadId);
     	state.putInt(Constants.THREAD_COUNT, mCount);
-    	state.putLong(Constants.LAST_REFRESH_TIME, mLastRefreshTime);
-    	if (mThreadsList != null)
-    		state.putSerializable(Constants.SERIAL_SUBREDDIT_CACHE, mThreadsList);
+    	
+    	// Cache
+    	new WriteCacheTask().execute(mThreadsList);
     }
     
     /**
