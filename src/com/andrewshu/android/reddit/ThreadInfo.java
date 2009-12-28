@@ -19,9 +19,8 @@
 
 package com.andrewshu.android.reddit;
 
+import java.io.Serializable;
 import java.util.HashMap;
-
-import org.codehaus.jackson.JsonNode;
 
 /**
  * Class representing a thread posting in reddit API.
@@ -29,7 +28,9 @@ import org.codehaus.jackson.JsonNode;
  * @author TalkLittle
  *
  */
-public class ThreadInfo {
+public class ThreadInfo implements Serializable {
+	static final long serialVersionUID = 29;
+	
 	public static final String AUTHOR        = "author";
 	public static final String CLICKED       = "clicked";
 	public static final String CREATED       = "created";
@@ -63,7 +64,7 @@ public class ThreadInfo {
 	};
 	
 	public HashMap<String, String> mValues = new HashMap<String, String>();
-	public JsonNode mMediaEmbed; // Unused.
+//	public JsonNode mMediaEmbed; // Unused.
 	
 	public void put(String key, String value) {
 		mValues.put(key, value);

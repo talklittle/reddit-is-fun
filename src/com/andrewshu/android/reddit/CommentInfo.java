@@ -19,6 +19,7 @@
 
 package com.andrewshu.android.reddit;
 
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.HashMap;
 
@@ -32,7 +33,9 @@ import android.text.SpannableStringBuilder;
  * @author TalkLittle
  *
  */
-public class CommentInfo {
+public class CommentInfo implements Serializable {
+	static final long serialVersionUID = 29;
+	
 	public static final String AUTHOR       = "author";
 	public static final String BODY         = "body";
 	public static final String BODY_HTML    = "body_html";

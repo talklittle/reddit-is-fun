@@ -24,7 +24,13 @@ import android.app.Activity;
 public class Constants {
 	
 	static final boolean LOGGING = false;
-
+	
+	// File containing the last subreddit viewed, along with the JSON in it
+	static final String SERIAL_SUBREDDIT_CACHE = "subreddit.ser";
+	static final String SERIAL_COMMENTS_CACHE = "comments.ser";
+	
+	static final String LAST_REFRESH_TIME = "last_refresh";
+	
 	static final String COMMENT_KIND = "t1";
 	static final String THREAD_KIND = "t3";
 	static final String MESSAGE_KIND = "t4";
@@ -35,7 +41,8 @@ public class Constants {
 
 	static final int DEFAULT_THREAD_DOWNLOAD_LIMIT = 25;
     static final int DEFAULT_COMMENT_DOWNLOAD_LIMIT = 200;
-    
+    static final long DEFAULT_FRESH_DURATION = 1800000;  // 30 minutes
+
     // startActivityForResult request codes
     static final int ACTIVITY_PICK_SUBREDDIT = 0;
     static final int ACTIVITY_SUBMIT_LINK = 1;

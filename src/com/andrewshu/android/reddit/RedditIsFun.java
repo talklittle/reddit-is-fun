@@ -92,7 +92,8 @@ public final class RedditIsFun extends ListActivity {
 	private final JsonFactory jsonFactory = new JsonFactory(); 
 	
     /** Custom list adapter that fits our threads data into the list. */
-    private ThreadsListAdapter mThreadsAdapter;
+    private ThreadsListAdapter mThreadsAdapter = null;
+    private ArrayList<ThreadInfo> mThreadsList = null;
 
     private final DefaultHttpClient mClient = Common.getGzipHttpClient();
 	
@@ -105,6 +106,7 @@ public final class RedditIsFun extends ListActivity {
     private DownloadThreadsTask mCurrentDownloadThreadsTask = null;
     private final Object mCurrentDownloadThreadsTaskLock = new Object();
     
+    // Navigation that can be cached
     private CharSequence mAfter = null;
     private CharSequence mBefore = null;
     private CharSequence mUrlToGetHere = null;
@@ -112,8 +114,9 @@ public final class RedditIsFun extends ListActivity {
     private CharSequence mSortByUrl = Constants.ThreadsSort.SORT_BY_HOT_URL;
     private CharSequence mSortByUrlExtra = Constants.EMPTY_STRING;
     private volatile int mCount = Constants.DEFAULT_THREAD_DOWNLOAD_LIMIT;
-    
     private CharSequence mJumpToThreadId = null;
+    private long mLastRefreshTime = 0;
+    // End navigation variables
     
     // ProgressDialogs with percentage bars
     private AutoResetProgressDialog mLoadingThreadsProgress;
@@ -150,10 +153,17 @@ public final class RedditIsFun extends ListActivity {
 		    mCount = savedInstanceState.getInt(Constants.THREAD_COUNT);
 		    mSortByUrl = savedInstanceState.getCharSequence(Constants.ThreadsSort.SORT_BY_KEY);
 		    mJumpToThreadId = savedInstanceState.getCharSequence(Constants.JUMP_TO_THREAD_ID_KEY);
+		    mLastRefreshTime = savedInstanceState.getLong(Constants.LAST_REFRESH_TIME);
+		    // Restore previous session from cache, if the cache isn't too old
+		    if (isFreshCacheExists() && savedInstanceState.containsKey(Constants.SERIAL_SUBREDDIT_CACHE)) {
+		    	mThreadsList = (ArrayList<ThreadInfo>) savedInstanceState.getSerializable(Constants.SERIAL_SUBREDDIT_CACHE);
+		    	resetUI(new ThreadsListAdapter(this, mThreadsList));
+		    	jumpToThread();
+		    	return;
+		    }
         } else {
         	mSettings.setSubreddit(mSettings.homepage);
         }
-        
         new DownloadThreadsTask().execute(mSettings.subreddit);
     }
     
@@ -175,15 +185,8 @@ public final class RedditIsFun extends ListActivity {
     	new Common.PeekEnvelopeTask(this, mClient, mSettings.mailNotificationStyle).execute();
     	
     	// threads list stuff
-    	if (mJumpToThreadId != null) {
-			for (int k = 0; k < mThreadsAdapter.getCount(); k++) {
-				if (mJumpToThreadId.equals(mThreadsAdapter.getItem(k).getId())) {
-					getListView().setSelection(k);
-					mJumpToThreadId = null;
-					break;
-				}
-			}
-		}
+    	if (mJumpToThreadId != null)
+    		jumpToThread();
     }
     
     /**
@@ -447,6 +450,19 @@ public final class RedditIsFun extends ListActivity {
         }
     }
     
+    /**
+     * Jump to thread whose id is mJumpToThreadId. Then clear mJumpToThreadId.
+     */
+    private void jumpToThread() {
+		for (int k = 0; k < mThreadsAdapter.getCount(); k++) {
+			if (mJumpToThreadId.equals(mThreadsAdapter.getItem(k).getId())) {
+				getListView().setSelection(k);
+				mJumpToThreadId = null;
+				break;
+			}
+		}
+    }
+    
     
     /**
      * Called when user clicks an item in the list. Starts an activity to
@@ -469,11 +485,16 @@ public final class RedditIsFun extends ListActivity {
 
     /**
      * Resets the output UI list contents, retains session state.
+     * @param threadsAdapter A ThreadsListAdapter to use. Pass in null if you want a new empty one created.
      */
-    void resetUI() {
-        // Reset the list to be empty.
-    	List<ThreadInfo> items = new ArrayList<ThreadInfo>();
-		mThreadsAdapter = new ThreadsListAdapter(this, items);
+    void resetUI(ThreadsListAdapter threadsAdapter) {
+    	if (threadsAdapter == null) {
+            // Reset the list to be empty.
+	    	mThreadsList = new ArrayList<ThreadInfo>();
+			mThreadsAdapter = new ThreadsListAdapter(this, mThreadsList);
+    	} else {
+    		mThreadsAdapter = threadsAdapter;
+    	}
 	    setListAdapter(mThreadsAdapter);
 	    Common.updateListDrawables(this, mSettings.theme);
     }
@@ -529,6 +550,7 @@ public final class RedditIsFun extends ListActivity {
 		    			mCount -= Constants.DEFAULT_THREAD_DOWNLOAD_LIMIT;
 		    		}
 	
+		    		mLastRefreshTime = System.currentTimeMillis();
 		    		mUrlToGetHere = url = sb.toString();
 		    		mUrlToGetHereChanged = false;
 	    		}
@@ -674,7 +696,7 @@ public final class RedditIsFun extends ListActivity {
 	    			mCurrentDownloadThreadsTask.cancel(true);
 	    		mCurrentDownloadThreadsTask = this;
     		}
-    		resetUI();
+    		resetUI(null);
     		mThreadsAdapter.mIsLoading = true;
     		
 	    	if ("jailbait".equals(mSettings.subreddit.toString())) {
@@ -704,15 +726,8 @@ public final class RedditIsFun extends ListActivity {
 	    			mThreadsAdapter.add(new ThreadInfo());
 	    		mThreadsAdapter.mIsLoading = false;
 	    		mThreadsAdapter.notifyDataSetChanged();
-	    		if (mJumpToThreadId != null) {
-	    			for (int k = 0; k < mThreadsAdapter.getCount(); k++) {
-	    				if (mJumpToThreadId.equals(mThreadsAdapter.getItem(k).getId())) {
-	    					getListView().setSelection(k);
-	    					mJumpToThreadId = null;
-	    					break;
-	    				}
-	    			}
-	    		}
+	    		if (mJumpToThreadId != null)
+	    			jumpToThread();
     		} else {
     			if (!isCancelled())
     				Common.showErrorToast(_mUserError, Toast.LENGTH_LONG, RedditIsFun.this);
@@ -1406,7 +1421,12 @@ public final class RedditIsFun extends ListActivity {
 			startActivity(i);
 		}
 	};
+
 	
+	private boolean isFreshCacheExists() {
+		long time = System.currentTimeMillis();
+		return time - mLastRefreshTime <= Constants.DEFAULT_FRESH_DURATION;
+	}
 	
     
     @Override
@@ -1417,6 +1437,9 @@ public final class RedditIsFun extends ListActivity {
     	state.putCharSequence(Constants.ThreadsSort.SORT_BY_KEY, mSortByUrl);
     	state.putCharSequence(Constants.JUMP_TO_THREAD_ID_KEY, mJumpToThreadId);
     	state.putInt(Constants.THREAD_COUNT, mCount);
+    	state.putLong(Constants.LAST_REFRESH_TIME, mLastRefreshTime);
+    	if (mThreadsList != null)
+    		state.putSerializable(Constants.SERIAL_SUBREDDIT_CACHE, mThreadsList);
     }
     
     /**
