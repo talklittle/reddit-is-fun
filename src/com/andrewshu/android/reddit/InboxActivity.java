@@ -134,9 +134,6 @@ public final class InboxActivity extends ListActivity
         setTheme(mSettings.theme);
         
         setContentView(R.layout.comments_list_content);
-        // HACK: set background color directly for android 2.0
-        if (mSettings.theme == R.style.Reddit_Light)
-        	getListView().setBackgroundResource(R.color.white);
         registerForContextMenu(getListView());
         // The above layout contains a list id "android:list"
         // which ListActivity adopts as its list -- we can
@@ -147,6 +144,16 @@ public final class InboxActivity extends ListActivity
 		} else {
 			showDialog(Constants.DIALOG_LOGIN);
 		}
+    }
+    
+    /**
+     * Hack to explicitly set background color whenever changing ListView.
+     */
+    public void setContentView(int layoutResID) {
+    	super.setContentView(layoutResID);
+    	// HACK: set background color directly for android 2.0
+        if (mSettings.theme == R.style.Reddit_Light)
+        	getListView().setBackgroundResource(R.color.white);
     }
     
 	private void returnStatus(int status) {
@@ -164,9 +171,6 @@ public final class InboxActivity extends ListActivity
     	if (mSettings.theme != previousTheme) {
     		setTheme(mSettings.theme);
     		setContentView(R.layout.threads_list_content);
-            // HACK: set background color directly for android 2.0
-            if (mSettings.theme == R.style.Reddit_Light)
-            	getListView().setBackgroundResource(R.color.white);
     		registerForContextMenu(getListView());
     		setListAdapter(mMessagesAdapter);
     		Common.updateListDrawables(this, mSettings.theme);

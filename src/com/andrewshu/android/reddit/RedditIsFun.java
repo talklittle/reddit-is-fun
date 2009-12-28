@@ -136,9 +136,6 @@ public final class RedditIsFun extends ListActivity {
         setTheme(mSettings.theme);
         
         setContentView(R.layout.threads_list_content);
-        // HACK: set background color directly for android 2.0
-        if (mSettings.theme == R.style.Reddit_Light)
-        	getListView().setBackgroundResource(R.color.white);
         // The above layout contains a list id "android:list"
         // which ListActivity adopts as its list -- we can
         // access it with getListView().
@@ -169,9 +166,6 @@ public final class RedditIsFun extends ListActivity {
     	if (mSettings.theme != previousTheme) {
     		setTheme(mSettings.theme);
     		setContentView(R.layout.threads_list_content);
-            // HACK: set background color directly for android 2.0
-            if (mSettings.theme == R.style.Reddit_Light)
-            	getListView().setBackgroundResource(R.color.white);
     		setListAdapter(mThreadsAdapter);
     		Common.updateListDrawables(this, mSettings.theme);
     	}
@@ -190,6 +184,16 @@ public final class RedditIsFun extends ListActivity {
 				}
 			}
 		}
+    }
+    
+    /**
+     * Hack to explicitly set background color whenever changing ListView.
+     */
+    public void setContentView(int layoutResID) {
+    	super.setContentView(layoutResID);
+    	// HACK: set background color directly for android 2.0
+        if (mSettings.theme == R.style.Reddit_Light)
+        	getListView().setBackgroundResource(R.color.white);
     }
     
     @Override
@@ -1062,9 +1066,6 @@ public final class RedditIsFun extends ListActivity {
     		}
     		setTheme(mSettings.theme);
     		setContentView(R.layout.threads_list_content);
-            // HACK: set background color directly for android 2.0
-            if (mSettings.theme == R.style.Reddit_Light)
-            	getListView().setBackgroundResource(R.color.white);
     		setListAdapter(mThreadsAdapter);
     		Common.updateListDrawables(this, mSettings.theme);
     		break;
