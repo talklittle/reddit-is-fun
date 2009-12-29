@@ -69,8 +69,8 @@ import android.telephony.PhoneNumberUtils;
 import android.text.SpannableString;
 import android.text.SpannableStringBuilder;
 import android.text.Spanned;
-import android.text.style.AbsoluteSizeSpan;
 import android.text.style.ForegroundColorSpan;
+import android.text.style.TextAppearanceSpan;
 import android.util.Log;
 import android.view.ContextMenu;
 import android.view.KeyEvent;
@@ -358,8 +358,8 @@ public class CommentsListActivity extends ListActivity
 	                String title = mOpThreadInfo.getTitle().replaceAll("\n ", " ").replaceAll(" \n", " ").replaceAll("\n", " ");
 	                SpannableString titleSS = new SpannableString(title);
 	                int titleLen = title.length();
-	                AbsoluteSizeSpan titleASS = new AbsoluteSizeSpan(14);
-	                titleSS.setSpan(titleASS, 0, titleLen, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
+	                TextAppearanceSpan titleTAS = new TextAppearanceSpan(getApplicationContext(), R.style.TextAppearance_14sp);
+	                titleSS.setSpan(titleTAS, 0, titleLen, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
 	                if (mSettings.theme == R.style.Reddit_Light) {
 	                	// FIXME: This doesn't work persistently, since "clicked" is not delivered to reddit.com
 	    	            if (Constants.TRUE_STRING.equals(mOpThreadInfo.getClicked())) {
@@ -374,8 +374,8 @@ public class CommentsListActivity extends ListActivity
 	                builder.append(titleSS);
 	                builder.append(" ");
 	                SpannableString domainSS = new SpannableString("("+mOpThreadInfo.getDomain()+")");
-	                AbsoluteSizeSpan domainASS = new AbsoluteSizeSpan(10);
-	                domainSS.setSpan(domainASS, 0, mOpThreadInfo.getDomain().length()+2, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
+	                TextAppearanceSpan domainTAS = new TextAppearanceSpan(getApplicationContext(), R.style.TextAppearance_10sp);
+	                domainSS.setSpan(domainTAS, 0, mOpThreadInfo.getDomain().length()+2, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
 	                builder.append(domainSS);
 	                titleView.setText(builder);
 	                

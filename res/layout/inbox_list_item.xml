@@ -38,14 +38,14 @@
         android:layout_height="wrap_content"
         android:layout_marginRight="5dip"
         android:singleLine="true"
-        android:textSize="10dip"
+        android:textSize="10sp"
     />
     
 	<TextView android:id="@+id/subject"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginBottom="4dip"
-      	android:textSize="12dip"
+      	android:textSize="12sp"
       	android:textStyle="bold"
         />
 	
@@ -53,7 +53,7 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="Loading..."
-        android:textSize="12dip"
+        android:textSize="12sp"
 		android:autoLink="all"
 		android:linksClickable="false"
     />

@@ -30,7 +30,7 @@
    		android:layout_height="wrap_content"
    		android:layout_alignParentTop="true"
    		android:layout_marginBottom="5dip"
-   		android:textSize="14dip"
+   		android:textSize="14sp"
    		android:textColor="@color/white"
    		android:maxLines="5"
    		/>
@@ -41,7 +41,7 @@
    		android:layout_below="@id/title"
    		android:singleLine="true"
    		android:ellipsize="marquee"
-   		android:textSize="9dip"
+   		android:textSize="9sp"
    		android:textColor="@color/white"
    		/>
    	
@@ -55,7 +55,7 @@
 	    
         android:singleLine="true"
         android:ellipsize="marquee"
-        android:textSize="10dip"
+        android:textSize="10sp"
         android:textColor="@color/white"
     />
     

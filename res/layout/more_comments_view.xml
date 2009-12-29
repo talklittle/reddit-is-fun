@@ -34,7 +34,7 @@
         android:layout_height="wrap_content"
         android:layout_toRightOf="@id/left_indent"
         android:text="@string/more_comments"
-        android:textSize="10dip"
+        android:textSize="10sp"
         android:textStyle="bold"
         android:textColor="@color/markdown_link_color"
         />

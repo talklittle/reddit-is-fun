@@ -43,5 +43,14 @@
 	<style name="Reddit_Dark" parent="@android:style/Theme">
 	</style>
 	
+	<!-- Workarounds for older API that doesn't have 2-param constructor AbsoluteSizeSpan(size, dip) -->
+	<style name="TextAppearance.10sp" parent="android:TextAppearance.Theme">
+		<item name="android:textSize">10sp</item>
+	</style>
+	<style name="TextAppearance.14sp" parent="android:TextAppearance.Theme">
+		<item name="android:textSize">14sp</item>
+	</style>
+	
+	
 </resources>
 

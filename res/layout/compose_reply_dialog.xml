@@ -31,7 +31,7 @@
    		android:layout_height="wrap_content"
    		android:singleLine="true"
    		android:ellipsize="marquee"
-   		android:textSize="9dip"
+   		android:textSize="9sp"
    		/>
    		-->
 	
@@ -44,7 +44,7 @@
 	   		android:layout_height="wrap_content"
 	   		android:minLines="9"
 	   		android:maxLines="21"
-	   		android:textSize="12dip"
+	   		android:textSize="12sp"
 	   		android:gravity="top|left"
 	   		android:inputType="text|textMultiLine|textCapSentences"
 	   		/>

@@ -100,7 +100,7 @@
 		        android:layout_height="wrap_content"
 		        android:layout_marginBottom="1dip"
 		        android:layout_alignParentLeft="true"
-		        android:textSize="14dip"
+		        android:textSize="14sp"
 		    />
 		    
 		    <!-- Next row -->
@@ -115,7 +115,7 @@
 		
 		        android:singleLine="true"
 		        android:ellipsize="marquee"
-		        android:textSize="10dip"
+		        android:textSize="10sp"
 		    />
 		
 		    <TextView android:id="@+id/subreddit"
@@ -124,7 +124,7 @@
 		        android:layout_marginLeft="5dip"
 		        android:layout_toRightOf="@id/numComments"
 		        android:layout_alignBaseline="@id/numComments"
-		        android:textSize="10dip"
+		        android:textSize="10sp"
 		        android:text="funny"
 		    />
 	
@@ -141,7 +141,7 @@
 		        
 		        android:singleLine="true"
 		        android:ellipsize="marquee"
-		        android:textSize="10dip"
+		        android:textSize="10sp"
 		    />
 		    
 		    <TextView android:id="@+id/submitter"
@@ -155,7 +155,7 @@
 		
 				android:singleLine="true"
 		        android:ellipsize="marquee"
-		        android:textSize="10dip"
+		        android:textSize="10sp"
 		    />
 		    
 		</RelativeLayout>
