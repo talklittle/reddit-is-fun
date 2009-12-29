@@ -44,7 +44,7 @@ public class RedditSettings {
 	// --- States that change frequently. ---
 	CharSequence subreddit = Constants.FRONTPAGE_STRING;
 	boolean isFrontpage = false;
-	CharSequence threadId;  // Does not change for a given commentslist (OP is static)
+	CharSequence threadId = null;  // For a given instance of CommentsListActivity, this will be some String
 	
 	
 	//

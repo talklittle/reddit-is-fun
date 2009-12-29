@@ -18,7 +18,11 @@
  */
 package com.andrewshu.android.reddit;
 
-public class MarkdownURL implements Comparable<MarkdownURL> {
+import java.io.Serializable;
+
+public class MarkdownURL implements Comparable<MarkdownURL>, Serializable {
+	static final long serialVersionUID = 29;
+	
 	public int startOffset;
 	public String url;
 	

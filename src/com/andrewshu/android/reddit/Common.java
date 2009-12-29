@@ -20,6 +20,7 @@
 package com.andrewshu.android.reddit;
 
 import java.io.BufferedReader;
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -496,6 +497,27 @@ public class Common {
 	}
     
     static void deleteCaches(Context context) {
+    	for (String fileName : context.fileList()) {
+    		context.deleteFile(fileName);
+    	}
+    }
+    
+    static void deleteCachesOlderThan(Context context, long someTime) {
+    	try {
+	    	FileInputStream fis = context.openFileInput(Constants.FILENAME_LAST_REFRESH_TIME);
+			BufferedReader reader = new BufferedReader(new InputStreamReader(fis));
+			String timeString = reader.readLine().trim();
+			long cacheTime = Long.valueOf(timeString);
+			reader.close();
+			fis.close();
+			
+			// If the stored time is not older, then don't delete cache. Return.
+			if (cacheTime >= someTime)
+				return;
+    	} catch (Exception e) {
+    		// Bad or missing time file. Delete cache.
+    	}
+	    
     	for (String fileName : context.fileList()) {
     		context.deleteFile(fileName);
     	}

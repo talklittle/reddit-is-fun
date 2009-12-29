@@ -29,6 +29,7 @@ public class Constants {
 	static final String FILENAME_SUBREDDIT_CACHE = "subreddit.ser";
 	// File containing the serialized ArrayList<CommentInfo> of last comments viewed
 	static final String FILENAME_COMMENTS_CACHE = "comments.ser";
+	static final String FILENAME_COMMENTS_OP_CACHE = "comments_op.ser";
 	// File containing a string of System.currentTimeMillis()
 	static final String FILENAME_LAST_REFRESH_TIME = "lastrefresh.dat";
 	// File containing a string of subreddit minus "/r/" prefix

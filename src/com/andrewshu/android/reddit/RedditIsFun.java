@@ -28,7 +28,6 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
-import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -162,7 +161,7 @@ public final class RedditIsFun extends ListActivity {
         } else {
         	mSettings.setSubreddit(mSettings.homepage);
         }
-        new ReadCacheTask().execute(Constants.FILENAME_SUBREDDIT_CACHE);
+        // Launch ReadCacheTask in onResume()
     }
     
     @Override
@@ -177,9 +176,10 @@ public final class RedditIsFun extends ListActivity {
     		setListAdapter(mThreadsAdapter);
     		Common.updateListDrawables(this, mSettings.theme);
     	}
-    	if (mSettings.loggedIn != previousLoggedIn) {
+    	if (mSettings.loggedIn != previousLoggedIn)
     		new DownloadThreadsTask().execute(mSettings.subreddit);
-    	}
+    	else if (mThreadsList == null)
+            new ReadCacheTask().execute();
     	new Common.PeekEnvelopeTask(this, mClient, mSettings.mailNotificationStyle).execute();
     	
     	// threads list stuff
@@ -983,115 +983,6 @@ public final class RedditIsFun extends ListActivity {
     	}
     }
     
-    private class ReadCacheTask extends AsyncTask<String, Void, Boolean> {
-    	@Override
-    	public Boolean doInBackground(String... fileName) {
-    		try {
-    			// read the time
-    			FileInputStream fis = openFileInput(Constants.FILENAME_LAST_REFRESH_TIME);
-    			BufferedReader reader = new BufferedReader(new InputStreamReader(fis));
-    			String timeString = reader.readLine().trim();
-    			mLastRefreshTime = Long.valueOf(timeString);
-    			reader.close();
-    			fis.close();
-    		    // Restore previous session from cache, if the cache isn't too old
-    		    if (Common.isFreshCache(mLastRefreshTime)) {
-        			// read the mThreadsList
-        			fis = openFileInput(fileName[0]);
-        			ObjectInputStream in = new ObjectInputStream(fis);
-        			mThreadsList = (ArrayList<ThreadInfo>) in.readObject();
-        			in.close();
-        			fis.close();
-    		    	// read the subreddit
-    		    	fis = openFileInput(Constants.FILENAME_LAST_SUBREDDIT);
-    		    	reader = new BufferedReader(new InputStreamReader(fis));
-    		    	mSettings.setSubreddit(reader.readLine().trim());
-    		    	reader.close();
-    		    	fis.close();
-        			return true;
-    		    }
-    		} catch (FileNotFoundException ex) {
-    			if (Constants.LOGGING) Log.e(TAG, ex.getLocalizedMessage());
-    		} catch (IOException ex) {
-    			if (Constants.LOGGING) Log.e(TAG, ex.getLocalizedMessage());
-    		} catch (ClassNotFoundException ex) {
-    			if (Constants.LOGGING) Log.e(TAG, ex.getLocalizedMessage());
-    		}
-    		return false;
-    	}
-    	
-    	@Override
-    	public void onPreExecute() {
-    		// If there are comments in the cache, open CommentsListActivity
-    		for (String file : fileList()) {
-        		if (file.equals(Constants.FILENAME_COMMENTS_CACHE)) {
-        			Intent i = new Intent(getApplicationContext(), CommentsListActivity.class);
-        			startActivity(i);
-        			// Stop reading the cache for subreddit
-        			cancel(true);
-        			return;
-        		}
-    		}
-    		showDialog(Constants.DIALOG_LOADING_THREADS_CACHE);
-    	}
-    	
-    	@Override
-    	public void onPostExecute(Boolean success) {
-    		dismissDialog(Constants.DIALOG_LOADING_THREADS_CACHE);
-    		if (success) {
-    			// Use the cached threads list
-		    	resetUI(new ThreadsListAdapter(RedditIsFun.this, mThreadsList));
-		    	// Set the title based on subreddit
-		    	if (Constants.FRONTPAGE_STRING.equals(mSettings.subreddit))
-		    		setTitle("reddit.com: what's new online!");
-		    	else
-		    		setTitle("/r/"+mSettings.subreddit.toString().trim());
-		    	// Point the list to whichever thread the user was looking at
-		    	jumpToThread();
-    		} else {
-    			//Common.showErrorToast("Reading subreddit cache failed.", Toast.LENGTH_SHORT, RedditIsFun.this);
-    			// Since it didn't read from cache, download normally from Internet.
-    			new DownloadThreadsTask().execute(mSettings.subreddit);
-    		}
-    	}
-    }
-    
-    private class WriteCacheTask extends AsyncTask<Serializable, Void, Boolean> {
-    	// XXX: is passing threadsList to doInBackground thread-safe?
-    	@Override
-    	public Boolean doInBackground(Serializable... threadsList) {
-    		if (threadsList[0] == null)
-				return false;
-			try {
-				FileOutputStream fos;
-				ObjectOutputStream out;
-				// write the subreddit
-				fos = openFileOutput(Constants.FILENAME_LAST_SUBREDDIT, MODE_PRIVATE);
-				fos.write(mSettings.subreddit.toString().getBytes("UTF-8"));
-				fos.close();
-    			// write the serialized mThreadsList
-				fos = openFileOutput(Constants.FILENAME_SUBREDDIT_CACHE, MODE_PRIVATE);
-    			out = new ObjectOutputStream(fos);
-    			out.writeObject(threadsList[0]);
-    			out.close();
-    			fos.close();
-    			// write the time
-    			fos = openFileOutput(Constants.FILENAME_LAST_REFRESH_TIME, MODE_PRIVATE);
-    			fos.write(Long.toString(mLastRefreshTime).getBytes("UTF-8"));
-    			fos.close();
-    			return true;
-    		} catch (IOException ex) {
-    			ex.printStackTrace();
-    		}
-    		return false;
-    	}
-    	
-    	@Override
-    	public void onPreExecute() {
-    		Common.deleteCaches(getApplicationContext());
-    	}
-    }
-    
     
     /**
      * Populates the menu.
@@ -1545,6 +1436,82 @@ public final class RedditIsFun extends ListActivity {
 	};
 
 	
+	
+    private class ReadCacheTask extends AsyncTask<Void, Void, Boolean> {
+    	@Override
+    	public Boolean doInBackground(Void... zzz) {
+    		try {
+    			// read the time
+    			FileInputStream fis = openFileInput(Constants.FILENAME_LAST_REFRESH_TIME);
+    			BufferedReader reader = new BufferedReader(new InputStreamReader(fis));
+    			String timeString = reader.readLine().trim();
+    			mLastRefreshTime = Long.valueOf(timeString);
+    			reader.close();
+    			fis.close();
+    		    // Restore previous session from cache, if the cache isn't too old
+    		    if (Common.isFreshCache(mLastRefreshTime)) {
+        			// read the mThreadsList
+        			fis = openFileInput(Constants.FILENAME_SUBREDDIT_CACHE);
+        			ObjectInputStream in = new ObjectInputStream(fis);
+        			mThreadsList = (ArrayList<ThreadInfo>) in.readObject();
+        			in.close();
+        			fis.close();
+    		    	// read the subreddit
+    		    	fis = openFileInput(Constants.FILENAME_LAST_SUBREDDIT);
+    		    	reader = new BufferedReader(new InputStreamReader(fis));
+    		    	mSettings.setSubreddit(reader.readLine().trim());
+    		    	reader.close();
+    		    	fis.close();
+        			return true;
+    		    }
+    		} catch (FileNotFoundException ex) {
+    			if (Constants.LOGGING) Log.e(TAG, ex.getLocalizedMessage());
+    		} catch (IOException ex) {
+    			if (Constants.LOGGING) Log.e(TAG, ex.getLocalizedMessage());
+    		} catch (ClassNotFoundException ex) {
+    			if (Constants.LOGGING) Log.e(TAG, ex.getLocalizedMessage());
+    		}
+    		return false;
+    	}
+    	
+    	@Override
+    	public void onPreExecute() {
+    		// If there are comments in the cache, open CommentsListActivity
+    		for (String file : fileList()) {
+        		if (file.equals(Constants.FILENAME_COMMENTS_CACHE)) {
+        			Intent i = new Intent(getApplicationContext(), CommentsListActivity.class);
+        			startActivity(i);
+        			// Stop reading the cache for subreddit
+        			cancel(true);
+        			return;
+        		}
+    		}
+    		showDialog(Constants.DIALOG_LOADING_THREADS_CACHE);
+    	}
+    	
+    	@Override
+    	public void onPostExecute(Boolean success) {
+    		dismissDialog(Constants.DIALOG_LOADING_THREADS_CACHE);
+    		if (success) {
+    			// Use the cached threads list
+		    	resetUI(new ThreadsListAdapter(RedditIsFun.this, mThreadsList));
+		    	// Set the title based on subreddit
+		    	if (Constants.FRONTPAGE_STRING.equals(mSettings.subreddit))
+		    		setTitle("reddit.com: what's new online!");
+		    	else
+		    		setTitle("/r/"+mSettings.subreddit.toString().trim());
+		    	// Point the list to whichever thread the user was looking at
+		    	jumpToThread();
+    		} else {
+    			//Common.showErrorToast("Reading subreddit cache failed.", Toast.LENGTH_SHORT, RedditIsFun.this);
+    			// Since it didn't read from cache, download normally from Internet.
+    			new DownloadThreadsTask().execute(mSettings.subreddit);
+    		}
+    	}
+    }
+    
+
+	
 	@Override
     protected void onSaveInstanceState(Bundle state) {
     	super.onSaveInstanceState(state);
@@ -1553,8 +1520,31 @@ public final class RedditIsFun extends ListActivity {
     	state.putCharSequence(Constants.ThreadsSort.SORT_BY_KEY, mSortByUrl);
     	state.putCharSequence(Constants.JUMP_TO_THREAD_ID_KEY, mJumpToThreadId);
     	state.putInt(Constants.THREAD_COUNT, mCount);
+    	
     	// Cache
-    	new WriteCacheTask().execute(mThreadsList);
+		if (mThreadsList == null)
+			return;
+		Common.deleteCachesOlderThan(getApplicationContext(), mLastRefreshTime);
+		try {
+			FileOutputStream fos;
+			ObjectOutputStream out;
+			// write the subreddit
+			fos = openFileOutput(Constants.FILENAME_LAST_SUBREDDIT, MODE_PRIVATE);
+			fos.write(mSettings.subreddit.toString().getBytes("UTF-8"));
+			fos.close();
+			// write the serialized mThreadsList
+			fos = openFileOutput(Constants.FILENAME_SUBREDDIT_CACHE, MODE_PRIVATE);
+			out = new ObjectOutputStream(fos);
+			out.writeObject(mThreadsList);
+			out.close();
+			fos.close();
+			// write the time
+			fos = openFileOutput(Constants.FILENAME_LAST_REFRESH_TIME, MODE_PRIVATE);
+			fos.write(Long.toString(mLastRefreshTime).getBytes("UTF-8"));
+			fos.close();
+		} catch (IOException ex) {
+			if (Constants.LOGGING) Log.e(TAG, ex.getLocalizedMessage());
+		}
     }
     
     /**

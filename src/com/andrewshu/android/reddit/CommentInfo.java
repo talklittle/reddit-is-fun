@@ -55,7 +55,7 @@ public class CommentInfo implements Serializable {
 	
 	public final HashMap<String, String> mValues = new HashMap<String, String>();
 	public final ArrayList<MarkdownURL> mUrls = new ArrayList<MarkdownURL>();
-	public SpannableStringBuilder mSSBBody = null;
+	transient public SpannableStringBuilder mSSBBody = null;
 //	public JsonNode mReplies;  // Unused. use another JSON GET if necessary
 	public ThreadInfo mOpInfo = null;
 	public int mIndent = 0;
