@@ -108,8 +108,11 @@ public final class RedditIsFun extends ListActivity {
     // UI State
     private View mVoteTargetView = null;
     private ThreadInfo mVoteTargetThreadInfo = null;
-    private DownloadThreadsTask mCurrentDownloadThreadsTask = null;
+    private AsyncTask mCurrentDownloadThreadsTask = null;
     private final Object mCurrentDownloadThreadsTaskLock = new Object();
+
+    // Whether it should use the cache. Otherwise download from Internet.
+    private boolean mShouldUseThreadsCache = true;
     
     // Navigation that can be cached
     private CharSequence mAfter = null;
@@ -177,9 +180,8 @@ public final class RedditIsFun extends ListActivity {
     		Common.updateListDrawables(this, mSettings.theme);
     	}
     	if (mSettings.loggedIn != previousLoggedIn)
-    		new DownloadThreadsTask().execute(mSettings.subreddit);
-    	else if (mThreadsList == null)
-            new ReadCacheTask().execute();
+    		mShouldUseThreadsCache = false;
+        new ReadCacheTask().execute();
     	new Common.PeekEnvelopeTask(this, mClient, mSettings.mailNotificationStyle).execute();
     	
     	// threads list stuff
@@ -1440,28 +1442,33 @@ public final class RedditIsFun extends ListActivity {
     private class ReadCacheTask extends AsyncTask<Void, Void, Boolean> {
     	@Override
     	public Boolean doInBackground(Void... zzz) {
+    		FileInputStream fis = null;
+    		ObjectInputStream in = null;
+    		if (!mShouldUseThreadsCache)
+    			return false;
     		try {
     			// read the time
-    			FileInputStream fis = openFileInput(Constants.FILENAME_LAST_REFRESH_TIME);
-    			BufferedReader reader = new BufferedReader(new InputStreamReader(fis));
-    			String timeString = reader.readLine().trim();
-    			mLastRefreshTime = Long.valueOf(timeString);
-    			reader.close();
+    			fis = openFileInput(Constants.FILENAME_CACHE_TIME);
+    			in = new ObjectInputStream(fis);
+    			mLastRefreshTime = in.readLong();
+    			in.close();
     			fis.close();
-    		    // Restore previous session from cache, if the cache isn't too old
+    			
+    			// Restore previous session from cache, if the cache isn't too old
     		    if (Common.isFreshCache(mLastRefreshTime)) {
-        			// read the mThreadsList
-        			fis = openFileInput(Constants.FILENAME_SUBREDDIT_CACHE);
-        			ObjectInputStream in = new ObjectInputStream(fis);
+    		    	fis = openFileInput(Constants.FILENAME_SUBREDDIT_CACHE);
+        			in = new ObjectInputStream(fis);
+        			mAfter = (CharSequence) in.readObject();
+        			mBefore = (CharSequence) in.readObject();
+        			mCount = in.readInt();
+        			mJumpToThreadId = (CharSequence) in.readObject();
+        			mSettings.setSubreddit((CharSequence) in.readObject());
+        			mSortByUrl = (CharSequence) in.readObject();
+        			mSortByUrlExtra = (CharSequence) in.readObject();
         			mThreadsList = (ArrayList<ThreadInfo>) in.readObject();
-        			in.close();
-        			fis.close();
-    		    	// read the subreddit
-    		    	fis = openFileInput(Constants.FILENAME_LAST_SUBREDDIT);
-    		    	reader = new BufferedReader(new InputStreamReader(fis));
-    		    	mSettings.setSubreddit(reader.readLine().trim());
-    		    	reader.close();
-    		    	fis.close();
+        			mUrlToGetHere = (CharSequence) in.readObject();
+        			mUrlToGetHereChanged = in.readBoolean();
+        	
         			return true;
     		    }
     		} catch (FileNotFoundException ex) {
@@ -1470,12 +1477,25 @@ public final class RedditIsFun extends ListActivity {
     			if (Constants.LOGGING) Log.e(TAG, ex.getLocalizedMessage());
     		} catch (ClassNotFoundException ex) {
     			if (Constants.LOGGING) Log.e(TAG, ex.getLocalizedMessage());
+    		} finally {
+	    		try {
+	    			in.close();
+	    		} catch (Exception ignore) {}
+	    		try {
+	    			fis.close();
+	    		} catch (Exception ignore) {}
     		}
+    		deleteFile(Constants.FILENAME_SUBREDDIT_CACHE);
     		return false;
     	}
     	
     	@Override
     	public void onPreExecute() {
+    		synchronized (mCurrentDownloadThreadsTaskLock) {
+	    		if (mCurrentDownloadThreadsTask != null)
+	    			mCurrentDownloadThreadsTask.cancel(true);
+	    		mCurrentDownloadThreadsTask = this;
+    		}
     		// If there are comments in the cache, open CommentsListActivity
     		for (String file : fileList()) {
         		if (file.equals(Constants.FILENAME_COMMENTS_CACHE)) {
@@ -1525,25 +1545,51 @@ public final class RedditIsFun extends ListActivity {
 		if (mThreadsList == null)
 			return;
 		Common.deleteCachesOlderThan(getApplicationContext(), mLastRefreshTime);
+		FileOutputStream fos = null;
+		ObjectOutputStream out = null;
 		try {
-			FileOutputStream fos;
-			ObjectOutputStream out;
-			// write the subreddit
-			fos = openFileOutput(Constants.FILENAME_LAST_SUBREDDIT, MODE_PRIVATE);
-			fos.write(mSettings.subreddit.toString().getBytes("UTF-8"));
-			fos.close();
-			// write the serialized mThreadsList
-			fos = openFileOutput(Constants.FILENAME_SUBREDDIT_CACHE, MODE_PRIVATE);
-			out = new ObjectOutputStream(fos);
-			out.writeObject(mThreadsList);
-			out.close();
-			fos.close();
 			// write the time
-			fos = openFileOutput(Constants.FILENAME_LAST_REFRESH_TIME, MODE_PRIVATE);
-			fos.write(Long.toString(mLastRefreshTime).getBytes("UTF-8"));
+			fos = openFileOutput(Constants.FILENAME_CACHE_TIME, MODE_PRIVATE);
+			out = new ObjectOutputStream(fos);
+			out.writeLong(mLastRefreshTime);
+			out.close();
 			fos.close();
 		} catch (IOException ex) {
 			if (Constants.LOGGING) Log.e(TAG, ex.getLocalizedMessage());
+			deleteFile(Constants.FILENAME_SUBREDDIT_CACHE);
+		} finally {
+			try {
+				out.close();
+			} catch (Exception ignore) {}
+			try {
+				fos.close();
+			} catch (Exception ignore) {}			
+		}
+		
+		try {
+			// Write cache variables in alphabetical order by variable name.
+			fos = openFileOutput(Constants.FILENAME_SUBREDDIT_CACHE, MODE_PRIVATE);
+			out = new ObjectOutputStream(fos);
+			out.writeObject(mAfter);
+			out.writeObject(mBefore);
+			out.writeInt(mCount);
+			out.writeObject(mJumpToThreadId);
+			out.writeObject(mSettings.subreddit);
+			out.writeObject(mSortByUrl);
+			out.writeObject(mSortByUrlExtra);
+			out.writeObject(mThreadsList);
+			out.writeObject(mUrlToGetHere);
+			out.writeBoolean(mUrlToGetHereChanged);
+		} catch (IOException ex) {
+			if (Constants.LOGGING) Log.e(TAG, ex.getLocalizedMessage());
+			deleteFile(Constants.FILENAME_SUBREDDIT_CACHE);
+		} finally {
+			try {
+				out.close();
+			} catch (Exception ignore) {}
+			try {
+				fos.close();
+			} catch (Exception ignore) {}			
 		}
     }
     

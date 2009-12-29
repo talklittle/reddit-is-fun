@@ -130,6 +130,9 @@ public class CommentsListActivity extends ListActivity
     // Common settings are stored here
     private final RedditSettings mSettings = new RedditSettings();
     
+    // Whether the cache should be used during onResume().
+    private boolean mShouldUseCommentsCache = true;
+    
     // Navigation items to be cached
     private CharSequence mThreadTitle = null;
     private CharSequence mMoreChildrenId = "";
@@ -153,7 +156,7 @@ public class CommentsListActivity extends ListActivity
     private CharSequence mReplyTargetName = null;
     private CharSequence mEditTargetBody = null;
     private String mDeleteTargetKind = null;
-    private DownloadCommentsTask mCurrentDownloadCommentsTask = null;
+    private AsyncTask mCurrentDownloadCommentsTask = null;
     private final Object mCurrentDownloadCommentsTaskLock = new Object();
     
     // ProgressDialogs with percentage bars
@@ -181,10 +184,20 @@ public class CommentsListActivity extends ListActivity
         // access it with getListView().
         
         // Pull current subreddit and thread info from Intent
-        Bundle extras = getIntent().getExtras();
+        Intent intent = getIntent();
+        if (intent == null) {
+        	// onResume() should handle this. Probably read from cache.
+        	mShouldUseCommentsCache = true;
+        	return;
+        }
+        
+        // Intent is not null. Means we got a new Intent to go to comments page.
+        mShouldUseCommentsCache = false;
+        
+        Bundle extras = intent.getExtras();
         if (extras == null) {
         	if (Constants.LOGGING) Log.d(TAG, "No info in Intent. Using comments cache instead.");
-			new ReadCacheTask().execute();
+        	// See onResume()
 			return;
         }
     	// More children: displaying something that's not the root of comments list.
@@ -201,7 +214,7 @@ public class CommentsListActivity extends ListActivity
     			mJumpToCommentId = commentContextMatcher.group(4);
     		} else {
     			if (Constants.LOGGING) Log.d(TAG, "No info in Intent. Using comments cache instead.");
-    			new ReadCacheTask().execute();
+            	mShouldUseCommentsCache = true;
     			return;
     		}
     	} else {
@@ -224,11 +237,9 @@ public class CommentsListActivity extends ListActivity
         	mEditTargetBody = savedInstanceState.getCharSequence(Constants.EDIT_TARGET_BODY_KEY);
         	mDeleteTargetKind = savedInstanceState.getString(Constants.DELETE_TARGET_KIND_KEY);
         	mJumpToCommentPosition = savedInstanceState.getInt(Constants.JUMP_TO_COMMENT_POSITION_KEY);
-        	// If user is reaching onCreate and there is savedInstanceState, he may be rotating the screen.
-        	new ReadCacheTask().execute();
-        } else {
-            new DownloadCommentsTask().execute(Constants.DEFAULT_COMMENT_DOWNLOAD_LIMIT);
-        }
+        	// savedInstanceState means probably rotated screen or something.
+        	mShouldUseCommentsCache = true;
+    	}
     }
     
     /**
@@ -255,10 +266,10 @@ public class CommentsListActivity extends ListActivity
     		getListView().setDivider(null);
     		Common.updateListDrawables(this, mSettings.theme);
     	}
-    	if (mSettings.loggedIn != previousLoggedIn) {
-    		new DownloadCommentsTask().execute(Constants.DEFAULT_COMMENT_DOWNLOAD_LIMIT);
-    	}
-    	new Common.PeekEnvelopeTask(this, mClient, mSettings.mailNotificationStyle).execute();
+    	if (mSettings.loggedIn != previousLoggedIn)
+    		mShouldUseCommentsCache = false;
+    	new ReadCacheTask().execute();
+	    new Common.PeekEnvelopeTask(this, mClient, mSettings.mailNotificationStyle).execute();
     	
     	// comments list stuff
     	jumpToComment();
@@ -2331,67 +2342,36 @@ public class CommentsListActivity extends ListActivity
     private class ReadCacheTask extends AsyncTask<Void, Void, Boolean> {
     	@Override
     	public Boolean doInBackground(Void... zzz) {
+    		if (!mShouldUseCommentsCache)
+    			return false;
+    		FileInputStream fis = null;
+    		ObjectInputStream in = null;
     		try {
     			// read the time
-    			FileInputStream fis = openFileInput(Constants.FILENAME_LAST_REFRESH_TIME);
-    			BufferedReader reader = new BufferedReader(new InputStreamReader(fis));
-    			String timeString = reader.readLine().trim();
-    			mLastRefreshTime = Long.valueOf(timeString);
-    			reader.close();
+    			fis = openFileInput(Constants.FILENAME_CACHE_TIME);
+    			in = new ObjectInputStream(fis);
+    			mLastRefreshTime = in.readLong();
+    			in.close();
     			fis.close();
-    		    // Restore previous session from cache, if the cache isn't too old
+    			
+    			// Restore previous session from cache, if the cache isn't too old
     		    if (Common.isFreshCache(mLastRefreshTime)) {
-        			// read the mCommentsList
         			fis = openFileInput(Constants.FILENAME_COMMENTS_CACHE);
-        			ObjectInputStream in = new ObjectInputStream(fis);
+        			in = new ObjectInputStream(fis);
         			mCommentsList = (ArrayList<CommentInfo>) in.readObject();
-        			in.close();
-        			fis.close();
         			// Process nonserializable (transient) members of the CommentInfos
         			for (CommentInfo ci : mCommentsList) {
         				ci.mSSBBody = markdown.markdown(ci.getBody(), new SpannableStringBuilder(), ci.mUrls); 
         			}
-        			// read the mOpThreadInfo
-        			fis = openFileInput(Constants.FILENAME_COMMENTS_OP_CACHE);
-        			in = new ObjectInputStream(fis);
+        			mMoreChildrenId = (CharSequence) in.readObject();
+        			if (mMoreChildrenId == null)
+        				mMoreChildrenId = "";
         			mOpThreadInfo = (ThreadInfo) in.readObject();
-        			in.close();
-        			fis.close();
-        			
-    		    	// read the subreddit
-    		    	fis = openFileInput(Constants.FILENAME_LAST_SUBREDDIT);
-    		    	reader = new BufferedReader(new InputStreamReader(fis));
-    		    	mSettings.setSubreddit(reader.readLine().trim());
-    		    	reader.close();
-    		    	fis.close();
-    				// read the thread id
-    				fis = openFileInput(Constants.FILENAME_LAST_THREAD_ID);
-    				reader = new BufferedReader(new InputStreamReader(fis));
-    				mSettings.setThreadId(reader.readLine().trim());
-    				reader.close();
-    				fis.close();
-    				// read the thread title
-    				try {
-	    				fis = openFileInput(Constants.FILENAME_LAST_THREAD_TITLE);
-	    				reader = new BufferedReader(new InputStreamReader(fis));
-	    				mThreadTitle = reader.readLine().trim();
-	    				reader.close();
-	    				fis.close();
-    				} catch (FileNotFoundException ex) {
-    					// Ignore for thread title.
-    				}
-    				// read the more children id
-    				fis = openFileInput(Constants.FILENAME_MORE_CHILDREN_ID);
-    				reader = new BufferedReader(new InputStreamReader(fis));
-    				try {
-    					mMoreChildrenId = reader.readLine().trim();
-    				} catch (NullPointerException ex) {
-    					// readLine() can return null for empty file.
-    					mMoreChildrenId = "";
-    				}
-    				reader.close();
-    				fis.close();
-        			return true;
+    		    	mSettings.setSubreddit((CharSequence) in.readObject());
+    				mSettings.setThreadId((CharSequence) in.readObject());
+    				mThreadTitle = (CharSequence) in.readObject();
+    				
+    				return true;
     		    }
     		} catch (FileNotFoundException ex) {
     			if (Constants.LOGGING) Log.e(TAG, ex.getLocalizedMessage());
@@ -2399,12 +2379,24 @@ public class CommentsListActivity extends ListActivity
     			if (Constants.LOGGING) Log.e(TAG, ex.getLocalizedMessage());
     		} catch (ClassNotFoundException ex) {
     			if (Constants.LOGGING) Log.e(TAG, ex.getLocalizedMessage());
+    		} finally {
+	    		try {
+	    			in.close();
+	    		} catch (Exception ignore) {}
+	    		try {
+	    			fis.close();
+	    		} catch (Exception ignore) {}
     		}
     		return false;
     	}
     	
     	@Override
     	public void onPreExecute() {
+    		synchronized (mCurrentDownloadCommentsTaskLock) {
+	    		if (mCurrentDownloadCommentsTask != null)
+	    			mCurrentDownloadCommentsTask.cancel(true);
+	    		mCurrentDownloadCommentsTask = this;
+    		}
     		showDialog(Constants.DIALOG_LOADING_COMMENTS_CACHE);
     	}
     	
@@ -2429,6 +2421,7 @@ public class CommentsListActivity extends ListActivity
     			} else {
 	    			// Quit, because the Comments List requires subreddit and thread id from Intent.
 	    			if (Constants.LOGGING) Log.e(TAG, "Quitting because of bad comment URL context and no cache.");
+	    			deleteFile(Constants.FILENAME_COMMENTS_CACHE);
 	    			finish();
     			}
     		}
@@ -2451,49 +2444,47 @@ public class CommentsListActivity extends ListActivity
 		if (mCommentsList == null || mSettings.threadId == null)
 			return;
 		Common.deleteCachesOlderThan(getApplicationContext(), mLastRefreshTime);
+		FileOutputStream fos = null;
+		ObjectOutputStream out = null;
 		try {
-			FileOutputStream fos;
-			ObjectOutputStream out;
-			// write the subreddit
-			fos = openFileOutput(Constants.FILENAME_LAST_SUBREDDIT, MODE_PRIVATE);
-			fos.write(mSettings.subreddit.toString().getBytes("UTF-8"));
-			fos.close();
-			// write the thread id
-			fos = openFileOutput(Constants.FILENAME_LAST_THREAD_ID, MODE_PRIVATE);
-			fos.write(mSettings.threadId.toString().getBytes("UTF-8"));
-			fos.close();
-			// write the thread title
-			try {
-				fos = openFileOutput(Constants.FILENAME_LAST_THREAD_TITLE, MODE_PRIVATE);
-				fos.write(mThreadTitle.toString().getBytes("UTF-8"));
-				fos.close();
-			} catch (Exception e) {
-				if (Constants.LOGGING) Log.e(TAG, e.getLocalizedMessage());
-			}
-			// write the more children id
-			fos = openFileOutput(Constants.FILENAME_MORE_CHILDREN_ID, MODE_PRIVATE);
-			fos.write(mMoreChildrenId.toString().getBytes("UTF-8"));
-
-			// write the serialized mCommentsList
-			fos = openFileOutput(Constants.FILENAME_COMMENTS_CACHE, MODE_PRIVATE);
-			out = new ObjectOutputStream(fos);
-			out.writeObject(mCommentsList);
-			out.close();
-			fos.close();
-			// write the serialized mOpThreadInfo
-			fos = openFileOutput(Constants.FILENAME_COMMENTS_OP_CACHE, MODE_PRIVATE);
-			out = new ObjectOutputStream(fos);
-			out.writeObject(mOpThreadInfo);
-			out.close();
-			fos.close();
-			
 			// write the time
-			fos = openFileOutput(Constants.FILENAME_LAST_REFRESH_TIME, MODE_PRIVATE);
-			fos.write(Long.toString(mLastRefreshTime).getBytes("UTF-8"));
+			fos = openFileOutput(Constants.FILENAME_CACHE_TIME, MODE_PRIVATE);
+			out = new ObjectOutputStream(fos);
+			out.writeLong(mLastRefreshTime);
+			out.close();
 			fos.close();
 		} catch (IOException ex) {
 			if (Constants.LOGGING) Log.e(TAG, ex.getLocalizedMessage());
-			Common.deleteCaches(getApplicationContext());
+			Common.deleteAllCaches(getApplicationContext());
+		} finally {
+			try {
+				out.close();
+			} catch (Exception ignore) {}
+			try {
+				fos.close();
+			} catch (Exception ignore) {}			
+		}
+		
+		try {
+			// Write cache variables in alphabetical order by variable name.
+			fos = openFileOutput(Constants.FILENAME_COMMENTS_CACHE, MODE_PRIVATE);
+			out = new ObjectOutputStream(fos);
+			out.writeObject(mCommentsList);
+			out.writeObject(mMoreChildrenId);
+			out.writeObject(mOpThreadInfo);
+			out.writeObject(mSettings.subreddit);
+			out.writeObject(mSettings.threadId);
+			out.writeObject(mThreadTitle);
+		} catch (IOException ex) {
+			if (Constants.LOGGING) Log.e(TAG, ex.getLocalizedMessage());
+			deleteFile(Constants.FILENAME_COMMENTS_CACHE);
+		} finally {
+			try {
+				out.close();
+			} catch (Exception ignore) {}
+			try {
+				fos.close();
+			} catch (Exception ignore) {}			
 		}
     }
     

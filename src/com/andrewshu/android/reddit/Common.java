@@ -24,6 +24,7 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.io.ObjectInputStream;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
@@ -496,31 +497,35 @@ public class Common {
 		return time - cacheTime <= Constants.DEFAULT_FRESH_DURATION;
 	}
     
-    static void deleteCaches(Context context) {
+    static void deleteAllCaches(Context context) {
     	for (String fileName : context.fileList()) {
     		context.deleteFile(fileName);
     	}
     }
     
     static void deleteCachesOlderThan(Context context, long someTime) {
-    	try {
-	    	FileInputStream fis = context.openFileInput(Constants.FILENAME_LAST_REFRESH_TIME);
-			BufferedReader reader = new BufferedReader(new InputStreamReader(fis));
-			String timeString = reader.readLine().trim();
-			long cacheTime = Long.valueOf(timeString);
-			reader.close();
-			fis.close();
+    	FileInputStream fis = null;
+    	ObjectInputStream in = null;
+    	
+		try {
+	    	fis = context.openFileInput(Constants.FILENAME_CACHE_TIME);
+			in = new ObjectInputStream(fis);
+			long cacheTime = in.readLong();
 			
-			// If the stored time is not older, then don't delete cache. Return.
+			// If at least one file is new enough, don't delete caches.
 			if (cacheTime >= someTime)
 				return;
     	} catch (Exception e) {
     		// Bad or missing time file. Delete cache.
+    	} finally {
+    		try {
+    			in.close();
+    		} catch (Exception ignore) {}
+    		try {
+    			fis.close();
+    		} catch (Exception ignore) {}
     	}
-	    
-    	for (String fileName : context.fileList()) {
-    		context.deleteFile(fileName);
-    	}
+    	deleteAllCaches(context);
     }
 	
     
