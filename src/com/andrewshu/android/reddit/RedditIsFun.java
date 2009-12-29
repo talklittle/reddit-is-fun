@@ -181,9 +181,6 @@ public final class RedditIsFun extends ListActivity {
     		mShouldUseThreadsCache = false;
     	new ReadCacheTask().execute();
     	new Common.PeekEnvelopeTask(this, mClient, mSettings.mailNotificationStyle).execute();
-    	
-    	// threads list stuff
-    	jumpToThread();
     }
     
     /**
@@ -471,6 +468,8 @@ public final class RedditIsFun extends ListActivity {
     protected void onListItemClick(ListView l, View v, int position, long id) {
         ThreadInfo item = mThreadsAdapter.getItem(position);
         
+        // if mThreadsAdapter.getCount() - 1 contains the "next 25, prev 25" buttons,
+        // or if there are fewer than 25 threads...
         if (position < mThreadsAdapter.getCount() - 1 || mThreadsAdapter.getCount() < Constants.DEFAULT_THREAD_DOWNLOAD_LIMIT + 1) {
 	        // Mark the thread as selected
 	        mVoteTargetThreadInfo = item;

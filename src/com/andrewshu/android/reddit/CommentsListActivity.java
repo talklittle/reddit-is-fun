@@ -265,9 +265,6 @@ public class CommentsListActivity extends ListActivity
     		mShouldUseCommentsCache = false;
     	new ReadCacheTask().execute();
 	    new Common.PeekEnvelopeTask(this, mClient, mSettings.mailNotificationStyle).execute();
-    	
-    	// comments list stuff
-    	jumpToComment();
     }
     
     @Override
