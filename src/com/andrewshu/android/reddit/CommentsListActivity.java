@@ -21,7 +21,6 @@ package com.andrewshu.android.reddit;
 
 import java.io.BufferedReader;
 import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -118,7 +117,6 @@ public class CommentsListActivity extends ListActivity
     private final JsonFactory jsonFactory = new JsonFactory();
     private final Markdown markdown = new Markdown();
     private int mNestedCommentsJSONOrder = 0;
-    private HashSet<Integer> mMorePositions = new HashSet<Integer>(); 
 	
     /** Custom list adapter that fits our threads data into the list. */
     private CommentsListAdapter mCommentsAdapter;
@@ -131,27 +129,27 @@ public class CommentsListActivity extends ListActivity
     private final RedditSettings mSettings = new RedditSettings();
     
     // Whether the cache should be used during onResume().
-    private boolean mShouldUseCommentsCache = true;
+    volatile private boolean mShouldUseCommentsCache = true;
     
     // Navigation items to be cached
-    private CharSequence mThreadTitle = null;
-    private CharSequence mMoreChildrenId = "";
     private long mLastRefreshTime = 0;
+    private CharSequence mJumpToCommentId = null;
+    private int mJumpToCommentPosition = 0;
+    private CharSequence mMoreChildrenId = "";
+    private HashSet<Integer> mMorePositions = new HashSet<Integer>();
+    private int mNumVisibleComments = Constants.DEFAULT_COMMENT_DOWNLOAD_LIMIT;
+    private ThreadInfo mOpThreadInfo;
+    private CharSequence mSortByUrl = Constants.CommentsSort.SORT_BY_BEST_URL;
+    private CharSequence mThreadTitle = null;
     // should also cache mSettings.subreddit and mSettings.threadId
     // End navigation to be cached
 	
-    private CharSequence mSortByUrl = Constants.CommentsSort.SORT_BY_BEST_URL;
-    private ThreadInfo mOpThreadInfo;
-    private int mNumVisibleComments = Constants.DEFAULT_COMMENT_DOWNLOAD_LIMIT;
-    private int mJumpToCommentPosition = 0;
-    private CharSequence mJumpToCommentId = null;
     // Keep track of the row ids of comments that user has hidden
     private HashSet<Integer> mHiddenCommentHeads = new HashSet<Integer>();
     // Keep track of the row ids of descendants of hidden comment heads
     private HashSet<Integer> mHiddenComments = new HashSet<Integer>();
-
+    
     // UI State
-    private View mVoteTargetView = null;
     private CommentInfo mVoteTargetCommentInfo = null;
     private CharSequence mReplyTargetName = null;
     private CharSequence mEditTargetBody = null;
@@ -592,7 +590,6 @@ public class CommentsListActivity extends ListActivity
         
         // Mark the OP post/regular comment as selected
         mVoteTargetCommentInfo = item;
-        mVoteTargetView = v;
         if (mVoteTargetCommentInfo.getOP() != null) {
         	mReplyTargetName = mVoteTargetCommentInfo.getOP().getName();
 		} else {
@@ -657,6 +654,7 @@ public class CommentsListActivity extends ListActivity
     		mCommentsAdapter = commentsAdapter;
     	}
         setListAdapter(mCommentsAdapter);
+        mCommentsAdapter.notifyDataSetChanged();  // Just in case
         getListView().setDivider(null);
         Common.updateListDrawables(this, mSettings.theme);
         mHiddenComments.clear();
@@ -992,7 +990,9 @@ public class CommentsListActivity extends ListActivity
     		}
     		resetUI(null);
     		mCommentsAdapter.mIsLoading = true;
-	    	
+    		// In case a ReadCacheTask tries to preempt this DownloadCommentsTask
+    		mShouldUseCommentsCache = false;
+			
 	    	if ("jailbait".equals(mSettings.subreddit.toString())) {
 	    		Toast lodToast = Toast.makeText(CommentsListActivity.this, "", Toast.LENGTH_LONG);
 	    		View lodView = ((LayoutInflater) getSystemService(Context.LAYOUT_INFLATER_SERVICE))
@@ -1019,6 +1019,7 @@ public class CommentsListActivity extends ListActivity
 	    		}
 	    		// Remember this time for caching purposes
 	    		mLastRefreshTime = System.currentTimeMillis();
+	    		mShouldUseCommentsCache = true;
 	    		mCommentsAdapter.mIsLoading = false;
 	    		mCommentsAdapter.notifyDataSetChanged();
 	    		// Point the list to last comment user was looking at, if any
@@ -1446,7 +1447,6 @@ public class CommentsListActivity extends ListActivity
     	private int _mDirection;
     	private String _mUserError = "Error voting.";
     	private CommentInfo _mTargetCommentInfo;
-    	private View _mTargetView;
     	
     	// Save the previous arrow and score in case we need to revert
     	private int _mPreviousScore, _mPreviousUps, _mPreviousDowns;
@@ -1457,7 +1457,6 @@ public class CommentsListActivity extends ListActivity
     		_mDirection = direction;
     		// Copy these because they can change while voting thread is running
     		_mTargetCommentInfo = mVoteTargetCommentInfo;
-    		_mTargetView = mVoteTargetView;
     	}
     	
     	@Override
@@ -1552,17 +1551,8 @@ public class CommentsListActivity extends ListActivity
         		throw new RuntimeException("How the hell did you vote something besides -1, 0, or 1?");
         	}
 
-        	// Update UI: 6 cases (3 original directions, each with 2 possible changes)
-        	// UI is updated *before* the transaction actually happens. If the connection breaks for
-        	// some reason, then the vote will be lost.
-        	// Oh well, happens on reddit.com too, occasionally.
-        	final ImageView ivUp = (ImageView) _mTargetView.findViewById(R.id.vote_up_image);
-        	final ImageView ivDown = (ImageView) _mTargetView.findViewById(R.id.vote_down_image);
-        	final TextView voteCounter = (TextView) _mTargetView.findViewById(R.id.votes);
-    		int newImageResourceUp, newImageResourceDown;
     		int newUps, newDowns;
         	String newLikes;
-        	
         	if (_mTargetCommentInfo.getOP() != null) {
         		_mPreviousUps = Integer.valueOf(_mTargetCommentInfo.getOP().getUps());
         		_mPreviousDowns = Integer.valueOf(_mTargetCommentInfo.getOP().getDowns());
@@ -1576,59 +1566,43 @@ public class CommentsListActivity extends ListActivity
     	    	newDowns = _mPreviousDowns;
     	    	_mPreviousLikes = _mTargetCommentInfo.getLikes();
         	}
-        	if (Constants.TRUE_STRING.equals(_mPreviousLikes)) {
-        		if (_mDirection == 0) {
-        			newUps = _mPreviousUps - 1;
-        			newImageResourceUp = R.drawable.vote_up_gray;
-        			newImageResourceDown = R.drawable.vote_down_gray;
-        			newLikes = Constants.NULL_STRING;
-        		} else if (_mDirection == -1) {
-        			newUps = _mPreviousUps - 1;
-        			newDowns = _mPreviousDowns + 1;
-        			newImageResourceUp = R.drawable.vote_up_gray;
-        			newImageResourceDown = R.drawable.vote_down_blue;
-        			newLikes = Constants.FALSE_STRING;
-        		} else {
-        			cancel(true);
-        			return;
-        		}
-        	} else if (Constants.FALSE_STRING.equals(_mPreviousLikes)) {
-        		if (_mDirection == 1) {
-        			newUps = _mPreviousUps + 1;
-        			newDowns = _mPreviousDowns - 1;
-        			newImageResourceUp = R.drawable.vote_up_red;
-        			newImageResourceDown = R.drawable.vote_down_gray;
-        			newLikes = Constants.TRUE_STRING;
-        		} else if (_mDirection == 0) {
-        			newDowns = _mPreviousDowns - 1;
-        			newImageResourceUp = R.drawable.vote_up_gray;
-        			newImageResourceDown = R.drawable.vote_down_gray;
-        			newLikes = Constants.NULL_STRING;
-        		} else {
-        			cancel(true);
-        			return;
-        		}
-        	} else {
-        		if (_mDirection == 1) {
-        			newUps = _mPreviousUps + 1;
-        			newImageResourceUp = R.drawable.vote_up_red;
-        			newImageResourceDown = R.drawable.vote_down_gray;
-        			newLikes = Constants.TRUE_STRING;
-        		} else if (_mDirection == -1) {
-        			newDowns = _mPreviousDowns + 1;
-        			newImageResourceUp = R.drawable.vote_up_gray;
-        			newImageResourceDown = R.drawable.vote_down_blue;
-        			newLikes = Constants.FALSE_STRING;
-        		} else {
-        			cancel(true);
-        			return;
-        		}
-        	}
-        	
-        	ivUp.setImageResource(newImageResourceUp);
-    		ivDown.setImageResource(newImageResourceDown);
-    		String newScore = String.valueOf(newUps - newDowns);
-    		voteCounter.setText(newScore + " points");
+	        if (Constants.TRUE_STRING.equals(_mPreviousLikes)) {
+	    		if (_mDirection == 0) {
+	    			newUps = _mPreviousUps - 1;
+	    			newLikes = Constants.NULL_STRING;
+	    		} else if (_mDirection == -1) {
+	    			newUps = _mPreviousUps - 1;
+	    			newDowns = _mPreviousDowns + 1;
+	    			newLikes = Constants.FALSE_STRING;
+	    		} else {
+	    			cancel(true);
+	    			return;
+	    		}
+	    	} else if (Constants.FALSE_STRING.equals(_mPreviousLikes)) {
+	    		if (_mDirection == 1) {
+	    			newUps = _mPreviousUps + 1;
+	    			newDowns = _mPreviousDowns - 1;
+	    			newLikes = Constants.TRUE_STRING;
+	    		} else if (_mDirection == 0) {
+	    			newDowns = _mPreviousDowns - 1;
+	    			newLikes = Constants.NULL_STRING;
+	    		} else {
+	    			cancel(true);
+	    			return;
+	    		}
+	    	} else {
+	    		if (_mDirection == 1) {
+	    			newUps = _mPreviousUps + 1;
+	    			newLikes = Constants.TRUE_STRING;
+	    		} else if (_mDirection == -1) {
+	    			newDowns = _mPreviousDowns + 1;
+	    			newLikes = Constants.FALSE_STRING;
+	    		} else {
+	    			cancel(true);
+	    			return;
+	    		}
+	    	}
+
     		if (_mTargetCommentInfo.getOP() != null) {
     			_mTargetCommentInfo.getOP().setLikes(newLikes);
     			_mTargetCommentInfo.getOP().setUps(String.valueOf(newUps));
@@ -1645,9 +1619,6 @@ public class CommentsListActivity extends ListActivity
     	public void onPostExecute(Boolean success) {
     		if (!success) {
     			// Vote failed. Undo the arrow and score.
-        		final ImageView ivUp = (ImageView) _mTargetView.findViewById(R.id.vote_up_image);
-            	final ImageView ivDown = (ImageView) _mTargetView.findViewById(R.id.vote_down_image);
-            	final TextView voteCounter = (TextView) _mTargetView.findViewById(R.id.votes);
             	int oldImageResourceUp, oldImageResourceDown;
         		if (Constants.TRUE_STRING.equals(_mPreviousLikes)) {
             		oldImageResourceUp = R.drawable.vote_up_red;
@@ -1659,9 +1630,6 @@ public class CommentsListActivity extends ListActivity
             		oldImageResourceUp = R.drawable.vote_up_gray;
             		oldImageResourceDown = R.drawable.vote_down_gray;
             	}
-        		ivUp.setImageResource(oldImageResourceUp);
-        		ivDown.setImageResource(oldImageResourceDown);
-        		voteCounter.setText(String.valueOf(_mPreviousScore));
         		if (_mTargetCommentInfo.getOP() != null) {
         			_mTargetCommentInfo.getOP().setLikes(_mPreviousLikes);
         			_mTargetCommentInfo.getOP().setUps(String.valueOf(_mPreviousUps));
@@ -2366,27 +2334,31 @@ public class CommentsListActivity extends ListActivity
     		    if (Common.isFreshCache(mLastRefreshTime)) {
         			fis = openFileInput(Constants.FILENAME_COMMENTS_CACHE);
         			in = new ObjectInputStream(fis);
+        			
         			mCommentsList = (ArrayList<CommentInfo>) in.readObject();
         			// Process nonserializable (transient) members of the CommentInfos
         			for (CommentInfo ci : mCommentsList) {
         				ci.mSSBBody = markdown.markdown(ci.getBody(), new SpannableStringBuilder(), ci.mUrls); 
         			}
+        			mJumpToCommentId = (CharSequence) in.readObject();
+        			mJumpToCommentPosition = in.readInt();
         			mMoreChildrenId = (CharSequence) in.readObject();
-        			if (mMoreChildrenId == null)
-        				mMoreChildrenId = "";
+        			mMorePositions = (HashSet<Integer>) in.readObject();
+        			mNumVisibleComments = in.readInt();
         			mOpThreadInfo = (ThreadInfo) in.readObject();
     		    	mSettings.setSubreddit((CharSequence) in.readObject());
     				mSettings.setThreadId((CharSequence) in.readObject());
+    				mSortByUrl = (CharSequence) in.readObject();
     				mThreadTitle = (CharSequence) in.readObject();
     				
     				return true;
     		    }
-    		} catch (FileNotFoundException ex) {
+    		    // Cache is old
+    		    return false;
+    		} catch (Exception ex) {
     			if (Constants.LOGGING) Log.e(TAG, ex.getLocalizedMessage());
-    		} catch (IOException ex) {
-    			if (Constants.LOGGING) Log.e(TAG, ex.getLocalizedMessage());
-    		} catch (ClassNotFoundException ex) {
-    			if (Constants.LOGGING) Log.e(TAG, ex.getLocalizedMessage());
+    			deleteFile(Constants.FILENAME_COMMENTS_CACHE);
+    			return false;
     		} finally {
 	    		try {
 	    			in.close();
@@ -2395,7 +2367,6 @@ public class CommentsListActivity extends ListActivity
 	    			fis.close();
 	    		} catch (Exception ignore) {}
     		}
-    		return false;
     	}
     	
     	@Override
@@ -2477,10 +2448,15 @@ public class CommentsListActivity extends ListActivity
 			fos = openFileOutput(Constants.FILENAME_COMMENTS_CACHE, MODE_PRIVATE);
 			out = new ObjectOutputStream(fos);
 			out.writeObject(mCommentsList);
-			out.writeObject(mMoreChildrenId);
+			out.writeObject(mJumpToCommentId);
+		    out.writeInt(mJumpToCommentPosition);
+		    out.writeObject(mMoreChildrenId);
+			out.writeObject(mMorePositions);
+			out.writeInt(mNumVisibleComments);
 			out.writeObject(mOpThreadInfo);
 			out.writeObject(mSettings.subreddit);
 			out.writeObject(mSettings.threadId);
+			out.writeObject(mSortByUrl);
 			out.writeObject(mThreadTitle);
 		} catch (IOException ex) {
 			if (Constants.LOGGING) Log.e(TAG, ex.getLocalizedMessage());

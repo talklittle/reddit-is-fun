@@ -21,7 +21,6 @@ package com.andrewshu.android.reddit;
 
 import java.io.BufferedReader;
 import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -106,13 +105,12 @@ public final class RedditIsFun extends ListActivity {
     private final RedditSettings mSettings = new RedditSettings();
     
     // UI State
-    private View mVoteTargetView = null;
     private ThreadInfo mVoteTargetThreadInfo = null;
     private AsyncTask mCurrentDownloadThreadsTask = null;
     private final Object mCurrentDownloadThreadsTaskLock = new Object();
 
     // Whether it should use the cache. Otherwise download from Internet.
-    private boolean mShouldUseThreadsCache = true;
+    volatile private boolean mShouldUseThreadsCache = true;
     
     // Navigation that can be cached
     private CharSequence mAfter = null;
@@ -164,7 +162,7 @@ public final class RedditIsFun extends ListActivity {
         } else {
         	mSettings.setSubreddit(mSettings.homepage);
         }
-        // Launch ReadCacheTask in onResume()
+        new ReadCacheTask().execute();
     }
     
     @Override
@@ -181,7 +179,7 @@ public final class RedditIsFun extends ListActivity {
     	}
     	if (mSettings.loggedIn != previousLoggedIn)
     		mShouldUseThreadsCache = false;
-        new ReadCacheTask().execute();
+    	new ReadCacheTask().execute();
     	new Common.PeekEnvelopeTask(this, mClient, mSettings.mailNotificationStyle).execute();
     	
     	// threads list stuff
@@ -476,7 +474,6 @@ public final class RedditIsFun extends ListActivity {
         if (position < mThreadsAdapter.getCount() - 1 || mThreadsAdapter.getCount() < Constants.DEFAULT_THREAD_DOWNLOAD_LIMIT + 1) {
 	        // Mark the thread as selected
 	        mVoteTargetThreadInfo = item;
-	        mVoteTargetView = v;
 	        mJumpToThreadId = item.getId();
 	        showDialog(Constants.DIALOG_THING_CLICK);
         } else {
@@ -497,6 +494,7 @@ public final class RedditIsFun extends ListActivity {
     		mThreadsAdapter = threadsAdapter;
     	}
 	    setListAdapter(mThreadsAdapter);
+	    mThreadsAdapter.notifyDataSetChanged();  // Just in case
 	    Common.updateListDrawables(this, mSettings.theme);
     }
     
@@ -698,7 +696,9 @@ public final class RedditIsFun extends ListActivity {
     		}
     		resetUI(null);
     		mThreadsAdapter.mIsLoading = true;
-    		
+    		// In case a ReadCacheTask tries to preempt this DownloadThreadsTask
+    		mShouldUseThreadsCache = false;
+			
 	    	if ("jailbait".equals(mSettings.subreddit.toString())) {
 	    		Toast lodToast = Toast.makeText(RedditIsFun.this, "", Toast.LENGTH_LONG);
 	    		View lodView = ((LayoutInflater) getSystemService(Context.LAYOUT_INFLATER_SERVICE))
@@ -727,6 +727,7 @@ public final class RedditIsFun extends ListActivity {
 	    			mThreadsAdapter.add(new ThreadInfo());
 	    		// Remember this time for caching purposes
 	    		mLastRefreshTime = System.currentTimeMillis();
+	    		mShouldUseThreadsCache = true;
 	    		mThreadsAdapter.mIsLoading = false;
 	    		mThreadsAdapter.notifyDataSetChanged();
 	    		// Point the list to last thread user was looking at, if any
@@ -786,7 +787,6 @@ public final class RedditIsFun extends ListActivity {
     	private int _mDirection;
     	private String _mUserError = "Error voting.";
     	private ThreadInfo _mTargetThreadInfo;
-    	private View _mTargetView;
     	
     	// Save the previous arrow and score in case we need to revert
     	private int _mPreviousScore;
@@ -798,7 +798,6 @@ public final class RedditIsFun extends ListActivity {
     		_mSubreddit = subreddit;
     		// Copy these because they can change while voting thread is running
     		_mTargetThreadInfo = mVoteTargetThreadInfo;
-    		_mTargetView = mVoteTargetView;
     	}
     	
     	@Override
@@ -893,10 +892,6 @@ public final class RedditIsFun extends ListActivity {
         		if (Constants.LOGGING) Log.e(TAG, "WTF: _mDirection = " + _mDirection);
         		throw new RuntimeException("How the hell did you vote something besides -1, 0, or 1?");
         	}
-    		final ImageView ivUp = (ImageView) _mTargetView.findViewById(R.id.vote_up_image);
-        	final ImageView ivDown = (ImageView) _mTargetView.findViewById(R.id.vote_down_image);
-        	final TextView voteCounter = (TextView) _mTargetView.findViewById(R.id.votes);
-    		int newImageResourceUp, newImageResourceDown;
         	String newScore;
         	String newLikes;
         	_mPreviousScore = Integer.valueOf(_mTargetThreadInfo.getScore());
@@ -904,13 +899,9 @@ public final class RedditIsFun extends ListActivity {
         	if (Constants.TRUE_STRING.equals(_mPreviousLikes)) {
         		if (_mDirection == 0) {
         			newScore = String.valueOf(_mPreviousScore - 1);
-        			newImageResourceUp = R.drawable.vote_up_gray;
-        			newImageResourceDown = R.drawable.vote_down_gray;
         			newLikes = Constants.NULL_STRING;
         		} else if (_mDirection == -1) {
         			newScore = String.valueOf(_mPreviousScore - 2);
-        			newImageResourceUp = R.drawable.vote_up_gray;
-        			newImageResourceDown = R.drawable.vote_down_blue;
         			newLikes = Constants.FALSE_STRING;
         		} else {
         			cancel(true);
@@ -919,13 +910,9 @@ public final class RedditIsFun extends ListActivity {
         	} else if (Constants.FALSE_STRING.equals(_mPreviousLikes)) {
         		if (_mDirection == 1) {
         			newScore = String.valueOf(_mPreviousScore + 2);
-        			newImageResourceUp = R.drawable.vote_up_red;
-        			newImageResourceDown = R.drawable.vote_down_gray;
         			newLikes = Constants.TRUE_STRING;
         		} else if (_mDirection == 0) {
         			newScore = String.valueOf(_mPreviousScore + 1);
-        			newImageResourceUp = R.drawable.vote_up_gray;
-        			newImageResourceDown = R.drawable.vote_down_gray;
         			newLikes = Constants.NULL_STRING;
         		} else {
         			cancel(true);
@@ -934,22 +921,15 @@ public final class RedditIsFun extends ListActivity {
         	} else {
         		if (_mDirection == 1) {
         			newScore = String.valueOf(_mPreviousScore + 1);
-        			newImageResourceUp = R.drawable.vote_up_red;
-        			newImageResourceDown = R.drawable.vote_down_gray;
         			newLikes = Constants.TRUE_STRING;
         		} else if (_mDirection == -1) {
         			newScore = String.valueOf(_mPreviousScore - 1);
-        			newImageResourceUp = R.drawable.vote_up_gray;
-        			newImageResourceDown = R.drawable.vote_down_blue;
         			newLikes = Constants.FALSE_STRING;
         		} else {
         			cancel(true);
         			return;
         		}
         	}
-        	ivUp.setImageResource(newImageResourceUp);
-    		ivDown.setImageResource(newImageResourceDown);
-    		voteCounter.setText(newScore);
     		_mTargetThreadInfo.setLikes(newLikes);
     		_mTargetThreadInfo.setScore(newScore);
     		mThreadsAdapter.notifyDataSetChanged();
@@ -959,9 +939,6 @@ public final class RedditIsFun extends ListActivity {
     	public void onPostExecute(Boolean success) {
     		if (!success) {
     			// Vote failed. Undo the arrow and score.
-        		final ImageView ivUp = (ImageView) _mTargetView.findViewById(R.id.vote_up_image);
-            	final ImageView ivDown = (ImageView) _mTargetView.findViewById(R.id.vote_down_image);
-            	final TextView voteCounter = (TextView) _mTargetView.findViewById(R.id.votes);
             	int oldImageResourceUp, oldImageResourceDown;
         		if (Constants.TRUE_STRING.equals(_mPreviousLikes)) {
             		oldImageResourceUp = R.drawable.vote_up_red;
@@ -973,9 +950,6 @@ public final class RedditIsFun extends ListActivity {
             		oldImageResourceUp = R.drawable.vote_up_gray;
             		oldImageResourceDown = R.drawable.vote_down_gray;
             	}
-        		ivUp.setImageResource(oldImageResourceUp);
-        		ivDown.setImageResource(oldImageResourceDown);
-        		voteCounter.setText(String.valueOf(_mPreviousScore));
         		_mTargetThreadInfo.setLikes(_mPreviousLikes);
         		_mTargetThreadInfo.setScore(String.valueOf(_mPreviousScore));
         		mThreadsAdapter.notifyDataSetChanged();
@@ -1063,6 +1037,12 @@ public final class RedditIsFun extends ListActivity {
         	}
     		break;
     	case R.id.refresh_menu_id:
+    		// Reset some navigation
+    		mUrlToGetHere = null;
+    		mUrlToGetHereChanged = true;
+    		mAfter = null;
+    		mBefore = null;
+    		mCount = Constants.DEFAULT_THREAD_DOWNLOAD_LIMIT;
     		new DownloadThreadsTask().execute(mSettings.subreddit);
     		break;
     	case R.id.submit_link_menu_id:
@@ -1471,12 +1451,12 @@ public final class RedditIsFun extends ListActivity {
         	
         			return true;
     		    }
-    		} catch (FileNotFoundException ex) {
+    		    // Cache is old
+    		    return false;
+    		} catch (Exception ex) {
     			if (Constants.LOGGING) Log.e(TAG, ex.getLocalizedMessage());
-    		} catch (IOException ex) {
-    			if (Constants.LOGGING) Log.e(TAG, ex.getLocalizedMessage());
-    		} catch (ClassNotFoundException ex) {
-    			if (Constants.LOGGING) Log.e(TAG, ex.getLocalizedMessage());
+        		deleteFile(Constants.FILENAME_SUBREDDIT_CACHE);
+        		return false;
     		} finally {
 	    		try {
 	    			in.close();
@@ -1485,8 +1465,6 @@ public final class RedditIsFun extends ListActivity {
 	    			fis.close();
 	    		} catch (Exception ignore) {}
     		}
-    		deleteFile(Constants.FILENAME_SUBREDDIT_CACHE);
-    		return false;
     	}
     	
     	@Override
@@ -1502,7 +1480,7 @@ public final class RedditIsFun extends ListActivity {
         			Intent i = new Intent(getApplicationContext(), CommentsListActivity.class);
         			startActivity(i);
         			// Stop reading the cache for subreddit
-        			cancel(true);
+        			this.cancel(true);
         			return;
         		}
     		}
