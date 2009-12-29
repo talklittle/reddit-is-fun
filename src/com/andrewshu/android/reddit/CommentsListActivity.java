@@ -191,9 +191,6 @@ public class CommentsListActivity extends ListActivity
         	return;
         }
         
-        // Intent is not null. Means we got a new Intent to go to comments page.
-        mShouldUseCommentsCache = false;
-        
         Bundle extras = intent.getExtras();
         if (extras == null) {
         	if (Constants.LOGGING) Log.d(TAG, "No info in Intent. Using comments cache instead.");
@@ -618,6 +615,17 @@ public class CommentsListActivity extends ListActivity
         }
     }
     
+    
+    @Override
+    public boolean onKeyDown(int keyCode, KeyEvent event) {
+        if (keyCode == KeyEvent.KEYCODE_BACK) {
+            // When the user presses back, clear the comments cache.
+            deleteFile(Constants.FILENAME_COMMENTS_CACHE);
+        }
+        return super.onKeyDown(keyCode, event);
+    }
+
+    
     /**
      * Try jumping to mJumpToCommentPosition. failing that, try mJumpToCommentId.
      */
@@ -625,7 +633,7 @@ public class CommentsListActivity extends ListActivity
 	    if (mJumpToCommentPosition != 0) {
 			getListView().setSelectionFromTop(mJumpToCommentPosition, 10);
 			mJumpToCommentPosition = 0;
-		} else if (mJumpToCommentId != null) {
+		} else if (mJumpToCommentId != null && mCommentsAdapter != null) {
 			for (int k = 0; k < mCommentsAdapter.getCount(); k++) {
 				if (mJumpToCommentId.equals(mCommentsAdapter.getItem(k).getId())) {
 					getListView().setSelectionFromTop(k, 10);
@@ -2443,7 +2451,6 @@ public class CommentsListActivity extends ListActivity
     	// Cache
 		if (mCommentsList == null || mSettings.threadId == null)
 			return;
-		Common.deleteCachesOlderThan(getApplicationContext(), mLastRefreshTime);
 		FileOutputStream fos = null;
 		ObjectOutputStream out = null;
 		try {

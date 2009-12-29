@@ -453,7 +453,7 @@ public final class RedditIsFun extends ListActivity {
      * Jump to thread whose id is mJumpToThreadId. Then clear mJumpToThreadId.
      */
     private void jumpToThread() {
-    	if (mJumpToThreadId == null)
+    	if (mJumpToThreadId == null || mThreadsAdapter == null)
     		return;
 		for (int k = 0; k < mThreadsAdapter.getCount(); k++) {
 			if (mJumpToThreadId.equals(mThreadsAdapter.getItem(k).getId())) {
@@ -1544,7 +1544,6 @@ public final class RedditIsFun extends ListActivity {
     	// Cache
 		if (mThreadsList == null)
 			return;
-		Common.deleteCachesOlderThan(getApplicationContext(), mLastRefreshTime);
 		FileOutputStream fos = null;
 		ObjectOutputStream out = null;
 		try {
