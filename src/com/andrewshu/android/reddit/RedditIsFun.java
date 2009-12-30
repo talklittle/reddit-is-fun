@@ -720,15 +720,14 @@ public final class RedditIsFun extends ListActivity {
     		dismissDialog(Constants.DIALOG_LOADING_THREADS_LIST);
     		if (success) {
 	    		for (ThreadInfo ti : mThreadInfos)
-	        		mThreadsAdapter.add(ti);
+	        		mThreadsList.add(ti);
 	    		// "25 more" button.
-	    		if (mThreadsAdapter.getCount() >= Constants.DEFAULT_THREAD_DOWNLOAD_LIMIT)
-	    			mThreadsAdapter.add(new ThreadInfo());
+	    		if (mThreadsList.size() >= Constants.DEFAULT_THREAD_DOWNLOAD_LIMIT)
+	    			mThreadsList.add(new ThreadInfo());
 	    		// Remember this time for caching purposes
 	    		mLastRefreshTime = System.currentTimeMillis();
 	    		mShouldUseThreadsCache = true;
-	    		mThreadsAdapter.mIsLoading = false;
-	    		mThreadsAdapter.notifyDataSetChanged();
+	    		resetUI(new ThreadsListAdapter(RedditIsFun.this, mThreadsList));
 	    		// Point the list to last thread user was looking at, if any
 	    		jumpToThread();
     		} else {
@@ -1364,6 +1363,8 @@ public final class RedditIsFun extends ListActivity {
     		break;
     		
     	case Constants.DIALOG_LOADING_THREADS_LIST:
+    		// FIXME: if different number of threads in reddit.com settings (e.g., 100) it should display that as max instead,
+    		// since the JSON returns more than just 25 if that is the case.
     		mLoadingThreadsProgress.setMax(mSettings.threadDownloadLimit);
     		break;
     		

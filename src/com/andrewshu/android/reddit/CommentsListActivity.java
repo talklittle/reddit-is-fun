@@ -121,6 +121,8 @@ public class CommentsListActivity extends ListActivity
     /** Custom list adapter that fits our threads data into the list. */
     private CommentsListAdapter mCommentsAdapter;
     private ArrayList<CommentInfo> mCommentsList;
+    // Lock used when modifying the mCommentsAdapter
+    private static final Object COMMENT_ADAPTER_LOCK = new Object();
     
     private final DefaultHttpClient mClient = Common.getGzipHttpClient();
     
@@ -135,10 +137,10 @@ public class CommentsListActivity extends ListActivity
     private long mLastRefreshTime = 0;
     private CharSequence mJumpToCommentId = null;
     private int mJumpToCommentPosition = 0;
-    private CharSequence mMoreChildrenId = "";
+//    private CharSequence mMoreChildrenId = "";
     private HashSet<Integer> mMorePositions = new HashSet<Integer>();
     private int mNumVisibleComments = Constants.DEFAULT_COMMENT_DOWNLOAD_LIMIT;
-    private ThreadInfo mOpThreadInfo;
+    private ThreadInfo mOpThreadInfo = null;
     private CharSequence mSortByUrl = Constants.CommentsSort.SORT_BY_BEST_URL;
     private CharSequence mThreadTitle = null;
     // should also cache mSettings.subreddit and mSettings.threadId
@@ -195,10 +197,6 @@ public class CommentsListActivity extends ListActivity
         	// See onResume()
 			return;
         }
-    	// More children: displaying something that's not the root of comments list.
-    	mMoreChildrenId = extras.getCharSequence(Constants.EXTRA_MORE_CHILDREN_ID);
-    	if (mMoreChildrenId == null)
-    		mMoreChildrenId = "";
     	// Comment context: a URL pointing directly at a comment, versus a thread
     	String commentContext = extras.getString(Constants.EXTRA_COMMENT_CONTEXT);
     	if (commentContext != null) {
@@ -595,13 +593,8 @@ public class CommentsListActivity extends ListActivity
 		
         if (mMorePositions.contains(position)) {
         	mJumpToCommentPosition = position;
-        	Intent moreChildrenIntent = new Intent(getApplicationContext(), CommentsListActivity.class);
-        	moreChildrenIntent.putExtra(ThreadInfo.SUBREDDIT, mOpThreadInfo.getSubreddit());
-        	moreChildrenIntent.putExtra(ThreadInfo.ID, mOpThreadInfo.getId());
-        	moreChildrenIntent.putExtra(ThreadInfo.TITLE, mOpThreadInfo.getTitle());
-        	moreChildrenIntent.putExtra(ThreadInfo.NUM_COMMENTS, Integer.valueOf(mOpThreadInfo.getNumComments()));
-        	moreChildrenIntent.putExtra(Constants.EXTRA_MORE_CHILDREN_ID, item.getId());
-        	startActivity(moreChildrenIntent);
+        	// Use this constructor to tell it to load more comments inline
+        	new DownloadCommentsTask(item.getId(), position, item.getIndent()).execute(Constants.DEFAULT_COMMENT_DOWNLOAD_LIMIT);
         } else {
         	mJumpToCommentId = item.getId();
         	if (!"[deleted]".equals(item.getAuthor()))
@@ -628,11 +621,13 @@ public class CommentsListActivity extends ListActivity
 			getListView().setSelectionFromTop(mJumpToCommentPosition, 10);
 			mJumpToCommentPosition = 0;
 		} else if (mJumpToCommentId != null && mCommentsAdapter != null) {
-			for (int k = 0; k < mCommentsAdapter.getCount(); k++) {
-				if (mJumpToCommentId.equals(mCommentsAdapter.getItem(k).getId())) {
-					getListView().setSelectionFromTop(k, 10);
-					mJumpToCommentId = null;
-					break;
+			synchronized (COMMENT_ADAPTER_LOCK) {
+				for (int k = 0; k < mCommentsAdapter.getCount(); k++) {
+					if (mJumpToCommentId.equals(mCommentsAdapter.getItem(k).getId())) {
+						getListView().setSelectionFromTop(k, 10);
+						mJumpToCommentId = null;
+						break;
+					}
 				}
 			}
 		}
@@ -643,15 +638,17 @@ public class CommentsListActivity extends ListActivity
      * @param commentsAdapter A new CommentsListAdapter to use. Pass in null to create a new empty one.
      */
     public void resetUI(CommentsListAdapter commentsAdapter) {
-    	if (commentsAdapter == null) {
-    		// Reset the list to be empty.
-    		mCommentsList = new ArrayList<CommentInfo>();
-            mCommentsAdapter = new CommentsListAdapter(this, mCommentsList);
-    	} else {
-    		mCommentsAdapter = commentsAdapter;
+    	synchronized (COMMENT_ADAPTER_LOCK) {
+	    	if (commentsAdapter == null) {
+	    		// Reset the list to be empty.
+	    		mCommentsList = new ArrayList<CommentInfo>();
+	            mCommentsAdapter = new CommentsListAdapter(this, mCommentsList);
+	    	} else {
+	    		mCommentsAdapter = commentsAdapter;
+	    	}
+	        setListAdapter(mCommentsAdapter);
+	        mCommentsAdapter.notifyDataSetChanged();  // Just in case
     	}
-        setListAdapter(mCommentsAdapter);
-        mCommentsAdapter.notifyDataSetChanged();  // Just in case
         getListView().setDivider(null);
         Common.updateListDrawables(this, mSettings.theme);
         mHiddenComments.clear();
@@ -674,6 +671,31 @@ public class CommentsListActivity extends ListActivity
     	
     	private TreeMap<Integer, CommentInfo> mCommentsMap = new TreeMap<Integer, CommentInfo>();
     	private int _mNumComments = mNumVisibleComments;
+    	// _mPositionOffset != 0 means that you're doing "load more comments"
+    	private int _mPositionOffset;
+    	private int _mIndentation;
+    	private String _mMoreChildrenId;
+    	
+    	/**
+    	 * Constructor to do normal comments page
+    	 */
+    	public DownloadCommentsTask() {
+    		_mMoreChildrenId = "";
+    		_mPositionOffset = 0;
+    		_mIndentation = 0;
+    	}
+    	
+    	/**
+    	 * "load more comments" starting at this position
+    	 * @param moreChildrenId The reddit thing-id of the "more" children comment
+    	 * @param morePosition Position in local list to insert
+    	 * @param indentation The indentation level of the child.
+    	 */
+    	public DownloadCommentsTask(String moreChildrenId, int morePosition, int indentation) {
+    		_mMoreChildrenId = moreChildrenId;
+    		_mPositionOffset = morePosition;
+    		_mIndentation = indentation;
+    	}
        
     	// XXX: maxComments is unused for now
     	public Boolean doInBackground(Integer... maxComments) {
@@ -683,7 +705,7 @@ public class CommentsListActivity extends ListActivity
 	        		.append(mSettings.subreddit.toString().trim())
 	        		.append("/comments/")
 	        		.append(mSettings.threadId)
-	        		.append("/z/").append(mMoreChildrenId).append(".json?").append(mSortByUrl).append("&");
+	        		.append("/z/").append(_mMoreChildrenId).append(".json?").append(mSortByUrl).append("&");
             	HttpGet request = new HttpGet(sb.toString());
                 HttpResponse response = mClient.execute(request);
             	entity = response.getEntity();
@@ -807,12 +829,14 @@ public class CommentsListActivity extends ListActivity
 					}
 				}
 				// For comments OP, should be only one
-				mOpThreadInfo = ti;
-				CommentInfo ci = new CommentInfo();
-				ci.setOpInfo(ti);
-				ci.setIndent(0);
-				ci.setListOrder(0);
-				mCommentsMap.put(0, ci);
+				if (_mPositionOffset == 0) {
+					mOpThreadInfo = ti;
+					CommentInfo ci = new CommentInfo();
+					ci.setOpInfo(ti);
+					ci.setIndent(0);
+					ci.setListOrder(0);
+					mCommentsMap.put(0, ci);
+				}
 			}
 			// Wind down the end of the "data" then outermost thread-json-object
 			for (int i = 0; i < 2; i++)
@@ -822,8 +846,11 @@ public class CommentsListActivity extends ListActivity
 			//
 			// --- Now, process the comments ---
 			//
-			mNestedCommentsJSONOrder = 1;
-			processNestedCommentsJSON(jp, 0);
+			if (_mPositionOffset == 0)
+				mNestedCommentsJSONOrder = 1;  // position 0 is taken by OP thread
+			else
+				mNestedCommentsJSONOrder = _mPositionOffset;
+			processNestedCommentsJSON(jp, _mIndentation);
 			
 		}
 		
@@ -968,7 +995,10 @@ public class CommentsListActivity extends ListActivity
 				}
 				// Finished parsing one of the children
 				mCommentsMap.put(ci.getListOrder(), ci);
-				publishProgress(mNestedCommentsJSONOrder);
+				if (_mPositionOffset == 0)
+					publishProgress(mNestedCommentsJSONOrder);
+				else
+					publishProgress(mNestedCommentsJSONOrder - _mPositionOffset + 1);
 			}
 			// Wind down the end of the "data" then "replies" objects
 			for (int i = 0; i < 2; i++)
@@ -985,7 +1015,9 @@ public class CommentsListActivity extends ListActivity
 	    			mCurrentDownloadCommentsTask.cancel(true);
 	    		mCurrentDownloadCommentsTask = this;
     		}
-    		resetUI(null);
+    		// Initialize mCommentsList and mCommentsAdapter
+    		if (mCommentsList == null || mCommentsAdapter == null)
+    			resetUI(null);
     		mCommentsAdapter.mIsLoading = true;
     		// In case a ReadCacheTask tries to preempt this DownloadCommentsTask
     		mShouldUseCommentsCache = false;
@@ -1008,8 +1040,24 @@ public class CommentsListActivity extends ListActivity
     		}
 			dismissDialog(Constants.DIALOG_LOADING_COMMENTS_LIST);
     		if (success) {
-	    		for (Integer key : mCommentsMap.keySet())
-	        		mCommentsAdapter.add(mCommentsMap.get(key));
+    			synchronized (COMMENT_ADAPTER_LOCK) {
+    				// Shift the comments' positions for comments after what is about to be inserted.
+    				// Shift them by (number inserted - 1) since there used to be a "load more comments" entry there.
+    				if (_mPositionOffset != 0) {
+    					int numInserted = mCommentsMap.size();
+    					for (int i = _mPositionOffset + 1; i < mCommentsList.size(); i++)
+    						mCommentsList.get(i).setListOrder(i + numInserted - 1);
+    					// Now remove the "load more comments" entry
+    					mMorePositions.remove(_mPositionOffset);
+    					mCommentsList.remove(_mPositionOffset);
+    				}
+    				// Insert the new comments
+		    		for (Integer key : mCommentsMap.keySet()) {
+		    			CommentInfo ci = mCommentsMap.get(key);
+		    			mCommentsList.add(ci.getListOrder(), ci);
+		    		}
+		    	}
+				resetUI(new CommentsListAdapter(CommentsListActivity.this, mCommentsList));
 	    		if (mThreadTitle == null) {
 	    			mThreadTitle = mOpThreadInfo.getTitle().replaceAll("\n ", " ").replaceAll(" \n", " ").replaceAll("\n", " ");
 	    			setTitle(mThreadTitle + " : " + mSettings.subreddit);
@@ -1017,8 +1065,6 @@ public class CommentsListActivity extends ListActivity
 	    		// Remember this time for caching purposes
 	    		mLastRefreshTime = System.currentTimeMillis();
 	    		mShouldUseCommentsCache = true;
-	    		mCommentsAdapter.mIsLoading = false;
-	    		mCommentsAdapter.notifyDataSetChanged();
 	    		// Point the list to last comment user was looking at, if any
 	    		jumpToComment();
     		} else {
@@ -1724,7 +1770,9 @@ public class CommentsListActivity extends ListActivity
         
         switch (item.getItemId()) {
         case R.id.op_menu_id:
-    		mVoteTargetCommentInfo = mCommentsAdapter.getItem(0);
+    		synchronized (COMMENT_ADAPTER_LOCK) {
+    			mVoteTargetCommentInfo = mCommentsAdapter.getItem(0);
+    		}
     		mReplyTargetName = mVoteTargetCommentInfo.getOP().getName();
     		showDialog(Constants.DIALOG_THING_CLICK);
     		break;
@@ -1743,7 +1791,9 @@ public class CommentsListActivity extends ListActivity
     	case R.id.reply_thread_menu_id:
     		// From the menu, only used for the OP, which is a thread.
         	if (mSettings.loggedIn) {
-	    		mVoteTargetCommentInfo = mCommentsAdapter.getItem(0);
+	    		synchronized (COMMENT_ADAPTER_LOCK) {
+	    			mVoteTargetCommentInfo = mCommentsAdapter.getItem(0);
+	    		}
 	    		mReplyTargetName = mVoteTargetCommentInfo.getOP().getName();
 	            showDialog(Constants.DIALOG_REPLY);
         	} else {
@@ -1817,9 +1867,11 @@ public class CommentsListActivity extends ListActivity
     		menu.add(0, Constants.DIALOG_SHOW_COMMENT, Menu.NONE, "Show comment");
     		menu.add(0, Constants.DIALOG_GOTO_PARENT, Menu.NONE, "Go to parent");
     	} else {
-    		if (mSettings.username != null && mSettings.username.equals(mCommentsAdapter.getItem(rowId).getAuthor())) {
-    			menu.add(0, Constants.DIALOG_EDIT, Menu.NONE, "Edit");
-    			menu.add(0, Constants.DIALOG_DELETE, Menu.NONE, "Delete");
+    		synchronized (COMMENT_ADAPTER_LOCK) {
+	    		if (mSettings.username != null && mSettings.username.equals(mCommentsAdapter.getItem(rowId).getAuthor())) {
+	    			menu.add(0, Constants.DIALOG_EDIT, Menu.NONE, "Edit");
+	    			menu.add(0, Constants.DIALOG_DELETE, Menu.NONE, "Delete");
+	    		}
     		}
     		menu.add(0, Constants.DIALOG_HIDE_COMMENT, Menu.NONE, "Hide comment");
     		menu.add(0, Constants.DIALOG_GOTO_PARENT, Menu.NONE, "Go to parent");
@@ -1839,20 +1891,26 @@ public class CommentsListActivity extends ListActivity
     		showComment(rowId);
     		return true;
     	case Constants.DIALOG_GOTO_PARENT:
-    		int myIndent = mCommentsAdapter.getItem(rowId).getIndent();
-    		int parentRowId;
-    		for (parentRowId = rowId - 1; parentRowId >= 0; parentRowId--)
-    			if (mCommentsAdapter.getItem(parentRowId).getIndent() < myIndent)
-    				break;
-    		getListView().setSelectionFromTop(parentRowId, 10);
+    		synchronized (COMMENT_ADAPTER_LOCK) {
+    			int myIndent = mCommentsAdapter.getItem(rowId).getIndent();
+	    		int parentRowId;
+	    		for (parentRowId = rowId - 1; parentRowId >= 0; parentRowId--)
+	    			if (mCommentsAdapter.getItem(parentRowId).getIndent() < myIndent)
+	    				break;
+	    		getListView().setSelectionFromTop(parentRowId, 10);
+    		}
     		return true;
     	case Constants.DIALOG_EDIT:
-    		mReplyTargetName = mCommentsAdapter.getItem(rowId).getName();
-    		mEditTargetBody = mCommentsAdapter.getItem(rowId).getBody();
+    		synchronized (COMMENT_ADAPTER_LOCK) {
+	    		mReplyTargetName = mCommentsAdapter.getItem(rowId).getName();
+	    		mEditTargetBody = mCommentsAdapter.getItem(rowId).getBody();
+    		}
     		showDialog(Constants.DIALOG_EDIT);
     		return true;
     	case Constants.DIALOG_DELETE:
-    		mReplyTargetName = mCommentsAdapter.getItem(rowId).getName();
+    		synchronized (COMMENT_ADAPTER_LOCK) {
+    			mReplyTargetName = mCommentsAdapter.getItem(rowId).getName();
+    		}
     		// It must be a comment, since the OP selftext is reached via options menu, not context menu
     		mDeleteTargetKind = Constants.COMMENT_KIND;
     		showDialog(Constants.DIALOG_DELETE);
@@ -1864,15 +1922,17 @@ public class CommentsListActivity extends ListActivity
     
     private void hideComment(int rowId) {
     	mHiddenCommentHeads.add(rowId);
-    	int myIndent = mCommentsAdapter.getItem(rowId).getIndent();
-    	// Hide everything after the row.
-    	for (int i = rowId + 1; i < mCommentsAdapter.getCount(); i++) {
-    		CommentInfo ci = mCommentsAdapter.getItem(i);
-    		if (ci.getIndent() <= myIndent)
-    			break;
-    		mHiddenComments.add(i);
+    	synchronized (COMMENT_ADAPTER_LOCK) {
+	    	int myIndent = mCommentsAdapter.getItem(rowId).getIndent();
+	    	// Hide everything after the row.
+	    	for (int i = rowId + 1; i < mCommentsAdapter.getCount(); i++) {
+	    		CommentInfo ci = mCommentsAdapter.getItem(i);
+	    		if (ci.getIndent() <= myIndent)
+	    			break;
+	    		mHiddenComments.add(i);
+	    	}
+	    	mCommentsAdapter.notifyDataSetChanged();
     	}
-    	mCommentsAdapter.notifyDataSetChanged();
     	getListView().setSelectionFromTop(rowId, 10);
     }
     
@@ -1880,24 +1940,26 @@ public class CommentsListActivity extends ListActivity
     	if (mHiddenCommentHeads.contains(rowId)) {
     		mHiddenCommentHeads.remove(rowId);
     	}
-    	int stopIndent = mCommentsAdapter.getItem(rowId).getIndent();
-    	int skipIndentAbove = -1;
-    	for (int i = rowId + 1; i < mCommentsAdapter.getCount(); i++) {
-    		CommentInfo ci = mCommentsAdapter.getItem(i);
-    		int ciIndent = ci.getIndent();
-    		if (ciIndent <= stopIndent)
-    			break;
-    		if (skipIndentAbove != -1 && ciIndent > skipIndentAbove)
-    			continue;
-    		if (mHiddenCommentHeads.contains(i) && mHiddenComments.contains(i)) {
-    			mHiddenComments.remove(i);
-    			skipIndentAbove = ci.getIndent();
-    		}
-    		skipIndentAbove = -1;
-    		if (mHiddenComments.contains(i))
-    			mHiddenComments.remove(i);
+    	synchronized (COMMENT_ADAPTER_LOCK) {
+	    	int stopIndent = mCommentsAdapter.getItem(rowId).getIndent();
+	    	int skipIndentAbove = -1;
+	    	for (int i = rowId + 1; i < mCommentsAdapter.getCount(); i++) {
+	    		CommentInfo ci = mCommentsAdapter.getItem(i);
+	    		int ciIndent = ci.getIndent();
+	    		if (ciIndent <= stopIndent)
+	    			break;
+	    		if (skipIndentAbove != -1 && ciIndent > skipIndentAbove)
+	    			continue;
+	    		if (mHiddenCommentHeads.contains(i) && mHiddenComments.contains(i)) {
+	    			mHiddenComments.remove(i);
+	    			skipIndentAbove = ci.getIndent();
+	    		}
+	    		skipIndentAbove = -1;
+	    		if (mHiddenComments.contains(i))
+	    			mHiddenComments.remove(i);
+	    	}
+	    	mCommentsAdapter.notifyDataSetChanged();
     	}
-    	mCommentsAdapter.notifyDataSetChanged();
     	getListView().setSelectionFromTop(rowId, 10);
     }
 
@@ -2339,7 +2401,6 @@ public class CommentsListActivity extends ListActivity
         			}
         			mJumpToCommentId = (CharSequence) in.readObject();
         			mJumpToCommentPosition = in.readInt();
-        			mMoreChildrenId = (CharSequence) in.readObject();
         			mMorePositions = (HashSet<Integer>) in.readObject();
         			mNumVisibleComments = in.readInt();
         			mOpThreadInfo = (ThreadInfo) in.readObject();
@@ -2447,8 +2508,7 @@ public class CommentsListActivity extends ListActivity
 			out.writeObject(mCommentsList);
 			out.writeObject(mJumpToCommentId);
 		    out.writeInt(mJumpToCommentPosition);
-		    out.writeObject(mMoreChildrenId);
-			out.writeObject(mMorePositions);
+		    out.writeObject(mMorePositions);
 			out.writeInt(mNumVisibleComments);
 			out.writeObject(mOpThreadInfo);
 			out.writeObject(mSettings.subreddit);
