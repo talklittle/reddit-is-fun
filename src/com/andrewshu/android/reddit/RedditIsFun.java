@@ -1489,21 +1489,23 @@ public final class RedditIsFun extends ListActivity {
     	
     	@Override
     	public void onPostExecute(Boolean success) {
-    		dismissDialog(Constants.DIALOG_LOADING_THREADS_CACHE);
-    		if (success) {
-    			// Use the cached threads list
-		    	resetUI(new ThreadsListAdapter(RedditIsFun.this, mThreadsList));
-		    	// Set the title based on subreddit
-		    	if (Constants.FRONTPAGE_STRING.equals(mSettings.subreddit))
-		    		setTitle("reddit.com: what's new online!");
-		    	else
-		    		setTitle("/r/"+mSettings.subreddit.toString().trim());
-		    	// Point the list to whichever thread the user was looking at
-		    	jumpToThread();
-    		} else {
-    			//Common.showErrorToast("Reading subreddit cache failed.", Toast.LENGTH_SHORT, RedditIsFun.this);
-    			// Since it didn't read from cache, download normally from Internet.
-    			new DownloadThreadsTask().execute(mSettings.subreddit);
+    		if (!isCancelled()) {
+	    		dismissDialog(Constants.DIALOG_LOADING_THREADS_CACHE);
+	    		if (success) {
+	    			// Use the cached threads list
+			    	resetUI(new ThreadsListAdapter(RedditIsFun.this, mThreadsList));
+			    	// Set the title based on subreddit
+			    	if (Constants.FRONTPAGE_STRING.equals(mSettings.subreddit))
+			    		setTitle("reddit.com: what's new online!");
+			    	else
+			    		setTitle("/r/"+mSettings.subreddit.toString().trim());
+			    	// Point the list to whichever thread the user was looking at
+			    	jumpToThread();
+	    		} else {
+	    			//Common.showErrorToast("Reading subreddit cache failed.", Toast.LENGTH_SHORT, RedditIsFun.this);
+	    			// Since it didn't read from cache, download normally from Internet.
+	    			new DownloadThreadsTask().execute(mSettings.subreddit);
+	    		}
     		}
     	}
     }
