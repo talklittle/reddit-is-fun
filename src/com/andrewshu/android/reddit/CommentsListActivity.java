@@ -119,8 +119,7 @@ public class CommentsListActivity extends ListActivity
     private int mNestedCommentsJSONOrder = 0;
 	
     /** Custom list adapter that fits our threads data into the list. */
-    private CommentsListAdapter mCommentsAdapter;
-    private ArrayList<CommentInfo> mCommentsList;
+    private CommentsListAdapter mCommentsAdapter = null;
     // Lock used when modifying the mCommentsAdapter
     private static final Object COMMENT_ADAPTER_LOCK = new Object();
     
@@ -272,7 +271,7 @@ public class CommentsListActivity extends ListActivity
     }
     
 
-    private final class CommentsListAdapter extends ArrayAdapter<CommentInfo> {
+    private final class CommentsListAdapter extends SerializableCommentInfoArrayAdapter {
     	static final int OP_ITEM_VIEW_TYPE = 0;
     	static final int COMMENT_ITEM_VIEW_TYPE = 1;
     	static final int MORE_ITEM_VIEW_TYPE = 2;
@@ -637,22 +636,19 @@ public class CommentsListActivity extends ListActivity
      * Resets the output UI list contents, retains session state.
      * @param commentsAdapter A new CommentsListAdapter to use. Pass in null to create a new empty one.
      */
-    public void resetUI(CommentsListAdapter commentsAdapter) {
+    public void resetUI() {
     	synchronized (COMMENT_ADAPTER_LOCK) {
-	    	if (commentsAdapter == null) {
-	    		// Reset the list to be empty.
-	    		mCommentsList = new ArrayList<CommentInfo>();
-	            mCommentsAdapter = new CommentsListAdapter(this, mCommentsList);
-	    	} else {
-	    		mCommentsAdapter = commentsAdapter;
-	    	}
+    		// Reset the list to be empty.
+    		ArrayList<CommentInfo> items = new ArrayList<CommentInfo>();
+            mCommentsAdapter = new CommentsListAdapter(this, items);
+            mHiddenComments.clear();
+            mHiddenCommentHeads.clear();
 	        setListAdapter(mCommentsAdapter);
 	        mCommentsAdapter.notifyDataSetChanged();  // Just in case
     	}
-        getListView().setDivider(null);
+    	// Update UI stuff
+    	getListView().setDivider(null);
         Common.updateListDrawables(this, mSettings.theme);
-        mHiddenComments.clear();
-        mHiddenCommentHeads.clear();
     }
 
         
@@ -1015,9 +1011,9 @@ public class CommentsListActivity extends ListActivity
 	    			mCurrentDownloadCommentsTask.cancel(true);
 	    		mCurrentDownloadCommentsTask = this;
     		}
-    		// Initialize mCommentsList and mCommentsAdapter
-    		if (mCommentsList == null || mCommentsAdapter == null)
-    			resetUI(null);
+    		// Initialize mCommentsAdapter
+    		if (mCommentsAdapter == null)
+    			resetUI();
     		mCommentsAdapter.mIsLoading = true;
     		// In case a ReadCacheTask tries to preempt this DownloadCommentsTask
     		mShouldUseCommentsCache = false;
@@ -1049,15 +1045,14 @@ public class CommentsListActivity extends ListActivity
     						mCommentsList.get(i).setListOrder(i + numInserted - 1);
     					// Now remove the "load more comments" entry
     					mMorePositions.remove(_mPositionOffset);
-    					mCommentsList.remove(_mPositionOffset);
+    					mCommentsAdapter.remove(mCommentsAdapter.getItem(_mPositionOffset));
     				}
     				// Insert the new comments
 		    		for (Integer key : mCommentsMap.keySet()) {
 		    			CommentInfo ci = mCommentsMap.get(key);
-		    			mCommentsList.add(ci.getListOrder(), ci);
+		    			mCommentsAdapter.insert(ci, ci.getListOrder());
 		    		}
 		    	}
-				resetUI(new CommentsListAdapter(CommentsListActivity.this, mCommentsList));
 	    		if (mThreadTitle == null) {
 	    			mThreadTitle = mOpThreadInfo.getTitle().replaceAll("\n ", " ").replaceAll(" \n", " ").replaceAll("\n", " ");
 	    			setTitle(mThreadTitle + " : " + mSettings.subreddit);
@@ -2394,9 +2389,10 @@ public class CommentsListActivity extends ListActivity
         			fis = openFileInput(Constants.FILENAME_COMMENTS_CACHE);
         			in = new ObjectInputStream(fis);
         			
-        			mCommentsList = (ArrayList<CommentInfo>) in.readObject();
+        			mCommentsAdapter = (CommentsListAdapter) in.readObject();
         			// Process nonserializable (transient) members of the CommentInfos
-        			for (CommentInfo ci : mCommentsList) {
+        			for (int i = 0; i < mCommentsAdapter.getCount(); i++) {
+        				CommentInfo ci = mCommentsAdapter.getItem(i);
         				ci.mSSBBody = markdown.markdown(ci.getBody(), new SpannableStringBuilder(), ci.mUrls); 
         			}
         			mJumpToCommentId = (CharSequence) in.readObject();
@@ -2445,8 +2441,9 @@ public class CommentsListActivity extends ListActivity
     			// Ignore. Probably caused by screen rotation.
     		}
     		if (success) {
-    			// Use the cached threads list
-		    	resetUI(new CommentsListAdapter(CommentsListActivity.this, mCommentsList));
+    			// Use the cached comments list
+		    	setListAdapter(mCommentsAdapter);
+		    	mCommentsAdapter.notifyDataSetChanged();
 		    	setTitle(mThreadTitle + " : " + mSettings.subreddit);
 		    	// Point the list to whichever comment the user was looking at
 		    	jumpToComment();
@@ -2478,7 +2475,7 @@ public class CommentsListActivity extends ListActivity
     	state.putString(Constants.DELETE_TARGET_KIND_KEY, mDeleteTargetKind);
     	
     	// Cache
-		if (mCommentsList == null || mSettings.threadId == null)
+		if (mCommentsAdapter == null || mSettings.threadId == null)
 			return;
 		FileOutputStream fos = null;
 		ObjectOutputStream out = null;
@@ -2505,7 +2502,7 @@ public class CommentsListActivity extends ListActivity
 			// Write cache variables in alphabetical order by variable name.
 			fos = openFileOutput(Constants.FILENAME_COMMENTS_CACHE, MODE_PRIVATE);
 			out = new ObjectOutputStream(fos);
-			out.writeObject(mCommentsList);
+			out.writeObject(mCommentsAdapter);
 			out.writeObject(mJumpToCommentId);
 		    out.writeInt(mJumpToCommentPosition);
 		    out.writeObject(mMorePositions);
