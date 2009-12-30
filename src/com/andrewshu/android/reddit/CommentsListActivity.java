@@ -132,6 +132,8 @@ public class CommentsListActivity extends ListActivity
     
     // Whether the cache should be used during onResume().
     volatile private boolean mShouldUseCommentsCache = true;
+    // Whether onCreate was called. (if not, then no need to even load from cache)
+    private boolean mIsOnCreate = false;
     
     // Navigation items to be cached
     private long mLastRefreshTime = 0;
@@ -173,6 +175,8 @@ public class CommentsListActivity extends ListActivity
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        
+        mIsOnCreate = true;
         
         Common.loadRedditPreferences(this, mSettings, mClient);
         setTheme(mSettings.theme);
@@ -261,7 +265,8 @@ public class CommentsListActivity extends ListActivity
     	}
     	if (mSettings.loggedIn != previousLoggedIn)
     		mShouldUseCommentsCache = false;
-    	new ReadCacheTask().execute();
+    	if (mIsOnCreate)
+    		new ReadCacheTask().execute();
 	    new Common.PeekEnvelopeTask(this, mClient, mSettings.mailNotificationStyle).execute();
     }
     
@@ -1040,7 +1045,7 @@ public class CommentsListActivity extends ListActivity
 	    		mCurrentDownloadCommentsTask = this;
     		}
     		// Initialize mCommentsList and mCommentsAdapter
-    		if (mCommentsList == null || mCommentsAdapter == null)
+    		if (_mPositionOffset == 0)
     			resetUI(null);
     		mCommentsAdapter.mIsLoading = true;
     		// In case a ReadCacheTask tries to preempt this DownloadCommentsTask
