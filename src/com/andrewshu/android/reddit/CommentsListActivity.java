@@ -119,8 +119,8 @@ public class CommentsListActivity extends ListActivity
     private int mNestedCommentsJSONOrder = 0;
 	
     /** Custom list adapter that fits our threads data into the list. */
-    private CommentsListAdapter mCommentsAdapter;
-    private ArrayList<CommentInfo> mCommentsList;
+    private CommentsListAdapter mCommentsAdapter = null;
+    private ArrayList<CommentInfo> mCommentsList = null;
     // Lock used when modifying the mCommentsAdapter
     private static final Object COMMENT_ADAPTER_LOCK = new Object();
     
@@ -719,6 +719,31 @@ public class CommentsListActivity extends ListActivity
                 in.close();
                 entity.consumeContent();
                 
+                // Fill in the list adapter
+                synchronized (COMMENT_ADAPTER_LOCK) {
+    				// Shift the comments' positions for comments after what is about to be inserted.
+    				// Shift them by (number inserted - 1) since there used to be a "load more comments" entry there.
+    				if (_mPositionOffset != 0) {
+    					int numInserted = mCommentsMap.size();
+    					for (int i = _mPositionOffset + 1; i < mCommentsList.size(); i++) {
+    						mCommentsList.get(i).setListOrder(i + numInserted - 1);
+    						// Also update other "load more comments" list items
+    						if (mMorePositions.remove(i))
+    							_mNewMorePositions.add(i + numInserted - 1);
+    					}
+    					// Now remove the "load more comments" entry
+    					mMorePositions.remove(_mPositionOffset);
+    					mCommentsList.remove(_mPositionOffset);
+    				}
+    				// Insert the new comments
+		    		for (Integer key : mCommentsMap.keySet()) {
+		    			CommentInfo ci = mCommentsMap.get(key);
+		    			mCommentsList.add(ci.getListOrder(), ci);
+		    		}
+		    		// Merge the new "load more comments" positions
+		    		mMorePositions.addAll(_mNewMorePositions);
+		    	}
+				
                 return true;
                 
             } catch (Exception e) {
@@ -1039,31 +1064,10 @@ public class CommentsListActivity extends ListActivity
     		}
 			dismissDialog(Constants.DIALOG_LOADING_COMMENTS_LIST);
     		if (success) {
-    			synchronized (COMMENT_ADAPTER_LOCK) {
-    				// Shift the comments' positions for comments after what is about to be inserted.
-    				// Shift them by (number inserted - 1) since there used to be a "load more comments" entry there.
-    				if (_mPositionOffset != 0) {
-    					int numInserted = mCommentsMap.size();
-    					for (int i = _mPositionOffset + 1; i < mCommentsAdapter.getCount(); i++) {
-    						mCommentsAdapter.getItem(i).setListOrder(i + numInserted - 1);
-    						// Also update other "load more comments" list items
-    						if (mMorePositions.remove(i))
-    							mMorePositions.add(i + numInserted - 1);
-    					}
-    					// Now remove the "load more comments" entry
-    					mMorePositions.remove(_mPositionOffset);
-    					mCommentsAdapter.remove(mCommentsAdapter.getItem(_mPositionOffset));
-    				}
-    				// Insert the new comments
-		    		for (Integer key : mCommentsMap.keySet()) {
-		    			CommentInfo ci = mCommentsMap.get(key);
-		    			mCommentsAdapter.insert(ci, ci.getListOrder());
-		    		}
-		    		// Merge the new "load more comments" positions
-		    		mMorePositions.addAll(_mNewMorePositions);
-		    		mCommentsAdapter.notifyDataSetChanged();
-		    	}
-				if (mThreadTitle == null) {
+    			// We modified mCommentsList, which backs mCommentsAdapter, so mCommentsAdapter has changed too.
+    			mCommentsAdapter.notifyDataSetChanged();
+    			// Set title in android titlebar
+    			if (mThreadTitle == null) {
 	    			mThreadTitle = mOpThreadInfo.getTitle().replaceAll("\n ", " ").replaceAll(" \n", " ").replaceAll("\n", " ");
 	    			setTitle(mThreadTitle + " : " + mSettings.subreddit);
 	    		}
