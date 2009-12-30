@@ -206,6 +206,61 @@ public final class RedditIsFun extends ListActivity {
     	Common.saveRedditPreferences(getApplicationContext(), mSettings);
     }
     
+    @Override
+    protected void onStop() {
+    	super.onStop();
+    	
+    	// Cache
+		if (mThreadsList == null)
+			return;
+		FileOutputStream fos = null;
+		ObjectOutputStream out = null;
+		try {
+			// write the time
+			fos = openFileOutput(Constants.FILENAME_CACHE_TIME, MODE_PRIVATE);
+			out = new ObjectOutputStream(fos);
+			out.writeLong(mLastRefreshTime);
+			out.close();
+			fos.close();
+		} catch (IOException ex) {
+			if (Constants.LOGGING) Log.e(TAG, ex.getMessage());
+			deleteFile(Constants.FILENAME_SUBREDDIT_CACHE);
+		} finally {
+			try {
+				out.close();
+			} catch (Exception ignore) {}
+			try {
+				fos.close();
+			} catch (Exception ignore) {}			
+		}
+		
+		try {
+			// Write cache variables in alphabetical order by variable name.
+			fos = openFileOutput(Constants.FILENAME_SUBREDDIT_CACHE, MODE_PRIVATE);
+			out = new ObjectOutputStream(fos);
+			out.writeObject(mAfter);
+			out.writeObject(mBefore);
+			out.writeInt(mCount);
+			out.writeObject(mJumpToThreadId);
+			out.writeObject(mSettings.subreddit);
+			out.writeObject(mSortByUrl);
+			out.writeObject(mSortByUrlExtra);
+			out.writeObject(mThreadsList);
+			out.writeObject(mUrlToGetHere);
+			out.writeBoolean(mUrlToGetHereChanged);
+		} catch (IOException ex) {
+			if (Constants.LOGGING) Log.e(TAG, ex.getMessage());
+			deleteFile(Constants.FILENAME_SUBREDDIT_CACHE);
+		} finally {
+			try {
+				out.close();
+			} catch (Exception ignore) {}
+			try {
+				fos.close();
+			} catch (Exception ignore) {}			
+		}
+    }
+    
 
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent intent) {
@@ -1527,56 +1582,6 @@ public final class RedditIsFun extends ListActivity {
     	state.putCharSequence(Constants.ThreadsSort.SORT_BY_KEY, mSortByUrl);
     	state.putCharSequence(Constants.JUMP_TO_THREAD_ID_KEY, mJumpToThreadId);
     	state.putInt(Constants.THREAD_COUNT, mCount);
-    	
-    	// Cache
-		if (mThreadsList == null)
-			return;
-		FileOutputStream fos = null;
-		ObjectOutputStream out = null;
-		try {
-			// write the time
-			fos = openFileOutput(Constants.FILENAME_CACHE_TIME, MODE_PRIVATE);
-			out = new ObjectOutputStream(fos);
-			out.writeLong(mLastRefreshTime);
-			out.close();
-			fos.close();
-		} catch (IOException ex) {
-			if (Constants.LOGGING) Log.e(TAG, ex.getLocalizedMessage());
-			deleteFile(Constants.FILENAME_SUBREDDIT_CACHE);
-		} finally {
-			try {
-				out.close();
-			} catch (Exception ignore) {}
-			try {
-				fos.close();
-			} catch (Exception ignore) {}			
-		}
-		
-		try {
-			// Write cache variables in alphabetical order by variable name.
-			fos = openFileOutput(Constants.FILENAME_SUBREDDIT_CACHE, MODE_PRIVATE);
-			out = new ObjectOutputStream(fos);
-			out.writeObject(mAfter);
-			out.writeObject(mBefore);
-			out.writeInt(mCount);
-			out.writeObject(mJumpToThreadId);
-			out.writeObject(mSettings.subreddit);
-			out.writeObject(mSortByUrl);
-			out.writeObject(mSortByUrlExtra);
-			out.writeObject(mThreadsList);
-			out.writeObject(mUrlToGetHere);
-			out.writeBoolean(mUrlToGetHereChanged);
-		} catch (IOException ex) {
-			if (Constants.LOGGING) Log.e(TAG, ex.getLocalizedMessage());
-			deleteFile(Constants.FILENAME_SUBREDDIT_CACHE);
-		} finally {
-			try {
-				out.close();
-			} catch (Exception ignore) {}
-			try {
-				fos.close();
-			} catch (Exception ignore) {}			
-		}
     }
     
     /**

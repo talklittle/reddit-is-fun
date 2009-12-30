@@ -278,6 +278,61 @@ public class CommentsListActivity extends ListActivity
     	Common.saveRedditPreferences(this, mSettings);
     }
     
+    @Override
+    protected void onStop() {
+    	super.onStop();
+    	
+    	// Cache
+		if (mCommentsList == null || mSettings.threadId == null)
+			return;
+		FileOutputStream fos = null;
+		ObjectOutputStream out = null;
+		try {
+			// write the time
+			fos = openFileOutput(Constants.FILENAME_CACHE_TIME, MODE_PRIVATE);
+			out = new ObjectOutputStream(fos);
+			out.writeLong(mLastRefreshTime);
+			out.close();
+			fos.close();
+		} catch (IOException ex) {
+			if (Constants.LOGGING) Log.e(TAG, ex.getMessage());
+			Common.deleteAllCaches(getApplicationContext());
+		} finally {
+			try {
+				out.close();
+			} catch (Exception ignore) {}
+			try {
+				fos.close();
+			} catch (Exception ignore) {}			
+		}
+		
+		try {
+			// Write cache variables in alphabetical order by variable name.
+			fos = openFileOutput(Constants.FILENAME_COMMENTS_CACHE, MODE_PRIVATE);
+			out = new ObjectOutputStream(fos);
+			out.writeObject(mCommentsList);
+			out.writeObject(mJumpToCommentId);
+		    out.writeInt(mJumpToCommentPosition);
+		    out.writeObject(mMorePositions);
+			out.writeInt(mNumVisibleComments);
+			out.writeObject(mOpThreadInfo);
+			out.writeObject(mSettings.subreddit);
+			out.writeObject(mSettings.threadId);
+			out.writeObject(mSortByUrl);
+			out.writeObject(mThreadTitle);
+		} catch (IOException ex) {
+			if (Constants.LOGGING) Log.e(TAG, ex.getMessage());
+			deleteFile(Constants.FILENAME_COMMENTS_CACHE);
+		} finally {
+			try {
+				out.close();
+			} catch (Exception ignore) {}
+			try {
+				fos.close();
+			} catch (Exception ignore) {}			
+		}
+    }
+    
 
     private final class CommentsListAdapter extends ArrayAdapter<CommentInfo> {
     	static final int OP_ITEM_VIEW_TYPE = 0;
@@ -2430,7 +2485,7 @@ public class CommentsListActivity extends ListActivity
     		    // Cache is old
     		    return false;
     		} catch (Exception ex) {
-    			if (Constants.LOGGING) Log.e(TAG, ex.getMessage());
+    			if (Constants.LOGGING) Log.e(TAG, "ReadCacheTask " + ex.getMessage());
     			deleteFile(Constants.FILENAME_COMMENTS_CACHE);
     			return false;
     		} finally {
@@ -2492,56 +2547,6 @@ public class CommentsListActivity extends ListActivity
     	state.putCharSequence(Constants.REPLY_TARGET_NAME_KEY, mReplyTargetName);
     	state.putCharSequence(Constants.EDIT_TARGET_BODY_KEY, mEditTargetBody);
     	state.putString(Constants.DELETE_TARGET_KIND_KEY, mDeleteTargetKind);
-    	
-    	// Cache
-		if (mCommentsList == null || mSettings.threadId == null)
-			return;
-		FileOutputStream fos = null;
-		ObjectOutputStream out = null;
-		try {
-			// write the time
-			fos = openFileOutput(Constants.FILENAME_CACHE_TIME, MODE_PRIVATE);
-			out = new ObjectOutputStream(fos);
-			out.writeLong(mLastRefreshTime);
-			out.close();
-			fos.close();
-		} catch (IOException ex) {
-			if (Constants.LOGGING) Log.e(TAG, ex.getLocalizedMessage());
-			Common.deleteAllCaches(getApplicationContext());
-		} finally {
-			try {
-				out.close();
-			} catch (Exception ignore) {}
-			try {
-				fos.close();
-			} catch (Exception ignore) {}			
-		}
-		
-		try {
-			// Write cache variables in alphabetical order by variable name.
-			fos = openFileOutput(Constants.FILENAME_COMMENTS_CACHE, MODE_PRIVATE);
-			out = new ObjectOutputStream(fos);
-			out.writeObject(mCommentsList);
-			out.writeObject(mJumpToCommentId);
-		    out.writeInt(mJumpToCommentPosition);
-		    out.writeObject(mMorePositions);
-			out.writeInt(mNumVisibleComments);
-			out.writeObject(mOpThreadInfo);
-			out.writeObject(mSettings.subreddit);
-			out.writeObject(mSettings.threadId);
-			out.writeObject(mSortByUrl);
-			out.writeObject(mThreadTitle);
-		} catch (IOException ex) {
-			if (Constants.LOGGING) Log.e(TAG, ex.getLocalizedMessage());
-			deleteFile(Constants.FILENAME_COMMENTS_CACHE);
-		} finally {
-			try {
-				out.close();
-			} catch (Exception ignore) {}
-			try {
-				fos.close();
-			} catch (Exception ignore) {}			
-		}
     }
     
     /**
