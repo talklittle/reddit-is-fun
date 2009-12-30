@@ -61,6 +61,12 @@ public class RedditPreferencesPage extends PreferenceActivity
         		getPreferenceScreen().getSharedPreferences()
                 .getString(Constants.PREF_THEME, null)));
         
+        e = findPreference(Constants.PREF_ROTATION);
+        e.setOnPreferenceChangeListener(this);
+        e.setSummary(getVisualRotationName(
+        		getPreferenceScreen().getSharedPreferences()
+                .getString(Constants.PREF_ROTATION, null)));
+        
         e = findPreference(Constants.PREF_MAIL_NOTIFICATION_STYLE);
         e.setOnPreferenceChangeListener(this);
         e.setSummary(getVisualMailNotificationStyleName(
@@ -85,6 +91,7 @@ public class RedditPreferencesPage extends PreferenceActivity
     protected void onResume() {
     	super.onResume();
     	Common.loadRedditPreferences(this, mSettings, null);
+    	setRequestedOrientation(mSettings.rotation);
     }
 
     @Override
@@ -111,6 +118,10 @@ public class RedditPreferencesPage extends PreferenceActivity
     	} else if (pref.getKey().equals(Constants.PREF_THEME)) {
             pref.setSummary(getVisualThemeName((String) objValue));
             mSettings.setTheme(RedditSettings.Theme.valueOf((String) objValue));
+            return true;
+    	} else if (pref.getKey().equals(Constants.PREF_ROTATION)) {
+            pref.setSummary(getVisualRotationName((String) objValue));
+            mSettings.setRotation(RedditSettings.Rotation.valueOf((String) objValue));
             return true;
         } else if (pref.getKey().equals(Constants.PREF_MAIL_NOTIFICATION_STYLE)) {
             pref.setSummary(getVisualMailNotificationStyleName((String) objValue));
@@ -197,6 +208,23 @@ public class RedditPreferencesPage extends PreferenceActivity
                 R.array.pref_theme_choices);
         CharSequence[] enumNames = getResources().getTextArray(
                 R.array.pref_theme_values);
+        // Sanity check
+        if (visualNames.length != enumNames.length) {
+            return "";
+        }
+        for (int i = 0; i < enumNames.length; i++) {
+            if (enumNames[i].equals(enumName)) {
+                return visualNames[i];
+            }
+        }
+        return "";
+    }
+    
+    private CharSequence getVisualRotationName(String enumName) {
+        CharSequence[] visualNames = getResources().getTextArray(
+                R.array.pref_rotation_choices);
+        CharSequence[] enumNames = getResources().getTextArray(
+                R.array.pref_rotation_values);
         // Sanity check
         if (visualNames.length != enumNames.length) {
             return "";

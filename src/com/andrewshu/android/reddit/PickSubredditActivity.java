@@ -104,6 +104,7 @@ public final class PickSubredditActivity extends ListActivity {
     	super.onCreate(savedInstanceState);
         
     	Common.loadRedditPreferences(this, mSettings, mClient);
+    	setRequestedOrientation(mSettings.rotation);
     	setTheme(mSettings.theme);
     	
         setContentView(R.layout.pick_subreddit_view);

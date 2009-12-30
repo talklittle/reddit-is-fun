@@ -146,6 +146,7 @@ public final class RedditIsFun extends ListActivity {
         mIsOnCreate = true;
                 
         Common.loadRedditPreferences(getApplicationContext(), mSettings, mClient);
+        setRequestedOrientation(mSettings.rotation);
         setTheme(mSettings.theme);
         
         setContentView(R.layout.threads_list_content);
@@ -175,6 +176,7 @@ public final class RedditIsFun extends ListActivity {
     	int previousTheme = mSettings.theme;
     	boolean previousLoggedIn = mSettings.loggedIn;
     	Common.loadRedditPreferences(getApplicationContext(), mSettings, mClient);
+    	setRequestedOrientation(mSettings.rotation);
     	if (mSettings.theme != previousTheme) {
     		setTheme(mSettings.theme);
     		setContentView(R.layout.threads_list_content);

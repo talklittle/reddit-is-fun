@@ -139,6 +139,9 @@ public class Common {
     	// Theme
     	editor.putString(Constants.PREF_THEME, RedditSettings.Theme.toString(rSettings.theme));
     	
+    	// Rotation
+    	editor.putString(Constants.PREF_ROTATION, RedditSettings.Rotation.toString(rSettings.rotation));
+    	
     	// Notifications
     	editor.putString(Constants.PREF_MAIL_NOTIFICATION_STYLE, rSettings.mailNotificationStyle);
     	editor.putString(Constants.PREF_MAIL_NOTIFICATION_SERVICE, rSettings.mailNotificationService);
@@ -181,6 +184,10 @@ public class Common {
         // Theme
         rSettings.setTheme(RedditSettings.Theme.valueOf(
         		sessionPrefs.getString(Constants.PREF_THEME, Constants.PREF_THEME_LIGHT)));
+        
+        // Rotation
+        rSettings.setRotation(RedditSettings.Rotation.valueOf(
+        		sessionPrefs.getString(Constants.PREF_ROTATION, Constants.PREF_ROTATION_UNSPECIFIED)));
         
         // Notifications
         rSettings.setMailNotificationStyle(sessionPrefs.getString(Constants.PREF_MAIL_NOTIFICATION_STYLE, Constants.PREF_MAIL_NOTIFICATION_STYLE_DEFAULT));

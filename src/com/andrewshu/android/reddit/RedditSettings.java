@@ -37,6 +37,7 @@ public class RedditSettings {
 	
 	// --- Themes ---
 	int theme = R.style.Reddit_Light;
+	int rotation = -1;  // -1 means unspecified
 	
 	String mailNotificationStyle = Constants.PREF_MAIL_NOTIFICATION_STYLE_DEFAULT;
 	String mailNotificationService = Constants.PREF_MAIL_NOTIFICATION_SERVICE_OFF;
@@ -72,6 +73,38 @@ public class RedditSettings {
 			}
 		}
 	}
+	public static class Rotation {
+		/* From http://developer.android.com/reference/android/R.attr.html#screenOrientation
+		 * unspecified -1
+		 * landscape 0
+		 * portrait 1
+		 * user 2
+		 * behind 3
+		 * sensor 4
+		 * nosensor 5
+		 */
+		public static int valueOf(String valueString) {
+			if (Constants.PREF_ROTATION_UNSPECIFIED.equals(valueString))
+				return -1;
+			if (Constants.PREF_ROTATION_PORTRAIT.equals(valueString))
+				return 1;
+			if (Constants.PREF_ROTATION_LANDSCAPE.equals(valueString))
+				return 0;
+			return -1;
+		}
+		public static String toString(int value) {
+			switch (value) {
+			case -1:
+				return Constants.PREF_ROTATION_UNSPECIFIED;
+			case 1:
+				return Constants.PREF_ROTATION_PORTRAIT;
+			case 0:
+				return Constants.PREF_ROTATION_LANDSCAPE;
+			default:
+				return Constants.PREF_ROTATION_UNSPECIFIED;
+			}
+		}
+	}
 	
 	// --- Setters ---
 	
@@ -96,20 +129,12 @@ public class RedditSettings {
 		this.modhash = modhash;
 	}
 	
-	void setUsername(CharSequence username) {
-		this.username = username;
-	}
-	
 	void setRedditSessionCookie(Cookie redditSessionCookie) {
 		this.redditSessionCookie = redditSessionCookie;
 	}
 	
-	void setThreadDownloadLimit(int threadDownloadLimit) {
-		this.threadDownloadLimit = threadDownloadLimit;
-	}
-
-	void setTheme(int theme) {
-		this.theme = theme;
+	void setRotation(int rotation) {
+		this.rotation = rotation;
 	}
 	
 	void setSubreddit(CharSequence subreddit) {
@@ -117,7 +142,20 @@ public class RedditSettings {
 		isFrontpage = Constants.FRONTPAGE_STRING.equals(subreddit);
 	}
 	
+	void setTheme(int theme) {
+		this.theme = theme;
+	}
+	
+	void setThreadDownloadLimit(int threadDownloadLimit) {
+		this.threadDownloadLimit = threadDownloadLimit;
+	}
+
 	void setThreadId(CharSequence threadId) {
 		this.threadId = threadId;
 	}
+
+	void setUsername(CharSequence username) {
+		this.username = username;
+	}
+	
 }

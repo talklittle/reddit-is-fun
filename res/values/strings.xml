@@ -119,6 +119,19 @@
         <item>THEME_DARK</item>
     </string-array>
 
+	<string name="pref_rotation">Screen rotation</string>
+	<string name="pref_rotation_dialogtitle">Screen rotation</string>
+	<string-array name="pref_rotation_choices">
+        <item>System settings (default)</item>
+        <item>Portrait</item>
+        <item>Landscape</item>
+    </string-array>
+	<string-array name="pref_rotation_values" translatable="false">
+        <item>ROTATION_UNSPECIFIED</item>
+        <item>ROTATION_PORTRAIT</item>
+        <item>ROTATION_LANDSCAPE</item>
+    </string-array>
+	
 	<string name="pref_mail_notification_style">Mail notification style</string>
 	<string name="pref_mail_notification_style_dialogtitle">Mail notification style</string>
 	<string-array name="pref_mail_notification_style_choices">

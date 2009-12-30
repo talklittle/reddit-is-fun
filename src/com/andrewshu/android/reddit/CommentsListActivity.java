@@ -179,6 +179,7 @@ public class CommentsListActivity extends ListActivity
         mIsOnCreate = true;
         
         Common.loadRedditPreferences(this, mSettings, mClient);
+        setRequestedOrientation(mSettings.rotation);
         setTheme(mSettings.theme);
         
         setContentView(R.layout.comments_list_content);
@@ -255,6 +256,7 @@ public class CommentsListActivity extends ListActivity
     	int previousTheme = mSettings.theme;
     	boolean previousLoggedIn = mSettings.loggedIn;
     	Common.loadRedditPreferences(this, mSettings, mClient);
+    	setRequestedOrientation(mSettings.rotation);
     	if (mSettings.theme != previousTheme) {
     		setTheme(mSettings.theme);
     		setContentView(R.layout.threads_list_content);

@@ -93,6 +93,7 @@ public class SubmitLinkActivity extends TabActivity {
 		super.onCreate(icicle);
 		
 		Common.loadRedditPreferences(this, mSettings, mClient);
+		setRequestedOrientation(mSettings.rotation);
 		setTheme(mSettings.theme);
 		
 		setContentView(R.layout.submit_link_main);

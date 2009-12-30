@@ -38,6 +38,14 @@
         		android:entries="@array/pref_theme_choices"
         		android:entryValues="@array/pref_theme_values"
         		android:dialogTitle="@string/pref_theme_dialogtitle" />
+        		
+   		<ListPreference
+   				android:key="rotation"
+        		android:title="@string/pref_rotation"
+        		android:defaultValue="ROTATION_UNSPECIFIED"
+        		android:entries="@array/pref_rotation_choices"
+        		android:entryValues="@array/pref_rotation_values"
+        		android:dialogTitle="@string/pref_rotation_dialogtitle" />
         
         <ListPreference
         		android:key="mail_notification_style"
