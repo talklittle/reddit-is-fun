@@ -675,6 +675,8 @@ public class CommentsListActivity extends ListActivity
     	private int _mPositionOffset;
     	private int _mIndentation;
     	private String _mMoreChildrenId;
+    	// Temporary storage for new "load more comments" found in the JSON
+    	private HashSet<Integer> _mNewMorePositions = new HashSet<Integer>();
     	
     	/**
     	 * Constructor to do normal comments page
@@ -878,7 +880,7 @@ public class CommentsListActivity extends ListActivity
 				CommentInfo moreCi = new CommentInfo();
 				moreCi.setListOrder(mNestedCommentsJSONOrder);
 				moreCi.setIndent(commentsNested);
-		    	mMorePositions.add(mNestedCommentsJSONOrder);
+		    	_mNewMorePositions.add(mNestedCommentsJSONOrder);
 		    	mNestedCommentsJSONOrder++;
 				
 		    	jp.nextToken();
@@ -939,7 +941,7 @@ public class CommentsListActivity extends ListActivity
 						if (Constants.JSON_MORE.equals(jp.getText())) {
 		//					more = true;
 				    		ci.put(Constants.JSON_KIND, Constants.JSON_MORE);
-					    	mMorePositions.add(ci.getListOrder());
+					    	_mNewMorePositions.add(ci.getListOrder());
 				    		
 					    	jp.nextToken();
 					    	if (!Constants.JSON_DATA.equals(jp.getCurrentName()))
@@ -995,10 +997,7 @@ public class CommentsListActivity extends ListActivity
 				}
 				// Finished parsing one of the children
 				mCommentsMap.put(ci.getListOrder(), ci);
-				if (_mPositionOffset == 0)
-					publishProgress(mNestedCommentsJSONOrder);
-				else
-					publishProgress(mNestedCommentsJSONOrder - _mPositionOffset + 1);
+				publishProgress(mNestedCommentsJSONOrder - _mPositionOffset);
 			}
 			// Wind down the end of the "data" then "replies" objects
 			for (int i = 0; i < 2; i++)
@@ -1045,20 +1044,26 @@ public class CommentsListActivity extends ListActivity
     				// Shift them by (number inserted - 1) since there used to be a "load more comments" entry there.
     				if (_mPositionOffset != 0) {
     					int numInserted = mCommentsMap.size();
-    					for (int i = _mPositionOffset + 1; i < mCommentsList.size(); i++)
-    						mCommentsList.get(i).setListOrder(i + numInserted - 1);
+    					for (int i = _mPositionOffset + 1; i < mCommentsAdapter.getCount(); i++) {
+    						mCommentsAdapter.getItem(i).setListOrder(i + numInserted - 1);
+    						// Also update other "load more comments" list items
+    						if (mMorePositions.remove(i))
+    							mMorePositions.add(i + numInserted - 1);
+    					}
     					// Now remove the "load more comments" entry
     					mMorePositions.remove(_mPositionOffset);
-    					mCommentsList.remove(_mPositionOffset);
+    					mCommentsAdapter.remove(mCommentsAdapter.getItem(_mPositionOffset));
     				}
     				// Insert the new comments
 		    		for (Integer key : mCommentsMap.keySet()) {
 		    			CommentInfo ci = mCommentsMap.get(key);
-		    			mCommentsList.add(ci.getListOrder(), ci);
+		    			mCommentsAdapter.insert(ci, ci.getListOrder());
 		    		}
+		    		// Merge the new "load more comments" positions
+		    		mMorePositions.addAll(_mNewMorePositions);
+		    		mCommentsAdapter.notifyDataSetChanged();
 		    	}
-				resetUI(new CommentsListAdapter(CommentsListActivity.this, mCommentsList));
-	    		if (mThreadTitle == null) {
+				if (mThreadTitle == null) {
 	    			mThreadTitle = mOpThreadInfo.getTitle().replaceAll("\n ", " ").replaceAll(" \n", " ").replaceAll("\n", " ");
 	    			setTitle(mThreadTitle + " : " + mSettings.subreddit);
 	    		}
@@ -1107,7 +1112,7 @@ public class CommentsListActivity extends ListActivity
     			Toast.makeText(CommentsListActivity.this, "Logged in as "+mUsername, Toast.LENGTH_SHORT).show();
     			// Check mail
     			new Common.PeekEnvelopeTask(CommentsListActivity.this, mClient, mSettings.mailNotificationStyle).execute();
-	    		// Refresh the threads list
+	    		// Refresh the comments list
     			new DownloadCommentsTask().execute(Constants.DEFAULT_COMMENT_DOWNLOAD_LIMIT);
     		} else {
             	Common.showErrorToast(mUserError, Toast.LENGTH_LONG, CommentsListActivity.this);
@@ -2445,7 +2450,7 @@ public class CommentsListActivity extends ListActivity
     			// Ignore. Probably caused by screen rotation.
     		}
     		if (success) {
-    			// Use the cached threads list
+    			// Use the cached comments list
 		    	resetUI(new CommentsListAdapter(CommentsListActivity.this, mCommentsList));
 		    	setTitle(mThreadTitle + " : " + mSettings.subreddit);
 		    	// Point the list to whichever comment the user was looking at
