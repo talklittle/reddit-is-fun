@@ -2430,7 +2430,7 @@ public class CommentsListActivity extends ListActivity
     		    // Cache is old
     		    return false;
     		} catch (Exception ex) {
-    			if (Constants.LOGGING) Log.e(TAG, ex.getLocalizedMessage());
+    			if (Constants.LOGGING) Log.e(TAG, ex.getMessage());
     			deleteFile(Constants.FILENAME_COMMENTS_CACHE);
     			return false;
     		} finally {
