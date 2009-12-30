@@ -1256,7 +1256,7 @@ public final class RedditIsFun extends ListActivity {
     		pdialog = new ProgressDialog(this);
     		pdialog.setMessage("Loading cached subreddit...");
     		pdialog.setIndeterminate(true);
-    		pdialog.setCancelable(false);
+    		pdialog.setCancelable(true);
     		dialog = pdialog;
     		break;
     	case Constants.DIALOG_LOADING_LOOK_OF_DISAPPROVAL:
