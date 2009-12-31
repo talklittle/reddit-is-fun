@@ -166,9 +166,6 @@
 	    android:layout_height="wrap_content"
 	    android:layout_marginLeft="8dip"
 	    android:layout_marginRight="8dip"
-	    android:drawableLeft="@drawable/selftext_border"
-	    android:drawableRight="@drawable/selftext_border"
-	    android:drawableBottom="@drawable/selftext_border"
 	    android:textSize="12sp"
 	    android:visibility="gone"
     />

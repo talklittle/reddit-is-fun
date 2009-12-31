@@ -222,6 +222,8 @@ public class Constants {
     static final String JSON_NEW = "new";
     static final String JSON_NUM_COMMENTS = "num_comments";
 	static final String JSON_REPLIES = "replies";
+	static final String JSON_SELFTEXT = "selftext";
+	static final String JSON_SELFTEXT_HTML = "selftext_html";
 	static final String JSON_SUBJECT = "subject";
     
     // TabSpec tags

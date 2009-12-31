@@ -354,7 +354,6 @@ public class CommentsListActivity extends ListActivity
 	                
 	                submitterView.setVisibility(View.VISIBLE);
 	                submissionTimeView.setVisibility(View.VISIBLE);
-	                selftextView.setVisibility(View.VISIBLE);
 	                
 	                // Set the title and domain using a SpannableStringBuilder
 	                SpannableStringBuilder builder = new SpannableStringBuilder();
@@ -412,8 +411,9 @@ public class CommentsListActivity extends ListActivity
 	                // --- End part copied from ThreadsListAdapter ---
 	                
 	                // Selftext is rendered in a WebView
-	            	if (!Constants.NULL_STRING.equals(mOpThreadInfo.getSelftext())) {
-	            		selftextView.setText(mOpThreadInfo.mSSBSelftext);
+	            	if (!Constants.EMPTY_STRING.equals(mOpThreadInfo.getSelftext())) {
+	            		selftextView.setVisibility(View.VISIBLE);
+		                selftextView.setText(mOpThreadInfo.mSSBSelftext);
 	            	} else {
 	            		selftextView.setVisibility(View.GONE);
 	            	}
@@ -844,6 +844,8 @@ public class CommentsListActivity extends ListActivity
 									int numComments = Integer.valueOf(jp.getText());
 									if (numComments != _mNumComments)
 										_mNumComments = numComments;
+								} else if (Constants.JSON_SELFTEXT.equals(namefield)) {
+									ti.mSSBSelftext = markdown.markdown(ti.getSelftext(), new SpannableStringBuilder(), ti.mUrls);
 								}
 							}
 						}
