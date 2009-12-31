@@ -1,0 +1,120 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+ * Copyright 2009 Andrew Shu
+ *
+ * This file is part of "reddit is fun".
+ *
+ * "reddit is fun" is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * "reddit is fun" is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with "reddit is fun".  If not, see <http://www.gnu.org/licenses/>.
+-->
+
+<!-- Note that this is used for both the OP and comment replies in commentslist -->
+
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+              android:id="@+id/layout_root"
+              android:layout_width="fill_parent"
+              android:layout_height="fill_parent"
+              android:minWidth="280dip"
+              android:padding="30dip"
+              >
+    
+    <!-- Up/down/login -->
+        
+	<CheckBox android:id="@+id/vote_up_button"
+		android:layout_width="100dip"
+		android:layout_height="50dip"
+		android:layout_marginTop="20dip"
+		android:layout_marginBottom="10dip"
+		android:layout_alignParentTop="true"
+		android:layout_alignParentLeft="true"
+		android:background="@android:color/transparent"
+		android:button="@drawable/vote_up_big_statelist"
+		/>
+				
+	<CheckBox android:id="@+id/vote_down_button"
+		android:layout_width="100dip"
+		android:layout_height="50dip"
+		android:layout_marginTop="10dip"
+		android:layout_below="@id/vote_up_button"
+		android:layout_alignParentLeft="true"
+		android:background="@android:color/transparent"
+		android:button="@drawable/vote_down_big_statelist"
+		/>
+	<Button android:id="@+id/login_button"
+		android:layout_width="100dip"
+		android:layout_height="75dip"
+		android:layout_marginTop="25dip"
+		android:layout_centerVertical="true"
+		android:visibility="visible"
+		android:text="@string/login_button"
+		/>
+		
+	<!-- To the right of up/down/login -->
+    
+    <TextView android:id="@+id/title"
+   		android:layout_width="wrap_content"
+   		android:layout_height="wrap_content"
+   		android:layout_alignParentTop="true"
+   		android:layout_marginLeft="120dip"
+   		android:layout_marginBottom="5dip"
+   		android:textSize="14sp"
+   		android:textColor="@color/white"
+   		android:maxLines="2"
+   		/>
+   	
+   	<TextView android:id="@+id/url"
+   		android:layout_width="wrap_content"
+   		android:layout_height="wrap_content"
+   		android:layout_below="@id/title"
+   		android:layout_alignLeft="@id/title"
+   		android:singleLine="true"
+   		android:ellipsize="marquee"
+   		android:textSize="9sp"
+   		android:textColor="@color/white"
+   		/>
+   	
+   	
+  	<TextView android:id="@+id/submissionTime_submitter_subreddit"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+		android:layout_below="@id/url"
+	    android:layout_alignLeft="@id/url"
+	    android:layout_marginBottom="15dip"
+	    
+        android:singleLine="true"
+        android:ellipsize="marquee"
+        android:textSize="10sp"
+        android:textColor="@color/white"
+    />
+    
+   	
+   	<!-- Right column -->
+	
+   	<Button android:id="@+id/reply_button"
+   		android:layout_width="110dip"
+   		android:layout_height="50dip"
+   		android:layout_below="@id/submissionTime_submitter_subreddit"
+   		android:layout_alignParentRight="true"
+   		android:singleLine="true"
+   		android:text="@string/comment_reply_button"
+   		/>
+   	<Button android:id="@+id/thread_link_button"
+   		android:layout_width="110dip"
+   		android:layout_height="50dip"
+   		android:layout_marginRight="20dip"
+   		android:layout_below="@id/submissionTime_submitter_subreddit"
+   		android:layout_toLeftOf="@id/reply_button"
+   		android:singleLine="true"
+   		android:text="@string/thread_link_button"
+   		/>
+</RelativeLayout>

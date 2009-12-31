@@ -1,0 +1,174 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+ * Copyright 2009 Andrew Shu
+ *
+ * This file is part of "reddit is fun".
+ *
+ * "reddit is fun" is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * "reddit is fun" is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with "reddit is fun".  If not, see <http://www.gnu.org/licenses/>.
+-->
+<!--
+/*
+ * reddit is fun
+ *
+ * by talklittle
+ */
+-->
+
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="fill_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:minHeight="?android:attr/listPreferredItemHeight"
+    android:paddingTop="2dip"
+    android:paddingBottom="2dip"
+    >
+
+	<LinearLayout
+		android:layout_width="wrap_content"
+		android:layout_height="wrap_content"
+		android:orientation="horizontal"
+		>
+		<RelativeLayout android:id="@+id/threads_list_left_section"
+		    android:layout_width="fill_parent"
+		    android:layout_height="wrap_content"
+		    >
+	
+		    <ImageView android:id="@+id/vote_up_image"
+				android:layout_width="16dip"
+				android:layout_height="8dip"
+				android:layout_marginLeft="12dip"
+				android:layout_marginRight="12dip"
+				android:layout_marginTop="4dip"
+				android:src="@drawable/vote_up_gray"
+				/>
+				
+			<TextView android:id="@+id/votes"
+		        android:layout_width="40dip"
+		        android:layout_height="32dip"
+		        android:layout_alignParentLeft="true"
+		        android:layout_below="@id/vote_up_image"
+		      
+		      	android:singleLine="true"
+		        android:ellipsize="marquee"
+		        android:gravity="center"
+		        android:textStyle="bold"
+		    />
+		
+			<ImageView android:id="@+id/vote_down_image"
+				android:layout_width="16dip"
+				android:layout_height="8dip"
+				android:layout_marginLeft="12dip"
+				android:layout_marginRight="12dip"
+				android:layout_below="@id/votes"
+				android:src="@drawable/vote_down_gray"
+				/>
+		    
+		    <!-- Thumbnail invisible by default -->
+		    <ImageView android:id="@+id/thumbnail"
+		        android:layout_width="wrap_content"
+		        android:layout_height="wrap_content"
+		        android:layout_toRightOf="@id/votes"
+		
+				android:visibility="invisible"
+		        android:gravity="center"
+		        android:scaleType="centerInside"
+		    />
+		    
+	    </RelativeLayout>
+	
+		<RelativeLayout
+		    android:layout_width="fill_parent"
+		    android:layout_height="wrap_content"
+		    android:paddingLeft="14dip"
+		    android:paddingRight="5dip">
+	
+			<!-- Top row -->
+		
+		    <TextView android:id="@+id/title"
+		        android:layout_width="wrap_content"
+		        android:layout_height="wrap_content"
+		        android:layout_marginBottom="1dip"
+		        android:layout_alignParentLeft="true"
+		        android:textSize="14sp"
+		    />
+		    
+		    <!-- Next row -->
+		    
+	        <TextView android:id="@+id/numComments"
+		        android:layout_width="wrap_content"
+		        android:layout_height="wrap_content"
+		        android:layout_below="@id/title"
+		        android:layout_alignLeft="@id/title"
+		        android:layout_marginRight="5dip"
+		        android:text="0 cmts"
+		
+		        android:singleLine="true"
+		        android:ellipsize="marquee"
+		        android:textSize="10sp"
+		    />
+		
+		    <TextView android:id="@+id/subreddit"
+		        android:layout_width="wrap_content"
+		        android:layout_height="wrap_content"
+		        android:layout_marginLeft="5dip"
+		        android:layout_toRightOf="@id/numComments"
+		        android:layout_alignBaseline="@id/numComments"
+		        android:textSize="10sp"
+		        android:text="funny"
+		    />
+	
+			<!-- A bottommost row used for OP posts in commentslist -->		
+		
+			<TextView android:id="@+id/submissionTime"
+		        android:layout_width="wrap_content"
+		        android:layout_height="wrap_content"
+				android:layout_below="@id/numComments"
+			    android:layout_alignLeft="@id/numComments"
+			    android:layout_marginRight="4dip"
+			    android:text="very recently"
+		        android:visibility="gone"
+		        
+		        android:singleLine="true"
+		        android:ellipsize="marquee"
+		        android:textSize="10sp"
+		    />
+		    
+		    <TextView android:id="@+id/submitter"
+		    	android:layout_width="wrap_content"
+			    android:layout_height="wrap_content"
+			   	android:layout_toRightOf="@id/submissionTime"
+		        android:layout_alignBaseline="@id/submissionTime"
+			    android:layout_marginRight="4dip"
+				android:text="by talklittle"
+				android:visibility="gone"
+		
+				android:singleLine="true"
+		        android:ellipsize="marquee"
+		        android:textSize="10sp"
+		    />
+		    
+		</RelativeLayout>
+	</LinearLayout>
+	
+    <TextView android:id="@+id/selftext"
+    	android:layout_width="fill_parent"
+	    android:layout_height="wrap_content"
+	    android:layout_marginLeft="8dip"
+	    android:layout_marginRight="8dip"
+	    android:background="@drawable/selftext_border"
+	    android:textSize="14sp"
+	    android:visibility="gone"
+    />
+
+</LinearLayout>

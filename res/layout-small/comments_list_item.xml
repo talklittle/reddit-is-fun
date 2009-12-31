@@ -1,0 +1,129 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+ * Copyright 2009 Andrew Shu
+ *
+ * This file is part of "reddit is fun".
+ *
+ * "reddit is fun" is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * "reddit is fun" is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with "reddit is fun".  If not, see <http://www.gnu.org/licenses/>.
+-->
+<!--
+/*
+ * reddit is fun
+ *
+ * by talklittle
+ */
+-->
+
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="fill_parent"
+    android:layout_height="wrap_content"
+    android:paddingTop="2dip"
+    android:paddingBottom="2dip"
+    >
+    
+    <!-- Comment Indentation hack -->
+    <TextView android:id="@+id/left_indent"
+    	android:layout_width="wrap_content"
+    	android:layout_height="wrap_content"
+    	android:visibility="invisible"
+    	/>
+
+<!-- Left section -->
+    <ImageView android:id="@+id/vote_up_image"
+		android:layout_width="8dip"
+		android:layout_height="8dip"
+		android:layout_marginLeft="2dip"
+		android:layout_marginRight="2dip"
+		android:layout_marginTop="4dip"
+		android:layout_toRightOf="@id/left_indent"
+		android:src="@drawable/vote_up_gray"
+		/>
+		
+	<ImageView android:id="@+id/vote_down_image"
+		android:layout_width="8dip"
+		android:layout_height="8dip"
+		android:layout_marginTop="2dip"
+		android:layout_marginLeft="2dip"
+		android:layout_marginRight="2dip"
+		android:layout_below="@id/vote_up_image"
+		android:layout_toRightOf="@id/left_indent"
+		android:src="@drawable/vote_down_gray"
+		/>
+    
+	<LinearLayout
+		android:orientation="vertical"
+		android:layout_width="fill_parent"
+		android:layout_height="wrap_content"
+		android:layout_weight="1"
+		android:layout_toRightOf="@id/vote_up_image">
+
+		<!-- Top row -->
+		
+		<RelativeLayout
+		    android:layout_width="fill_parent"
+		    android:layout_height="wrap_content"
+		    android:paddingLeft="5dip"
+		    android:paddingRight="5dip">
+
+			<TextView android:id="@+id/submitter"
+		        android:layout_width="wrap_content"
+		        android:layout_height="wrap_content"
+		        android:layout_marginRight="5dip"
+		        
+		        android:singleLine="true"
+		        android:ellipsize="marquee"
+		        android:textSize="12sp"
+		        android:textColor="#888"
+		        android:textStyle="bold"
+		    />
+		    
+			<TextView android:id="@+id/votes"
+		        android:layout_width="wrap_content"
+		        android:layout_height="wrap_content"
+		        android:layout_toRightOf="@id/submitter"
+		        android:layout_marginRight="4dip"
+		        
+		      	android:singleLine="true"
+		        android:ellipsize="marquee"
+		        android:textSize="12sp"
+		        />
+			
+			<TextView android:id="@+id/submissionTime"
+		        android:layout_width="wrap_content"
+		        android:layout_height="wrap_content"
+		        android:layout_toRightOf="@id/votes"
+		        android:layout_alignBaseline="@id/submitter"
+		        
+		        android:singleLine="true"
+		        android:ellipsize="marquee"
+		        android:textSize="12sp"
+		    	/>
+		            
+	    
+	    <!-- Bottom row -->
+		    
+	        <TextView android:id="@+id/body"
+		        android:layout_width="wrap_content"
+		        android:layout_height="wrap_content"
+		        android:layout_below="@id/submitter"
+		        android:layout_alignLeft="@id/submitter"
+		        android:text="Loading..."
+		        android:textSize="14sp"
+		    />
+		    
+	    </RelativeLayout>
+	    
+    </LinearLayout>
+
+</RelativeLayout>
