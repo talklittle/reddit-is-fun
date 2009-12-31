@@ -411,7 +411,8 @@ public class CommentsListActivity extends ListActivity
 	                // --- End part copied from ThreadsListAdapter ---
 	                
 	                // Selftext is rendered in a WebView
-	            	if (!Constants.EMPTY_STRING.equals(mOpThreadInfo.getSelftext())) {
+	            	if (!Constants.EMPTY_STRING.equals(mOpThreadInfo.getSelftext())
+	            			&& !Constants.NULL_STRING.equals(mOpThreadInfo.getSelftext())) {
 	            		selftextView.setVisibility(View.VISIBLE);
 		                selftextView.setText(mOpThreadInfo.mSSBSelftext);
 	            	} else {
