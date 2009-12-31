@@ -83,8 +83,6 @@ import android.view.ViewGroup;
 import android.view.ContextMenu.ContextMenuInfo;
 import android.view.View.OnClickListener;
 import android.view.View.OnKeyListener;
-import android.webkit.WebView;
-import android.webkit.WebSettings.TextSize;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.CheckBox;
@@ -407,7 +405,7 @@ public class CommentsListActivity extends ListActivity
 	                TextView submitterView = (TextView) view.findViewById(R.id.submitter);
 	                ImageView voteUpView = (ImageView) view.findViewById(R.id.vote_up_image);
 	                ImageView voteDownView = (ImageView) view.findViewById(R.id.vote_down_image);
-	                WebView selftextView = (WebView) view.findViewById(R.id.selftext);
+	                TextView selftextView = (TextView) view.findViewById(R.id.selftext);
 	                
 	                submitterView.setVisibility(View.VISIBLE);
 	                submissionTimeView.setVisibility(View.VISIBLE);
@@ -469,17 +467,8 @@ public class CommentsListActivity extends ListActivity
 	                // --- End part copied from ThreadsListAdapter ---
 	                
 	                // Selftext is rendered in a WebView
-	            	if (!Constants.NULL_STRING.equals(mOpThreadInfo.getSelftextHtml())) {
-	            		selftextView.getSettings().setTextSize(TextSize.SMALLER);
-	            		String baseURL = new StringBuilder("http://www.reddit.com/r/")
-	            				.append(mSettings.subreddit).append("/comments/").append(item.getId()).toString();
-	            		String selftextHtml;
-	            		if (mSettings.theme == R.style.Reddit_Dark)
-	            			selftextHtml = Constants.CSS_DARK;
-	            		else
-	            			selftextHtml = "";
-	            		selftextHtml += mOpThreadInfo.getSelftextHtml(); 
-	            		selftextView.loadDataWithBaseURL(baseURL, selftextHtml, "text/html", "UTF-8", null);
+	            	if (!Constants.NULL_STRING.equals(mOpThreadInfo.getSelftext())) {
+	            		selftextView.setText(mOpThreadInfo.mSSBSelftext);
 	            	} else {
 	            		selftextView.setVisibility(View.GONE);
 	            	}
@@ -2260,9 +2249,11 @@ public class CommentsListActivity extends ListActivity
         		submissionStuffView.setText(sb);
     			// For self posts, you're already there!
     			if (("self.").toLowerCase().equals(mOpThreadInfo.getDomain().substring(0, 5).toLowerCase())) {
-    				linkButton.setVisibility(View.INVISIBLE);
+    				linkButton.setText(R.string.comment_links_button);
+    				linkToEmbeddedURLs(linkButton);
     			} else {
     				final String url = mOpThreadInfo.getURL();
+    				linkButton.setText(R.string.thread_link_button);
 	    			linkButton.setOnClickListener(new OnClickListener() {
 	    				public void onClick(View v) {
 	    					dismissDialog(Constants.DIALOG_THING_CLICK);
@@ -2279,69 +2270,7 @@ public class CommentsListActivity extends ListActivity
     			submissionStuffView.setVisibility(View.INVISIBLE);
 
     			// Get embedded URLs
-    			final ArrayList<String> urls = new ArrayList<String>();
-    			final ArrayList<MarkdownURL> vtUrls = mVoteTargetCommentInfo.mUrls;
-    			int urlsCount = vtUrls.size();
-    			for (int i = 0; i < urlsCount; i++)
-    				urls.add(vtUrls.get(i).url);
-    	        if (urlsCount == 0) {
-        			linkButton.setVisibility(View.INVISIBLE);
-    	        } else {
-    	        	linkButton.setVisibility(View.VISIBLE);
-    	        	linkButton.setText("links");
-    	        	linkButton.setOnClickListener(new OnClickListener() {
-    	        		public void onClick(View v) {
-    	        			dismissDialog(Constants.DIALOG_THING_CLICK);
-    	        			
-    	    	            ArrayAdapter<String> adapter = 
-    	    	                new ArrayAdapter<String>(CommentsListActivity.this, android.R.layout.select_dialog_item, urls) {
-    	    	                public View getView(int position, View convertView, ViewGroup parent) {
-    	    	                    View v = super.getView(position, convertView, parent);
-    	    	                    try {
-    	    	                        String url = getItem(position).toString();
-    	    	                        TextView tv = (TextView) v;
-    	    	                        Drawable d = getPackageManager().getActivityIcon(new Intent(Intent.ACTION_VIEW, Uri.parse(url)));
-    	    	                        if (d != null) {
-    	    	                            d.setBounds(0, 0, d.getIntrinsicHeight(), d.getIntrinsicHeight());
-    	    	                            tv.setCompoundDrawablePadding(10);
-    	    	                            tv.setCompoundDrawables(d, null, null, null);
-    	    	                        }
-    	    	                        final String telPrefix = "tel:";
-    	    	                        if (url.startsWith(telPrefix)) {
-    	    	                            url = PhoneNumberUtils.formatNumber(url.substring(telPrefix.length()));
-    	    	                        }
-    	    	                        tv.setText(url);
-    	    	                    } catch (android.content.pm.PackageManager.NameNotFoundException ex) {
-    	    	                        ;
-    	    	                    }
-    	    	                    return v;
-    	    	                }
-    	    	            };
-
-    	    	            AlertDialog.Builder b = new AlertDialog.Builder(CommentsListActivity.this);
-
-    	    	            DialogInterface.OnClickListener click = new DialogInterface.OnClickListener() {
-    	    	                public final void onClick(DialogInterface dialog, int which) {
-    	    	                    if (which >= 0) {
-    	    	                        Common.launchBrowser(urls.get(which), CommentsListActivity.this);
-    	    	                    }
-    	    	                }
-    	    	            };
-    	    	                
-    	    	            b.setTitle(R.string.select_link_title);
-    	    	            b.setCancelable(true);
-    	    	            b.setAdapter(adapter, click);
-
-    	    	            b.setNegativeButton(android.R.string.cancel, new DialogInterface.OnClickListener() {
-    	    	                public final void onClick(DialogInterface dialog, int which) {
-    	    	                    dialog.dismiss();
-    	    	                }
-    	    	            });
-
-    	    	            b.show();
-    	        		}
-    	        	});
-    	        }
+    			linkToEmbeddedURLs(linkButton);
     		}
     		final CheckBox voteUpButton = (CheckBox) dialog.findViewById(R.id.vote_up_button);
     		final CheckBox voteDownButton = (CheckBox) dialog.findViewById(R.id.vote_down_button);
@@ -2415,6 +2344,81 @@ public class CommentsListActivity extends ListActivity
     	}
     }
     
+    /**
+     * Helper function to add links from mVoteTargetCommentInfo to the button
+     * @param linkButton Button that should open list of links
+     */
+    private void linkToEmbeddedURLs(Button linkButton) {
+		final ArrayList<String> urls = new ArrayList<String>();
+		final ArrayList<MarkdownURL> vtUrls;
+		final ThreadInfo opTi = mVoteTargetCommentInfo.getOP();
+		if (opTi != null)
+			vtUrls = opTi.mUrls;
+		else
+			vtUrls = mVoteTargetCommentInfo.mUrls;
+		int urlsCount = vtUrls.size();
+		for (int i = 0; i < urlsCount; i++)
+			urls.add(vtUrls.get(i).url);
+        if (urlsCount == 0) {
+			linkButton.setVisibility(View.INVISIBLE);
+        } else {
+        	linkButton.setVisibility(View.VISIBLE);
+        	linkButton.setText(R.string.comment_links_button);
+        	linkButton.setOnClickListener(new OnClickListener() {
+        		public void onClick(View v) {
+        			dismissDialog(Constants.DIALOG_THING_CLICK);
+        			
+    	            ArrayAdapter<String> adapter = 
+    	                new ArrayAdapter<String>(CommentsListActivity.this, android.R.layout.select_dialog_item, urls) {
+    	                public View getView(int position, View convertView, ViewGroup parent) {
+    	                    View v = super.getView(position, convertView, parent);
+    	                    try {
+    	                        String url = getItem(position).toString();
+    	                        TextView tv = (TextView) v;
+    	                        Drawable d = getPackageManager().getActivityIcon(new Intent(Intent.ACTION_VIEW, Uri.parse(url)));
+    	                        if (d != null) {
+    	                            d.setBounds(0, 0, d.getIntrinsicHeight(), d.getIntrinsicHeight());
+    	                            tv.setCompoundDrawablePadding(10);
+    	                            tv.setCompoundDrawables(d, null, null, null);
+    	                        }
+    	                        final String telPrefix = "tel:";
+    	                        if (url.startsWith(telPrefix)) {
+    	                            url = PhoneNumberUtils.formatNumber(url.substring(telPrefix.length()));
+    	                        }
+    	                        tv.setText(url);
+    	                    } catch (android.content.pm.PackageManager.NameNotFoundException ex) {
+    	                        ;
+    	                    }
+    	                    return v;
+    	                }
+    	            };
+
+    	            AlertDialog.Builder b = new AlertDialog.Builder(CommentsListActivity.this);
+
+    	            DialogInterface.OnClickListener click = new DialogInterface.OnClickListener() {
+    	                public final void onClick(DialogInterface dialog, int which) {
+    	                    if (which >= 0) {
+    	                        Common.launchBrowser(urls.get(which), CommentsListActivity.this);
+    	                    }
+    	                }
+    	            };
+    	                
+    	            b.setTitle(R.string.select_link_title);
+    	            b.setCancelable(true);
+    	            b.setAdapter(adapter, click);
+
+    	            b.setNegativeButton(android.R.string.cancel, new DialogInterface.OnClickListener() {
+    	                public final void onClick(DialogInterface dialog, int which) {
+    	                    dialog.dismiss();
+    	                }
+    	            });
+
+    	            b.show();
+        		}
+        	});
+        }
+    }
+    
     private final CompoundButton.OnCheckedChangeListener voteUpOnCheckedChangeListener = new CompoundButton.OnCheckedChangeListener() {
     	public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
 	    	dismissDialog(Constants.DIALOG_THING_CLICK);
@@ -2475,6 +2479,7 @@ public class CommentsListActivity extends ListActivity
         			mMorePositions = (HashSet<Integer>) in.readObject();
         			mNumVisibleComments = in.readInt();
         			mOpThreadInfo = (ThreadInfo) in.readObject();
+        			mOpThreadInfo.mSSBSelftext = markdown.markdown(mOpThreadInfo.getSelftext(), new SpannableStringBuilder(), mOpThreadInfo.mUrls);
     		    	mSettings.setSubreddit((CharSequence) in.readObject());
     				mSettings.setThreadId((CharSequence) in.readObject());
     				mSortByUrl = (CharSequence) in.readObject();

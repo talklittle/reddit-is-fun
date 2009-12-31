@@ -20,7 +20,10 @@
 package com.andrewshu.android.reddit;
 
 import java.io.Serializable;
+import java.util.ArrayList;
 import java.util.HashMap;
+
+import android.text.SpannableStringBuilder;
 
 /**
  * Class representing a thread posting in reddit API.
@@ -64,7 +67,9 @@ public class ThreadInfo implements Serializable {
 	};
 	
 	public HashMap<String, String> mValues = new HashMap<String, String>();
+	public final ArrayList<MarkdownURL> mUrls = new ArrayList<MarkdownURL>();
 //	public JsonNode mMediaEmbed; // Unused.
+	transient public SpannableStringBuilder mSSBSelftext = null;
 	
 	public void put(String key, String value) {
 		mValues.put(key, value);

@@ -46,6 +46,7 @@
 	<string name="thread_link_button">link</string>
 	<string name="thread_comments_button">comments</string>
 	
+	<string name="comment_links_button">links</string>
 	<string name="comment_reply_button">reply</string>
 	<string name="reply_save_button">save</string>
 	<string name="reply_cancel_button">cancel</string>
