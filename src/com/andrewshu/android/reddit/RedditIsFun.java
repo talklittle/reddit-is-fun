@@ -111,8 +111,6 @@ public final class RedditIsFun extends ListActivity {
 
     // Whether it should use the cache. Otherwise download from Internet.
     volatile private boolean mShouldUseThreadsCache = true;
-    // Whether onCreate was called. (if not, then no need to even load from cache)
-    private boolean mIsOnCreate = false;
     
     // Navigation that can be cached
     private CharSequence mAfter = null;
@@ -143,8 +141,6 @@ public final class RedditIsFun extends ListActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         
-        mIsOnCreate = true;
-                
         Common.loadRedditPreferences(getApplicationContext(), mSettings, mClient);
         setRequestedOrientation(mSettings.rotation);
         setTheme(mSettings.theme);
@@ -185,7 +181,7 @@ public final class RedditIsFun extends ListActivity {
     	}
     	if (mSettings.loggedIn != previousLoggedIn)
     		mShouldUseThreadsCache = false;
-    	if (mIsOnCreate)
+    	if (mThreadsAdapter == null)
     		new ReadCacheTask().execute();
     	new Common.PeekEnvelopeTask(this, mClient, mSettings.mailNotificationStyle).execute();
     }

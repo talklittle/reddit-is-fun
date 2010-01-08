@@ -130,8 +130,6 @@ public class CommentsListActivity extends ListActivity
     
     // Whether the cache should be used during onResume().
     volatile private boolean mShouldUseCommentsCache = true;
-    // Whether onCreate was called. (if not, then no need to even load from cache)
-    private boolean mIsOnCreate = false;
     
     // Navigation items to be cached
     private long mLastRefreshTime = 0;
@@ -173,8 +171,6 @@ public class CommentsListActivity extends ListActivity
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        
-        mIsOnCreate = true;
         
         Common.loadRedditPreferences(this, mSettings, mClient);
         setRequestedOrientation(mSettings.rotation);
@@ -265,7 +261,7 @@ public class CommentsListActivity extends ListActivity
     	}
     	if (mSettings.loggedIn != previousLoggedIn)
     		mShouldUseCommentsCache = false;
-    	if (mIsOnCreate)
+    	if (mCommentsAdapter == null)
     		new ReadCacheTask().execute();
 	    new Common.PeekEnvelopeTask(this, mClient, mSettings.mailNotificationStyle).execute();
     }
