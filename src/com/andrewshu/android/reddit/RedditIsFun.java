@@ -183,6 +183,8 @@ public final class RedditIsFun extends ListActivity {
     		mShouldUseThreadsCache = false;
     	if (mThreadsAdapter == null)
     		new ReadCacheTask().execute();
+    	else
+    		jumpToThread();
     	new Common.PeekEnvelopeTask(this, mClient, mSettings.mailNotificationStyle).execute();
     }
     
@@ -1502,8 +1504,6 @@ public final class RedditIsFun extends ListActivity {
 			    		setTitle("reddit.com: what's new online!");
 			    	else
 			    		setTitle("/r/"+mSettings.subreddit.toString().trim());
-			    	// Point the list to whichever thread the user was looking at
-			    	jumpToThread();
 	    		} else {
 	    			//Common.showErrorToast("Reading subreddit cache failed.", Toast.LENGTH_SHORT, RedditIsFun.this);
 	    			// Since it didn't read from cache, download normally from Internet.
