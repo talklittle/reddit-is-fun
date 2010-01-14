@@ -27,6 +27,7 @@ import android.text.SpannableString;
 import android.text.SpannableStringBuilder;
 import android.text.Spanned;
 import android.text.style.ForegroundColorSpan;
+import android.util.Log;
 import dk.brics.automaton.AutomatonMatcher;
 import dk.brics.automaton.RegExp;
 import dk.brics.automaton.RunAutomaton;
@@ -45,19 +46,15 @@ import dk.brics.automaton.RunAutomaton;
 public class Markdown {
 //    private Random rnd = new Random();
 //    private static final MarkdownCharacterProtector CHAR_PROTECTOR = new MarkdownCharacterProtector();
+	
+	static final String TAG = "Markdown";
     
     static final RunAutomaton inlineLinkAutomaton = new RunAutomaton(new RegExp("(" + // Whole match = $1
             "\\[([^\\]]*)\\]" + // Link text = $2
             "\\(" +
-            "[ \t]*" +
-            "<?([^>]*)>?" + // href = $3
-            "[ \t]*" +
-            "(" +
-            "('[^']*'|\\\"[^\"]*\\\")" + // Quoted title = $5
-            ")?" +
+            "([^\\)\\\\]|(\\\\.))+" +  // 3 cases: 1. simple URL. 2. escaped right-paren in URL. 3. escaped anything in URL. 
             "\\)" +
-            ")",
-            RegExp.NONE).toAutomaton());
+            ")", RegExp.NONE).toAutomaton());
     // Use inlineLinkAutomaton to check for whole match, then use inlineLink to capture groups
     static final Pattern inlineLink = Pattern.compile("(" + // Whole match = $1
             "\\[(.*?)\\]" + // Link text = $2
@@ -119,8 +116,10 @@ public class Markdown {
     private SpannableStringBuilder doAnchors(SpannableStringBuilder ssb, ArrayList<MarkdownURL> urls) {
     	// Inline-style links: [link text](url "optional title")
         AutomatonMatcher am = inlineLinkAutomaton.newMatcher(ssb);
+        // The offset into the entire original string 
         int start = 0;
         while (am.find()) {
+        	// The offsets from start (offset into orig. string = start + anchorStart)
         	int anchorStart = am.start();
         	int anchorEnd = am.end();
         	Matcher m = inlineLink.matcher(am.group());
@@ -130,10 +129,13 @@ public class Markdown {
 	        String url = m.group(3);
 	        String title = m.group(6);
 	        int linkTextLength = linkText.length();
+	        
+	        if (Constants.LOGGING) Log.d(TAG, "linkText="+linkText + " url="+url + " title="+ title);
+	        
 	        // protect emphasis (* and _) within urls
 //	        url = url.replaceAll("\\*", CHAR_PROTECTOR.encode("*"));
 //	        url = url.replaceAll("_", CHAR_PROTECTOR.encode("_"));
-	        urls.add(new MarkdownURL(anchorStart, url));
+	        urls.add(new MarkdownURL(start + anchorStart, url));
 //	        StringBuffer result = new StringBuffer();
 	        // TODO: Show title (if any) alongside url in popup menu
 //	        if (title != null) {
@@ -150,10 +152,10 @@ public class Markdown {
 	        SpannableString ss = new SpannableString(linkText);
 	        ForegroundColorSpan fcs = new ForegroundColorSpan(Constants.MARKDOWN_LINK_COLOR);
         	ss.setSpan(fcs, 0, linkTextLength, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
-        	ssb = ssb.replace(anchorStart, anchorEnd, ss);
+        	ssb = ssb.replace(start + anchorStart, start + anchorEnd, ss);
         	// Skip past what we just replaced
-        	start = anchorStart + linkText.length();
-        	am = inlineLinkAutomaton.newMatcher(ssb, start, ssb.length());
+        	am = inlineLinkAutomaton.newMatcher(ssb, start + anchorStart + linkTextLength, ssb.length());
+        	start += anchorStart + linkTextLength;
         }
         return ssb;
     }
