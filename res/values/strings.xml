@@ -51,6 +51,12 @@
 	<string name="reply_save_button">save</string>
 	<string name="reply_cancel_button">cancel</string>
 	
+	<string name="compose_destination_text">to:</string>
+	<string name="compose_subject_text">subject:</string>
+	<string name="compose_message_text">message:</string>
+	<string name="compose_send_button">send</string>
+	<string name="compose_cancel_button">cancel</string>
+	
 	<string name="comment_hidden">[+]</string>
 	<string name="more_comments">load more comments</string>
 	<string name="next_threads">next 25</string>
