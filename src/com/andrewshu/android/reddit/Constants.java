@@ -87,6 +87,7 @@ public class Constants {
     static final int DIALOG_GOTO_PARENT = 28;
     static final int DIALOG_EDIT = 29;
     static final int DIALOG_DELETE = 30;
+    static final int DIALOG_COMPOSE = 31;
     // progress dialogs
     static final int DIALOG_LOGGING_IN = 1000;
     static final int DIALOG_LOADING_THREADS_LIST = 1001;
@@ -100,6 +101,7 @@ public class Constants {
     static final int DIALOG_EDITING = 1009;
     static final int DIALOG_LOADING_THREADS_CACHE = 1010;
     static final int DIALOG_LOADING_COMMENTS_CACHE = 1011;
+    static final int DIALOG_COMPOSING = 1012;
     
     // Special CSS for webviews to match themes
     static final String CSS_DARK = "<style>body{color:#c0c0c0;background-color:#191919}a:link{color:#ffffff}</style>";

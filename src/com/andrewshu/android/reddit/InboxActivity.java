@@ -65,6 +65,8 @@ import android.text.style.URLSpan;
 import android.util.Log;
 import android.view.KeyEvent;
 import android.view.LayoutInflater;
+import android.view.Menu;
+import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.View.OnClickListener;
@@ -599,81 +601,154 @@ public final class InboxActivity extends ListActivity
     	}
     }
     
+    private class MessageComposeTask extends AsyncTask<CharSequence, Void, Boolean> {
+    	MessageInfo _mTargetMessageInfo;
+    	String _mUserError = "Error composing message. Please try again.";
+    	
+    	MessageComposeTask(MessageInfo targetMessageInfo) {
+    		_mTargetMessageInfo = targetMessageInfo;
+    	}
+    	
+    	@Override
+        public Boolean doInBackground(CharSequence... text) {
+        	String userError = "Error composing message. Please try again.";
+        	HttpEntity entity = null;
+        	
+        	String status = "";
+        	if (!mSettings.loggedIn) {
+        		Common.showErrorToast("You must be logged in to compose a message.", Toast.LENGTH_LONG, InboxActivity.this);
+        		_mUserError = "Not logged in";
+        		return false;
+        	}
+        	// Update the modhash if necessary
+        	if (mSettings.modhash == null) {
+        		CharSequence modhash = Common.doUpdateModhash(mClient);
+        		if (modhash == null) {
+        			// doUpdateModhash should have given an error about credentials
+        			Common.doLogout(mSettings, mClient);
+        			if (Constants.LOGGING) Log.e(TAG, "Message compose failed because doUpdateModhash() failed");
+        			return false;
+        		}
+        		mSettings.setModhash(modhash);
+        	}
+        	
+        	try {
+        		// Construct data
+    			List<NameValuePair> nvps = new ArrayList<NameValuePair>();
+    			nvps.add(new BasicNameValuePair("text", text[0].toString()));
+    			nvps.add(new BasicNameValuePair("subject", _mTargetMessageInfo.getSubject()));
+    			nvps.add(new BasicNameValuePair("to", _mTargetMessageInfo.getDest()));
+    			nvps.add(new BasicNameValuePair("id", "%23compose-message"));
+    			nvps.add(new BasicNameValuePair("uh", mSettings.modhash.toString()));
+    			nvps.add(new BasicNameValuePair("thing_id", ""));
+    			// Votehash is currently unused by reddit 
+//    				nvps.add(new BasicNameValuePair("vh", "0d4ab0ffd56ad0f66841c15609e9a45aeec6b015"));
+    			
+    			HttpPost httppost = new HttpPost("http://www.reddit.com/api/compose");
+    	        httppost.setEntity(new UrlEncodedFormEntity(nvps, HTTP.UTF_8));
+    	        
+    	        if (Constants.LOGGING) Log.d(TAG, nvps.toString());
+    	        
+                // Perform the HTTP POST request
+    	    	HttpResponse response = mClient.execute(httppost);
+    	    	status = response.getStatusLine().toString();
+            	if (!status.contains("OK"))
+            		throw new HttpException(status);
+            	
+            	entity = response.getEntity();
+
+            	BufferedReader in = new BufferedReader(new InputStreamReader(entity.getContent()));
+            	String line = in.readLine();
+            	in.close();
+            	if (line == null || Constants.EMPTY_STRING.equals(line)) {
+            		throw new HttpException("No content returned from compose POST");
+            	}
+            	if (line.contains("WRONG_PASSWORD")) {
+            		throw new Exception("Wrong password");
+            	}
+            	if (line.contains("USER_REQUIRED")) {
+            		// The modhash probably expired
+            		mSettings.setModhash(null);
+            		throw new Exception("User required. Huh?");
+            	}
+            	
+            	if (Constants.LOGGING) Common.logDLong(TAG, line);
+
+            	Matcher idMatcher = NEW_ID_PATTERN.matcher(line);
+            	if (idMatcher.find()) {
+            		// Don't need id since reply isn't posted to inbox
+//            		newFullname = idMatcher.group(1);
+//            		newId = idMatcher.group(3);
+            	} else {
+            		if (line.contains("RATELIMIT")) {
+                		// Try to find the # of minutes using regex
+                    	Matcher rateMatcher = RATELIMIT_RETRY_PATTERN.matcher(line);
+                    	if (rateMatcher.find())
+                    		userError = rateMatcher.group(1);
+                    	else
+                    		userError = "you are trying to submit too fast. try again in a few minutes.";
+                		throw new Exception(userError);
+                	}
+            	}
+            	
+            	entity.consumeContent();
+            	
+            	return true;
+            	
+        	} catch (Exception e) {
+        		if (entity != null) {
+        			try {
+        				entity.consumeContent();
+        			} catch (IOException e2) {
+        				if (Constants.LOGGING) Log.e(TAG, e.getMessage());
+        			}
+        		}
+        		if (Constants.LOGGING) Log.e(TAG, e.getMessage());
+        	}
+        	return false;
+        }
+    	
+    	@Override
+    	public void onPreExecute() {
+    		showDialog(Constants.DIALOG_COMPOSING);
+    	}
+    	
+    	@Override
+    	public void onPostExecute(Boolean success) {
+    		dismissDialog(Constants.DIALOG_COMPOSING);
+    		if (success) {
+    			_mTargetMessageInfo.setReplyDraft("");
+    			Toast.makeText(InboxActivity.this, "Message sent.", Toast.LENGTH_SHORT).show();
+    			// TODO: add the reply beneath the original, OR redirect to sent messages page
+    		} else {
+    			Common.showErrorToast(_mUserError, Toast.LENGTH_LONG, InboxActivity.this);
+    		}
+    	}
+    }
         
     
-    // TODO: Options menu
-//    /**
-//     * Populates the menu.
-//     */
-//    @Override
-//    public boolean onCreateOptionsMenu(Menu menu) {
-//        super.onCreateOptionsMenu(menu);
-//        
-//        menu.add(0, Constants.DIALOG_OP, 0, "OP")
-//        	.setOnMenuItemClickListener(new CommentsListMenu(Constants.DIALOG_OP));
-//        
-//        // Login and Logout need to use the same ID for menu entry so they can be swapped
-//        if (mSettings.loggedIn) {
-//        	menu.add(0, Constants.DIALOG_LOGIN, 1, "Logout: " + mSettings.username)
-//       			.setOnMenuItemClickListener(new CommentsListMenu(Constants.DIALOG_LOGOUT));
-//        } else {
-//        	menu.add(0, Constants.DIALOG_LOGIN, 1, "Login")
-//       			.setOnMenuItemClickListener(new CommentsListMenu(Constants.DIALOG_LOGIN));
-//        }
-//        
-//        menu.add(0, Constants.DIALOG_REFRESH, 2, "Refresh")
-//        	.setOnMenuItemClickListener(new CommentsListMenu(Constants.DIALOG_REFRESH));
-//        
-//        menu.add(0, Constants.DIALOG_REPLY, 3, "Reply to thread")
-//    		.setOnMenuItemClickListener(new CommentsListMenu(Constants.DIALOG_REPLY));
-//        
-//        if (mSettings.theme == R.style.Reddit_Light) {
-//        	menu.add(0, Constants.DIALOG_THEME, 4, "Dark")
-////        		.setIcon(R.drawable.dark_circle_menu_icon)
-//        		.setOnMenuItemClickListener(new CommentsListMenu(Constants.DIALOG_THEME));
-//        } else {
-//        	menu.add(0, Constants.DIALOG_THEME, 4, "Light")
-////	    		.setIcon(R.drawable.light_circle_menu_icon)
-//	    		.setOnMenuItemClickListener(new CommentsListMenu(Constants.DIALOG_THEME));
-//        }
-//        
-//        menu.add(0, Constants.DIALOG_OPEN_BROWSER, 5, "Open in browser")
-//    		.setOnMenuItemClickListener(new CommentsListMenu(Constants.DIALOG_OPEN_BROWSER));
-//        
-//        return true;
-//    }
-//    
-//    @Override
-//    public boolean onPrepareOptionsMenu(Menu menu) {
-//    	super.onPrepareOptionsMenu(menu);
-//    	
-//    	// Login/Logout
-//    	if (mSettings.loggedIn) {
-//	        menu.findItem(Constants.DIALOG_LOGIN).setTitle("Logout: " + mSettings.username)
-//	        	.setOnMenuItemClickListener(new CommentsListMenu(Constants.DIALOG_LOGOUT));
-//    	} else {
-//            menu.findItem(Constants.DIALOG_LOGIN).setTitle("Login")
-//            	.setOnMenuItemClickListener(new CommentsListMenu(Constants.DIALOG_LOGIN));
-//    	}
-//    	
-//    	// Theme: Light/Dark
-//    	if (mSettings.theme == R.style.Reddit_Light) {
-//    		menu.findItem(Constants.DIALOG_THEME).setTitle("Dark");
-////    			.setIcon(R.drawable.dark_circle_menu_icon);
-//    	} else {
-//    		menu.findItem(Constants.DIALOG_THEME).setTitle("Light");
-////    			.setIcon(R.drawable.light_circle_menu_icon);
-//    	}
-//        
-//        return true;
-//    }
-//
-//    @Override
-//    public boolean onOptionsItemSelected(MenuItem item) {
-//    	
-//    	
-//    	return true;
-//    }
+
+    /**
+     * Populates the menu.
+     */
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        super.onCreateOptionsMenu(menu);
+        
+        menu.add(0, Constants.DIALOG_COMPOSE, 0, "Compose Message");
+        
+        return true;
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+    	
+    	if(item.getItemId() == Constants.DIALOG_COMPOSE) {
+    		showDialog(Constants.DIALOG_COMPOSE);
+    	}
+    	
+    	return true;
+    }
 //
 //    private class CommentsListMenu implements MenuItem.OnMenuItemClickListener {
 //        private int mAction;
@@ -844,6 +919,31 @@ public final class InboxActivity extends ListActivity
     			}
     		});
     		break;
+    	case Constants.DIALOG_COMPOSE:
+    		dialog = new Dialog(this);
+    		dialog.setContentView(R.layout.compose_dialog);
+    		final EditText composeDestination = (EditText) dialog.findViewById(R.id.compose_destination_input);
+    		final EditText composeSubject = (EditText) dialog.findViewById(R.id.compose_subject_input);
+    		final EditText composeText = (EditText) dialog.findViewById(R.id.compose_text_input);
+    		final Button composeSendButton = (Button) dialog.findViewById(R.id.compose_send_button);
+    		final Button composeCancelButton = (Button) dialog.findViewById(R.id.compose_cancel_button);
+    		composeSendButton.setOnClickListener(new OnClickListener() {
+				@Override
+				public void onClick(View v) {
+		    		MessageInfo hi = new MessageInfo();
+		    		hi.put("dest", composeDestination.getText().toString());
+		    		hi.put("subject", composeSubject.getText().toString());
+		    		new MessageComposeTask(hi).execute(composeText.getText().toString());
+		    		dismissDialog(Constants.DIALOG_COMPOSE);
+				}
+    		});
+    		composeCancelButton.setOnClickListener(new OnClickListener() {
+				@Override
+				public void onClick(View v) {
+					dismissDialog(Constants.DIALOG_COMPOSE);
+				}
+    		});
+    		break;
     		
    		// "Please wait"
     	case Constants.DIALOG_LOGGING_IN:
@@ -866,8 +966,15 @@ public final class InboxActivity extends ListActivity
     		pdialog.setIndeterminate(true);
     		pdialog.setCancelable(false);
     		dialog = pdialog;
+    		break;   		
+    	case Constants.DIALOG_COMPOSING:
+    		pdialog = new ProgressDialog(this);
+    		pdialog.setMessage("Composing message...");
+    		pdialog.setIndeterminate(true);
+    		pdialog.setCancelable(false);
+    		dialog = pdialog;
     		break;
-    	
+    		
     	default:
     		throw new IllegalArgumentException("Unexpected dialog id "+id);
     	}
