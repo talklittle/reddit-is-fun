@@ -17,69 +17,81 @@
  * You should have received a copy of the GNU General Public License
  * along with "reddit is fun".  If not, see <http://www.gnu.org/licenses/>.
 -->
-<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
               android:id="@+id/layout_root"
               android:orientation="vertical"
               android:layout_width="wrap_content"
               android:layout_height="fill_parent"
               android:padding="10dp"
               >
-	<TextView android:id="@+id/compose_destination_textview"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="@string/compose_destination_text"
-        android:textStyle="bold"
-        android:layout_alignParentTop="true"
-        android:layout_alignParentLeft="true"
-        />
-    <EditText android:id="@+id/compose_destination_input"
+	<ScrollView android:id="@+id/bodyscroll"
 		android:layout_width="fill_parent"
 		android:layout_height="wrap_content"
-		android:layout_below="@id/compose_destination_textview"
-		android:layout_alignParentLeft="true"
-		/>    
-	<TextView android:id="@+id/compose_subject_textview"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="@string/compose_subject_text"
-        android:textStyle="bold"
-        android:layout_below="@id/compose_destination_input"
-        android:layout_alignParentLeft="true"
-        />	
-	<EditText android:id="@+id/compose_subject_input"
-		android:layout_width="fill_parent"
-		android:layout_height="wrap_content"
-		android:lines="1"
-		android:layout_below="@id/compose_subject_textview"
-		android:layout_alignParentLeft="true"
-		/>
-	<TextView android:id="@+id/compose_message_textview"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="@string/compose_message_text"
-        android:textStyle="bold"
-        android:layout_below="@id/compose_subject_input"
-        android:layout_alignParentLeft="true"
-        />
-	<EditText android:id="@+id/compose_text_input"
-		android:layout_width="fill_parent"
-		android:layout_height="wrap_content"
-		android:lines="8"
-		android:layout_below="@id/compose_message_textview"
-		android:layout_alignParentLeft="true"
-		/>
-	<Button android:id="@+id/compose_send_button"
-		android:layout_width="wrap_content"
-		android:layout_height="wrap_content"
-		android:text="@string/compose_send_button"
-		android:layout_below="@id/compose_text_input"
-		android:layout_alignParentLeft="true"
-		/>	
-	<Button android:id="@+id/compose_cancel_button"
-		android:layout_width="wrap_content"
-		android:layout_height="wrap_content"
-		android:text="@string/compose_cancel_button"
-		android:layout_below="@id/compose_text_input"
-		android:layout_toRightOf="@id/compose_send_button"
-		/>	
-</RelativeLayout>
+		>
+		<RelativeLayout
+			android:layout_width="fill_parent"
+			android:layout_height="wrap_content"
+			>
+			<TextView android:id="@+id/compose_destination_textview"
+		        android:layout_width="wrap_content"
+		        android:layout_height="wrap_content"
+		        android:text="@string/compose_destination_text"
+		        android:textColor="@color/white"
+		        android:layout_alignParentTop="true"
+		        android:layout_alignParentLeft="true"
+		        />
+		    <EditText android:id="@+id/compose_destination_input"
+				android:layout_width="fill_parent"
+				android:layout_height="wrap_content"
+				android:layout_below="@id/compose_destination_textview"
+				android:layout_alignParentLeft="true"
+				/>    
+			<TextView android:id="@+id/compose_subject_textview"
+		        android:layout_width="wrap_content"
+		        android:layout_height="wrap_content"
+		        android:text="@string/compose_subject_text"
+		        android:textColor="@color/white"
+		        android:layout_below="@id/compose_destination_input"
+		        android:layout_alignParentLeft="true"
+		        />	
+			<EditText android:id="@+id/compose_subject_input"
+				android:layout_width="fill_parent"
+				android:layout_height="wrap_content"
+				android:lines="1"
+				android:layout_below="@id/compose_subject_textview"
+				android:layout_alignParentLeft="true"
+				/>
+			<TextView android:id="@+id/compose_message_textview"
+		        android:layout_width="wrap_content"
+		        android:layout_height="wrap_content"
+		        android:text="@string/compose_message_text"
+		        android:textColor="@color/white"
+		        android:layout_below="@id/compose_subject_input"
+		        android:layout_alignParentLeft="true"
+		        />
+			<EditText android:id="@+id/compose_text_input"
+				android:layout_width="fill_parent"
+				android:layout_height="wrap_content"
+				android:lines="8"
+				android:layout_below="@id/compose_message_textview"
+				android:layout_alignParentLeft="true"
+				android:gravity="top|left"
+		   		android:inputType="text|textMultiLine|textCapSentences"
+			/>
+			<Button android:id="@+id/compose_send_button"
+				android:layout_width="wrap_content"
+				android:layout_height="wrap_content"
+				android:text="@string/compose_send_button"
+				android:layout_below="@id/compose_text_input"
+				android:layout_alignParentLeft="true"
+				/>	
+			<Button android:id="@+id/compose_cancel_button"
+				android:layout_width="wrap_content"
+				android:layout_height="wrap_content"
+				android:text="@string/compose_cancel_button"
+				android:layout_below="@id/compose_text_input"
+				android:layout_toRightOf="@id/compose_send_button"
+				/>
+		</RelativeLayout>
+	</ScrollView>
+</FrameLayout>

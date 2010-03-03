@@ -809,6 +809,7 @@ public final class InboxActivity extends ListActivity
     	ProgressDialog pdialog;
     	AlertDialog.Builder builder;
     	LayoutInflater inflater;
+    	View layout; // used for inflated views for AlertDialog.Builder.setView()
     	
     	switch (id) {
     	case Constants.DIALOG_LOGIN:
@@ -920,13 +921,15 @@ public final class InboxActivity extends ListActivity
     		});
     		break;
     	case Constants.DIALOG_COMPOSE:
-    		dialog = new Dialog(this);
-    		dialog.setContentView(R.layout.compose_dialog);
-    		final EditText composeDestination = (EditText) dialog.findViewById(R.id.compose_destination_input);
-    		final EditText composeSubject = (EditText) dialog.findViewById(R.id.compose_subject_input);
-    		final EditText composeText = (EditText) dialog.findViewById(R.id.compose_text_input);
-    		final Button composeSendButton = (Button) dialog.findViewById(R.id.compose_send_button);
-    		final Button composeCancelButton = (Button) dialog.findViewById(R.id.compose_cancel_button);
+    		inflater = (LayoutInflater) getSystemService(Context.LAYOUT_INFLATER_SERVICE);
+    		builder = new AlertDialog.Builder(this);
+    		layout = inflater.inflate(R.layout.compose_dialog, null);
+    		dialog = builder.setView(layout).create();
+    		final EditText composeDestination = (EditText) layout.findViewById(R.id.compose_destination_input);
+    		final EditText composeSubject = (EditText) layout.findViewById(R.id.compose_subject_input);
+    		final EditText composeText = (EditText) layout.findViewById(R.id.compose_text_input);
+    		final Button composeSendButton = (Button) layout.findViewById(R.id.compose_send_button);
+    		final Button composeCancelButton = (Button) layout.findViewById(R.id.compose_cancel_button);
     		composeSendButton.setOnClickListener(new OnClickListener() {
 				@Override
 				public void onClick(View v) {
