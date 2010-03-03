@@ -934,9 +934,22 @@ public final class InboxActivity extends ListActivity
 				@Override
 				public void onClick(View v) {
 		    		MessageInfo hi = new MessageInfo();
-		    		hi.put("dest", composeDestination.getText().toString());
-		    		hi.put("subject", composeSubject.getText().toString());
-		    		new MessageComposeTask(hi).execute(composeText.getText().toString());
+		    		// reddit.com performs these sanity checks too.
+		    		if ("".equals(composeDestination.getText().toString().trim())) {
+		    			Toast.makeText(InboxActivity.this, "please enter a username", Toast.LENGTH_LONG).show();
+		    			return;
+		    		}
+		    		if ("".equals(composeSubject.getText().toString().trim())) {
+		    			Toast.makeText(InboxActivity.this, "please enter a subject", Toast.LENGTH_LONG).show();
+		    			return;
+		    		}
+		    		if ("".equals(composeText.getText().toString().trim())) {
+		    			Toast.makeText(InboxActivity.this, "you need to enter a message", Toast.LENGTH_LONG).show();
+		    			return;
+		    		}
+		    		hi.put(MessageInfo.DEST, composeDestination.getText().toString().trim());
+		    		hi.put(MessageInfo.SUBJECT, composeSubject.getText().toString().trim());
+		    		new MessageComposeTask(hi).execute(composeText.getText().toString().trim());
 		    		dismissDialog(Constants.DIALOG_COMPOSE);
 				}
     		});
