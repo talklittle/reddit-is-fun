@@ -78,19 +78,53 @@
 				android:gravity="top|left"
 		   		android:inputType="text|textMultiLine|textCapSentences"
 			/>
-			<Button android:id="@+id/compose_send_button"
+			<TextView android:id="@+id/compose_captcha_textview"
+            	android:text="@string/compose_captcha_text"
+            	android:textColor="@color/white"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_below="@id/compose_text_input"
+                android:padding="4dip"
+                android:visibility="gone"
+                />
+            <ImageView android:id="@+id/compose_captcha_image"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_below="@id/compose_captcha_textview"
+                android:padding="4dip"
+                android:visibility="gone"
+                />
+            <EditText android:id="@+id/compose_captcha_input"
+            	android:layout_width="fill_parent"
+            	android:layout_height="wrap_content"
+            	android:layout_below="@id/compose_captcha_image"
+            	android:singleLine="true"
+            	android:visibility="gone"
+            	/>
+            <TextView android:id="@+id/compose_captcha_loading"
+            	android:text="@string/compose_captcha_loading"
+            	android:textColor="@color/white"
+            	android:layout_width="wrap_content"
+            	android:layout_height="wrap_content"
+            	android:layout_below="@id/compose_text_input"
+            	android:padding="4dip"
+            	/>
+    		<!-- Hide the send button until we know if captcha is needed -->
+    		<Button android:id="@+id/compose_send_button"
 				android:layout_width="wrap_content"
 				android:layout_height="wrap_content"
 				android:text="@string/compose_send_button"
-				android:layout_below="@id/compose_text_input"
+				android:layout_below="@id/compose_captcha_input"
 				android:layout_alignParentLeft="true"
-				/>	
+				android:visibility="invisible"
+				/>
 			<Button android:id="@+id/compose_cancel_button"
 				android:layout_width="wrap_content"
 				android:layout_height="wrap_content"
 				android:text="@string/compose_cancel_button"
-				android:layout_below="@id/compose_text_input"
+				android:layout_below="@id/compose_captcha_input"
 				android:layout_toRightOf="@id/compose_send_button"
+				android:layout_alignBaseline="@id/compose_send_button"
 				/>
 		</RelativeLayout>
 	</ScrollView>
