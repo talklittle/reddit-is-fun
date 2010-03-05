@@ -365,13 +365,14 @@ public final class InboxActivity extends ListActivity
 			if (JsonToken.START_OBJECT != jp.getCurrentToken())
 				throw new IllegalStateException(genericListingError);
 			jp.nextToken();
-			// Save the "after"
-			if (!Constants.JSON_AFTER.equals(jp.getCurrentName()))
+			// Save the modhash
+			if (!Constants.JSON_MODHASH.equals(jp.getCurrentName()))
 				throw new IllegalStateException(genericListingError);
 			jp.nextToken();
-			mAfter = jp.getText();
-			if (Constants.NULL_STRING.equals(mAfter))
-				mAfter = null;
+			if (Constants.EMPTY_STRING.equals(jp.getText()))
+				mSettings.setModhash(null);
+			else
+				mSettings.setModhash(jp.getText());
 			jp.nextToken();
 			if (!Constants.JSON_CHILDREN.equals(jp.getCurrentName()))
 				throw new IllegalStateException(genericListingError);
@@ -412,6 +413,14 @@ public final class InboxActivity extends ListActivity
 				mMessageInfos.add(mi);
 //				publishProgress(progressIndex++);
 			}
+			// Get the "after"
+			jp.nextToken();
+			if (!Constants.JSON_AFTER.equals(jp.getCurrentName()))
+				throw new IllegalStateException(genericListingError);
+			jp.nextToken();
+			mAfter = jp.getText();
+			if (Constants.NULL_STRING.equals(mAfter))
+				mAfter = null;
 			// Get the "before"
 			jp.nextToken();
 			if (!Constants.JSON_BEFORE.equals(jp.getCurrentName()))

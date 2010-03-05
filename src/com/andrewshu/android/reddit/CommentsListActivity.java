@@ -783,10 +783,17 @@ public class CommentsListActivity extends ListActivity
 			if (JsonToken.START_OBJECT != jp.getCurrentToken())
 				throw new IllegalStateException(genericListingError);
 			jp.nextToken();
-			while (!Constants.JSON_CHILDREN.equals(jp.getCurrentName())) {
-				// Don't care
-				jp.nextToken();
-			}
+			// Save the modhash
+			if (!Constants.JSON_MODHASH.equals(jp.getCurrentName()))
+				throw new IllegalStateException(genericListingError);
+			jp.nextToken();
+			if (Constants.EMPTY_STRING.equals(jp.getText()))
+				mSettings.setModhash(null);
+			else
+				mSettings.setModhash(jp.getText());
+			jp.nextToken();
+			if (!Constants.JSON_CHILDREN.equals(jp.getCurrentName()))
+				throw new IllegalStateException(genericListingError);
 			jp.nextToken();
 			if (jp.getCurrentToken() != JsonToken.START_ARRAY)
 				throw new IllegalStateException(genericListingError);
@@ -931,10 +938,17 @@ public class CommentsListActivity extends ListActivity
 		    	if (jp.nextToken() != JsonToken.START_OBJECT)
 		    		throw new IllegalStateException(genericListingError);
 		    	jp.nextToken();
-		    	while (!Constants.JSON_CHILDREN.equals(jp.getCurrentName())) {
-		    		// Don't care about "after"
-		    		jp.nextToken();
-		    	}
+				// Save the modhash
+				if (!Constants.JSON_MODHASH.equals(jp.getCurrentName()))
+					throw new IllegalStateException(genericListingError);
+				jp.nextToken();
+				if (Constants.EMPTY_STRING.equals(jp.getText()))
+					mSettings.setModhash(null);
+				else
+					mSettings.setModhash(jp.getText());
+				jp.nextToken();
+		    	if (!Constants.JSON_CHILDREN.equals(jp.getCurrentName()))
+		    		throw new IllegalStateException(genericListingError);
 		    	jp.nextToken();
 		    	if (jp.getCurrentToken() != JsonToken.START_ARRAY)
 		    		throw new IllegalStateException(genericListingError);
