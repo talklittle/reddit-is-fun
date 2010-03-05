@@ -791,7 +791,7 @@ public final class InboxActivity extends ListActivity
 					try {
 						entity.consumeContent();
 					} catch (Exception e2) {
-						if (Constants.LOGGING) Log.e(TAG, e.getMessage());
+						if (Constants.LOGGING) Log.e(TAG, e2.getMessage());
 					}
 				}
 				if (Constants.LOGGING) Log.e(TAG, "Error accessing http://www.reddit.com/message/compose/ to check for CAPTCHA");

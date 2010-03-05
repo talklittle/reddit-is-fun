@@ -1241,7 +1241,7 @@ public class CommentsListActivity extends ListActivity
         			try {
         				entity.consumeContent();
         			} catch (Exception e2) {
-        				if (Constants.LOGGING) Log.e(TAG, e.getMessage());
+        				if (Constants.LOGGING) Log.e(TAG, e2.getMessage());
         			}
         		}
         		if (Constants.LOGGING) Log.e(TAG, e.getMessage());
@@ -1369,7 +1369,7 @@ public class CommentsListActivity extends ListActivity
         			try {
         				entity.consumeContent();
         			} catch (Exception e2) {
-        				if (Constants.LOGGING) Log.e(TAG, e.getMessage());
+        				if (Constants.LOGGING) Log.e(TAG, e2.getMessage());
         			}
         		}
         		if (Constants.LOGGING) Log.e(TAG, e.getMessage());
@@ -1476,7 +1476,7 @@ public class CommentsListActivity extends ListActivity
         			try {
         				entity.consumeContent();
         			} catch (Exception e2) {
-        				if (Constants.LOGGING) Log.e(TAG, e.getMessage());
+        				if (Constants.LOGGING) Log.e(TAG, e2.getMessage());
         			}
         		}
         		if (Constants.LOGGING) Log.e(TAG, e.getMessage());
@@ -1601,7 +1601,7 @@ public class CommentsListActivity extends ListActivity
         			try {
         				entity.consumeContent();
         			} catch (Exception e2) {
-        				if (Constants.LOGGING) Log.e(TAG, e.getMessage());
+        				if (Constants.LOGGING) Log.e(TAG, e2.getMessage());
         			}
         		}
         		if (Constants.LOGGING) Log.e(TAG, e.getMessage());

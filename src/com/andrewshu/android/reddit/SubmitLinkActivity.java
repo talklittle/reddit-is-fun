@@ -329,7 +329,6 @@ public class SubmitLinkActivity extends TabActivity {
 
             	BufferedReader in = new BufferedReader(new InputStreamReader(entity.getContent()));
             	String line = in.readLine();
-            	if (Constants.LOGGING) Common.logDLong(TAG, line);
             	in.close();
             	if (line == null || Constants.EMPTY_STRING.equals(line)) {
             		throw new HttpException("No content returned from reply POST");
@@ -391,7 +390,7 @@ public class SubmitLinkActivity extends TabActivity {
         			try {
         				entity.consumeContent();
         			} catch (Exception e2) {
-        				if (Constants.LOGGING) Log.e(TAG, e.getMessage());
+        				if (Constants.LOGGING) Log.e(TAG, e2.getMessage());
         			}
         		}
         		if (Constants.LOGGING) Log.e(TAG, e.getMessage());
