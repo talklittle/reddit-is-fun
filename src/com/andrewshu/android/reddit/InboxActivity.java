@@ -588,19 +588,18 @@ public final class InboxActivity extends ListActivity
                 	throw new Exception("No id returned by reply POST.");
             	}
             	
-            	entity.consumeContent();
-            	
             	return true;
             	
         	} catch (Exception e) {
+        		if (Constants.LOGGING) Log.e(TAG, e.getMessage());
+        	} finally {
         		if (entity != null) {
         			try {
         				entity.consumeContent();
         			} catch (IOException e2) {
-        				if (Constants.LOGGING) Log.e(TAG, e.getMessage());
+        				if (Constants.LOGGING) Log.e(TAG, e2.getMessage());
         			}
         		}
-        		if (Constants.LOGGING) Log.e(TAG, e.getMessage());
         	}
         	return false;
         }
@@ -719,22 +718,22 @@ public final class InboxActivity extends ListActivity
             		if (line.contains("BAD_CAPTCHA")) {
             			_mUserError = "Bad CAPTCHA. Try again.";
             			new DownloadCaptchaTask(_mDialog).execute();
+            			return false;
             		}
             	}
-            	
-            	entity.consumeContent();
             	
             	return true;
             	
         	} catch (Exception e) {
+        		if (Constants.LOGGING) Log.e(TAG, e.getMessage());
+        	} finally {
         		if (entity != null) {
         			try {
         				entity.consumeContent();
         			} catch (IOException e2) {
-        				if (Constants.LOGGING) Log.e(TAG, e.getMessage());
+        				if (Constants.LOGGING) Log.e(TAG, e2.getMessage());
         			}
         		}
-        		if (Constants.LOGGING) Log.e(TAG, e.getMessage());
         	}
         	return false;
         }
