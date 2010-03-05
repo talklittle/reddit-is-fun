@@ -92,10 +92,10 @@ public final class InboxActivity extends ListActivity
 	private static final String TAG = "InboxActivity";
 	
 	// Captcha "iden"
-    private final Pattern CAPTCHA_IDEN_PATTERN = Pattern.compile("name=\"iden\" value=\"(.*?)\"");
+    private final Pattern CAPTCHA_IDEN_PATTERN = Pattern.compile("name=\"iden\" value=\"([^\"]+?)\"");
     // Group 2: Captcha image absolute path
-    private final Pattern CAPTCHA_IMAGE_PATTERN = Pattern.compile("<img class=\"capimage\"( alt=\".*?\")? src=\"(.+?)\"");
-	// Group 1: fullname. Group 2: kind. Group 3: id36.
+    private final Pattern CAPTCHA_IMAGE_PATTERN = Pattern.compile("<img class=\"capimage\"( alt=\".*?\")? src=\"(/captcha/[^\"]+?)\"");
+    	// Group 1: fullname. Group 2: kind. Group 3: id36.
     private final Pattern NEW_ID_PATTERN = Pattern.compile("\"id\": \"((.+?)_(.+?))\"");
     // Group 1: whole error. Group 2: the time part
     private final Pattern RATELIMIT_RETRY_PATTERN = Pattern.compile("(you are trying to submit too fast. try again in (.+?)\\.)");
@@ -581,6 +581,10 @@ public final class InboxActivity extends ListActivity
                     		userError = "you are trying to submit too fast. try again in a few minutes.";
                 		throw new Exception(userError);
                 	}
+            		if (line.contains("DELETED_LINK")) {
+            			_mUserError = "the link you are commenting on has been deleted";
+            			throw new Exception(_mUserError);
+            		}
                 	throw new Exception("No id returned by reply POST.");
             	}
             	

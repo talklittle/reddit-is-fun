@@ -71,9 +71,9 @@ public class SubmitLinkActivity extends TabActivity {
 	private static final String TAG = "SubmitLinkActivity";
 	
 	// Captcha "iden"
-    private final Pattern CAPTCHA_IDEN_PATTERN = Pattern.compile("name=\"iden\" value=\"(.*?)\"");
+    private final Pattern CAPTCHA_IDEN_PATTERN = Pattern.compile("name=\"iden\" value=\"([^\"]+?)\"");
     // Group 2: Captcha image absolute path
-    private final Pattern CAPTCHA_IMAGE_PATTERN = Pattern.compile("<img class=\"capimage\"( alt=\".*?\")? src=\"(.+?)\"");
+    private final Pattern CAPTCHA_IMAGE_PATTERN = Pattern.compile("<img class=\"capimage\"( alt=\".*?\")? src=\"(/captcha/[^\"]+?)\"");
     // Group 1: Subreddit. Group 2: thread id (no t3_ prefix)
     static final Pattern NEW_THREAD_PATTERN = Pattern.compile("\"http://www.reddit.com/r/(.+?)/comments/(.+?)/.*?/\"");
     // Group 1: whole error. Group 2: the time part
@@ -329,6 +329,7 @@ public class SubmitLinkActivity extends TabActivity {
 
             	BufferedReader in = new BufferedReader(new InputStreamReader(entity.getContent()));
             	String line = in.readLine();
+            	if (Constants.LOGGING) Common.logDLong(TAG, line);
             	in.close();
             	if (line == null || Constants.EMPTY_STRING.equals(line)) {
             		throw new HttpException("No content returned from reply POST");
@@ -425,38 +426,46 @@ public class SubmitLinkActivity extends TabActivity {
 		@Override
 		public Boolean doInBackground(Void... voidz) {
 			HttpEntity entity = null;
+			BufferedReader in = null;
 			try {
 				HttpGet request = new HttpGet(mSubmitUrl);
 				HttpResponse response = mClient.execute(request);
 				entity = response.getEntity(); 
-	    		BufferedReader in = new BufferedReader(new InputStreamReader(entity.getContent()));
-            	String line = in.readLine();
-            	in.close();
-
-            	Matcher idenMatcher = CAPTCHA_IDEN_PATTERN.matcher(line);
-            	Matcher urlMatcher = CAPTCHA_IMAGE_PATTERN.matcher(line);
-            	if (idenMatcher.find() && urlMatcher.find()) {
-            		mCaptchaIden = idenMatcher.group(1);
-            		mCaptchaUrl = urlMatcher.group(2);
-            		entity.consumeContent();
-            		return true;
-            	} else {
-            		mCaptchaIden = null;
-            		mCaptchaUrl = null;
-            		entity.consumeContent();
-            		return false;
+	    		in = new BufferedReader(new InputStreamReader(entity.getContent()));
+            	
+            	// Some HTML pages, like submit link page, are 2 lines (used to always be 1 long line)
+            	String line;
+            	while ((line = in.readLine()) != null) {
+            		Matcher idenMatcher = CAPTCHA_IDEN_PATTERN.matcher(line);
+                	Matcher urlMatcher = CAPTCHA_IMAGE_PATTERN.matcher(line);
+                	if (idenMatcher.find() && urlMatcher.find()) {
+                		mCaptchaIden = idenMatcher.group(1);
+                		mCaptchaUrl = urlMatcher.group(2);
+                		return true;
+                	}            		
             	}
+        		mCaptchaIden = null;
+        		mCaptchaUrl = null;
+        		return false;
 			} catch (Exception e) {
+				if (Constants.LOGGING) Log.e(TAG, "Error accessing "+mSubmitUrl+" to check for CAPTCHA");
+				return null;
+			} finally {
+				if (in != null) {
+					try {
+						in.close();
+					} catch (Exception e2) {
+						if (Constants.LOGGING) Log.e(TAG, e2.getMessage());
+					}
+				}
 				if (entity != null) {
 					try {
 						entity.consumeContent();
 					} catch (Exception e2) {
-						if (Constants.LOGGING) Log.e(TAG, e.getMessage());
+						if (Constants.LOGGING) Log.e(TAG, e2.getMessage());
 					}
 				}
-				if (Constants.LOGGING) Log.e(TAG, "Error accessing "+mSubmitUrl+" to check for CAPTCHA");
 			}
-			return null;
 		}
 		
 		@Override

@@ -1224,6 +1224,10 @@ public class CommentsListActivity extends ListActivity
                     		_mUserError = "you are trying to submit too fast. try again in a few minutes.";
                 		throw new Exception(_mUserError);
                 	}
+            		if (line.contains("DELETED_LINK")) {
+            			_mUserError = "the link you are commenting on has been deleted";
+            			throw new Exception(_mUserError);
+            		}
                 	throw new Exception("No id returned by reply POST.");
             	}
             	
@@ -1348,6 +1352,10 @@ public class CommentsListActivity extends ListActivity
                     		_mUserError = "you are trying to submit too fast. try again in a few minutes.";
                 		throw new Exception(_mUserError);
                 	}
+            		if (line.contains("DELETED_LINK")) {
+            			_mUserError = "the link you are commenting on has been deleted";
+            			throw new Exception(_mUserError);
+            		}
                 	throw new Exception("No id returned by reply POST.");
             	}
             	
