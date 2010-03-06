@@ -63,6 +63,14 @@
         		android:entryValues="@array/pref_mail_notification_service_values"
         		android:dialogTitle="@string/pref_mail_notification_service_dialogtitle" />
 
+        <ListPreference
+        		android:key="on_click"
+        		android:title="@string/pref_on_click"
+        		android:entries="@array/pref_click_choices"
+        		android:dialogTitle="@string/pref_click_dialogtitle"
+        		android:entryValues="@array/pref_click_values"
+        		android:defaultValue="ON_CLICK_OPEN_LINK"/>
+
 		<!-- 
         <ListPreference
                 android:key="text_size"

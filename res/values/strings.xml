@@ -174,4 +174,12 @@
    	</string-array>
     
 	
+<string-array name="pref_click_choices"><item>Launch Dialog</item><item>Launch Link</item>
+
+</string-array>
+<string-array name="pref_click_values"><item>ON_CLICK_OPEN_DIALOG</item><item>ON_CLICK_OPEN_LINK</item>
+
+</string-array>
+<string name="pref_click_dialogtitle">On Click Action</string>
+<string name="pref_on_click">On Click Action</string>
 </resources>

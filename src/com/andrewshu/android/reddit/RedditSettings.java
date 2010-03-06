@@ -42,6 +42,8 @@ public class RedditSettings {
 	String mailNotificationStyle = Constants.PREF_MAIL_NOTIFICATION_STYLE_DEFAULT;
 	String mailNotificationService = Constants.PREF_MAIL_NOTIFICATION_SERVICE_OFF;
 	
+	String onClickAction = Constants.PREF_ON_CLICK_OPEN_DIALOG;
+	
 	// --- States that change frequently. ---
 	CharSequence subreddit = Constants.FRONTPAGE_STRING;
 	boolean isFrontpage = false;
@@ -127,6 +129,10 @@ public class RedditSettings {
 	
 	void setModhash(CharSequence modhash) {
 		this.modhash = modhash;
+	}
+	
+	void setOnClickAction (String action)	{
+		this.onClickAction = action;
 	}
 	
 	void setRedditSessionCookie(Cookie redditSessionCookie) {

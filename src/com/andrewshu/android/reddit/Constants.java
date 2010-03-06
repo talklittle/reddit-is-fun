@@ -256,6 +256,9 @@ public class Constants {
     static final String PREF_MAIL_NOTIFICATION_SERVICE_1HOUR = "MAIL_NOTIFICATION_SERVICE_1HOUR";
     static final String PREF_MAIL_NOTIFICATION_SERVICE_6HOURS = "MAIL_NOTIFICATION_SERVICE_6HOURS";
     static final String PREF_MAIL_NOTIFICATION_SERVICE_1DAY = "MAIL_NOTIFICATION_SERVICE_1DAY";
+    static final String PREF_ON_CLICK = "on_click";
+    static final String PREF_ON_CLICK_OPEN_LINK = "ON_CLICK_OPEN_LINK";
+    static final String PREF_ON_CLICK_OPEN_DIALOG = "ON_CLICK_OPEN_DIALOG";
     
     // A short HTML file returned by reddit, so we can get the modhash
     static final String MODHASH_URL = "http://www.reddit.com/r";

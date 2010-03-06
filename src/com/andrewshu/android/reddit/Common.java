@@ -151,7 +151,10 @@ public class Common {
     	// Notifications
     	editor.putString(Constants.PREF_MAIL_NOTIFICATION_STYLE, rSettings.mailNotificationStyle);
     	editor.putString(Constants.PREF_MAIL_NOTIFICATION_SERVICE, rSettings.mailNotificationService);
-    
+
+        //OnClickAction
+        editor.putString(Constants.PREF_ON_CLICK, rSettings.onClickAction);
+
     	editor.commit();
     }
     
@@ -198,6 +201,9 @@ public class Common {
         // Notifications
         rSettings.setMailNotificationStyle(sessionPrefs.getString(Constants.PREF_MAIL_NOTIFICATION_STYLE, Constants.PREF_MAIL_NOTIFICATION_STYLE_DEFAULT));
         rSettings.setMailNotificationService(sessionPrefs.getString(Constants.PREF_MAIL_NOTIFICATION_SERVICE, Constants.PREF_MAIL_NOTIFICATION_SERVICE_OFF));
+
+        //OnClickAction
+        rSettings.setOnClickAction(sessionPrefs.getString(Constants.PREF_ON_CLICK, Constants.PREF_ON_CLICK_OPEN_DIALOG));
     }
     
     /**

@@ -79,6 +79,11 @@ public class RedditPreferencesPage extends PreferenceActivity
         		getPreferenceScreen().getSharedPreferences()
         		.getString(Constants.PREF_MAIL_NOTIFICATION_SERVICE, null)));
         
+        e = findPreference(Constants.PREF_ON_CLICK);
+        e.setOnPreferenceChangeListener(this);
+        e.setSummary(getVisualOnClickName(getPreferenceScreen().getSharedPreferences()
+        		.getString(Constants.PREF_ON_CLICK, null)));
+        
 //        e = findPreference(BrowserSettings.PREF_TEXT_SIZE);
 //        e.setOnPreferenceChangeListener(this);
 //        e.setSummary(getVisualTextSizeName(
@@ -184,6 +189,11 @@ public class RedditPreferencesPage extends PreferenceActivity
                         Toast.LENGTH_LONG).show();
         	}
         	return true;
+        } else if (pref.getKey().equals(Constants.PREF_ON_CLICK))
+        {
+        	pref.setSummary(getVisualOnClickName((String) objValue));
+        	mSettings.setOnClickAction((String)objValue);
+        	return true;
         }
         
         return false;
@@ -258,6 +268,23 @@ public class RedditPreferencesPage extends PreferenceActivity
                 R.array.pref_mail_notification_service_choices);
         CharSequence[] enumNames = getResources().getTextArray(
                 R.array.pref_mail_notification_service_values);
+        // Sanity check
+        if (visualNames.length != enumNames.length) {
+            return "";
+        }
+        for (int i = 0; i < enumNames.length; i++) {
+            if (enumNames[i].equals(enumName)) {
+                return visualNames[i];
+            }
+        }
+        return "";
+    }
+    
+    private CharSequence getVisualOnClickName(String enumName) {
+        CharSequence[] visualNames = getResources().getTextArray(
+                R.array.pref_click_choices);
+        CharSequence[] enumNames = getResources().getTextArray(
+                R.array.pref_click_values);
         // Sanity check
         if (visualNames.length != enumNames.length) {
             return "";
