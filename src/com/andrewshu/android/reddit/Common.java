@@ -503,7 +503,6 @@ public class Common {
           Intent intent = new Intent(act.getApplicationContext(), CommentsListActivity.class);
           intent.putExtra(ThreadInfo.SUBREDDIT, matcher.group(1));
           intent.putExtra(ThreadInfo.ID, matcher.group(2));
-          intent.putExtra(ThreadInfo.TITLE, "Loading...");
           intent.putExtra(ThreadInfo.NUM_COMMENTS, Constants.DEFAULT_COMMENT_DOWNLOAD_LIMIT);
           act.startActivity(intent);
           return;

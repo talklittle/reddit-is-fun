@@ -213,7 +213,11 @@ public class CommentsListActivity extends ListActivity
         	mSettings.setThreadId(extras.getString(ThreadInfo.ID));
         	mSettings.setSubreddit(extras.getString(ThreadInfo.SUBREDDIT));
         	mThreadTitle = extras.getString(ThreadInfo.TITLE);
-        	setTitle(mThreadTitle + " : " + mSettings.subreddit);
+        	if (mThreadTitle != null) {
+        	  setTitle(mThreadTitle + " : " + mSettings.subreddit);
+        	} else {
+        	  setTitle("reddit is fun");
+        	}
         	int numComments = extras.getInt(ThreadInfo.NUM_COMMENTS);
         	// TODO: Take into account very negative karma comments
         	if (numComments < Constants.DEFAULT_COMMENT_DOWNLOAD_LIMIT)
