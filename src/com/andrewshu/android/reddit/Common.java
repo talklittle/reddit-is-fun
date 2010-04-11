@@ -89,7 +89,7 @@ public class Common {
 	private static final String TAG = "Common";
 	
 	private static final DefaultHttpClient mGzipHttpClient = createGzipHttpClient();
-	private static final Pattern REDDIT_LINK = Pattern.compile("http://www.reddit.com/r/(.+?)(/comments/(.+?)/.+?/(.+?)?)/?");
+	private static final Pattern REDDIT_LINK = Pattern.compile("http://www.reddit.com/r/([^/]+)(?:/comments/([^/]+)/[^/]+(?:/([^/]+))?)?/?");
 	
 	static void showErrorToast(CharSequence error, int duration, Context context) {
 		LayoutInflater inflater = (LayoutInflater) context.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
@@ -494,23 +494,29 @@ public class Common {
     static void launchBrowser(CharSequence url, Activity act) {
       Matcher matcher = REDDIT_LINK.matcher(url);
       if (matcher.matches()) {
-        if (matcher.groupCount() > 1) {
+        if (matcher.group(3) != null) {
+          Intent intent = new Intent(act.getApplicationContext(), CommentsListActivity.class);
+          intent.putExtra(Constants.EXTRA_COMMENT_CONTEXT, url);
+          act.startActivity(intent);
+          return;
+        } else if (matcher.group(2) != null) {
           Intent intent = new Intent(act.getApplicationContext(), CommentsListActivity.class);
           intent.putExtra(ThreadInfo.SUBREDDIT, matcher.group(1));
-          intent.putExtra(ThreadInfo.ID, matcher.group(3));
+          intent.putExtra(ThreadInfo.ID, matcher.group(2));
           intent.putExtra(ThreadInfo.TITLE, "Loading...");
           intent.putExtra(ThreadInfo.NUM_COMMENTS, Constants.DEFAULT_COMMENT_DOWNLOAD_LIMIT);
           act.startActivity(intent);
-        } else {
+          return;
+        } else if (matcher.group(1) != null) {
           Intent intent = new Intent(act.getApplicationContext(), RedditIsFun.class);
           intent.putExtra(ThreadInfo.SUBREDDIT, matcher.group(1));
           act.startActivity(intent);
+          return;
         }
-      } else {
-        Intent browser = new Intent(Intent.ACTION_VIEW, Uri.parse(url.toString()));
-        browser.putExtra(Browser.EXTRA_APPLICATION_ID, act.getPackageName());
-        act.startActivity(browser);
       }
+      Intent browser = new Intent(Intent.ACTION_VIEW, Uri.parse(url.toString()));
+      browser.putExtra(Browser.EXTRA_APPLICATION_ID, act.getPackageName());
+      act.startActivity(browser);
     }
     
     
