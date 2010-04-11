@@ -89,6 +89,7 @@ public class Common {
 	private static final String TAG = "Common";
 	
 	private static final DefaultHttpClient mGzipHttpClient = createGzipHttpClient();
+	private static final Pattern REDDIT_LINK = Pattern.compile("http://www.reddit.com/r/(.+?)(/comments/(.+?)/.+?/(.+?)?)/?");
 	
 	static void showErrorToast(CharSequence error, int duration, Context context) {
 		LayoutInflater inflater = (LayoutInflater) context.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
@@ -490,12 +491,26 @@ public class Common {
 		notificationManager.cancel(Constants.NOTIFICATION_HAVE_MAIL);
     }
     
-
-    
     static void launchBrowser(CharSequence url, Activity act) {
-		Intent browser = new Intent(Intent.ACTION_VIEW, Uri.parse(url.toString()));
-		browser.putExtra(Browser.EXTRA_APPLICATION_ID, act.getPackageName());
-		act.startActivity(browser);
+      Matcher matcher = REDDIT_LINK.matcher(url);
+      if (matcher.matches()) {
+        if (matcher.groupCount() > 1) {
+          Intent intent = new Intent(act.getApplicationContext(), CommentsListActivity.class);
+          intent.putExtra(ThreadInfo.SUBREDDIT, matcher.group(1));
+          intent.putExtra(ThreadInfo.ID, matcher.group(3));
+          intent.putExtra(ThreadInfo.TITLE, "Loading...");
+          intent.putExtra(ThreadInfo.NUM_COMMENTS, Constants.DEFAULT_COMMENT_DOWNLOAD_LIMIT);
+          act.startActivity(intent);
+        } else {
+          Intent intent = new Intent(act.getApplicationContext(), RedditIsFun.class);
+          intent.putExtra(ThreadInfo.SUBREDDIT, matcher.group(1));
+          act.startActivity(intent);
+        }
+      } else {
+        Intent browser = new Intent(Intent.ACTION_VIEW, Uri.parse(url.toString()));
+        browser.putExtra(Browser.EXTRA_APPLICATION_ID, act.getPackageName());
+        act.startActivity(browser);
+      }
     }
     
     

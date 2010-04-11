@@ -108,7 +108,7 @@ public class CommentsListActivity extends ListActivity
     // Group 1: fullname. Group 2: kind. Group 3: id36.
     private final Pattern NEW_ID_PATTERN = Pattern.compile("\"id\": \"((.+?)_(.+?))\"");
     // Group 2: subreddit name. Group 3: thread id36. Group 4: Comment id36.
-    private final Pattern COMMENT_CONTEXT_PATTERN = Pattern.compile("(http://www.reddit.com)?/r/(.+?)/comments/(.+?)/.+?/([a-zA-Z0-9]+)");
+    private final Pattern COMMENT_CONTEXT_PATTERN = Pattern.compile("(http://www.reddit.com)?/r/(.+?)/comments/(.+?)/.+?/([a-zA-Z0-9]+)?");
     // Group 1: whole error. Group 2: the time part
     private final Pattern RATELIMIT_RETRY_PATTERN = Pattern.compile("(you are trying to submit too fast. try again in (.+?)\\.)");
 
@@ -220,6 +220,7 @@ public class CommentsListActivity extends ListActivity
         		mNumVisibleComments = numComments;
         	else
         		mNumVisibleComments = Constants.DEFAULT_COMMENT_DOWNLOAD_LIMIT;
+        	mShouldUseCommentsCache = false;
     	}
     	
     	if (savedInstanceState != null) {
@@ -850,6 +851,9 @@ public class CommentsListActivity extends ListActivity
 										_mNumComments = numComments;
 								} else if (Constants.JSON_SELFTEXT.equals(namefield)) {
 									ti.mSSBSelftext = markdown.markdown(ti.getSelftext(), new SpannableStringBuilder(), ti.mUrls);
+								} else if (Constants.JSON_TITLE.equals(namefield)) {
+								  // We might not have a title if we've intercepted a plain link to a thread.
+								  mThreadTitle = jp.getText();
 								}
 							}
 						}
@@ -1078,8 +1082,8 @@ public class CommentsListActivity extends ListActivity
     			// Set title in android titlebar
     			if (mThreadTitle == null) {
 	    			mThreadTitle = mOpThreadInfo.getTitle().replaceAll("\n ", " ").replaceAll(" \n", " ").replaceAll("\n", " ");
-	    			setTitle(mThreadTitle + " : " + mSettings.subreddit);
 	    		}
+    			setTitle(mThreadTitle + " : " + mSettings.subreddit);
 	    		// Remember this time for caching purposes
 	    		mLastRefreshTime = System.currentTimeMillis();
 	    		mShouldUseCommentsCache = true;
