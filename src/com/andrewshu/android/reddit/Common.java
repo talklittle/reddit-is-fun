@@ -89,8 +89,13 @@ public class Common {
 	private static final String TAG = "Common";
 	
 	private static final DefaultHttpClient mGzipHttpClient = createGzipHttpClient();
-	private static final Pattern REDDIT_LINK = Pattern.compile("http://www.reddit.com/r/([^/]+)(?:/comments/([^/]+)/[^/]+(?:/([^/]+))?)?/?");
-	
+	private static final Pattern REDDIT_LINK = Pattern.compile(
+      "https?://(?:[\\w-]+\\.)?reddit.com" +
+      "(?:/r/([^/]+))?" +
+      "(?:/comments/([^/]+)/[^/]+" +
+          "(?:/([^/]+))?" +
+      ")?/?");
+
 	static void showErrorToast(CharSequence error, int duration, Context context) {
 		LayoutInflater inflater = (LayoutInflater) context.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
 		Toast t = new Toast(context);

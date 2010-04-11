@@ -701,9 +701,11 @@ public class CommentsListActivity extends ListActivity
     	public Boolean doInBackground(Integer... maxComments) {
     		HttpEntity entity = null;
             try {
-            	StringBuilder sb = new StringBuilder("http://www.reddit.com/r/")
-	        		.append(mSettings.subreddit.toString().trim())
-	        		.append("/comments/")
+            	StringBuilder sb = new StringBuilder("http://www.reddit.com/");
+	        		if (mSettings.subreddit != null) {
+	        		  sb.append("/r/").append(mSettings.subreddit.toString().trim());
+	        		}
+	        		sb.append("/comments/")
 	        		.append(mSettings.threadId)
 	        		.append("/z/").append(_mMoreChildrenId).append(".json?").append(mSortByUrl).append("&");
             	HttpGet request = new HttpGet(sb.toString());
@@ -858,6 +860,8 @@ public class CommentsListActivity extends ListActivity
 								} else if (Constants.JSON_TITLE.equals(namefield)) {
 								  // We might not have a title if we've intercepted a plain link to a thread.
 								  mThreadTitle = jp.getText();
+								} else if (Constants.JSON_SUBREDDIT.equals(namefield)) {
+								  mSettings.subreddit = jp.getText();
 								}
 							}
 						}
@@ -1049,7 +1053,7 @@ public class CommentsListActivity extends ListActivity
 
     	
     	public void onPreExecute() {
-    		if (mSettings.subreddit == null || mSettings.threadId == null)
+    		if (mSettings.threadId == null)
 	    		this.cancel(true);
     		synchronized (mCurrentDownloadCommentsTaskLock) {
 	    		if (mCurrentDownloadCommentsTask != null)
@@ -1063,7 +1067,7 @@ public class CommentsListActivity extends ListActivity
     		// In case a ReadCacheTask tries to preempt this DownloadCommentsTask
     		mShouldUseCommentsCache = false;
 			
-	    	if ("jailbait".equals(mSettings.subreddit.toString())) {
+	    	if (mSettings.subreddit != null && "jailbait".equals(mSettings.subreddit.toString())) {
 	    		Toast lodToast = Toast.makeText(CommentsListActivity.this, "", Toast.LENGTH_LONG);
 	    		View lodView = ((LayoutInflater) getSystemService(Context.LAYOUT_INFLATER_SERVICE))
 	    			.inflate(R.layout.look_of_disapproval_view, null);
