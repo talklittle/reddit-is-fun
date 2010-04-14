@@ -10,6 +10,7 @@ Contributors:
 * ulfada
 * choofins
 * jc4p
+* albertb
 
 Android Market QR Codes
 ----------------
