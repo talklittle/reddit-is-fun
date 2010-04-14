@@ -1360,7 +1360,6 @@ public final class RedditIsFun extends ListActivity {
     		}
 
     		// "link" button behaves differently for regular links vs. self posts and links to comments pages (e.g., bestof)
-    		// TODO: Handle bestof posts, which aren't self posts
             if (("self.").toLowerCase().equals(mVoteTargetThreadInfo.getDomain().substring(0, 5).toLowerCase())) {
             	// It's a self post. Both buttons do the same thing.
             	linkButton.setEnabled(false);
