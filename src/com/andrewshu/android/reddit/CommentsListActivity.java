@@ -132,6 +132,7 @@ public class CommentsListActivity extends ListActivity
     
     // UI State
     private ThingInfo mVoteTargetThing = null;
+    private CharSequence mReportTargetName = null;
     private CharSequence mReplyTargetName = null;
     private CharSequence mEditTargetBody = null;
     private String mDeleteTargetKind = null;
@@ -202,6 +203,7 @@ public class CommentsListActivity extends ListActivity
        		mJumpToCommentId = savedInstanceState.getCharSequence(Constants.JUMP_TO_COMMENT_ID_KEY);
        		mJumpToCommentContext = savedInstanceState.getInt(Constants.JUMP_TO_COMMENT_CONTEXT_KEY);
         	mReplyTargetName = savedInstanceState.getCharSequence(Constants.REPLY_TARGET_NAME_KEY);
+        	mReportTargetName = savedInstanceState.getCharSequence(Constants.REPORT_TARGET_NAME_KEY);
         	mEditTargetBody = savedInstanceState.getCharSequence(Constants.EDIT_TARGET_BODY_KEY);
         	mDeleteTargetKind = savedInstanceState.getString(Constants.DELETE_TARGET_KIND_KEY);
         	mJumpToCommentPosition = savedInstanceState.getInt(Constants.JUMP_TO_COMMENT_POSITION_KEY);
@@ -1285,8 +1287,6 @@ public class CommentsListActivity extends ListActivity
     	}
     }
 
-        
-    
     private class VoteTask extends AsyncTask<Void, Void, Boolean> {
     	
     	private static final String TAG = "VoteWorker";
@@ -1458,6 +1458,95 @@ public class CommentsListActivity extends ListActivity
     }
     
     
+
+    private class ReportTask extends AsyncTask<Void, Void, Boolean> {
+    	
+    	private static final String TAG = "ReportTask";
+    	
+    	private String _mUserError = "Error reporting.";
+    	private String _mFullId;
+    	
+    	ReportTask(String fullname) {
+    		this._mFullId = fullname;
+    	}
+    	
+    	@Override
+    	public Boolean doInBackground(Void... v) {
+        	HttpEntity entity = null;
+        	
+        	if (!mSettings.loggedIn) {
+        		_mUserError = "You must be logged in to report something.";
+        		return false;
+        	}
+        	
+        	// Update the modhash if necessary
+        	if (mSettings.modhash == null) {
+        		CharSequence modhash = Common.doUpdateModhash(mClient); 
+        		if (modhash == null) {
+        			// doUpdateModhash should have given an error about credentials
+        			Common.doLogout(mSettings, mClient, getApplicationContext());
+        			if (Constants.LOGGING) Log.e(TAG, "Report failed because doUpdateModhash() failed");
+        			return false;
+        		}
+        		mSettings.setModhash(modhash);
+        	}
+        	
+        	try {
+        		// Construct data
+    			List<NameValuePair> nvps = new ArrayList<NameValuePair>();
+    			nvps.add(new BasicNameValuePair("id", _mFullId));
+    			nvps.add(new BasicNameValuePair("executed", "reported"));
+    			nvps.add(new BasicNameValuePair("r", mSettings.subreddit.toString()));
+    			nvps.add(new BasicNameValuePair("uh", mSettings.modhash.toString()));
+    			// Votehash is currently unused by reddit 
+//    				nvps.add(new BasicNameValuePair("vh", "0d4ab0ffd56ad0f66841c15609e9a45aeec6b015"));
+    			
+    			HttpPost httppost = new HttpPost("http://www.reddit.com/api/report");
+    	        httppost.setEntity(new UrlEncodedFormEntity(nvps, HTTP.UTF_8));
+    	        
+    	        if (Constants.LOGGING) Log.d(TAG, nvps.toString());
+    	        
+                // Perform the HTTP POST request
+    	    	HttpResponse response = mClient.execute(httppost);
+    	    	entity = response.getEntity();
+
+    	    	String error = Common.checkResponseErrors(response, entity);
+            	if (error != null)
+            		throw new Exception(error);
+
+            	// Success
+            	return true;
+
+        	} catch (Exception e) {
+        		if (Constants.LOGGING) Log.e(TAG, e.getMessage());
+        	} finally {
+        		if (entity != null) {
+        			try {
+        				entity.consumeContent();
+        			} catch (Exception e2) {
+        				if (Constants.LOGGING) Log.e(TAG, "entity.consumeContent():" + e2.getMessage());
+        			}
+        		}
+        	}
+        	return false;
+        }
+    	
+    	public void onPreExecute() {
+	        if (!mSettings.loggedIn) {
+	        	Common.showErrorToast("You must be logged in to report this.", Toast.LENGTH_LONG, CommentsListActivity.this);
+	        	cancel(true);
+	        	return;
+	        }
+    	}
+    	
+    	public void onPostExecute(Boolean success) {
+    		if (success) {
+    			Toast.makeText(CommentsListActivity.this, "Reported.", Toast.LENGTH_SHORT);
+    		} else {
+    			Common.showErrorToast(_mUserError, Toast.LENGTH_LONG, CommentsListActivity.this);
+    		}
+    	}
+    }
 
     /**
      * Populates the menu.
@@ -1633,7 +1722,8 @@ public class CommentsListActivity extends ListActivity
     	int rowId = (int) info.id;
     	
     	if (rowId == 0) {
-    		;
+    		if (mSettings.loggedIn)
+    			menu.add(0, Constants.DIALOG_REPORT, Menu.NONE, "Report thread");
     	} else if (mMorePositions.contains(rowId)) {
     		menu.add(0, Constants.DIALOG_GOTO_PARENT, Menu.NONE, "Go to parent");
     	} else if (mHiddenCommentHeads.contains(rowId)) {
@@ -1647,6 +1737,8 @@ public class CommentsListActivity extends ListActivity
 	    		}
     		}
     		menu.add(0, Constants.DIALOG_HIDE_COMMENT, Menu.NONE, "Hide comment");
+    		if (mSettings.loggedIn)
+    			menu.add(0, Constants.DIALOG_REPORT, Menu.NONE, "Report comment");
     		menu.add(0, Constants.DIALOG_GOTO_PARENT, Menu.NONE, "Go to parent");
     	}
     }
@@ -1687,6 +1779,12 @@ public class CommentsListActivity extends ListActivity
     		// It must be a comment, since the OP selftext is reached via options menu, not context menu
     		mDeleteTargetKind = Constants.COMMENT_KIND;
     		showDialog(Constants.DIALOG_DELETE);
+    		return true;
+    	case Constants.DIALOG_REPORT:
+    		synchronized (COMMENT_ADAPTER_LOCK) {
+    			mReportTargetName = mCommentsAdapter.getItem(rowId).getName();
+    		}
+    		showDialog(Constants.DIALOG_REPORT);
     		return true;
 		default:
     		return super.onContextItemSelected(item);	
@@ -1857,6 +1955,23 @@ public class CommentsListActivity extends ListActivity
     		dialog = builder.create();
     		break;
     		
+    	case Constants.DIALOG_REPORT:
+    		builder = new AlertDialog.Builder(this);
+    		builder.setTitle("Really report this?");
+    		builder.setPositiveButton("Yes", new DialogInterface.OnClickListener() {
+    			public void onClick(DialogInterface dialog, int item) {
+    				dismissDialog(Constants.DIALOG_REPORT);
+    				new ReportTask(mReportTargetName.toString()).execute();
+    			}
+    		})
+    		.setNegativeButton("No", new DialogInterface.OnClickListener() {
+				public void onClick(DialogInterface dialog, int id) {
+					dialog.cancel();
+				}
+			});
+    		dialog = builder.create();
+    		break;
+    		
    		// "Please wait"
     	case Constants.DIALOG_DELETING:
     		pdialog = new ProgressDialog(this);
@@ -1993,7 +2108,7 @@ public class CommentsListActivity extends ListActivity
 	    				dismissDialog(Constants.DIALOG_THING_CLICK);
 	    				showDialog(Constants.DIALOG_REPLY);
 	        		}
-	    		});
+	    		});	
 	    	} else {
     			voteUpButton.setVisibility(View.GONE);
     			voteDownButton.setVisibility(View.GONE);
@@ -2120,6 +2235,7 @@ public class CommentsListActivity extends ListActivity
     	state.putCharSequence(Constants.JUMP_TO_COMMENT_ID_KEY, mJumpToCommentId);
     	state.putInt(Constants.JUMP_TO_COMMENT_CONTEXT_KEY, mJumpToCommentContext);
     	state.putCharSequence(Constants.REPLY_TARGET_NAME_KEY, mReplyTargetName);
+    	state.putCharSequence(Constants.REPORT_TARGET_NAME_KEY, mReportTargetName);
     	state.putCharSequence(Constants.EDIT_TARGET_BODY_KEY, mEditTargetBody);
     	state.putString(Constants.DELETE_TARGET_KIND_KEY, mDeleteTargetKind);
     }
@@ -2143,6 +2259,7 @@ public class CommentsListActivity extends ListActivity
         	Constants.DIALOG_REPLYING,
         	Constants.DIALOG_SORT_BY,
         	Constants.DIALOG_THING_CLICK,
+        	Constants.DIALOG_REPORT
         };
         for (int dialog : myDialogs) {
 	        try {

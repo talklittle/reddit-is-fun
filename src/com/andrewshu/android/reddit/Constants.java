@@ -100,6 +100,8 @@ public class Constants {
     static final int DIALOG_DELETE = 30;
     static final int DIALOG_COMPOSE = 31;
     static final int DIALOG_FIRST_ON_CLICK = 32;
+    static final int DIALOG_REPORT = 33;
+
     // progress dialogs
     static final int DIALOG_LOGGING_IN = 1000;
     static final int DIALOG_LOADING_LOOK_OF_DISAPPROVAL = 1003;
@@ -137,6 +139,7 @@ public class Constants {
     static final String JUMP_TO_COMMENT_CONTEXT_KEY = "jump_to_comment_context";
     static final String JUMP_TO_COMMENT_POSITION_KEY = "jump_to_comment_position";
     static final String JUMP_TO_THREAD_ID_KEY = "jump_to_thread_id";
+    static final String REPORT_TARGET_NAME_KEY = "report_target_name";
     static final String REPLY_TARGET_NAME_KEY = "reply_target_name";
     static final String SUBREDDIT_KEY = "subreddit";
     static final String URL_TO_GET_HERE_KEY = "url_to_get_here";
