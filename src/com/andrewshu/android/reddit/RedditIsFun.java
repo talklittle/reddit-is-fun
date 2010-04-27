@@ -649,7 +649,7 @@ public final class RedditIsFun extends ListActivity {
 									break;
 								if (jp.getCurrentToken() == JsonToken.START_OBJECT)
 									nested++;
-								if (jp.getCurrentToken() == JsonToken.END_OBJECT)
+								else if (jp.getCurrentToken() == JsonToken.END_OBJECT)
 									nested--;
 							}
 							break;  // Go on to the next thread (JSON Object) in the JSON Array.
@@ -660,17 +660,17 @@ public final class RedditIsFun extends ListActivity {
 							String namefield = jp.getCurrentName();
 							jp.nextToken(); // move to value
 							// Should validate each field but I'm lazy
-							if (Constants.JSON_MEDIA.equals(namefield) && jp.getCurrentToken() == JsonToken.START_OBJECT) {
-								while (jp.nextToken() != JsonToken.END_OBJECT) {
-									String mediaNamefield = jp.getCurrentName();
-									jp.nextToken(); // move to value
-									ti.put("media/"+mediaNamefield, jp.getText());
-								}
-							} else if (Constants.JSON_MEDIA_EMBED.equals(namefield) && jp.getCurrentToken() == JsonToken.START_OBJECT) {
-								while (jp.nextToken() != JsonToken.END_OBJECT) {
-									String mediaNamefield = jp.getCurrentName();
-									jp.nextToken(); // move to value
-									ti.put("media_embed/"+mediaNamefield, jp.getText());
+							// FIXME: Handle sub-objects ("media" and "media_embed"). For now, ignore.
+							if (jp.getCurrentToken() == JsonToken.START_OBJECT) {
+								int nested = 0;
+								for (;;) {
+									jp.nextToken();
+									if (jp.getCurrentToken() == JsonToken.END_OBJECT && nested == 0)
+										break;
+									if (jp.getCurrentToken() == JsonToken.START_OBJECT)
+										nested++;
+									else if (jp.getCurrentToken() == JsonToken.END_OBJECT)
+										nested--;
 								}
 							} else {
 								ti.put(namefield, StringEscapeUtils.unescapeHtml(jp.getText().replaceAll("\r", "")));
