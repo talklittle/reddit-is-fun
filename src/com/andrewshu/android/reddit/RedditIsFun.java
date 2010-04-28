@@ -83,6 +83,8 @@ import android.widget.ListView;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.google.gson.Gson;
+
 /**
  * Main Activity class representing a Subreddit, i.e., a ThreadsList.
  * 
@@ -318,7 +320,7 @@ public final class RedditIsFun extends ListActivity {
 	            titleSS.setSpan(titleTAS, 0, titleLen, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
 	            if (mSettings.theme == R.style.Reddit_Light) {
 	            	// FIXME: This doesn't work persistently, since "clicked" is not delivered to reddit.com
-		            if (Constants.TRUE_STRING.equals(item.getClicked())) {
+		            if (item.isClicked()) {
 		            	ForegroundColorSpan fcs = new ForegroundColorSpan(res.getColor(R.color.purple));
 		            	titleSS.setSpan(fcs, 0, titleLen, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
 		            } else {
@@ -334,8 +336,8 @@ public final class RedditIsFun extends ListActivity {
 	            builder.append(domainSS);
 	            titleView.setText(builder);
 	            
-	            votesView.setText(item.getScore());
-	            numCommentsView.setText(item.getNumComments()+" comments");
+	            votesView.setText("" + item.getScore());
+	            numCommentsView.setText(item.getNum_comments()+" comments");
 	            if (mSettings.isFrontpage) {
 	            	subredditView.setVisibility(View.VISIBLE);
 	            	subredditView.setText(item.getSubreddit());
@@ -562,8 +564,10 @@ public final class RedditIsFun extends ListActivity {
             	entity = response.getEntity();
             	InputStream in = entity.getContent();
                 try {
-                	parseSubredditJSON(in);
-                	in.close();
+                	InputStreamReader reader = new InputStreamReader(in);
+            		parseSubredditJSON(reader);
+                	reader.close();
+            		in.close();
                 	entity.consumeContent();
                 	mSettings.setSubreddit(subreddit[0]);
                 	return true;
@@ -586,119 +590,36 @@ public final class RedditIsFun extends ListActivity {
             return false;
 	    }
     	
-    	private void parseSubredditJSON(InputStream in) throws IOException,
-		    	JsonParseException, IllegalStateException {
-		
-			JsonParser jp = jsonFactory.createJsonParser(in);
-			
-			if (jp.nextToken() == JsonToken.VALUE_NULL)
-				return;
-			
-			// --- Validate initial stuff, skip to the JSON List of threads ---
-			String genericListingError = "Not a subreddit listing";
-		//	if (JsonToken.START_OBJECT != jp.nextToken()) // starts with "{"
-		//		throw new IllegalStateException(genericListingError);
-			jp.nextToken();
-			if (!Constants.JSON_KIND.equals(jp.getCurrentName()))
-				throw new IllegalStateException(genericListingError);
-			jp.nextToken();
-			if (!Constants.JSON_LISTING.equals(jp.getText()))
-				throw new IllegalStateException(genericListingError);
-			jp.nextToken();
-			if (!Constants.JSON_DATA.equals(jp.getCurrentName()))
-				throw new IllegalStateException(genericListingError);
-			jp.nextToken();
-			if (JsonToken.START_OBJECT != jp.getCurrentToken())
-				throw new IllegalStateException(genericListingError);
-			jp.nextToken();
-			// Save the modhash
-			if (!Constants.JSON_MODHASH.equals(jp.getCurrentName()))
-				throw new IllegalStateException(genericListingError);
-			jp.nextToken();
-			if (Constants.EMPTY_STRING.equals(jp.getText()))
-				mSettings.setModhash(null);
-			else
-				mSettings.setModhash(jp.getText());
-			jp.nextToken();
-			if (!Constants.JSON_CHILDREN.equals(jp.getCurrentName()))
-				throw new IllegalStateException(genericListingError);
-			jp.nextToken();
-			if (jp.getCurrentToken() != JsonToken.START_ARRAY)
-				throw new IllegalStateException(genericListingError);
-			
-			// --- Main parsing ---
-			int progressIndex = 0;
-			while (jp.nextToken() != JsonToken.END_ARRAY) {
-				if (jp.getCurrentToken() != JsonToken.START_OBJECT)
-					throw new IllegalStateException("Unexpected non-JSON-object in the children array");
-			
-				// Process JSON representing one thread
-				ThreadInfo ti = new ThreadInfo();
-				while (jp.nextToken() != JsonToken.END_OBJECT) {
-					String fieldname = jp.getCurrentName();
-					jp.nextToken(); // move to value, or START_OBJECT/START_ARRAY
-				
-					if (Constants.JSON_KIND.equals(fieldname)) {
-						if (!Constants.THREAD_KIND.equals(jp.getText())) {
-							// Skip this JSON Object since it doesn't represent a thread.
-							// May encounter nested objects too.
-							int nested = 0;
-							for (;;) {
-								jp.nextToken();
-								if (jp.getCurrentToken() == JsonToken.END_OBJECT && nested == 0)
-									break;
-								if (jp.getCurrentToken() == JsonToken.START_OBJECT)
-									nested++;
-								else if (jp.getCurrentToken() == JsonToken.END_OBJECT)
-									nested--;
-							}
-							break;  // Go on to the next thread (JSON Object) in the JSON Array.
-						}
-						ti.put(Constants.JSON_KIND, Constants.THREAD_KIND);
-					} else if (Constants.JSON_DATA.equals(fieldname)) { // contains an object
-						while (jp.nextToken() != JsonToken.END_OBJECT) {
-							String namefield = jp.getCurrentName();
-							jp.nextToken(); // move to value
-							// Should validate each field but I'm lazy
-							// FIXME: Handle sub-objects ("media" and "media_embed"). For now, ignore.
-							if (jp.getCurrentToken() == JsonToken.START_OBJECT) {
-								int nested = 0;
-								for (;;) {
-									jp.nextToken();
-									if (jp.getCurrentToken() == JsonToken.END_OBJECT && nested == 0)
-										break;
-									if (jp.getCurrentToken() == JsonToken.START_OBJECT)
-										nested++;
-									else if (jp.getCurrentToken() == JsonToken.END_OBJECT)
-										nested--;
-								}
-							} else {
-								ti.put(namefield, StringEscapeUtils.unescapeHtml(jp.getText().replaceAll("\r", "")));
-							}
-						}
-					} else {
-						throw new IllegalStateException("Unrecognized field '"+fieldname+"'!");
-					}
-				}
-				mThreadInfos.add(ti);
-				publishProgress(progressIndex++);
-			}
-			// Get the "after"
-			jp.nextToken();
-			if (!Constants.JSON_AFTER.equals(jp.getCurrentName()))
-				throw new IllegalStateException(genericListingError);
-			jp.nextToken();
-			mAfter = jp.getText();
-			if (Constants.NULL_STRING.equals(mAfter))
-				mAfter = null;
-			// Get the "before"
-			jp.nextToken();
-			if (!Constants.JSON_BEFORE.equals(jp.getCurrentName()))
-				throw new IllegalStateException(genericListingError);
-			jp.nextToken();
-			mBefore = jp.getText();
-			if (Constants.NULL_STRING.equals(mBefore))
-				mBefore = null;
+    	private void parseSubredditJSON(InputStreamReader reader)
+    			throws IOException, JsonParseException, IllegalStateException {
+    		
+    		Gson gson = new Gson();
+    		String genericListingError = "Not a subreddit listing";
+    		try {
+    			ThreadListing listing = gson.fromJson(reader, ThreadListing.class);
+    			if (Constants.LOGGING) Log.d(TAG, "ThreadListing kind: \"" + listing.getKind() + "\"");
+    			if (!Constants.JSON_LISTING.equals(listing.getKind()))
+    				throw new IllegalStateException(genericListingError);
+    			// Save the modhash, after, and before
+    			ThreadListingData data = listing.getData();
+    			if (Constants.EMPTY_STRING.equals(data.getModhash()))
+    				mSettings.setModhash(null);
+    			else
+    				mSettings.setModhash(data.getModhash());
+    			mAfter = data.getAfter();
+    			mBefore = data.getBefore();
+    			
+    			// Go through the children and get the ThreadInfos
+    			int progressIndex = 0;
+    			for (ThreadListingDataListing tiContainer : data.getChildren()) {
+    				// Only add entries that are threads. kind="t3"
+    				if (Constants.THREAD_KIND.equals(tiContainer.getKind()))
+    					mThreadInfos.add(tiContainer.getData());
+    				publishProgress(++progressIndex);
+    			}
+    		} catch (Exception ex) {
+    			if (Constants.LOGGING) Log.e(TAG, ex.getMessage());
+    		}
     	}
     	
     	@Override
@@ -905,16 +826,16 @@ public final class RedditIsFun extends ListActivity {
         		if (Constants.LOGGING) Log.e(TAG, "WTF: _mDirection = " + _mDirection);
         		throw new RuntimeException("How the hell did you vote something besides -1, 0, or 1?");
         	}
-        	String newScore;
+        	int newScore;
         	String newLikes;
         	_mPreviousScore = Integer.valueOf(_mTargetThreadInfo.getScore());
         	_mPreviousLikes = _mTargetThreadInfo.getLikes();
         	if (Constants.TRUE_STRING.equals(_mPreviousLikes)) {
         		if (_mDirection == 0) {
-        			newScore = String.valueOf(_mPreviousScore - 1);
+        			newScore = _mPreviousScore - 1;
         			newLikes = Constants.NULL_STRING;
         		} else if (_mDirection == -1) {
-        			newScore = String.valueOf(_mPreviousScore - 2);
+        			newScore = _mPreviousScore - 2;
         			newLikes = Constants.FALSE_STRING;
         		} else {
         			cancel(true);
@@ -922,10 +843,10 @@ public final class RedditIsFun extends ListActivity {
         		}
         	} else if (Constants.FALSE_STRING.equals(_mPreviousLikes)) {
         		if (_mDirection == 1) {
-        			newScore = String.valueOf(_mPreviousScore + 2);
+        			newScore = _mPreviousScore + 2;
         			newLikes = Constants.TRUE_STRING;
         		} else if (_mDirection == 0) {
-        			newScore = String.valueOf(_mPreviousScore + 1);
+        			newScore = _mPreviousScore + 1;
         			newLikes = Constants.NULL_STRING;
         		} else {
         			cancel(true);
@@ -933,10 +854,10 @@ public final class RedditIsFun extends ListActivity {
         		}
         	} else {
         		if (_mDirection == 1) {
-        			newScore = String.valueOf(_mPreviousScore + 1);
+        			newScore = _mPreviousScore + 1;
         			newLikes = Constants.TRUE_STRING;
         		} else if (_mDirection == -1) {
-        			newScore = String.valueOf(_mPreviousScore - 1);
+        			newScore = _mPreviousScore - 1;
         			newLikes = Constants.FALSE_STRING;
         		} else {
         			cancel(true);
@@ -964,7 +885,7 @@ public final class RedditIsFun extends ListActivity {
             		oldImageResourceDown = R.drawable.vote_down_gray;
             	}
         		_mTargetThreadInfo.setLikes(_mPreviousLikes);
-        		_mTargetThreadInfo.setScore(String.valueOf(_mPreviousScore));
+        		_mTargetThreadInfo.setScore(_mPreviousScore);
         		mThreadsAdapter.notifyDataSetChanged();
         		
     			Common.showErrorToast(_mUserError, Toast.LENGTH_LONG, RedditIsFun.this);
@@ -1317,8 +1238,8 @@ public final class RedditIsFun extends ListActivity {
     		final Button commentsButton = (Button) dialog.findViewById(R.id.thread_comments_button);
     		
     		titleView.setText(mVoteTargetThreadInfo.getTitle().replaceAll("\n ", " ").replaceAll(" \n", " ").replaceAll("\n", " "));
-    		urlView.setText(mVoteTargetThreadInfo.getURL());
-    		sb = new StringBuilder(Util.getTimeAgo(Double.valueOf(mVoteTargetThreadInfo.getCreatedUtc())))
+    		urlView.setText(mVoteTargetThreadInfo.getUrl());
+    		sb = new StringBuilder(Util.getTimeAgo(Double.valueOf(mVoteTargetThreadInfo.getCreated_utc())))
     			.append(" by ").append(mVoteTargetThreadInfo.getAuthor());
             // Show subreddit if user is currently looking at front page
     		if (mSettings.isFrontpage) {
@@ -1364,7 +1285,7 @@ public final class RedditIsFun extends ListActivity {
             	// It's a self post. Both buttons do the same thing.
             	linkButton.setEnabled(false);
             } else {
-            	final String url = mVoteTargetThreadInfo.getURL();
+            	final String url = mVoteTargetThreadInfo.getUrl();
             	linkButton.setOnClickListener(new OnClickListener() {
     				public void onClick(View v) {
     					dismissDialog(Constants.DIALOG_THING_CLICK);
@@ -1384,7 +1305,7 @@ public final class RedditIsFun extends ListActivity {
     				i.putExtra(ThreadInfo.SUBREDDIT, mVoteTargetThreadInfo.getSubreddit());
     				i.putExtra(ThreadInfo.ID, mVoteTargetThreadInfo.getId());
     				i.putExtra(ThreadInfo.TITLE, mVoteTargetThreadInfo.getTitle());
-    				i.putExtra(ThreadInfo.NUM_COMMENTS, Integer.valueOf(mVoteTargetThreadInfo.getNumComments()));
+    				i.putExtra(ThreadInfo.NUM_COMMENTS, Integer.valueOf(mVoteTargetThreadInfo.getNum_comments()));
     				startActivity(i);
     			}
     		});

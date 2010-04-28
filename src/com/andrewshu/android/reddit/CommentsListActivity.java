@@ -365,7 +365,7 @@ public class CommentsListActivity extends ListActivity
 	                titleSS.setSpan(titleTAS, 0, titleLen, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
 	                if (mSettings.theme == R.style.Reddit_Light) {
 	                	// FIXME: This doesn't work persistently, since "clicked" is not delivered to reddit.com
-	    	            if (Constants.TRUE_STRING.equals(mOpThreadInfo.getClicked())) {
+	    	            if (mOpThreadInfo.isClicked()) {
 	    	            	ForegroundColorSpan fcs = new ForegroundColorSpan(res.getColor(R.color.purple));
 	    	            	titleView.setTextColor(res.getColor(R.color.purple));
 	    	            	titleSS.setSpan(fcs, 0, titleLen, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
@@ -383,9 +383,9 @@ public class CommentsListActivity extends ListActivity
 	                titleView.setText(builder);
 	                
 	                votesView.setText(mOpThreadInfo.getScore());
-	                numCommentsView.setText(mOpThreadInfo.getNumComments()+" comments");
+	                numCommentsView.setText(mOpThreadInfo.getNum_comments()+" comments");
 	                subredditView.setText(mOpThreadInfo.getSubreddit());
-	                submissionTimeView.setText(Util.getTimeAgo(Double.valueOf(mOpThreadInfo.getCreatedUtc())));
+	                submissionTimeView.setText(Util.getTimeAgo(Double.valueOf(mOpThreadInfo.getCreated_utc())));
 	                submitterView.setText("by "+mOpThreadInfo.getAuthor());
 	                
 	                // Set the up and down arrow colors based on whether user likes
@@ -1686,9 +1686,9 @@ public class CommentsListActivity extends ListActivity
 
     		if (_mTargetCommentInfo.getOP() != null) {
     			_mTargetCommentInfo.getOP().setLikes(newLikes);
-    			_mTargetCommentInfo.getOP().setUps(String.valueOf(newUps));
-    			_mTargetCommentInfo.getOP().setDowns(String.valueOf(newDowns));
-    			_mTargetCommentInfo.getOP().setScore(String.valueOf(newUps - newDowns));
+    			_mTargetCommentInfo.getOP().setUps(newUps);
+    			_mTargetCommentInfo.getOP().setDowns(newDowns);
+    			_mTargetCommentInfo.getOP().setScore(newUps - newDowns);
     		} else{
     			_mTargetCommentInfo.setLikes(newLikes);
     			_mTargetCommentInfo.setUps(String.valueOf(newUps));
@@ -1713,9 +1713,9 @@ public class CommentsListActivity extends ListActivity
             	}
         		if (_mTargetCommentInfo.getOP() != null) {
         			_mTargetCommentInfo.getOP().setLikes(_mPreviousLikes);
-        			_mTargetCommentInfo.getOP().setUps(String.valueOf(_mPreviousUps));
-        			_mTargetCommentInfo.getOP().setDowns(String.valueOf(_mPreviousDowns));
-        			_mTargetCommentInfo.getOP().setScore(String.valueOf(_mPreviousUps - _mPreviousDowns));
+        			_mTargetCommentInfo.getOP().setUps(_mPreviousUps);
+        			_mTargetCommentInfo.getOP().setDowns(_mPreviousDowns);
+        			_mTargetCommentInfo.getOP().setScore(_mPreviousUps - _mPreviousDowns);
         		} else{
         			_mTargetCommentInfo.setLikes(_mPreviousLikes);
         			_mTargetCommentInfo.setUps(String.valueOf(_mPreviousUps));
@@ -1762,7 +1762,7 @@ public class CommentsListActivity extends ListActivity
     	
     	// Edit and delete
     	if (mSettings.username != null && mSettings.username.equals(mOpThreadInfo.getAuthor())) {
-			if (!Constants.NULL_STRING.equals(mOpThreadInfo.getSelftextHtml()))
+			if (!Constants.NULL_STRING.equals(mOpThreadInfo.getSelftext_html()))
 				menu.findItem(R.id.op_edit_menu_id).setVisible(true);
 			else
 				menu.findItem(R.id.op_edit_menu_id).setVisible(false);
@@ -2220,9 +2220,9 @@ public class CommentsListActivity extends ListActivity
     			titleView.setVisibility(View.VISIBLE);
     			titleView.setText(mOpThreadInfo.getTitle().replaceAll("\n ", " ").replaceAll(" \n", " ").replaceAll("\n", " "));
     			urlView.setVisibility(View.VISIBLE);
-    			urlView.setText(mOpThreadInfo.getURL());
+    			urlView.setText(mOpThreadInfo.getUrl());
     			submissionStuffView.setVisibility(View.VISIBLE);
-        		sb = new StringBuilder(Util.getTimeAgo(Double.valueOf(mOpThreadInfo.getCreatedUtc())))
+        		sb = new StringBuilder(Util.getTimeAgo(Double.valueOf(mOpThreadInfo.getCreated_utc())))
 	    			.append(" by ").append(mOpThreadInfo.getAuthor());
         		submissionStuffView.setText(sb);
     			// For self posts, you're already there!
@@ -2230,7 +2230,7 @@ public class CommentsListActivity extends ListActivity
     				linkButton.setText(R.string.comment_links_button);
     				linkToEmbeddedURLs(linkButton);
     			} else {
-    				final String url = mOpThreadInfo.getURL();
+    				final String url = mOpThreadInfo.getUrl();
     				linkButton.setText(R.string.thread_link_button);
 	    			linkButton.setOnClickListener(new OnClickListener() {
 	    				public void onClick(View v) {

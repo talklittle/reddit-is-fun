@@ -60,6 +60,31 @@ public class ThreadInfo implements Serializable {
 	public static final String UPS           = "ups";
 	public static final String URL           = "url";
 	
+	private String author;
+	private boolean clicked;
+	private double created;
+	private double created_utc;
+	private String domain;
+	private int downs;
+	private boolean hidden;
+	private String id;
+	private String likes;
+//	private MediaInfo media;
+//	private MediaEmbedInfo media_embed;
+	private String name;
+	private int num_comments;
+	private boolean saved;
+	private int score;
+	private String selftext;
+	private String selftext_html;
+	private String subreddit;
+	private String subreddit_id;
+	private String then;
+	private String thumbnail;
+	private String title;
+	private int ups;
+	private String url;
+	
 	public static final String[] _KEYS = {
 		AUTHOR, CLICKED, CREATED, CREATED_UTC, DOMAIN, DOWNS, HIDDEN,
 		ID, KIND, LIKES, MEDIA, NAME, NUM_COMMENTS, SAVED, SCORE, SELFTEXT,
@@ -75,101 +100,195 @@ public class ThreadInfo implements Serializable {
 		mValues.put(key, value);
 	}
 	
-	public void setDowns(String downs) {
-		mValues.put(DOWNS, downs);
-	}
-	
-	public void setLikes(String likes) {
-		mValues.put(LIKES, likes);
-	}
-	
-	public void setNumComments(String numComments) {
-		mValues.put(NUM_COMMENTS, numComments);
-	}
-	
-	public void setScore(String score) {
-		mValues.put(SCORE, score);
-	}
-	
-	public void setUps(String ups) {
-		mValues.put(UPS, ups);
-	}
+	//
+	// Getters
+	//
 
 	public String getAuthor() {
-		return mValues.get(AUTHOR);
+		return author;
 	}
-	
-	public String getClicked() {
-		return mValues.get(CLICKED);
+
+	public boolean isClicked() {
+		return clicked;
 	}
-	
-	public String getCreated() {
-		return mValues.get(CREATED);
+
+	public double getCreated() {
+		return created;
 	}
-	
-	public String getCreatedUtc() {
-		return mValues.get(CREATED_UTC);
+
+	public double getCreated_utc() {
+		return created_utc;
 	}
 
 	public String getDomain() {
-		return mValues.get(DOMAIN);
-	}
-	
-	public String getDowns() {
-		return mValues.get(DOWNS);
-	}
-	
-	public String getId() {
-		return mValues.get(ID);
-	}
-	
-	public String getKind() {
-		return mValues.get(KIND);
-	}
-	
-	public String getLikes() {
-		return mValues.get(LIKES);
-	}
-	
-	public String getName() {
-		return mValues.get(NAME);
-	}
-	
-	public String getNumComments() {
-		return mValues.get(NUM_COMMENTS);
-	}
-	
-	public String getScore() {
-		return mValues.get(SCORE);
-	}
-	
-	public String getSelftext() {
-		return mValues.get(SELFTEXT);
-	}
-	
-	public String getSelftextHtml() {
-		return mValues.get(SELFTEXT_HTML);
-	}
-	
-	public String getSubreddit() {
-		return mValues.get(SUBREDDIT);
-	}
-	
-	public String getTitle() {
-		return mValues.get(TITLE);
-	}
-	
-	public String getThumbnail() {
-		return mValues.get(THUMBNAIL);
-	}
-	
-	public String getUps() {
-		return mValues.get(UPS);
+		return domain;
 	}
 
-	public String getURL() {
-		return mValues.get(URL);
+	public int getDowns() {
+		return downs;
+	}
+
+	public boolean isHidden() {
+		return hidden;
+	}
+
+	public String getId() {
+		return id;
+	}
+
+	public String getLikes() {
+		return likes;
+	}
+
+	public String getName() {
+		return name;
+	}
+
+	public int getNum_comments() {
+		return num_comments;
+	}
+
+	public boolean isSaved() {
+		return saved;
+	}
+
+	public int getScore() {
+		return score;
+	}
+
+	public String getSelftext() {
+		return selftext;
+	}
+
+	public String getSelftext_html() {
+		return selftext_html;
+	}
+
+	public String getSubreddit() {
+		return subreddit;
+	}
+
+	public String getSubreddit_id() {
+		return subreddit_id;
+	}
+
+	public String getThen() {
+		return then;
+	}
+
+	public String getThumbnail() {
+		return thumbnail;
+	}
+
+	public String getTitle() {
+		return title;
+	}
+
+	public int getUps() {
+		return ups;
+	}
+
+	public String getUrl() {
+		return url;
 	}
 	
+	public SpannableStringBuilder getSSBSelftext() {
+		return mSSBSelftext;
+	}
+
+	//
+	// Setters
+	//
 	
+	public void setAuthor(String author) {
+		this.author = author;
+	}
+
+	public void setClicked(boolean clicked) {
+		this.clicked = clicked;
+	}
+
+	public void setCreated(double created) {
+		this.created = created;
+	}
+
+	public void setCreated_utc(double created_utc) {
+		this.created_utc = created_utc;
+	}
+
+	public void setDomain(String domain) {
+		this.domain = domain;
+	}
+
+	public void setDowns(int downs) {
+		this.downs = downs;
+	}
+
+	public void setHidden(boolean hidden) {
+		this.hidden = hidden;
+	}
+
+	public void setId(String id) {
+		this.id = id;
+	}
+
+	public void setLikes(String likes) {
+		this.likes = likes;
+	}
+
+	public void setName(String name) {
+		this.name = name;
+	}
+
+	public void setNum_comments(int num_comments) {
+		this.num_comments = num_comments;
+	}
+
+	public void setSaved(boolean saved) {
+		this.saved = saved;
+	}
+
+	public void setScore(int score) {
+		this.score = score;
+	}
+
+	public void setSelftext(String selftext) {
+		this.selftext = selftext;
+	}
+
+	public void setSelftext_html(String selftext_html) {
+		this.selftext_html = selftext_html;
+	}
+
+	public void setSubreddit(String subreddit) {
+		this.subreddit = subreddit;
+	}
+
+	public void setSubreddit_id(String subreddit_id) {
+		this.subreddit_id = subreddit_id;
+	}
+
+	public void setThen(String then) {
+		this.then = then;
+	}
+
+	public void setThumbnail(String thumbnail) {
+		this.thumbnail = thumbnail;
+	}
+
+	public void setTitle(String title) {
+		this.title = title;
+	}
+
+	public void setUps(int ups) {
+		this.ups = ups;
+	}
+
+	public void setUrl(String url) {
+		this.url = url;
+	}
+
+	public void setSSBSelftext(SpannableStringBuilder selftext) {
+		mSSBSelftext = selftext;
+	}
 }
