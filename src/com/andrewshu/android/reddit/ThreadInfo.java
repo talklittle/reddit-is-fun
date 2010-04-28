@@ -23,6 +23,8 @@ import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.HashMap;
 
+import org.codehaus.jackson.annotate.JsonAnySetter;
+
 import android.text.SpannableStringBuilder;
 
 /**
@@ -32,7 +34,7 @@ import android.text.SpannableStringBuilder;
  *
  */
 public class ThreadInfo implements Serializable {
-	static final long serialVersionUID = 29;
+	static final long serialVersionUID = 39;
 	
 	public static final String AUTHOR        = "author";
 	public static final String CLICKED       = "clicked";
@@ -98,6 +100,11 @@ public class ThreadInfo implements Serializable {
 	
 	public void put(String key, String value) {
 		mValues.put(key, value);
+	}
+	
+	@JsonAnySetter
+	public void handleUnknown(String key, Object value) {
+		// Ignore.
 	}
 	
 	//

@@ -30,7 +30,6 @@ import java.io.ObjectOutputStream;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.apache.commons.lang.StringEscapeUtils;
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpException;
 import org.apache.http.HttpResponse;
@@ -43,8 +42,7 @@ import org.apache.http.message.BasicNameValuePair;
 import org.apache.http.protocol.HTTP;
 import org.codehaus.jackson.JsonFactory;
 import org.codehaus.jackson.JsonParseException;
-import org.codehaus.jackson.JsonParser;
-import org.codehaus.jackson.JsonToken;
+import org.codehaus.jackson.map.ObjectMapper;
 
 import android.app.Activity;
 import android.app.AlertDialog;
@@ -82,8 +80,6 @@ import android.widget.ImageView;
 import android.widget.ListView;
 import android.widget.TextView;
 import android.widget.Toast;
-
-import com.google.gson.Gson;
 
 /**
  * Main Activity class representing a Subreddit, i.e., a ThreadsList.
@@ -564,10 +560,8 @@ public final class RedditIsFun extends ListActivity {
             	entity = response.getEntity();
             	InputStream in = entity.getContent();
                 try {
-                	InputStreamReader reader = new InputStreamReader(in);
-            		parseSubredditJSON(reader);
-                	reader.close();
-            		in.close();
+                	parseSubredditJSON(in);
+                	in.close();
                 	entity.consumeContent();
                 	mSettings.setSubreddit(subreddit[0]);
                 	return true;
@@ -590,13 +584,13 @@ public final class RedditIsFun extends ListActivity {
             return false;
 	    }
     	
-    	private void parseSubredditJSON(InputStreamReader reader)
+    	private void parseSubredditJSON(InputStream in)
     			throws IOException, JsonParseException, IllegalStateException {
     		
-    		Gson gson = new Gson();
+    		ObjectMapper om = new ObjectMapper();
     		String genericListingError = "Not a subreddit listing";
     		try {
-    			ThreadListing listing = gson.fromJson(reader, ThreadListing.class);
+    			ThreadListing listing = om.readValue(in, ThreadListing.class);
     			if (Constants.LOGGING) Log.d(TAG, "ThreadListing kind: \"" + listing.getKind() + "\"");
     			if (!Constants.JSON_LISTING.equals(listing.getKind()))
     				throw new IllegalStateException(genericListingError);

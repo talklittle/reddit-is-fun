@@ -23,7 +23,7 @@ import android.app.Activity;
 
 public class Constants {
 	
-	static final boolean LOGGING = false;
+	static final boolean LOGGING = true;
 	
 	// File containing the serialized variables of last subreddit viewed
 	static final String FILENAME_SUBREDDIT_CACHE = "subreddit.dat";

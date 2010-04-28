@@ -22,8 +22,15 @@ public class ThreadListingDataListing {
 	private String kind;
 	private ThreadInfo data;
 	
+	public void setKind(String kind) {
+		this.kind = kind;
+	}
 	public String getKind() {
 		return kind;
+	}
+	
+	public void setData(ThreadInfo data) {
+		this.data = data;
 	}
 	public ThreadInfo getData() {
 		return data;
