@@ -837,17 +837,17 @@ public class CommentsListActivity extends ListActivity
 							String namefield = jp.getCurrentName();
 							jp.nextToken(); // move to value
 							// Should validate each field but I'm lazy
-							// FIXME: Handle sub-objects ("media" and "media_embed"). For now, ignore.
-							if (jp.getCurrentToken() == JsonToken.START_OBJECT) {
-								int nested = 0;
-								for (;;) {
-									jp.nextToken();
-									if (jp.getCurrentToken() == JsonToken.END_OBJECT && nested == 0)
-										break;
-									if (jp.getCurrentToken() == JsonToken.START_OBJECT)
-										nested++;
-									else if (jp.getCurrentToken() == JsonToken.END_OBJECT)
-										nested--;
+							if (Constants.JSON_MEDIA.equals(namefield) && jp.getCurrentToken() == JsonToken.START_OBJECT) {
+								while (jp.nextToken() != JsonToken.END_OBJECT) {
+									String mediaNamefield = jp.getCurrentName();
+									jp.nextToken(); // move to value
+									ti.put(Constants.JSON_MEDIA+"/"+mediaNamefield, jp.getText());
+								}
+							} else if (Constants.JSON_MEDIA_EMBED.equals(namefield) && jp.getCurrentToken() == JsonToken.START_OBJECT) {
+								while (jp.nextToken() != JsonToken.END_OBJECT) {
+									String mediaNamefield = jp.getCurrentName();
+									jp.nextToken(); // move to value
+									ti.put(Constants.JSON_MEDIA_EMBED+"/"+mediaNamefield, jp.getText());
 								}
 							} else {
 								ti.put(namefield, StringEscapeUtils.unescapeHtml(jp.getText().trim().replaceAll("\r", "")));
@@ -1686,9 +1686,9 @@ public class CommentsListActivity extends ListActivity
 
     		if (_mTargetCommentInfo.getOP() != null) {
     			_mTargetCommentInfo.getOP().setLikes(newLikes);
-    			_mTargetCommentInfo.getOP().setUps(newUps);
-    			_mTargetCommentInfo.getOP().setDowns(newDowns);
-    			_mTargetCommentInfo.getOP().setScore(newUps - newDowns);
+    			_mTargetCommentInfo.getOP().setUps(String.valueOf(newUps));
+    			_mTargetCommentInfo.getOP().setDowns(String.valueOf(newDowns));
+    			_mTargetCommentInfo.getOP().setScore(String.valueOf(newUps - newDowns));
     		} else{
     			_mTargetCommentInfo.setLikes(newLikes);
     			_mTargetCommentInfo.setUps(String.valueOf(newUps));
@@ -1713,9 +1713,9 @@ public class CommentsListActivity extends ListActivity
             	}
         		if (_mTargetCommentInfo.getOP() != null) {
         			_mTargetCommentInfo.getOP().setLikes(_mPreviousLikes);
-        			_mTargetCommentInfo.getOP().setUps(_mPreviousUps);
-        			_mTargetCommentInfo.getOP().setDowns(_mPreviousDowns);
-        			_mTargetCommentInfo.getOP().setScore(_mPreviousUps - _mPreviousDowns);
+        			_mTargetCommentInfo.getOP().setUps(String.valueOf(_mPreviousUps));
+        			_mTargetCommentInfo.getOP().setDowns(String.valueOf(_mPreviousDowns));
+        			_mTargetCommentInfo.getOP().setScore(String.valueOf(_mPreviousUps - _mPreviousDowns));
         		} else{
         			_mTargetCommentInfo.setLikes(_mPreviousLikes);
         			_mTargetCommentInfo.setUps(String.valueOf(_mPreviousUps));
