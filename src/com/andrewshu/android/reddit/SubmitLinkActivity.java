@@ -379,9 +379,9 @@ public class SubmitLinkActivity extends TabActivity {
             	// Getting here means success. Create a new ThreadInfo.
             	newlyCreatedThread = new ThreadInfo();
             	// We only need to fill in a few fields.
-            	newlyCreatedThread.put(ThreadInfo.ID, newId);
-            	newlyCreatedThread.put(ThreadInfo.SUBREDDIT, newSubreddit);
-            	newlyCreatedThread.put(ThreadInfo.TITLE, _mTitle.toString());
+            	newlyCreatedThread.setId(newId);
+            	newlyCreatedThread.setSubreddit(newSubreddit);
+            	newlyCreatedThread.setTitle(_mTitle.toString());
             	
             	return newlyCreatedThread;
             	

@@ -21,7 +21,7 @@ package com.andrewshu.android.reddit;
 
 import java.io.Serializable;
 import java.util.ArrayList;
-import java.util.HashMap;
+import java.util.Map;
 
 import android.text.SpannableStringBuilder;
 
@@ -42,7 +42,6 @@ public class ThreadInfo implements Serializable {
 	public static final String DOWNS         = "downs";
 	public static final String HIDDEN        = "hidden";
 	public static final String ID            = "id";
-	public static final String KIND          = "kind";
 	public static final String LIKES         = "likes";
 	public static final String MEDIA         = "media";
 	public static final String MEDIA_EMBED   = "media_embed";
@@ -62,113 +61,131 @@ public class ThreadInfo implements Serializable {
 	
 	public static final String[] _KEYS = {
 		AUTHOR, CLICKED, CREATED, CREATED_UTC, DOMAIN, DOWNS, HIDDEN,
-		ID, KIND, LIKES, MEDIA, NAME, NUM_COMMENTS, SAVED, SCORE, SELFTEXT,
+		ID, LIKES, MEDIA, NAME, NUM_COMMENTS, SAVED, SCORE, SELFTEXT,
 		SUBREDDIT, SUBREDDIT_ID, THEN, THUMBNAIL, TITLE, UPS, URL
 	};
 	
-	public HashMap<String, String> mValues = new HashMap<String, String>();
+	public Map mData;
+	public String mKind;
 	public final ArrayList<MarkdownURL> mUrls = new ArrayList<MarkdownURL>();
 //	public JsonNode mMediaEmbed; // Unused.
 	transient public SpannableStringBuilder mSSBSelftext = null;
 	
-	public void put(String key, String value) {
-		mValues.put(key, value);
+	public void setData(Map data) {
+		mData = data;
 	}
 	
-	public void setDowns(String downs) {
-		mValues.put(DOWNS, downs);
+	// XXX XXX XXX: get rid of this
+	public void put(String key, String value) {
+		mData.put(key, value);
+	}
+	
+	public void setDowns(Integer downs) {
+		mData.put(DOWNS, downs);
+	}
+	
+	public void setId(String id) {
+		mData.put(ID, id);
 	}
 	
 	public void setLikes(String likes) {
-		mValues.put(LIKES, likes);
+		mData.put(LIKES, likes);
 	}
 	
-	public void setNumComments(String numComments) {
-		mValues.put(NUM_COMMENTS, numComments);
+	public void setNumComments(Integer numComments) {
+		mData.put(NUM_COMMENTS, numComments);
 	}
 	
-	public void setScore(String score) {
-		mValues.put(SCORE, score);
+	public void setScore(Integer score) {
+		mData.put(SCORE, score);
 	}
 	
-	public void setUps(String ups) {
-		mValues.put(UPS, ups);
+	public void setSubreddit(String subreddit) {
+		mData.put(SUBREDDIT, subreddit);
+	}
+	
+	public void setTitle(String title) {
+		mData.put(TITLE, title);
+	}
+	
+	public void setUps(Integer ups) {
+		mData.put(UPS, ups);
 	}
 
 	public String getAuthor() {
-		return mValues.get(AUTHOR);
+		return (String) mData.get(AUTHOR);
 	}
 	
 	public String getClicked() {
-		return mValues.get(CLICKED);
+		return (String) mData.get(CLICKED);
 	}
 	
-	public String getCreated() {
-		return mValues.get(CREATED);
+	public Double getCreated() {
+		return (Double) mData.get(CREATED);
 	}
 	
-	public String getCreatedUtc() {
-		return mValues.get(CREATED_UTC);
+	public Double getCreatedUtc() {
+		return (Double) mData.get(CREATED_UTC);
 	}
 
 	public String getDomain() {
-		return mValues.get(DOMAIN);
+		return (String) mData.get(DOMAIN);
 	}
 	
-	public String getDowns() {
-		return mValues.get(DOWNS);
+	public Integer getDowns() {
+		return (Integer) mData.get(DOWNS);
 	}
 	
 	public String getId() {
-		return mValues.get(ID);
+		return (String) mData.get(ID);
 	}
 	
 	public String getKind() {
-		return mValues.get(KIND);
+		return mKind;
 	}
 	
 	public String getLikes() {
-		return mValues.get(LIKES);
+		return (String) mData.get(LIKES);
 	}
 	
 	public String getName() {
-		return mValues.get(NAME);
+		return (String) mData.get(NAME);
 	}
 	
-	public String getNumComments() {
-		return mValues.get(NUM_COMMENTS);
+	public Integer getNumComments() {
+		return (Integer) mData.get(NUM_COMMENTS);
 	}
 	
-	public String getScore() {
-		return mValues.get(SCORE);
+	public Integer getScore() {
+		return (Integer) mData.get(SCORE);
 	}
 	
 	public String getSelftext() {
-		return mValues.get(SELFTEXT);
+		return (String) mData.get(SELFTEXT);
 	}
 	
 	public String getSelftextHtml() {
-		return mValues.get(SELFTEXT_HTML);
+		return (String) mData.get(SELFTEXT_HTML);
 	}
 	
 	public String getSubreddit() {
-		return mValues.get(SUBREDDIT);
+		return (String) mData.get(SUBREDDIT);
 	}
 	
 	public String getTitle() {
-		return mValues.get(TITLE);
+		return (String) mData.get(TITLE);
 	}
 	
 	public String getThumbnail() {
-		return mValues.get(THUMBNAIL);
+		return (String) mData.get(THUMBNAIL);
 	}
 	
-	public String getUps() {
-		return mValues.get(UPS);
+	public Integer getUps() {
+		return (Integer) mData.get(UPS);
 	}
 
 	public String getURL() {
-		return mValues.get(URL);
+		return (String) mData.get(URL);
 	}
 	
 	

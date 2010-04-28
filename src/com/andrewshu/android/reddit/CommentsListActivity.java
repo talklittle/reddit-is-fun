@@ -837,6 +837,7 @@ public class CommentsListActivity extends ListActivity
 							String namefield = jp.getCurrentName();
 							jp.nextToken(); // move to value
 							// Should validate each field but I'm lazy
+							// FIXME: Handle sub-objects ("media" and "media_embed"). For now, ignore.
 							if (jp.getCurrentToken() == JsonToken.START_OBJECT) {
 								int nested = 0;
 								for (;;) {
@@ -1685,9 +1686,9 @@ public class CommentsListActivity extends ListActivity
 
     		if (_mTargetCommentInfo.getOP() != null) {
     			_mTargetCommentInfo.getOP().setLikes(newLikes);
-    			_mTargetCommentInfo.getOP().setUps(String.valueOf(newUps));
-    			_mTargetCommentInfo.getOP().setDowns(String.valueOf(newDowns));
-    			_mTargetCommentInfo.getOP().setScore(String.valueOf(newUps - newDowns));
+    			_mTargetCommentInfo.getOP().setUps(newUps);
+    			_mTargetCommentInfo.getOP().setDowns(newDowns);
+    			_mTargetCommentInfo.getOP().setScore(newUps - newDowns);
     		} else{
     			_mTargetCommentInfo.setLikes(newLikes);
     			_mTargetCommentInfo.setUps(String.valueOf(newUps));
@@ -1712,9 +1713,9 @@ public class CommentsListActivity extends ListActivity
             	}
         		if (_mTargetCommentInfo.getOP() != null) {
         			_mTargetCommentInfo.getOP().setLikes(_mPreviousLikes);
-        			_mTargetCommentInfo.getOP().setUps(String.valueOf(_mPreviousUps));
-        			_mTargetCommentInfo.getOP().setDowns(String.valueOf(_mPreviousDowns));
-        			_mTargetCommentInfo.getOP().setScore(String.valueOf(_mPreviousUps - _mPreviousDowns));
+        			_mTargetCommentInfo.getOP().setUps(_mPreviousUps);
+        			_mTargetCommentInfo.getOP().setDowns(_mPreviousDowns);
+        			_mTargetCommentInfo.getOP().setScore(_mPreviousUps - _mPreviousDowns);
         		} else{
         			_mTargetCommentInfo.setLikes(_mPreviousLikes);
         			_mTargetCommentInfo.setUps(String.valueOf(_mPreviousUps));
