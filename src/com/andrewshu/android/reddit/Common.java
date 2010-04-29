@@ -91,7 +91,7 @@ public class Common {
 	private static final DefaultHttpClient mGzipHttpClient = createGzipHttpClient();
 	private static final Pattern REDDIT_LINK = Pattern.compile(
       "https?://(?:[\\w-]+\\.)?reddit.com" +
-      "(?:/r/([^/.]+))?" +
+      "(?:/r/([^/.]+|reddit\\.com))?" +
       "(?:/comments/([^/.]+)/[^/.]+" +
           "(?:/([^/.]+))?" +
       ")?/?");
