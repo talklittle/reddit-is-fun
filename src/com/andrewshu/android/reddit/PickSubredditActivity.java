@@ -147,10 +147,10 @@ public final class PickSubredditActivity extends ListActivity {
     }
     
     private void returnSubreddit(String subreddit) {
-       	Bundle bundle = new Bundle();
-       	bundle.putString(ThreadInfo.SUBREDDIT, subreddit.trim());
+       	Bundle extras = new Bundle();
+       	extras.putString(Constants.EXTRA_SUBREDDIT, subreddit.trim());
        	Intent mIntent = new Intent();
-       	mIntent.putExtras(bundle);
+       	mIntent.putExtras(extras);
        	setResult(RESULT_OK, mIntent);
        	finish();	
     }

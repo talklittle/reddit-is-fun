@@ -1,5 +1,5 @@
 /*
- * Copyright 2009 Andrew Shu
+ * Copyright 2010 Andrew Shu
  *
  * This file is part of "reddit is fun".
  *
@@ -16,16 +16,30 @@
  * You should have received a copy of the GNU General Public License
  * along with "reddit is fun".  If not, see <http://www.gnu.org/licenses/>.
  */
-
 package com.andrewshu.android.reddit;
 
-public class Thing {
-	public ThreadInfo thread = null;
-	public CommentInfo comment = null;
-//	public SubredditInfo subreddit = null;
+public class Listing {
+	private String kind;
+	private ListingData data;
 	
-	public Thing(ThreadInfo thread, CommentInfo comment) {
-		this.thread = thread;
-		this.comment = comment;
+	public Listing() {}
+	
+	public Listing(String stuff) {
+		kind = null;
+		data = null;
+	}
+	
+	public void setKind(String kind) {
+		this.kind = kind;
+	}
+	public String getKind() {
+		return kind;
+	}
+	
+	public void setData(ListingData data) {
+		this.data = data;
+	}
+	public ListingData getData() {
+		return data;
 	}
 }

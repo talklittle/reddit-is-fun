@@ -30,7 +30,6 @@ import java.io.ObjectOutputStream;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
-import java.util.TreeMap;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -47,10 +46,8 @@ import org.apache.http.message.BasicNameValuePair;
 import org.apache.http.params.HttpConnectionParams;
 import org.apache.http.params.HttpParams;
 import org.apache.http.protocol.HTTP;
-import org.codehaus.jackson.JsonFactory;
 import org.codehaus.jackson.JsonParseException;
-import org.codehaus.jackson.JsonParser;
-import org.codehaus.jackson.JsonToken;
+import org.codehaus.jackson.map.ObjectMapper;
 
 import android.app.Activity;
 import android.app.AlertDialog;
@@ -112,13 +109,12 @@ public class CommentsListActivity extends ListActivity
     // Group 1: whole error. Group 2: the time part
     private final Pattern RATELIMIT_RETRY_PATTERN = Pattern.compile("(you are trying to submit too fast. try again in (.+?)\\.)");
 
-    private final JsonFactory jsonFactory = new JsonFactory();
+    private final ObjectMapper om = new ObjectMapper();
     private final Markdown markdown = new Markdown();
-    private int mNestedCommentsJSONOrder = 0;
-	
+    
     /** Custom list adapter that fits our threads data into the list. */
     private CommentsListAdapter mCommentsAdapter = null;
-    private ArrayList<CommentInfo> mCommentsList = null;
+    private ArrayList<ThingInfo> mCommentsList = null;
     // Lock used when modifying the mCommentsAdapter
     private static final Object COMMENT_ADAPTER_LOCK = new Object();
     
@@ -138,7 +134,7 @@ public class CommentsListActivity extends ListActivity
 //    private CharSequence mMoreChildrenId = "";
     private HashSet<Integer> mMorePositions = new HashSet<Integer>();
     private int mNumVisibleComments = Constants.DEFAULT_COMMENT_DOWNLOAD_LIMIT;
-    private ThreadInfo mOpThreadInfo = null;
+    private ThingInfo mOpThingInfo = null;
     private CharSequence mSortByUrl = Constants.CommentsSort.SORT_BY_BEST_URL;
     private CharSequence mThreadTitle = null;
     // should also cache mSettings.subreddit and mSettings.threadId
@@ -150,7 +146,7 @@ public class CommentsListActivity extends ListActivity
     private HashSet<Integer> mHiddenComments = new HashSet<Integer>();
     
     // UI State
-    private CommentInfo mVoteTargetCommentInfo = null;
+    private ThingInfo mVoteTargetThing = null;
     private CharSequence mReplyTargetName = null;
     private CharSequence mEditTargetBody = null;
     private String mDeleteTargetKind = null;
@@ -210,15 +206,15 @@ public class CommentsListActivity extends ListActivity
     			return;
     		}
     	} else {
-        	mSettings.setThreadId(extras.getString(ThreadInfo.ID));
-        	mSettings.setSubreddit(extras.getString(ThreadInfo.SUBREDDIT));
-        	mThreadTitle = extras.getString(ThreadInfo.TITLE);
+        	mSettings.setThreadId(extras.getString(Constants.EXTRA_ID));
+        	mSettings.setSubreddit(extras.getString(Constants.EXTRA_SUBREDDIT));
+        	mThreadTitle = extras.getString(Constants.EXTRA_TITLE);
         	if (mThreadTitle != null) {
         	  setTitle(mThreadTitle + " : " + mSettings.subreddit);
         	} else {
         	  setTitle("reddit is fun");
         	}
-        	int numComments = extras.getInt(ThreadInfo.NUM_COMMENTS);
+        	int numComments = extras.getInt(Constants.EXTRA_NUM_COMMENTS);
         	// TODO: Take into account very negative karma comments
         	if (numComments < Constants.DEFAULT_COMMENT_DOWNLOAD_LIMIT)
         		mNumVisibleComments = numComments;
@@ -278,7 +274,7 @@ public class CommentsListActivity extends ListActivity
     }
     
 
-    private final class CommentsListAdapter extends ArrayAdapter<CommentInfo> {
+    private final class CommentsListAdapter extends ArrayAdapter<ThingInfo> {
     	static final int OP_ITEM_VIEW_TYPE = 0;
     	static final int COMMENT_ITEM_VIEW_TYPE = 1;
     	static final int MORE_ITEM_VIEW_TYPE = 2;
@@ -291,7 +287,7 @@ public class CommentsListActivity extends ListActivity
     	private LayoutInflater mInflater;
         private int mFrequentSeparatorPos = ListView.INVALID_POSITION;
         
-        public CommentsListAdapter(Context context, List<CommentInfo> objects) {
+        public CommentsListAdapter(Context context, List<ThingInfo> objects) {
             super(context, 0, objects);
             mInflater = (LayoutInflater)context.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
         }
@@ -328,7 +324,7 @@ public class CommentsListActivity extends ListActivity
             View view;
             Resources res = getResources();
             
-            CommentInfo item = this.getItem(position);
+            ThingInfo item = this.getItem(position);
             
             try {
 	            if (position == 0) {
@@ -358,14 +354,14 @@ public class CommentsListActivity extends ListActivity
 	                
 	                // Set the title and domain using a SpannableStringBuilder
 	                SpannableStringBuilder builder = new SpannableStringBuilder();
-	                String title = mOpThreadInfo.getTitle().replaceAll("\n ", " ").replaceAll(" \n", " ").replaceAll("\n", " ");
+	                String title = mOpThingInfo.getTitle().replaceAll("\n ", " ").replaceAll(" \n", " ").replaceAll("\n", " ");
 	                SpannableString titleSS = new SpannableString(title);
 	                int titleLen = title.length();
 	                TextAppearanceSpan titleTAS = new TextAppearanceSpan(getApplicationContext(), R.style.TextAppearance_14sp);
 	                titleSS.setSpan(titleTAS, 0, titleLen, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
 	                if (mSettings.theme == R.style.Reddit_Light) {
 	                	// FIXME: This doesn't work persistently, since "clicked" is not delivered to reddit.com
-	    	            if (mOpThreadInfo.isClicked()) {
+	    	            if (mOpThingInfo.isClicked()) {
 	    	            	ForegroundColorSpan fcs = new ForegroundColorSpan(res.getColor(R.color.purple));
 	    	            	titleView.setTextColor(res.getColor(R.color.purple));
 	    	            	titleSS.setSpan(fcs, 0, titleLen, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
@@ -376,32 +372,32 @@ public class CommentsListActivity extends ListActivity
 	                }
 	                builder.append(titleSS);
 	                builder.append(" ");
-	                SpannableString domainSS = new SpannableString("("+mOpThreadInfo.getDomain()+")");
+	                SpannableString domainSS = new SpannableString("("+mOpThingInfo.getDomain()+")");
 	                TextAppearanceSpan domainTAS = new TextAppearanceSpan(getApplicationContext(), R.style.TextAppearance_10sp);
-	                domainSS.setSpan(domainTAS, 0, mOpThreadInfo.getDomain().length()+2, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
+	                domainSS.setSpan(domainTAS, 0, mOpThingInfo.getDomain().length()+2, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
 	                builder.append(domainSS);
 	                titleView.setText(builder);
 	                
-	                votesView.setText(mOpThreadInfo.getScore());
-	                numCommentsView.setText(mOpThreadInfo.getNum_comments()+" comments");
-	                subredditView.setText(mOpThreadInfo.getSubreddit());
-	                submissionTimeView.setText(Util.getTimeAgo(Double.valueOf(mOpThreadInfo.getCreated_utc())));
-	                submitterView.setText("by "+mOpThreadInfo.getAuthor());
+	                votesView.setText("" + mOpThingInfo.getScore());
+	                numCommentsView.setText(mOpThingInfo.getNum_comments()+" comments");
+	                subredditView.setText(mOpThingInfo.getSubreddit());
+	                submissionTimeView.setText(Util.getTimeAgo(mOpThingInfo.getCreated_utc()));
+	                submitterView.setText("by "+mOpThingInfo.getAuthor());
 	                
 	                // Set the up and down arrow colors based on whether user likes
 	                if (mSettings.loggedIn) {
-	                	if (Constants.TRUE_STRING.equals(mOpThreadInfo.getLikes())) {
-	                		voteUpView.setImageResource(R.drawable.vote_up_red);
-	                		voteDownView.setImageResource(R.drawable.vote_down_gray);
-	                		votesView.setTextColor(res.getColor(R.color.arrow_red));
-	                	} else if (Constants.FALSE_STRING.equals(mOpThreadInfo.getLikes())) {
-	                		voteUpView.setImageResource(R.drawable.vote_up_gray);
-	                		voteDownView.setImageResource(R.drawable.vote_down_blue);
-	                		votesView.setTextColor(res.getColor(R.color.arrow_blue));
-	                	} else {
+	                	if (mOpThingInfo.getLikes() == null) {
 	                		voteUpView.setImageResource(R.drawable.vote_up_gray);
 	                		voteDownView.setImageResource(R.drawable.vote_down_gray);
 	                		votesView.setTextColor(res.getColor(R.color.gray));
+	                	} else if (mOpThingInfo.getLikes() == true) {
+	                		voteUpView.setImageResource(R.drawable.vote_up_red);
+	                		voteDownView.setImageResource(R.drawable.vote_down_gray);
+	                		votesView.setTextColor(res.getColor(R.color.arrow_red));
+	                	} else {
+	                		voteUpView.setImageResource(R.drawable.vote_up_gray);
+	                		voteDownView.setImageResource(R.drawable.vote_down_blue);
+	                		votesView.setTextColor(res.getColor(R.color.arrow_blue));
 	                	}
 	                } else {
 	            		voteUpView.setImageResource(R.drawable.vote_up_gray);
@@ -411,11 +407,10 @@ public class CommentsListActivity extends ListActivity
 	                
 	                // --- End part copied from ThreadsListAdapter ---
 	                
-	                // Selftext is rendered in a WebView
-	            	if (!Constants.EMPTY_STRING.equals(mOpThreadInfo.getSelftext())
-	            			&& !Constants.NULL_STRING.equals(mOpThreadInfo.getSelftext())) {
+	            	if (mOpThingInfo.getSelftext() != null
+	            			&& !Constants.EMPTY_STRING.equals(mOpThingInfo.getSelftext())) {
 	            		selftextView.setVisibility(View.VISIBLE);
-		                selftextView.setText(mOpThreadInfo.mSSBSelftext);
+		                selftextView.setText(mOpThingInfo.getSSBSelftext());
 	            	} else {
 	            		selftextView.setVisibility(View.GONE);
 	            	}
@@ -447,17 +442,17 @@ public class CommentsListActivity extends ListActivity
 		            	if (Constants.LOGGING) Log.e(TAG, e.getMessage());
 		            }
 		            submitterView.setText(item.getAuthor());
-		            submissionTimeView.setText(Util.getTimeAgo(Double.valueOf(item.getCreatedUtc())));
+		            submissionTimeView.setText(Util.getTimeAgo(item.getCreated_utc()));
 		            switch (item.getIndent()) {
 		            case 0:  leftIndent.setText(""); break;
-		            case 1:  leftIndent.setText("w"); break;
-		            case 2:  leftIndent.setText("ww"); break;
-		            case 3:  leftIndent.setText("www"); break;
-		            case 4:  leftIndent.setText("wwww"); break;
-		            case 5:  leftIndent.setText("wwwww"); break;
-		            case 6:  leftIndent.setText("wwwwww"); break;
-		            case 7:  leftIndent.setText("wwwwwww"); break;
-		            default: leftIndent.setText("wwwwwww"); break;
+		            case 1:  leftIndent.setText("W"); break;
+		            case 2:  leftIndent.setText("WW"); break;
+		            case 3:  leftIndent.setText("WWW"); break;
+		            case 4:  leftIndent.setText("WWWW"); break;
+		            case 5:  leftIndent.setText("WWWWW"); break;
+		            case 6:  leftIndent.setText("WWWWWW"); break;
+		            case 7:  leftIndent.setText("WWWWWWW"); break;
+		            default: leftIndent.setText("WWWWWWWW"); break;
 		            }
             	} else if (mMorePositions.contains(position)) {
 	            	// "load more comments"
@@ -469,14 +464,14 @@ public class CommentsListActivity extends ListActivity
 	            	TextView leftIndent = (TextView) view.findViewById(R.id.left_indent);
 	            	switch (item.getIndent()) {
 		            case 0:  leftIndent.setText(""); break;
-		            case 1:  leftIndent.setText("w"); break;
-		            case 2:  leftIndent.setText("ww"); break;
-		            case 3:  leftIndent.setText("www"); break;
-		            case 4:  leftIndent.setText("wwww"); break;
-		            case 5:  leftIndent.setText("wwwww"); break;
-		            case 6:  leftIndent.setText("wwwwww"); break;
-		            case 7:  leftIndent.setText("wwwwwww"); break;
-		            default: leftIndent.setText("wwwwwww"); break;
+		            case 1:  leftIndent.setText("W"); break;
+		            case 2:  leftIndent.setText("WW"); break;
+		            case 3:  leftIndent.setText("WWW"); break;
+		            case 4:  leftIndent.setText("WWWW"); break;
+		            case 5:  leftIndent.setText("WWWWW"); break;
+		            case 6:  leftIndent.setText("WWWWWW"); break;
+		            case 7:  leftIndent.setText("WWWWWWW"); break;
+		            default: leftIndent.setText("WWWWWWWW"); break;
 		            }
 	            	// TODO: Show number of replies, if possible
 	            	
@@ -509,18 +504,18 @@ public class CommentsListActivity extends ListActivity
 		            	if (Constants.LOGGING) Log.e(TAG, e.getMessage());
 		            }
 		            submitterView.setText(item.getAuthor());
-		            submissionTimeView.setText(Util.getTimeAgo(Double.valueOf(item.getCreatedUtc())));
-		            bodyView.setText(item.mSSBBody);
+		            submissionTimeView.setText(Util.getTimeAgo(item.getCreated_utc()));
+		            bodyView.setText(item.getSSBBody());
 		            switch (item.getIndent()) {
 		            case 0:  leftIndent.setText(""); break;
-		            case 1:  leftIndent.setText("w"); break;
-		            case 2:  leftIndent.setText("ww"); break;
-		            case 3:  leftIndent.setText("www"); break;
-		            case 4:  leftIndent.setText("wwww"); break;
-		            case 5:  leftIndent.setText("wwwww"); break;
-		            case 6:  leftIndent.setText("wwwwww"); break;
-		            case 7:  leftIndent.setText("wwwwwww"); break;
-		            default: leftIndent.setText("wwwwwww"); break;
+		            case 1:  leftIndent.setText("W"); break;
+		            case 2:  leftIndent.setText("WW"); break;
+		            case 3:  leftIndent.setText("WWW"); break;
+		            case 4:  leftIndent.setText("WWWW"); break;
+		            case 5:  leftIndent.setText("WWWWW"); break;
+		            case 6:  leftIndent.setText("WWWWWW"); break;
+		            case 7:  leftIndent.setText("WWWWWWW"); break;
+		            default: leftIndent.setText("WWWWWWWW"); break;
 		            }
 		            
 		            if ("[deleted]".equals(item.getAuthor())) {
@@ -531,18 +526,18 @@ public class CommentsListActivity extends ListActivity
 		            else if (mSettings.loggedIn) {
 		            	voteUpView.setVisibility(View.VISIBLE);
 		            	voteDownView.setVisibility(View.VISIBLE);
-		            	if (Constants.TRUE_STRING.equals(item.getLikes())) {
-		            		voteUpView.setImageResource(R.drawable.vote_up_red);
-		            		voteDownView.setImageResource(R.drawable.vote_down_gray);
-//		            		votesView.setTextColor(res.getColor(R.color.arrow_red));
-		            	} else if (Constants.FALSE_STRING.equals(item.getLikes())) {
-		            		voteUpView.setImageResource(R.drawable.vote_up_gray);
-		            		voteDownView.setImageResource(R.drawable.vote_down_blue);
-//		            		votesView.setTextColor(res.getColor(R.color.arrow_blue));
-		            	} else {
+		            	if (item.getLikes() == null) {
 		            		voteUpView.setImageResource(R.drawable.vote_up_gray);
 		            		voteDownView.setImageResource(R.drawable.vote_down_gray);
 //		            		votesView.setTextColor(res.getColor(R.color.gray));
+		            	} else if (item.getLikes() == true) {
+		            		voteUpView.setImageResource(R.drawable.vote_up_red);
+		            		voteDownView.setImageResource(R.drawable.vote_down_gray);
+//		            		votesView.setTextColor(res.getColor(R.color.arrow_red));
+		            	} else {
+		            		voteUpView.setImageResource(R.drawable.vote_up_gray);
+		            		voteDownView.setImageResource(R.drawable.vote_down_blue);
+//		            		votesView.setTextColor(res.getColor(R.color.arrow_blue));
 		            	}
 		            } else {
 		            	voteUpView.setVisibility(View.VISIBLE);
@@ -574,7 +569,7 @@ public class CommentsListActivity extends ListActivity
      */
     @Override
     protected void onListItemClick(ListView l, View v, int position, long id) {
-        CommentInfo item = mCommentsAdapter.getItem(position);
+        ThingInfo item = mCommentsAdapter.getItem(position);
         
         if (mHiddenCommentHeads.contains(position)) {
         	showComment(position);
@@ -582,12 +577,8 @@ public class CommentsListActivity extends ListActivity
         }
         
         // Mark the OP post/regular comment as selected
-        mVoteTargetCommentInfo = item;
-        if (mVoteTargetCommentInfo.getOP() != null) {
-        	mReplyTargetName = mVoteTargetCommentInfo.getOP().getName();
-		} else {
-			mReplyTargetName = mVoteTargetCommentInfo.getName();
-		}
+        mVoteTargetThing = item;
+        mReplyTargetName = mVoteTargetThing.getName();
 		
         if (mMorePositions.contains(position)) {
         	mJumpToCommentPosition = position;
@@ -639,7 +630,7 @@ public class CommentsListActivity extends ListActivity
     	synchronized (COMMENT_ADAPTER_LOCK) {
 	    	if (commentsAdapter == null) {
 	    		// Reset the list to be empty.
-	    		mCommentsList = new ArrayList<CommentInfo>();
+	    		mCommentsList = new ArrayList<ThingInfo>();
 	            mCommentsAdapter = new CommentsListAdapter(this, mCommentsList);
 	    	} else {
 	    		mCommentsAdapter = commentsAdapter;
@@ -667,14 +658,15 @@ public class CommentsListActivity extends ListActivity
      */
     class DownloadCommentsTask extends AsyncTask<Integer, Integer, Boolean> {
     	
-    	private TreeMap<Integer, CommentInfo> mCommentsMap = new TreeMap<Integer, CommentInfo>();
     	private int _mNumComments = mNumVisibleComments;
     	// _mPositionOffset != 0 means that you're doing "load more comments"
     	private int _mPositionOffset;
     	private int _mIndentation;
+    	private int _mListIndex = 0;
     	private String _mMoreChildrenId;
     	// Temporary storage for new "load more comments" found in the JSON
     	private HashSet<Integer> _mNewMorePositions = new HashSet<Integer>();
+    	private ArrayList<ThingInfo> _mNewThingInfos = new ArrayList<ThingInfo>();
     	
     	/**
     	 * Constructor to do normal comments page
@@ -721,26 +713,27 @@ public class CommentsListActivity extends ListActivity
                 
                 // Fill in the list adapter
                 synchronized (COMMENT_ADAPTER_LOCK) {
-    				// Shift the comments' positions for comments after what is about to be inserted.
-    				// Shift them by (number inserted - 1) since there used to be a "load more comments" entry there.
-    				if (_mPositionOffset != 0) {
-    					int numInserted = mCommentsMap.size();
-    					for (int i = _mPositionOffset + 1; i < mCommentsList.size(); i++) {
-    						mCommentsList.get(i).setListOrder(i + numInserted - 1);
-    						// Also update other "load more comments" list items
-    						if (mMorePositions.remove(i))
-    							_mNewMorePositions.add(i + numInserted - 1);
+                	// Insert the new comments
+                	if (_mPositionOffset == 0) {
+                		// insert comments after OP
+                		mCommentsList.addAll(_mNewThingInfos);
+                	} else {
+                		int numNewComments = _mNewThingInfos.size();
+                		int numRemoved = 0;
+    					// First remove the "load more comments" entry
+    					if (mMorePositions.remove(_mPositionOffset)) {
+    						mCommentsList.remove(_mPositionOffset);
+    						numRemoved++;
     					}
-    					// Now remove the "load more comments" entry
-    					mMorePositions.remove(_mPositionOffset);
-    					mCommentsList.remove(_mPositionOffset);
-    				}
-    				// Insert the new comments
-		    		for (Integer key : mCommentsMap.keySet()) {
-		    			CommentInfo ci = mCommentsMap.get(key);
-		    			mCommentsList.add(ci.getListOrder(), ci);
-		    		}
-		    		// Merge the new "load more comments" positions
+                		// Update existing positions in the "more" positions set.
+    					for (int i = _mPositionOffset + 1; i < mCommentsList.size() + numRemoved; i++) {
+    						if (mMorePositions.remove(i))
+    							_mNewMorePositions.add(i + numNewComments - numRemoved);
+    					}
+    					// insert comments at _mPositionOffset
+                		mCommentsList.addAll(_mPositionOffset, _mNewThingInfos);
+                	}
+                	// Merge the new "load more comments" positions
 		    		mMorePositions.addAll(_mNewMorePositions);
 		    	}
 				
@@ -759,298 +752,107 @@ public class CommentsListActivity extends ListActivity
             return false;
 	    }
     	
-        void parseCommentsJSON(InputStream in) throws IOException,
-				JsonParseException, IllegalStateException {
-		
-			JsonParser jp = jsonFactory.createJsonParser(in);
-			
-			/* The comments JSON file is a JSON array with 2 elements. First element is a thread JSON object,
-			 * equivalent to the thread object you get from a subreddit .json file.
-			 * Second element is a similar JSON object, but the "children" array is an array of comments
-			 * instead of threads. 
-			 */
-			if (jp.nextToken() != JsonToken.START_ARRAY)
-				throw new IllegalStateException("Unexpected non-JSON-array in the comments");
-			
-			// The thread, copied from above but instead of ThreadsListAdapter, use CommentsListAdapter.
-			
-			String genericListingError = "Not a subreddit listing";
-			if (JsonToken.START_OBJECT != jp.nextToken()) // starts with "{"
-				throw new IllegalStateException(genericListingError);
-			jp.nextToken();
-			if (!Constants.JSON_KIND.equals(jp.getCurrentName()))
-				throw new IllegalStateException(genericListingError);
-			jp.nextToken();
-			if (!Constants.JSON_LISTING.equals(jp.getText()))
-				throw new IllegalStateException(genericListingError);
-			jp.nextToken();
-			if (!Constants.JSON_DATA.equals(jp.getCurrentName()))
-				throw new IllegalStateException(genericListingError);
-			jp.nextToken();
-			if (JsonToken.START_OBJECT != jp.getCurrentToken())
-				throw new IllegalStateException(genericListingError);
-			jp.nextToken();
-			// Save the modhash
-			if (!Constants.JSON_MODHASH.equals(jp.getCurrentName()))
-				throw new IllegalStateException(genericListingError);
-			jp.nextToken();
-			if (Constants.EMPTY_STRING.equals(jp.getText()))
-				mSettings.setModhash(null);
-			else
-				mSettings.setModhash(jp.getText());
-			jp.nextToken();
-			if (!Constants.JSON_CHILDREN.equals(jp.getCurrentName()))
-				throw new IllegalStateException(genericListingError);
-			jp.nextToken();
-			if (jp.getCurrentToken() != JsonToken.START_ARRAY)
-				throw new IllegalStateException(genericListingError);
-			
-			while (jp.nextToken() != JsonToken.END_ARRAY) {
-				if (jp.getCurrentToken() != JsonToken.START_OBJECT)
-					throw new IllegalStateException("Unexpected non-JSON-object in the children array");
-				
-				// Process JSON representing one thread
-				ThreadInfo ti = new ThreadInfo();
-				while (jp.nextToken() != JsonToken.END_OBJECT) {
-					String fieldname = jp.getCurrentName();
-					jp.nextToken(); // move to value, or START_OBJECT/START_ARRAY
-				
-					if (Constants.JSON_KIND.equals(fieldname)) {
-						if (!Constants.THREAD_KIND.equals(jp.getText())) {
-							// Skip this JSON Object since it doesn't represent a thread.
-							// May encounter nested objects too.
-							int nested = 0;
-							for (;;) {
-								jp.nextToken();
-								if (jp.getCurrentToken() == JsonToken.END_OBJECT && nested == 0)
-									break;
-								if (jp.getCurrentToken() == JsonToken.START_OBJECT)
-									nested++;
-								if (jp.getCurrentToken() == JsonToken.END_OBJECT)
-									nested--;
-							}
-							break;  // Go on to the next thread (JSON Object) in the JSON Array.
-						}
-						ti.put(Constants.JSON_KIND, Constants.THREAD_KIND);
-					} else if (Constants.JSON_DATA.equals(fieldname)) { // contains an object
-						while (jp.nextToken() != JsonToken.END_OBJECT) {
-							String namefield = jp.getCurrentName();
-							jp.nextToken(); // move to value
-							// Should validate each field but I'm lazy
-							if (Constants.JSON_MEDIA.equals(namefield) && jp.getCurrentToken() == JsonToken.START_OBJECT) {
-								while (jp.nextToken() != JsonToken.END_OBJECT) {
-									String mediaNamefield = jp.getCurrentName();
-									jp.nextToken(); // move to value
-									ti.put(Constants.JSON_MEDIA+"/"+mediaNamefield, jp.getText());
-								}
-							} else if (Constants.JSON_MEDIA_EMBED.equals(namefield) && jp.getCurrentToken() == JsonToken.START_OBJECT) {
-								while (jp.nextToken() != JsonToken.END_OBJECT) {
-									String mediaNamefield = jp.getCurrentName();
-									jp.nextToken(); // move to value
-									ti.put(Constants.JSON_MEDIA_EMBED+"/"+mediaNamefield, jp.getText());
-								}
-							} else {
-								ti.put(namefield, StringEscapeUtils.unescapeHtml(jp.getText().trim().replaceAll("\r", "")));
-								if (Constants.JSON_NUM_COMMENTS.equals(namefield)) {
-									int numComments = Integer.valueOf(jp.getText());
-									if (numComments != _mNumComments)
-										_mNumComments = numComments;
-								} else if (Constants.JSON_SELFTEXT.equals(namefield)) {
-									ti.mSSBSelftext = markdown.markdown(ti.getSelftext(), new SpannableStringBuilder(), ti.mUrls);
-								} else if (Constants.JSON_TITLE.equals(namefield)) {
-								  // We might not have a title if we've intercepted a plain link to a thread.
-								  mThreadTitle = jp.getText();
-								} else if (Constants.JSON_SUBREDDIT.equals(namefield)) {
-								  mSettings.subreddit = jp.getText();
-								}
-							}
-						}
-					} else {
-						throw new IllegalStateException("Unrecognized field '"+fieldname+"'!");
-					}
-				}
-				// For comments OP, should be only one
-				if (_mPositionOffset == 0) {
-					mOpThreadInfo = ti;
-					CommentInfo ci = new CommentInfo();
-					ci.setOpInfo(ti);
-					ci.setIndent(0);
-					ci.setListOrder(0);
-					mCommentsMap.put(0, ci);
-				}
-			}
-			// Wind down the end of the "data" then outermost thread-json-object
-			for (int i = 0; i < 2; i++)
-		    	while (jp.nextToken() != JsonToken.END_OBJECT)
-		    		;
-			
-			//
-			// --- Now, process the comments ---
-			//
-			if (_mPositionOffset == 0)
-				mNestedCommentsJSONOrder = 1;  // position 0 is taken by OP thread
-			else
-				mNestedCommentsJSONOrder = _mPositionOffset;
-			processNestedCommentsJSON(jp, _mIndentation);
-			
-		}
-		
-		void processNestedCommentsJSON(JsonParser jp, int commentsNested)
+    	private void parseCommentsJSON(InputStream in)
 				throws IOException, JsonParseException, IllegalStateException {
-			String genericListingError = "Not a valid listing";
 			
-		//	boolean more = false;
-			
-			if (jp.nextToken() != JsonToken.START_OBJECT) {
-		    	// It's OK for replies to be empty.
-		    	if (Constants.EMPTY_STRING.equals(jp.getText()))
-		    		return;
-		    	else
-		    		throw new IllegalStateException(genericListingError);
-			}
-			// Skip over to children
-			jp.nextToken();
-			if (!Constants.JSON_KIND.equals(jp.getCurrentName()))
-				throw new IllegalStateException(genericListingError);
-			jp.nextToken();
-			// Handle "more" link (child)
-			if (Constants.JSON_MORE.equals(jp.getText())) {
-		//		more = true;
-				CommentInfo moreCi = new CommentInfo();
-				moreCi.setListOrder(mNestedCommentsJSONOrder);
-				moreCi.setIndent(commentsNested);
-		    	_mNewMorePositions.add(mNestedCommentsJSONOrder);
-		    	mNestedCommentsJSONOrder++;
+			String genericListingError = "Not a comments listing";
+			try {
+				Listing[] listings = om.readValue(in, Listing[].class);
+
+				// listings[0] is a thread Listing for the OP.
+				// process same as a thread listing more or less
 				
-		    	jp.nextToken();
-		    	if (!Constants.JSON_DATA.equals(jp.getCurrentName()))
-		    		throw new IllegalStateException(genericListingError);
-		    	jp.nextToken();
-		    	if (JsonToken.START_OBJECT != jp.getCurrentToken())
-		    		throw new IllegalStateException(genericListingError);
-		    	// handle "more" -- "name" and "id"
-		    	while (jp.nextToken() != JsonToken.END_OBJECT) {
-		    		String fieldname = jp.getCurrentName();
-		    		jp.nextToken();
-		    		moreCi.put(fieldname, jp.getText());
-		    	}
-		    	// Skip to the end of children array ("more" is first and only child)
-		    	while (jp.nextToken() != JsonToken.END_ARRAY)
-		    		;
-		    	// Skip to end of "data", then "replies" object
-		    	for (int i = 0; i < 2; i++)
-			    	while (jp.nextToken() != JsonToken.END_OBJECT)
-			    		;
-		    	mCommentsMap.put(moreCi.getListOrder(), moreCi);
-		    	return;
-			} else if (Constants.JSON_LISTING.equals(jp.getText())) {
-		    	jp.nextToken();
-		    	if (!Constants.JSON_DATA.equals(jp.getCurrentName()))
-		    		throw new IllegalStateException(genericListingError);
-		    	if (jp.nextToken() != JsonToken.START_OBJECT)
-		    		throw new IllegalStateException(genericListingError);
-		    	jp.nextToken();
-				// Save the modhash
-				if (!Constants.JSON_MODHASH.equals(jp.getCurrentName()))
+				if (!Constants.JSON_LISTING.equals(listings[0].getKind()))
 					throw new IllegalStateException(genericListingError);
-				jp.nextToken();
-				if (Constants.EMPTY_STRING.equals(jp.getText()))
+				
+				// Save modhash, ignore "after" and "before" which are meaningless in this context (and probably null)
+				ListingData threadListingData = listings[0].getData();
+				if (Constants.EMPTY_STRING.equals(threadListingData.getModhash()))
 					mSettings.setModhash(null);
 				else
-					mSettings.setModhash(jp.getText());
-				jp.nextToken();
-		    	if (!Constants.JSON_CHILDREN.equals(jp.getCurrentName()))
-		    		throw new IllegalStateException(genericListingError);
-		    	jp.nextToken();
-		    	if (jp.getCurrentToken() != JsonToken.START_ARRAY)
-		    		throw new IllegalStateException(genericListingError);
-			} else {
-				throw new IllegalStateException(genericListingError);
-			}
-			
-			while (jp.nextToken() != JsonToken.END_ARRAY) {
-				if (jp.getCurrentToken() != JsonToken.START_OBJECT)
-					throw new IllegalStateException("Unexpected non-JSON-object in the children array");
+					mSettings.setModhash(threadListingData.getModhash());
 				
-				// --- Process JSON representing one regular, non-OP comment ---
-				CommentInfo ci = new CommentInfo();
-				ci.setIndent(commentsNested);
-				// Post the comments in prefix order.
-				ci.setListOrder(mNestedCommentsJSONOrder++);
-				while (jp.nextToken() != JsonToken.END_OBJECT) {
-		//			more = false;
-					String fieldname = jp.getCurrentName();
-					jp.nextToken(); // move to value, or START_OBJECT/START_ARRAY
+				if (Constants.LOGGING) Log.d(TAG, "Successfully got OP listing[0]: modhash "+mSettings.modhash);
 				
-					if (Constants.JSON_KIND.equals(fieldname)) {
-						// Handle "more" link (sibling)
-						if (Constants.JSON_MORE.equals(jp.getText())) {
-		//					more = true;
-				    		ci.put(Constants.JSON_KIND, Constants.JSON_MORE);
-					    	_mNewMorePositions.add(ci.getListOrder());
-				    		
-					    	jp.nextToken();
-					    	if (!Constants.JSON_DATA.equals(jp.getCurrentName()))
-					    		throw new IllegalStateException(genericListingError);
-					    	jp.nextToken();
-					    	if (JsonToken.START_OBJECT != jp.getCurrentToken())
-					    		throw new IllegalStateException(genericListingError);
-					    	// handle "more" -- "name" and "id"
-					    	while (jp.nextToken() != JsonToken.END_OBJECT) {
-					    		String moreFieldname = jp.getCurrentName();
-					    		jp.nextToken();
-					    		ci.put(moreFieldname, jp.getText());
-					    	}
-						}
-						else if (!Constants.COMMENT_KIND.equals(jp.getText())) {
-							// Skip this JSON Object since it doesn't represent a comment.
-							// May encounter nested objects too.
-							int nested = 0;
-							for (;;) {
-								jp.nextToken();
-								if (jp.getCurrentToken() == JsonToken.END_OBJECT && nested == 0)
-									break;
-								if (jp.getCurrentToken() == JsonToken.START_OBJECT)
-									nested++;
-								if (jp.getCurrentToken() == JsonToken.END_OBJECT)
-									nested--;
-							}
-							break;  // Go on to the next thread (JSON Object) in the JSON Array.
-						} else {
-							ci.put(Constants.JSON_KIND, Constants.COMMENT_KIND);
-						}
-					} else if (Constants.JSON_DATA.equals(fieldname)) { // contains an object
-						while (jp.nextToken() != JsonToken.END_OBJECT) {
-							String namefield = jp.getCurrentName();
-							
-							// Should validate each field but I'm lazy
-							if (Constants.JSON_REPLIES.equals(namefield)) {
-								// Nested replies beginning with same "kind": "Listing" stuff
-								processNestedCommentsJSON(jp, commentsNested + 1);
-							} else {
-								jp.nextToken(); // move to value
-								if (Constants.JSON_BODY.equals(namefield)) {
-									ci.put(namefield, StringEscapeUtils.unescapeHtml(jp.getText().trim().replaceAll("\r", "")));
-									ci.mSSBBody = markdown.markdown(ci.getBody(), new SpannableStringBuilder(), ci.mUrls);
-								} else {
-									ci.put(namefield, jp.getText().trim().replaceAll("\r", ""));
-								}
-							}
-						}
-					} else {
-						throw new IllegalStateException("Unrecognized field '"+fieldname+"'!");
+				ThingListing threadThingListing = threadListingData.getChildren()[0];
+				if (!Constants.THREAD_KIND.equals(threadThingListing.getKind()))
+					throw new IllegalStateException(genericListingError);
+
+				// For comments OP, should be only one
+				if (_mPositionOffset == 0) {
+					mOpThingInfo = threadThingListing.getData();
+					mOpThingInfo.setIndent(0);
+					synchronized (COMMENT_ADAPTER_LOCK) {
+						mCommentsList.add(0, mOpThingInfo);
 					}
 				}
-				// Finished parsing one of the children
-				mCommentsMap.put(ci.getListOrder(), ci);
-				publishProgress(mNestedCommentsJSONOrder - _mPositionOffset);
+				// Pull other data from the OP
+				_mNumComments = mOpThingInfo.getNum_comments();
+				// We might not have a title if we've intercepted a plain link to a thread.
+				mOpThingInfo.setSSBSelftext(markdown.markdown(mOpThingInfo.getSelftext(), new SpannableStringBuilder(), mOpThingInfo.getUrls()));
+				mThreadTitle = mOpThingInfo.getTitle();
+				mSettings.setSubreddit(mOpThingInfo.getSubreddit());
+				
+				// listings[1] is a comment Listing for the comments
+				// Go through the children and get the ThingInfos
+				
+				ListingData commentListingData = listings[1].getData();
+				for (ThingListing commentThingListing : commentListingData.getChildren()) {
+					// insert the comment and its replies, prefix traversal order
+					insertNestedComment(commentThingListing, 0);
+				}
+			} catch (Exception ex) {
+				if (Constants.LOGGING) Log.e(TAG, ex.getMessage());
 			}
-			// Wind down the end of the "data" then "replies" objects
-			for (int i = 0; i < 2; i++)
-		    	while (jp.nextToken() != JsonToken.END_OBJECT)
-		    		;
 		}
+    	
+    	/**
+    	 * Recursive method to insert comment tree into the mCommentsList,
+    	 * with proper list order and indentation
+    	 */
+    	void insertNestedComment(ThingListing commentThingListing, int indentLevel) {
+    		ThingInfo ci = commentThingListing.getData();
+    		ci.setIndent(_mIndentation + indentLevel);
 
+    		// Insert the comment
+    		_mListIndex++;
+	    	_mNewThingInfos.add(ci);
+    		
+    		// handle "more" entry
+    		if (Constants.MORE_KIND.equals(commentThingListing.getKind())) {
+    			_mNewMorePositions.add(_mPositionOffset + _mListIndex);
+    			if (Constants.LOGGING) Log.d(TAG, "new more position at " + (_mPositionOffset + _mListIndex));
+		    	return;
+    		}
+    		
+    		// Regular comment
+    		
+    		if (Constants.LOGGING) Log.d(TAG, "comment at index " + (_mPositionOffset + _mListIndex));
+	    	
+    		// Skip things that are not comments, which shouldn't happen
+			if (!Constants.COMMENT_KIND.equals(commentThingListing.getKind())) {
+				if (Constants.LOGGING) Log.e(TAG, "comment whose kind is \""+commentThingListing.getKind()+"\" (expected "+Constants.COMMENT_KIND+")");
+				return;
+			}
+			
+    		// do markdown
+    		ci.setBody(StringEscapeUtils.unescapeHtml(ci.getBody().trim().replaceAll("\r", "")));
+			ci.setSSBBody(markdown.markdown(ci.getBody(), new SpannableStringBuilder(), ci.getUrls()));
+			
+			// handle the replies
+			Listing repliesListing = ci.getReplies();
+			if (repliesListing == null)
+				return;
+			ListingData repliesListingData = repliesListing.getData();
+			if (repliesListingData == null)
+				return;
+			ThingListing[] replyThingListings = repliesListingData.getChildren();
+			if (replyThingListings == null)
+				return;
+			for (ThingListing replyThingListing : replyThingListings) {
+				insertNestedComment(replyThingListing, indentLevel + 1);
+			}
+    	}
     	
     	public void onPreExecute() {
     		if (mSettings.threadId == null)
@@ -1089,7 +891,7 @@ public class CommentsListActivity extends ListActivity
     			mCommentsAdapter.notifyDataSetChanged();
     			// Set title in android titlebar
     			if (mThreadTitle == null) {
-	    			mThreadTitle = mOpThreadInfo.getTitle().replaceAll("\n ", " ").replaceAll(" \n", " ").replaceAll("\n", " ");
+	    			mThreadTitle = mOpThingInfo.getTitle().replaceAll("\n ", " ").replaceAll(" \n", " ").replaceAll("\n", " ");
 	    		}
     			setTitle(mThreadTitle + " : " + mSettings.subreddit);
 	    		// Remember this time for caching purposes
@@ -1527,17 +1329,17 @@ public class CommentsListActivity extends ListActivity
     	private CharSequence _mThingFullname;
     	private int _mDirection;
     	private String _mUserError = "Error voting.";
-    	private CommentInfo _mTargetCommentInfo;
+    	private ThingInfo _mTargetThingInfo;
     	
     	// Save the previous arrow and score in case we need to revert
     	private int _mPreviousScore, _mPreviousUps, _mPreviousDowns;
-    	private String _mPreviousLikes;
+    	private Boolean _mPreviousLikes;
     	
     	VoteTask(CharSequence thingFullname, int direction) {
     		_mThingFullname = thingFullname;
     		_mDirection = direction;
     		// Copy these because they can change while voting thread is running
-    		_mTargetCommentInfo = mVoteTargetCommentInfo;
+    		_mTargetThingInfo = mVoteTargetThing;
     	}
     	
     	@Override
@@ -1633,40 +1435,32 @@ public class CommentsListActivity extends ListActivity
         	}
 
     		int newUps, newDowns;
-        	String newLikes;
-        	if (_mTargetCommentInfo.getOP() != null) {
-        		_mPreviousUps = Integer.valueOf(_mTargetCommentInfo.getOP().getUps());
-        		_mPreviousDowns = Integer.valueOf(_mTargetCommentInfo.getOP().getDowns());
-    	    	newUps = _mPreviousUps;
-    	    	newDowns = _mPreviousDowns;
-    	    	_mPreviousLikes = _mTargetCommentInfo.getOP().getLikes();
-        	} else {
-        		_mPreviousUps = Integer.valueOf(_mTargetCommentInfo.getUps());
-        		_mPreviousDowns = Integer.valueOf(_mTargetCommentInfo.getDowns());
-    	    	newUps = _mPreviousUps;
-    	    	newDowns = _mPreviousDowns;
-    	    	_mPreviousLikes = _mTargetCommentInfo.getLikes();
-        	}
-	        if (Constants.TRUE_STRING.equals(_mPreviousLikes)) {
-	    		if (_mDirection == 0) {
-	    			newUps = _mPreviousUps - 1;
-	    			newLikes = Constants.NULL_STRING;
+        	Boolean newLikes;
+        	_mPreviousUps = Integer.valueOf(_mTargetThingInfo.getUps());
+        	_mPreviousDowns = Integer.valueOf(_mTargetThingInfo.getDowns());
+    	    newUps = _mPreviousUps;
+    	    newDowns = _mPreviousDowns;
+    	    _mPreviousLikes = _mTargetThingInfo.getLikes();
+        	
+    	    if (_mPreviousLikes == null) {
+	    		if (_mDirection == 1) {
+	    			newUps = _mPreviousUps + 1;
+	    			newLikes = true;
 	    		} else if (_mDirection == -1) {
-	    			newUps = _mPreviousUps - 1;
 	    			newDowns = _mPreviousDowns + 1;
-	    			newLikes = Constants.FALSE_STRING;
+	    			newLikes = false;
 	    		} else {
 	    			cancel(true);
 	    			return;
 	    		}
-	    	} else if (Constants.FALSE_STRING.equals(_mPreviousLikes)) {
-	    		if (_mDirection == 1) {
-	    			newUps = _mPreviousUps + 1;
-	    			newDowns = _mPreviousDowns - 1;
-	    			newLikes = Constants.TRUE_STRING;
-	    		} else if (_mDirection == 0) {
-	    			newDowns = _mPreviousDowns - 1;
-	    			newLikes = Constants.NULL_STRING;
+    	    } else if (_mPreviousLikes == true) {
+    	    	if (_mDirection == 0) {
+	    			newUps = _mPreviousUps - 1;
+	    			newLikes = null;
+	    		} else if (_mDirection == -1) {
+	    			newUps = _mPreviousUps - 1;
+	    			newDowns = _mPreviousDowns + 1;
+	    			newLikes = false;
 	    		} else {
 	    			cancel(true);
 	    			return;
@@ -1674,53 +1468,42 @@ public class CommentsListActivity extends ListActivity
 	    	} else {
 	    		if (_mDirection == 1) {
 	    			newUps = _mPreviousUps + 1;
-	    			newLikes = Constants.TRUE_STRING;
-	    		} else if (_mDirection == -1) {
-	    			newDowns = _mPreviousDowns + 1;
-	    			newLikes = Constants.FALSE_STRING;
+	    			newDowns = _mPreviousDowns - 1;
+	    			newLikes = true;
+	    		} else if (_mDirection == 0) {
+	    			newDowns = _mPreviousDowns - 1;
+	    			newLikes = null;
 	    		} else {
 	    			cancel(true);
 	    			return;
 	    		}
 	    	}
 
-    		if (_mTargetCommentInfo.getOP() != null) {
-    			_mTargetCommentInfo.getOP().setLikes(newLikes);
-    			_mTargetCommentInfo.getOP().setUps(newUps);
-    			_mTargetCommentInfo.getOP().setDowns(newDowns);
-    			_mTargetCommentInfo.getOP().setScore(newUps - newDowns);
-    		} else{
-    			_mTargetCommentInfo.setLikes(newLikes);
-    			_mTargetCommentInfo.setUps(String.valueOf(newUps));
-    			_mTargetCommentInfo.setDowns(String.valueOf(newDowns));
-    		}
-    		mCommentsAdapter.notifyDataSetChanged();
+    		_mTargetThingInfo.setLikes(newLikes);
+    		_mTargetThingInfo.setUps(newUps);
+    		_mTargetThingInfo.setDowns(newDowns);
+    		_mTargetThingInfo.setScore(newUps - newDowns);
+        	mCommentsAdapter.notifyDataSetChanged();
     	}
     	
     	public void onPostExecute(Boolean success) {
     		if (!success) {
     			// Vote failed. Undo the arrow and score.
             	int oldImageResourceUp, oldImageResourceDown;
-        		if (Constants.TRUE_STRING.equals(_mPreviousLikes)) {
-            		oldImageResourceUp = R.drawable.vote_up_red;
-            		oldImageResourceDown = R.drawable.vote_down_gray;
-            	} else if (Constants.FALSE_STRING.equals(_mPreviousLikes)) {
+        		if (_mPreviousLikes == null) {
             		oldImageResourceUp = R.drawable.vote_up_gray;
-            		oldImageResourceDown = R.drawable.vote_down_blue;
+            		oldImageResourceDown = R.drawable.vote_down_gray;
+        		} else if (_mPreviousLikes == true) {
+        			oldImageResourceUp = R.drawable.vote_up_red;
+            		oldImageResourceDown = R.drawable.vote_down_gray;
             	} else {
             		oldImageResourceUp = R.drawable.vote_up_gray;
-            		oldImageResourceDown = R.drawable.vote_down_gray;
+            		oldImageResourceDown = R.drawable.vote_down_blue;
             	}
-        		if (_mTargetCommentInfo.getOP() != null) {
-        			_mTargetCommentInfo.getOP().setLikes(_mPreviousLikes);
-        			_mTargetCommentInfo.getOP().setUps(_mPreviousUps);
-        			_mTargetCommentInfo.getOP().setDowns(_mPreviousDowns);
-        			_mTargetCommentInfo.getOP().setScore(_mPreviousUps - _mPreviousDowns);
-        		} else{
-        			_mTargetCommentInfo.setLikes(_mPreviousLikes);
-        			_mTargetCommentInfo.setUps(String.valueOf(_mPreviousUps));
-        			_mTargetCommentInfo.setDowns(String.valueOf(_mPreviousDowns));
-        		}
+       			_mTargetThingInfo.setLikes(_mPreviousLikes);
+       			_mTargetThingInfo.setUps(_mPreviousUps);
+       			_mTargetThingInfo.setDowns(_mPreviousDowns);
+       			_mTargetThingInfo.setScore(_mPreviousUps - _mPreviousDowns);
         		mCommentsAdapter.notifyDataSetChanged();
         		
     			Common.showErrorToast(_mUserError, Toast.LENGTH_LONG, CommentsListActivity.this);
@@ -1761,8 +1544,8 @@ public class CommentsListActivity extends ListActivity
     	}
     	
     	// Edit and delete
-    	if (mSettings.username != null && mSettings.username.equals(mOpThreadInfo.getAuthor())) {
-			if (!Constants.NULL_STRING.equals(mOpThreadInfo.getSelftext_html()))
+    	if (mSettings.username != null && mSettings.username.equals(mOpThingInfo.getAuthor())) {
+			if (mOpThingInfo.getSelftext_html() != null)
 				menu.findItem(R.id.op_edit_menu_id).setVisible(true);
 			else
 				menu.findItem(R.id.op_edit_menu_id).setVisible(false);
@@ -1809,9 +1592,9 @@ public class CommentsListActivity extends ListActivity
         switch (item.getItemId()) {
         case R.id.op_menu_id:
     		synchronized (COMMENT_ADAPTER_LOCK) {
-    			mVoteTargetCommentInfo = mCommentsAdapter.getItem(0);
+    			mVoteTargetThing = mCommentsAdapter.getItem(0);
     		}
-    		mReplyTargetName = mVoteTargetCommentInfo.getOP().getName();
+    		mReplyTargetName = mVoteTargetThing.getName();
     		showDialog(Constants.DIALOG_THING_CLICK);
     		break;
     	case R.id.login_logout_menu_id:
@@ -1830,9 +1613,9 @@ public class CommentsListActivity extends ListActivity
     		// From the menu, only used for the OP, which is a thread.
         	if (mSettings.loggedIn) {
 	    		synchronized (COMMENT_ADAPTER_LOCK) {
-	    			mVoteTargetCommentInfo = mCommentsAdapter.getItem(0);
+	    			mVoteTargetThing = mCommentsAdapter.getItem(0);
 	    		}
-	    		mReplyTargetName = mVoteTargetCommentInfo.getOP().getName();
+	    		mReplyTargetName = mVoteTargetThing.getName();
 	            showDialog(Constants.DIALOG_REPLY);
         	} else {
         		Common.showErrorToast("You must be logged in to reply.", Toast.LENGTH_LONG, this);
@@ -1847,13 +1630,13 @@ public class CommentsListActivity extends ListActivity
     		Common.launchBrowser(url, this);
     		break;
     	case R.id.op_delete_menu_id:
-    		mReplyTargetName = mOpThreadInfo.getName();
+    		mReplyTargetName = mOpThingInfo.getName();
     		mDeleteTargetKind = Constants.THREAD_KIND;
     		showDialog(Constants.DIALOG_DELETE);
     		break;
     	case R.id.op_edit_menu_id:
-    		mReplyTargetName = mOpThreadInfo.getName();
-    		mEditTargetBody = mOpThreadInfo.getSelftext();
+    		mReplyTargetName = mOpThingInfo.getName();
+    		mEditTargetBody = mOpThingInfo.getSelftext();
     		showDialog(Constants.DIALOG_EDIT);
     		break;
     	case R.id.light_dark_menu_id:
@@ -1964,7 +1747,7 @@ public class CommentsListActivity extends ListActivity
 	    	int myIndent = mCommentsAdapter.getItem(rowId).getIndent();
 	    	// Hide everything after the row.
 	    	for (int i = rowId + 1; i < mCommentsAdapter.getCount(); i++) {
-	    		CommentInfo ci = mCommentsAdapter.getItem(i);
+	    		ThingInfo ci = mCommentsAdapter.getItem(i);
 	    		if (ci.getIndent() <= myIndent)
 	    			break;
 	    		mHiddenComments.add(i);
@@ -1982,7 +1765,7 @@ public class CommentsListActivity extends ListActivity
 	    	int stopIndent = mCommentsAdapter.getItem(rowId).getIndent();
 	    	int skipIndentAbove = -1;
 	    	for (int i = rowId + 1; i < mCommentsAdapter.getCount(); i++) {
-	    		CommentInfo ci = mCommentsAdapter.getItem(i);
+	    		ThingInfo ci = mCommentsAdapter.getItem(i);
 	    		int ciIndent = ci.getIndent();
 	    		if (ciIndent <= stopIndent)
 	    			break;
@@ -2208,29 +1991,30 @@ public class CommentsListActivity extends ListActivity
     		break;
     		
     	case Constants.DIALOG_THING_CLICK:
-    		if (mVoteTargetCommentInfo == null)
+    		if (mVoteTargetThing == null)
     			break;
-    		String likes;
+    		Boolean likes;
     		final TextView titleView = (TextView) dialog.findViewById(R.id.title);
     		final TextView urlView = (TextView) dialog.findViewById(R.id.url);
     		final TextView submissionStuffView = (TextView) dialog.findViewById(R.id.submissionTime_submitter_subreddit);
     		final Button linkButton = (Button) dialog.findViewById(R.id.thread_link_button);
-			if (mVoteTargetCommentInfo.getOP() != null) {
-				likes = mVoteTargetCommentInfo.getOP().getLikes();
+			
+    		if (mVoteTargetThing == mOpThingInfo) {
+				likes = mVoteTargetThing.getLikes();
     			titleView.setVisibility(View.VISIBLE);
-    			titleView.setText(mOpThreadInfo.getTitle().replaceAll("\n ", " ").replaceAll(" \n", " ").replaceAll("\n", " "));
+    			titleView.setText(mOpThingInfo.getTitle().replaceAll("\n ", " ").replaceAll(" \n", " ").replaceAll("\n", " "));
     			urlView.setVisibility(View.VISIBLE);
-    			urlView.setText(mOpThreadInfo.getUrl());
+    			urlView.setText(mOpThingInfo.getUrl());
     			submissionStuffView.setVisibility(View.VISIBLE);
-        		sb = new StringBuilder(Util.getTimeAgo(Double.valueOf(mOpThreadInfo.getCreated_utc())))
-	    			.append(" by ").append(mOpThreadInfo.getAuthor());
+        		sb = new StringBuilder(Util.getTimeAgo(mOpThingInfo.getCreated_utc()))
+	    			.append(" by ").append(mOpThingInfo.getAuthor());
         		submissionStuffView.setText(sb);
     			// For self posts, you're already there!
-    			if (("self.").toLowerCase().equals(mOpThreadInfo.getDomain().substring(0, 5).toLowerCase())) {
+    			if (("self.").toLowerCase().equals(mOpThingInfo.getDomain().substring(0, 5).toLowerCase())) {
     				linkButton.setText(R.string.comment_links_button);
     				linkToEmbeddedURLs(linkButton);
     			} else {
-    				final String url = mOpThreadInfo.getUrl();
+    				final String url = mOpThingInfo.getUrl();
     				linkButton.setText(R.string.thread_link_button);
 	    			linkButton.setOnClickListener(new OnClickListener() {
 	    				public void onClick(View v) {
@@ -2242,8 +2026,8 @@ public class CommentsListActivity extends ListActivity
 	    			linkButton.setVisibility(View.VISIBLE);
     			}
     		} else {
-    			titleView.setText("Comment by " + mVoteTargetCommentInfo.getAuthor());
-    			likes = mVoteTargetCommentInfo.getLikes();
+    			titleView.setText("Comment by " + mVoteTargetThing.getAuthor());
+    			likes = mVoteTargetThing.getLikes();
     			urlView.setVisibility(View.INVISIBLE);
     			submissionStuffView.setVisibility(View.INVISIBLE);
 
@@ -2267,18 +2051,18 @@ public class CommentsListActivity extends ListActivity
     			voteDownButton.setOnCheckedChangeListener(null);
     			
     			// Set initial states of the vote buttons based on user's past actions
-	    		if (Constants.TRUE_STRING.equals(likes)) {
-	    			// User currenty likes it
-	    			voteUpButton.setChecked(true);
-	    			voteDownButton.setChecked(false);
-	    		} else if (Constants.FALSE_STRING.equals(likes)) {
-	    			// User currently dislikes it
-	    			voteUpButton.setChecked(false);
-	    			voteDownButton.setChecked(true);
-	    		} else {
+	    		if (likes == null) {
 	    			// User is currently neutral
 	    			voteUpButton.setChecked(false);
 	    			voteDownButton.setChecked(false);
+	    		} else if (likes == true) {
+	    			// User currenty likes it
+	    			voteUpButton.setChecked(true);
+	    			voteDownButton.setChecked(false);
+	    		} else {
+	    			// User currently dislikes it
+	    			voteUpButton.setChecked(false);
+	    			voteDownButton.setChecked(true);
 	    		}
 	    		// Now we want the user to be able to vote.
 	    		voteUpButton.setOnCheckedChangeListener(voteUpOnCheckedChangeListener);
@@ -2306,9 +2090,9 @@ public class CommentsListActivity extends ListActivity
     		break;
     		
     	case Constants.DIALOG_REPLY:
-    		if (mVoteTargetCommentInfo != null && mVoteTargetCommentInfo.getReplyDraft() != null) {
+    		if (mVoteTargetThing != null && mVoteTargetThing.getReplyDraft() != null) {
     			EditText replyBodyView = (EditText) dialog.findViewById(R.id.body); 
-    			replyBodyView.setText(mVoteTargetCommentInfo.getReplyDraft());
+    			replyBodyView.setText(mVoteTargetThing.getReplyDraft());
     		}
     		break;
     		
@@ -2323,17 +2107,12 @@ public class CommentsListActivity extends ListActivity
     }
     
     /**
-     * Helper function to add links from mVoteTargetCommentInfo to the button
+     * Helper function to add links from mVoteTargetThing to the button
      * @param linkButton Button that should open list of links
      */
     private void linkToEmbeddedURLs(Button linkButton) {
 		final ArrayList<String> urls = new ArrayList<String>();
-		final ArrayList<MarkdownURL> vtUrls;
-		final ThreadInfo opTi = mVoteTargetCommentInfo.getOP();
-		if (opTi != null)
-			vtUrls = opTi.mUrls;
-		else
-			vtUrls = mVoteTargetCommentInfo.mUrls;
+		final ArrayList<MarkdownURL> vtUrls = mVoteTargetThing.mUrls;
 		int urlsCount = vtUrls.size();
 		for (int i = 0; i < urlsCount; i++)
 			urls.add(vtUrls.get(i).url);
@@ -2400,11 +2179,7 @@ public class CommentsListActivity extends ListActivity
     private final CompoundButton.OnCheckedChangeListener voteUpOnCheckedChangeListener = new CompoundButton.OnCheckedChangeListener() {
     	public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
 	    	dismissDialog(Constants.DIALOG_THING_CLICK);
-	    	String thingFullname;
-	    	if (mVoteTargetCommentInfo.getOP() != null)
-	    		thingFullname = mVoteTargetCommentInfo.getOP().getName();
-	    	else
-	    		thingFullname = mVoteTargetCommentInfo.getName();
+	    	String thingFullname = mVoteTargetThing.getName();
 			if (isChecked)
 				new VoteTask(thingFullname, 1).execute();
 			else
@@ -2414,11 +2189,7 @@ public class CommentsListActivity extends ListActivity
     private final CompoundButton.OnCheckedChangeListener voteDownOnCheckedChangeListener = new CompoundButton.OnCheckedChangeListener() {
 	    public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
 	    	dismissDialog(Constants.DIALOG_THING_CLICK);
-	    	String thingFullname;
-	    	if (mVoteTargetCommentInfo.getOP() != null)
-	    		thingFullname = mVoteTargetCommentInfo.getOP().getName();
-	    	else
-	    		thingFullname = mVoteTargetCommentInfo.getName();
+	    	String thingFullname = mVoteTargetThing.getName();
 			if (isChecked)
 				new VoteTask(thingFullname, -1).execute();
 			else
@@ -2447,17 +2218,17 @@ public class CommentsListActivity extends ListActivity
         			fis = openFileInput(Constants.FILENAME_COMMENTS_CACHE);
         			in = new ObjectInputStream(fis);
         			
-        			mCommentsList = (ArrayList<CommentInfo>) in.readObject();
+        			mCommentsList = (ArrayList<ThingInfo>) in.readObject();
         			// Process nonserializable (transient) members of the CommentInfos
-        			for (CommentInfo ci : mCommentsList) {
-        				ci.mSSBBody = markdown.markdown(ci.getBody(), new SpannableStringBuilder(), ci.mUrls); 
+        			for (ThingInfo ci : mCommentsList) {
+        				ci.setSSBBody(markdown.markdown(ci.getBody(), new SpannableStringBuilder(), ci.getUrls())); 
         			}
         			mJumpToCommentId = (CharSequence) in.readObject();
         			mJumpToCommentPosition = in.readInt();
         			mMorePositions = (HashSet<Integer>) in.readObject();
         			mNumVisibleComments = in.readInt();
-        			mOpThreadInfo = (ThreadInfo) in.readObject();
-        			mOpThreadInfo.mSSBSelftext = markdown.markdown(mOpThreadInfo.getSelftext(), new SpannableStringBuilder(), mOpThreadInfo.mUrls);
+        			mOpThingInfo = (ThingInfo) in.readObject();
+        			mOpThingInfo.setSSBSelftext(markdown.markdown(mOpThingInfo.getSelftext(), new SpannableStringBuilder(), mOpThingInfo.getUrls()));
     		    	mSettings.setSubreddit((CharSequence) in.readObject());
     				mSettings.setThreadId((CharSequence) in.readObject());
     				mSortByUrl = (CharSequence) in.readObject();
@@ -2564,7 +2335,7 @@ public class CommentsListActivity extends ListActivity
 		    out.writeInt(mJumpToCommentPosition);
 		    out.writeObject(mMorePositions);
 			out.writeInt(mNumVisibleComments);
-			out.writeObject(mOpThreadInfo);
+			out.writeObject(mOpThingInfo);
 			out.writeObject(mSettings.subreddit);
 			out.writeObject(mSettings.threadId);
 			out.writeObject(mSortByUrl);

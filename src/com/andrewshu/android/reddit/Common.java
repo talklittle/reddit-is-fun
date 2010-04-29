@@ -506,14 +506,14 @@ public class Common {
           return;
         } else if (matcher.group(2) != null) {
           Intent intent = new Intent(act.getApplicationContext(), CommentsListActivity.class);
-          intent.putExtra(ThreadInfo.SUBREDDIT, matcher.group(1));
-          intent.putExtra(ThreadInfo.ID, matcher.group(2));
-          intent.putExtra(ThreadInfo.NUM_COMMENTS, Constants.DEFAULT_COMMENT_DOWNLOAD_LIMIT);
+          intent.putExtra(Constants.EXTRA_SUBREDDIT, matcher.group(1));
+          intent.putExtra(Constants.EXTRA_ID, matcher.group(2));
+          intent.putExtra(Constants.EXTRA_NUM_COMMENTS, Constants.DEFAULT_COMMENT_DOWNLOAD_LIMIT);
           act.startActivity(intent);
           return;
         } else if (matcher.group(1) != null) {
           Intent intent = new Intent(act.getApplicationContext(), RedditIsFun.class);
-          intent.putExtra(ThreadInfo.SUBREDDIT, matcher.group(1));
+          intent.putExtra(Constants.EXTRA_SUBREDDIT, matcher.group(1));
           act.startActivity(intent);
           return;
         }

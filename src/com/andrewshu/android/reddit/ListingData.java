@@ -18,8 +18,8 @@
  */
 package com.andrewshu.android.reddit;
 
-public class ThreadListingData {
-	private ThreadListingDataListing[] children;
+public class ListingData {
+	private ThingListing[] children;
 	private String after;
 	private String before;
 	private String modhash;
@@ -45,10 +45,10 @@ public class ThreadListingData {
 		return modhash;
 	}
 	
-	public void setChildren(ThreadListingDataListing[] children) {
+	public void setChildren(ThingListing[] children) {
 		this.children = children;
 	}
-	public ThreadListingDataListing[] getChildren() {
+	public ThingListing[] getChildren() {
 		return children;
 	}
 }

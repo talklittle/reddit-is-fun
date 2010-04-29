@@ -36,7 +36,8 @@ public class Constants {
 	static final String THREAD_KIND = "t3";
 	static final String MESSAGE_KIND = "t4";
 	static final String SUBREDDIT_KIND = "t5";
-	
+	static final String MORE_KIND = "more";
+    
 	// Requires a non-default font
 	static final String LOOK_OF_DISAPPROVAL = "\u0ca0\u005f\u0ca0";
 
@@ -57,10 +58,14 @@ public class Constants {
     // --- Intent extras ---
     // Tell PickSubredditActivity to hide the fronptage string
     static final String EXTRA_HIDE_FRONTPAGE_STRING = "hideFrontpage";
+    static final String EXTRA_ID = "id";
     // Tell CommentsListActivity to jump to a comment context (a URL. pattern match)
     static final String EXTRA_COMMENT_CONTEXT = "jumpToComment";
     // Tell CommentsListActivity to show "more children"
     static final String EXTRA_MORE_CHILDREN_ID = "moreChildrenId";
+    static final String EXTRA_NUM_COMMENTS = "num_comments";
+    static final String EXTRA_SUBREDDIT = "subreddit";
+    static final String EXTRA_TITLE = "title";
     
     // User-defined result codes
     static final int RESULT_LOGIN_REQUIRED = Activity.RESULT_FIRST_USER;
@@ -126,13 +131,15 @@ public class Constants {
     static final String HAVE_MAIL_TEXT = "You have reddit mail.";
     
     // save instance state Bundle keys
-    static final String URL_TO_GET_HERE_KEY = "url_to_get_here";
-    static final String JUMP_TO_COMMENT_POSITION_KEY = "jump_to_comment_position";
+    static final String DELETE_TARGET_KIND_KEY = "delete_target_kind";
+    static final String EDIT_TARGET_BODY_KEY = "edit_target_body";
+    static final String ID_KEY = "id";
     static final String JUMP_TO_COMMENT_ID_KEY = "jump_to_comment_id";
+    static final String JUMP_TO_COMMENT_POSITION_KEY = "jump_to_comment_position";
     static final String JUMP_TO_THREAD_ID_KEY = "jump_to_thread_id";
     static final String REPLY_TARGET_NAME_KEY = "reply_target_name";
-    static final String EDIT_TARGET_BODY_KEY = "edit_target_body";
-    static final String DELETE_TARGET_KIND_KEY = "delete_target_kind";
+    static final String SUBREDDIT_KEY = "subreddit";
+    static final String URL_TO_GET_HERE_KEY = "url_to_get_here";
     
     static final String THREAD_COUNT = "threadCount";
     
@@ -220,7 +227,6 @@ public class Constants {
     static final String JSON_MEDIA = "media";
     static final String JSON_MEDIA_EMBED = "media_embed";
     static final String JSON_MODHASH = "modhash";
-    static final String JSON_MORE = "more";
     static final String JSON_NEW = "new";
     static final String JSON_NUM_COMMENTS = "num_comments";
     static final String JSON_TITLE = "title";

@@ -18,9 +18,9 @@
  */
 package com.andrewshu.android.reddit;
 
-public class ThreadListing {
+public class ThingListing {
 	private String kind;
-	private ThreadListingData data;
+	private ThingInfo data;
 	
 	public void setKind(String kind) {
 		this.kind = kind;
@@ -29,10 +29,10 @@ public class ThreadListing {
 		return kind;
 	}
 	
-	public void setData(ThreadListingData data) {
+	public void setData(ThingInfo data) {
 		this.data = data;
 	}
-	public ThreadListingData getData() {
+	public ThingInfo getData() {
 		return data;
 	}
 }

@@ -40,7 +40,6 @@ import org.apache.http.client.methods.HttpPost;
 import org.apache.http.impl.client.DefaultHttpClient;
 import org.apache.http.message.BasicNameValuePair;
 import org.apache.http.protocol.HTTP;
-import org.codehaus.jackson.JsonFactory;
 import org.codehaus.jackson.JsonParseException;
 import org.codehaus.jackson.map.ObjectMapper;
 
@@ -91,11 +90,11 @@ public final class RedditIsFun extends ListActivity {
 
 	private static final String TAG = "RedditIsFun";
 	
-	private final JsonFactory jsonFactory = new JsonFactory(); 
+	private final ObjectMapper om = new ObjectMapper();
 	
     /** Custom list adapter that fits our threads data into the list. */
     private ThreadsListAdapter mThreadsAdapter = null;
-    private ArrayList<ThreadInfo> mThreadsList = null;
+    private ArrayList<ThingInfo> mThreadsList = null;
 
     private final DefaultHttpClient mClient = Common.getGzipHttpClient();
 	
@@ -103,7 +102,7 @@ public final class RedditIsFun extends ListActivity {
     private final RedditSettings mSettings = new RedditSettings();
     
     // UI State
-    private ThreadInfo mVoteTargetThreadInfo = null;
+    private ThingInfo mVoteTargetThingInfo = null;
     private AsyncTask mCurrentDownloadThreadsTask = null;
     private final Object mCurrentDownloadThreadsTaskLock = new Object();
 
@@ -149,7 +148,7 @@ public final class RedditIsFun extends ListActivity {
         // access it with getListView().
 
         if (savedInstanceState != null) {
-	        CharSequence subreddit = savedInstanceState.getCharSequence(ThreadInfo.SUBREDDIT);
+	        CharSequence subreddit = savedInstanceState.getCharSequence(Constants.SUBREDDIT_KEY);
 	        if (subreddit != null)
 	        	mSettings.setSubreddit(subreddit);
 	        else
@@ -211,7 +210,7 @@ public final class RedditIsFun extends ListActivity {
     	case Constants.ACTIVITY_PICK_SUBREDDIT:
     		if (resultCode == Activity.RESULT_OK) {
     			Bundle extras = intent.getExtras();
-	    		String newSubreddit = extras.getString(ThreadInfo.SUBREDDIT);
+	    		String newSubreddit = extras.getString(Constants.EXTRA_SUBREDDIT);
 	    		if (newSubreddit != null && !"".equals(newSubreddit)) {
 	    			mSettings.setSubreddit(newSubreddit);
 	    			resetUrlToGetHere();
@@ -222,16 +221,16 @@ public final class RedditIsFun extends ListActivity {
     	case Constants.ACTIVITY_SUBMIT_LINK:
     		if (resultCode == Activity.RESULT_OK) {
     			Bundle extras = intent.getExtras();
-	    		String newSubreddit = extras.getString(ThreadInfo.SUBREDDIT);
-	    		String newId = extras.getString(ThreadInfo.ID);
-	    		String newTitle = extras.getString(ThreadInfo.TITLE);
+	    		String newSubreddit = extras.getString(Constants.EXTRA_SUBREDDIT);
+	    		String newId = extras.getString(Constants.EXTRA_ID);
+	    		String newTitle = extras.getString(Constants.EXTRA_TITLE);
 	    		mSettings.setSubreddit(newSubreddit);
 	    		// Start up comments list with the new thread
 	    		Intent i = new Intent(getApplicationContext(), CommentsListActivity.class);
-				i.putExtra(ThreadInfo.SUBREDDIT, newSubreddit);
-				i.putExtra(ThreadInfo.ID, newId);
-				i.putExtra(ThreadInfo.TITLE, newTitle);
-				i.putExtra(ThreadInfo.NUM_COMMENTS, 0);
+				i.putExtra(Constants.EXTRA_SUBREDDIT, newSubreddit);
+				i.putExtra(Constants.EXTRA_ID, newId);
+				i.putExtra(Constants.EXTRA_TITLE, newTitle);
+				i.putExtra(Constants.EXTRA_NUM_COMMENTS, 0);
 				startActivity(i);
     		} else if (resultCode == Constants.RESULT_LOGIN_REQUIRED) {
     			Common.showErrorToast("You must be logged in to make a submission.", Toast.LENGTH_LONG, this);
@@ -243,7 +242,7 @@ public final class RedditIsFun extends ListActivity {
     }
     
     
-    private final class ThreadsListAdapter extends ArrayAdapter<ThreadInfo> {
+    private final class ThreadsListAdapter extends ArrayAdapter<ThingInfo> {
     	static final int THREAD_ITEM_VIEW_TYPE = 0;
     	static final int MORE_ITEM_VIEW_TYPE = 1;
     	// The number of view types
@@ -254,7 +253,7 @@ public final class RedditIsFun extends ListActivity {
 //        private SparseArray<SoftReference<Bitmap>> mBitmapCache = null; // TODO?: use this?
     	private int mFrequentSeparatorPos = ListView.INVALID_POSITION;
         
-        public ThreadsListAdapter(Context context, List<ThreadInfo> objects) {
+        public ThreadsListAdapter(Context context, List<ThingInfo> objects) {
             super(context, 0, objects);
             mInflater = (LayoutInflater)context.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
         }
@@ -295,7 +294,7 @@ public final class RedditIsFun extends ListActivity {
 	                view = convertView;
 	            }
 	            
-	            ThreadInfo item = this.getItem(position);
+	            ThingInfo item = this.getItem(position);
 	            
 	            // Set the values of the Views for the ThreadsListItem
 	            
@@ -347,18 +346,18 @@ public final class RedditIsFun extends ListActivity {
 	            
 	            // Set the up and down arrow colors based on whether user likes
 	            if (mSettings.loggedIn) {
-	            	if (Constants.TRUE_STRING.equals(item.getLikes())) {
-	            		voteUpView.setImageResource(R.drawable.vote_up_red);
-	            		voteDownView.setImageResource(R.drawable.vote_down_gray);
-	            		votesView.setTextColor(res.getColor(R.color.arrow_red));
-	            	} else if (Constants.FALSE_STRING.equals(item.getLikes())) {
-	            		voteUpView.setImageResource(R.drawable.vote_up_gray);
-	            		voteDownView.setImageResource(R.drawable.vote_down_blue);
-	            		votesView.setTextColor(res.getColor(R.color.arrow_blue));
-	            	} else {
+	            	if (item.getLikes() == null) {
 	            		voteUpView.setImageResource(R.drawable.vote_up_gray);
 	            		voteDownView.setImageResource(R.drawable.vote_down_gray);
 	            		votesView.setTextColor(res.getColor(R.color.gray));
+	            	} else if (item.getLikes() == true) {
+	            		voteUpView.setImageResource(R.drawable.vote_up_red);
+	            		voteDownView.setImageResource(R.drawable.vote_down_gray);
+	            		votesView.setTextColor(res.getColor(R.color.arrow_red));
+	            	} else {
+	            		voteUpView.setImageResource(R.drawable.vote_up_gray);
+	            		voteDownView.setImageResource(R.drawable.vote_down_blue);
+	            		votesView.setTextColor(res.getColor(R.color.arrow_blue));
 	            	}
 	            } else {
 	        		voteUpView.setImageResource(R.drawable.vote_up_gray);
@@ -469,13 +468,13 @@ public final class RedditIsFun extends ListActivity {
      */
     @Override
     protected void onListItemClick(ListView l, View v, int position, long id) {
-        ThreadInfo item = mThreadsAdapter.getItem(position);
+        ThingInfo item = mThreadsAdapter.getItem(position);
         
         // if mThreadsAdapter.getCount() - 1 contains the "next 25, prev 25" buttons,
         // or if there are fewer than 25 threads...
         if (position < mThreadsAdapter.getCount() - 1 || mThreadsAdapter.getCount() < Constants.DEFAULT_THREAD_DOWNLOAD_LIMIT + 1) {
 	        // Mark the thread as selected
-	        mVoteTargetThreadInfo = item;
+	        mVoteTargetThingInfo = item;
 	        mJumpToThreadId = item.getId();
 	        showDialog(Constants.DIALOG_THING_CLICK);
         } else {
@@ -490,7 +489,7 @@ public final class RedditIsFun extends ListActivity {
     void resetUI(ThreadsListAdapter threadsAdapter) {
     	if (threadsAdapter == null) {
             // Reset the list to be empty.
-	    	mThreadsList = new ArrayList<ThreadInfo>();
+	    	mThreadsList = new ArrayList<ThingInfo>();
 			mThreadsAdapter = new ThreadsListAdapter(this, mThreadsList);
     	} else {
     		mThreadsAdapter = threadsAdapter;
@@ -514,7 +513,7 @@ public final class RedditIsFun extends ListActivity {
      */
     private class DownloadThreadsTask extends AsyncTask<CharSequence, Integer, Boolean> {
     	
-    	private ArrayList<ThreadInfo> mThreadInfos = new ArrayList<ThreadInfo>();
+    	private ArrayList<ThingInfo> mThingInfos = new ArrayList<ThingInfo>();
     	private String _mUserError = "Error retrieving subreddit info.";
     	
     	public Boolean doInBackground(CharSequence... subreddit) {
@@ -587,15 +586,14 @@ public final class RedditIsFun extends ListActivity {
     	private void parseSubredditJSON(InputStream in)
     			throws IOException, JsonParseException, IllegalStateException {
     		
-    		ObjectMapper om = new ObjectMapper();
     		String genericListingError = "Not a subreddit listing";
     		try {
-    			ThreadListing listing = om.readValue(in, ThreadListing.class);
-    			if (Constants.LOGGING) Log.d(TAG, "ThreadListing kind: \"" + listing.getKind() + "\"");
+    			Listing listing = om.readValue(in, Listing.class);
+    			
     			if (!Constants.JSON_LISTING.equals(listing.getKind()))
     				throw new IllegalStateException(genericListingError);
     			// Save the modhash, after, and before
-    			ThreadListingData data = listing.getData();
+    			ListingData data = listing.getData();
     			if (Constants.EMPTY_STRING.equals(data.getModhash()))
     				mSettings.setModhash(null);
     			else
@@ -603,12 +601,12 @@ public final class RedditIsFun extends ListActivity {
     			mAfter = data.getAfter();
     			mBefore = data.getBefore();
     			
-    			// Go through the children and get the ThreadInfos
+    			// Go through the children and get the ThingInfos
     			int progressIndex = 0;
-    			for (ThreadListingDataListing tiContainer : data.getChildren()) {
+    			for (ThingListing tiContainer : data.getChildren()) {
     				// Only add entries that are threads. kind="t3"
     				if (Constants.THREAD_KIND.equals(tiContainer.getKind()))
-    					mThreadInfos.add(tiContainer.getData());
+    					mThingInfos.add(tiContainer.getData());
     				publishProgress(++progressIndex);
     			}
     		} catch (Exception ex) {
@@ -649,11 +647,11 @@ public final class RedditIsFun extends ListActivity {
     		}
     		dismissDialog(Constants.DIALOG_LOADING_THREADS_LIST);
     		if (success) {
-	    		for (ThreadInfo ti : mThreadInfos)
+	    		for (ThingInfo ti : mThingInfos)
 	        		mThreadsList.add(ti);
 	    		// "25 more" button.
 	    		if (mThreadsList.size() >= Constants.DEFAULT_THREAD_DOWNLOAD_LIMIT)
-	    			mThreadsList.add(new ThreadInfo());
+	    			mThreadsList.add(new ThingInfo());
 	    		// Remember this time for caching purposes
 	    		mLastRefreshTime = System.currentTimeMillis();
 	    		mShouldUseThreadsCache = true;
@@ -714,18 +712,18 @@ public final class RedditIsFun extends ListActivity {
     	private CharSequence _mThingFullname, _mSubreddit;
     	private int _mDirection;
     	private String _mUserError = "Error voting.";
-    	private ThreadInfo _mTargetThreadInfo;
+    	private ThingInfo _mTargetThingInfo;
     	
     	// Save the previous arrow and score in case we need to revert
     	private int _mPreviousScore;
-    	private String _mPreviousLikes;
+    	private Boolean _mPreviousLikes;
     	
     	VoteTask(CharSequence thingFullname, int direction, CharSequence subreddit) {
     		_mThingFullname = thingFullname;
     		_mDirection = direction;
     		_mSubreddit = subreddit;
     		// Copy these because they can change while voting thread is running
-    		_mTargetThreadInfo = mVoteTargetThreadInfo;
+    		_mTargetThingInfo = mVoteTargetThingInfo;
     	}
     	
     	@Override
@@ -821,45 +819,45 @@ public final class RedditIsFun extends ListActivity {
         		throw new RuntimeException("How the hell did you vote something besides -1, 0, or 1?");
         	}
         	int newScore;
-        	String newLikes;
-        	_mPreviousScore = Integer.valueOf(_mTargetThreadInfo.getScore());
-        	_mPreviousLikes = _mTargetThreadInfo.getLikes();
-        	if (Constants.TRUE_STRING.equals(_mPreviousLikes)) {
-        		if (_mDirection == 0) {
-        			newScore = _mPreviousScore - 1;
-        			newLikes = Constants.NULL_STRING;
+        	Boolean newLikes;
+        	_mPreviousScore = Integer.valueOf(_mTargetThingInfo.getScore());
+        	_mPreviousLikes = _mTargetThingInfo.getLikes();
+        	if (_mPreviousLikes == null) {
+        		if (_mDirection == 1) {
+        			newScore = _mPreviousScore + 1;
+        			newLikes = true;
         		} else if (_mDirection == -1) {
-        			newScore = _mPreviousScore - 2;
-        			newLikes = Constants.FALSE_STRING;
+        			newScore = _mPreviousScore - 1;
+        			newLikes = false;
         		} else {
         			cancel(true);
         			return;
         		}
-        	} else if (Constants.FALSE_STRING.equals(_mPreviousLikes)) {
-        		if (_mDirection == 1) {
-        			newScore = _mPreviousScore + 2;
-        			newLikes = Constants.TRUE_STRING;
-        		} else if (_mDirection == 0) {
-        			newScore = _mPreviousScore + 1;
-        			newLikes = Constants.NULL_STRING;
+        	} else if (_mPreviousLikes == true) {
+        		if (_mDirection == 0) {
+        			newScore = _mPreviousScore - 1;
+        			newLikes = null;
+        		} else if (_mDirection == -1) {
+        			newScore = _mPreviousScore - 2;
+        			newLikes = false;
         		} else {
         			cancel(true);
         			return;
         		}
         	} else {
         		if (_mDirection == 1) {
+        			newScore = _mPreviousScore + 2;
+        			newLikes = true;
+        		} else if (_mDirection == 0) {
         			newScore = _mPreviousScore + 1;
-        			newLikes = Constants.TRUE_STRING;
-        		} else if (_mDirection == -1) {
-        			newScore = _mPreviousScore - 1;
-        			newLikes = Constants.FALSE_STRING;
+        			newLikes = null;
         		} else {
         			cancel(true);
         			return;
         		}
         	}
-    		_mTargetThreadInfo.setLikes(newLikes);
-    		_mTargetThreadInfo.setScore(newScore);
+    		_mTargetThingInfo.setLikes(newLikes);
+    		_mTargetThingInfo.setScore(newScore);
     		mThreadsAdapter.notifyDataSetChanged();
     	}
     	
@@ -868,18 +866,18 @@ public final class RedditIsFun extends ListActivity {
     		if (!success) {
     			// Vote failed. Undo the arrow and score.
             	int oldImageResourceUp, oldImageResourceDown;
-        		if (Constants.TRUE_STRING.equals(_mPreviousLikes)) {
-            		oldImageResourceUp = R.drawable.vote_up_red;
-            		oldImageResourceDown = R.drawable.vote_down_gray;
-            	} else if (Constants.FALSE_STRING.equals(_mPreviousLikes)) {
+        		if (_mPreviousLikes == null) {
             		oldImageResourceUp = R.drawable.vote_up_gray;
-            		oldImageResourceDown = R.drawable.vote_down_blue;
+            		oldImageResourceDown = R.drawable.vote_down_gray;
+        		} else if (_mPreviousLikes == true) {
+        			oldImageResourceUp = R.drawable.vote_up_red;
+            		oldImageResourceDown = R.drawable.vote_down_gray;
             	} else {
             		oldImageResourceUp = R.drawable.vote_up_gray;
-            		oldImageResourceDown = R.drawable.vote_down_gray;
+            		oldImageResourceDown = R.drawable.vote_down_blue;
             	}
-        		_mTargetThreadInfo.setLikes(_mPreviousLikes);
-        		_mTargetThreadInfo.setScore(_mPreviousScore);
+        		_mTargetThingInfo.setLikes(_mPreviousLikes);
+        		_mTargetThingInfo.setScore(_mPreviousScore);
         		mThreadsAdapter.notifyDataSetChanged();
         		
     			Common.showErrorToast(_mUserError, Toast.LENGTH_LONG, RedditIsFun.this);
@@ -975,7 +973,7 @@ public final class RedditIsFun extends ListActivity {
     		break;
     	case R.id.submit_link_menu_id:
     		Intent submitLinkIntent = new Intent(getApplicationContext(), SubmitLinkActivity.class);
-    		submitLinkIntent.putExtra(ThreadInfo.SUBREDDIT, mSettings.subreddit);
+    		submitLinkIntent.putExtra(Constants.EXTRA_SUBREDDIT, mSettings.subreddit);
     		startActivityForResult(submitLinkIntent, Constants.ACTIVITY_SUBMIT_LINK);
     		break;
     	case R.id.sort_by_menu_id:
@@ -1220,7 +1218,7 @@ public final class RedditIsFun extends ListActivity {
     		break;
     		
     	case Constants.DIALOG_THING_CLICK:
-    		if (mVoteTargetThreadInfo == null)
+    		if (mVoteTargetThingInfo == null)
     			break;
     		final CheckBox voteUpButton = (CheckBox) dialog.findViewById(R.id.vote_up_button);
     		final CheckBox voteDownButton = (CheckBox) dialog.findViewById(R.id.vote_down_button);
@@ -1231,13 +1229,13 @@ public final class RedditIsFun extends ListActivity {
     		final Button linkButton = (Button) dialog.findViewById(R.id.thread_link_button);
     		final Button commentsButton = (Button) dialog.findViewById(R.id.thread_comments_button);
     		
-    		titleView.setText(mVoteTargetThreadInfo.getTitle().replaceAll("\n ", " ").replaceAll(" \n", " ").replaceAll("\n", " "));
-    		urlView.setText(mVoteTargetThreadInfo.getUrl());
-    		sb = new StringBuilder(Util.getTimeAgo(Double.valueOf(mVoteTargetThreadInfo.getCreated_utc())))
-    			.append(" by ").append(mVoteTargetThreadInfo.getAuthor());
+    		titleView.setText(mVoteTargetThingInfo.getTitle().replaceAll("\n ", " ").replaceAll(" \n", " ").replaceAll("\n", " "));
+    		urlView.setText(mVoteTargetThingInfo.getUrl());
+    		sb = new StringBuilder(Util.getTimeAgo(mVoteTargetThingInfo.getCreated_utc()))
+    			.append(" by ").append(mVoteTargetThingInfo.getAuthor());
             // Show subreddit if user is currently looking at front page
     		if (mSettings.isFrontpage) {
-    			sb.append(" to ").append(mVoteTargetThreadInfo.getSubreddit());
+    			sb.append(" to ").append(mVoteTargetThingInfo.getSubreddit());
     		}
             submissionStuffView.setText(sb);
             
@@ -1247,18 +1245,18 @@ public final class RedditIsFun extends ListActivity {
     			voteUpButton.setVisibility(View.VISIBLE);
     			voteDownButton.setVisibility(View.VISIBLE);
     			// Set initial states of the vote buttons based on user's past actions
-	    		if (Constants.TRUE_STRING.equals(mVoteTargetThreadInfo.getLikes())) {
-	    			// User currenty likes it
-	    			voteUpButton.setChecked(true);
-	    			voteDownButton.setChecked(false);
-	    		} else if (Constants.FALSE_STRING.equals(mVoteTargetThreadInfo.getLikes())) {
-	    			// User currently dislikes it
-	    			voteUpButton.setChecked(false);
-	    			voteDownButton.setChecked(true);
-	    		} else {
+	    		if (mVoteTargetThingInfo.getLikes() == null) {
 	    			// User is currently neutral
 	    			voteUpButton.setChecked(false);
 	    			voteDownButton.setChecked(false);
+	    		} else if (mVoteTargetThingInfo.getLikes() == true) {
+	    			// User currenty likes it
+	    			voteUpButton.setChecked(true);
+	    			voteDownButton.setChecked(false);
+	    		} else {
+	    			// User currently dislikes it
+	    			voteUpButton.setChecked(false);
+	    			voteDownButton.setChecked(true);
 	    		}
 	    		voteUpButton.setOnCheckedChangeListener(voteUpOnCheckedChangeListener);
 	    		voteDownButton.setOnCheckedChangeListener(voteDownOnCheckedChangeListener);
@@ -1275,11 +1273,11 @@ public final class RedditIsFun extends ListActivity {
     		}
 
     		// "link" button behaves differently for regular links vs. self posts and links to comments pages (e.g., bestof)
-            if (("self.").toLowerCase().equals(mVoteTargetThreadInfo.getDomain().substring(0, 5).toLowerCase())) {
+            if (("self.").toLowerCase().equals(mVoteTargetThingInfo.getDomain().substring(0, 5).toLowerCase())) {
             	// It's a self post. Both buttons do the same thing.
             	linkButton.setEnabled(false);
             } else {
-            	final String url = mVoteTargetThreadInfo.getUrl();
+            	final String url = mVoteTargetThingInfo.getUrl();
             	linkButton.setOnClickListener(new OnClickListener() {
     				public void onClick(View v) {
     					dismissDialog(Constants.DIALOG_THING_CLICK);
@@ -1296,10 +1294,10 @@ public final class RedditIsFun extends ListActivity {
     				dismissDialog(Constants.DIALOG_THING_CLICK);
     				// Launch an Intent for CommentsListActivity
     				Intent i = new Intent(getApplicationContext(), CommentsListActivity.class);
-    				i.putExtra(ThreadInfo.SUBREDDIT, mVoteTargetThreadInfo.getSubreddit());
-    				i.putExtra(ThreadInfo.ID, mVoteTargetThreadInfo.getId());
-    				i.putExtra(ThreadInfo.TITLE, mVoteTargetThreadInfo.getTitle());
-    				i.putExtra(ThreadInfo.NUM_COMMENTS, Integer.valueOf(mVoteTargetThreadInfo.getNum_comments()));
+    				i.putExtra(Constants.EXTRA_SUBREDDIT, mVoteTargetThingInfo.getSubreddit());
+    				i.putExtra(Constants.EXTRA_ID, mVoteTargetThingInfo.getId());
+    				i.putExtra(Constants.EXTRA_TITLE, mVoteTargetThingInfo.getTitle());
+    				i.putExtra(Constants.EXTRA_NUM_COMMENTS, Integer.valueOf(mVoteTargetThingInfo.getNum_comments()));
     				startActivity(i);
     			}
     		});
@@ -1332,9 +1330,9 @@ public final class RedditIsFun extends ListActivity {
     	public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
 	    	dismissDialog(Constants.DIALOG_THING_CLICK);
 			if (isChecked) {
-				new VoteTask(mVoteTargetThreadInfo.getName(), 1, mVoteTargetThreadInfo.getSubreddit()).execute();
+				new VoteTask(mVoteTargetThingInfo.getName(), 1, mVoteTargetThingInfo.getSubreddit()).execute();
 			} else {
-				new VoteTask(mVoteTargetThreadInfo.getName(), 0, mVoteTargetThreadInfo.getSubreddit()).execute();
+				new VoteTask(mVoteTargetThingInfo.getName(), 0, mVoteTargetThingInfo.getSubreddit()).execute();
 			}
 		}
     };
@@ -1342,9 +1340,9 @@ public final class RedditIsFun extends ListActivity {
 	    public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
 	    	dismissDialog(Constants.DIALOG_THING_CLICK);
 			if (isChecked) {
-				new VoteTask(mVoteTargetThreadInfo.getName(), -1, mVoteTargetThreadInfo.getSubreddit()).execute();
+				new VoteTask(mVoteTargetThingInfo.getName(), -1, mVoteTargetThingInfo.getSubreddit()).execute();
 			} else {
-				new VoteTask(mVoteTargetThreadInfo.getName(), 0, mVoteTargetThreadInfo.getSubreddit()).execute();
+				new VoteTask(mVoteTargetThingInfo.getName(), 0, mVoteTargetThingInfo.getSubreddit()).execute();
 			}
 		}
     };
@@ -1376,7 +1374,7 @@ public final class RedditIsFun extends ListActivity {
         			mSettings.setSubreddit((CharSequence) in.readObject());
         			mSortByUrl = (CharSequence) in.readObject();
         			mSortByUrlExtra = (CharSequence) in.readObject();
-        			mThreadsList = (ArrayList<ThreadInfo>) in.readObject();
+        			mThreadsList = (ArrayList<ThingInfo>) in.readObject();
         			mUrlToGetHere = (CharSequence) in.readObject();
         			mUrlToGetHereChanged = in.readBoolean();
         	
@@ -1444,7 +1442,7 @@ public final class RedditIsFun extends ListActivity {
 	@Override
     protected void onSaveInstanceState(Bundle state) {
     	super.onSaveInstanceState(state);
-    	state.putCharSequence(ThreadInfo.SUBREDDIT, mSettings.subreddit);
+    	state.putCharSequence(Constants.SUBREDDIT_KEY, mSettings.subreddit);
     	state.putCharSequence(Constants.URL_TO_GET_HERE_KEY, mUrlToGetHere);
     	state.putCharSequence(Constants.ThreadsSort.SORT_BY_KEY, mSortByUrl);
     	state.putCharSequence(Constants.JUMP_TO_THREAD_ID_KEY, mJumpToThreadId);
