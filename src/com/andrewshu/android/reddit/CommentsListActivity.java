@@ -837,17 +837,16 @@ public class CommentsListActivity extends ListActivity
 							String namefield = jp.getCurrentName();
 							jp.nextToken(); // move to value
 							// Should validate each field but I'm lazy
-							if (Constants.JSON_MEDIA.equals(namefield) && jp.getCurrentToken() == JsonToken.START_OBJECT) {
-								while (jp.nextToken() != JsonToken.END_OBJECT) {
-									String mediaNamefield = jp.getCurrentName();
-									jp.nextToken(); // move to value
-									ti.put(Constants.JSON_MEDIA+"/"+mediaNamefield, jp.getText());
-								}
-							} else if (Constants.JSON_MEDIA_EMBED.equals(namefield) && jp.getCurrentToken() == JsonToken.START_OBJECT) {
-								while (jp.nextToken() != JsonToken.END_OBJECT) {
-									String mediaNamefield = jp.getCurrentName();
-									jp.nextToken(); // move to value
-									ti.put(Constants.JSON_MEDIA_EMBED+"/"+mediaNamefield, jp.getText());
+							if (jp.getCurrentToken() == JsonToken.START_OBJECT) {
+								int nested = 0;
+								for (;;) {
+									jp.nextToken();
+									if (jp.getCurrentToken() == JsonToken.END_OBJECT && nested == 0)
+										break;
+									if (jp.getCurrentToken() == JsonToken.START_OBJECT)
+										nested++;
+									else if (jp.getCurrentToken() == JsonToken.END_OBJECT)
+										nested--;
 								}
 							} else {
 								ti.put(namefield, StringEscapeUtils.unescapeHtml(jp.getText().trim().replaceAll("\r", "")));
