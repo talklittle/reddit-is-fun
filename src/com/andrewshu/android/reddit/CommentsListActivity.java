@@ -2023,7 +2023,7 @@ public class CommentsListActivity extends ListActivity
 	    					Common.launchBrowser(url, CommentsListActivity.this);
 	    				}
 	    			});
-	    			linkButton.setVisibility(View.VISIBLE);
+	    			linkButton.setEnabled(true);
     			}
     		} else {
     			titleView.setText("Comment by " + mVoteTargetThing.getAuthor());
@@ -2032,7 +2032,8 @@ public class CommentsListActivity extends ListActivity
     			submissionStuffView.setVisibility(View.INVISIBLE);
 
     			// Get embedded URLs
-    			linkToEmbeddedURLs(linkButton);
+    			linkButton.setText(R.string.comment_links_button);
+    	    	linkToEmbeddedURLs(linkButton);
     		}
     		final CheckBox voteUpButton = (CheckBox) dialog.findViewById(R.id.vote_up_button);
     		final CheckBox voteDownButton = (CheckBox) dialog.findViewById(R.id.vote_down_button);
@@ -2116,11 +2117,10 @@ public class CommentsListActivity extends ListActivity
 		int urlsCount = vtUrls.size();
 		for (int i = 0; i < urlsCount; i++)
 			urls.add(vtUrls.get(i).url);
-        if (urlsCount == 0) {
-			linkButton.setVisibility(View.INVISIBLE);
+		if (urlsCount == 0) {
+			linkButton.setEnabled(false);
         } else {
-        	linkButton.setVisibility(View.VISIBLE);
-        	linkButton.setText(R.string.comment_links_button);
+        	linkButton.setEnabled(true);
         	linkButton.setOnClickListener(new OnClickListener() {
         		public void onClick(View v) {
         			dismissDialog(Constants.DIALOG_THING_CLICK);
