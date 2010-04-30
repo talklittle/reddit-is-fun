@@ -19,6 +19,8 @@
 
 package com.andrewshu.android.reddit;
 
+import java.beans.PropertyChangeEvent;
+import java.beans.PropertyChangeListener;
 import java.io.BufferedReader;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
@@ -30,6 +32,7 @@ import java.io.ObjectOutputStream;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.apache.http.Header;
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpException;
 import org.apache.http.HttpResponse;
@@ -121,9 +124,6 @@ public final class RedditIsFun extends ListActivity {
     private long mLastRefreshTime = 0;
     // End navigation variables
     
-    // ProgressDialogs with percentage bars
-    private AutoResetProgressDialog mLoadingThreadsProgress;
-    
     // Menu
     private boolean mCanChord = false;
     
@@ -141,7 +141,8 @@ public final class RedditIsFun extends ListActivity {
         Common.loadRedditPreferences(getApplicationContext(), mSettings, mClient);
         setRequestedOrientation(mSettings.rotation);
         setTheme(mSettings.theme);
-        
+        requestWindowFeature(Window.FEATURE_PROGRESS);
+    	
         setContentView(R.layout.threads_list_content);
         // The above layout contains a list id "android:list"
         // which ListActivity adopts as its list -- we can
@@ -511,10 +512,14 @@ public final class RedditIsFun extends ListActivity {
      * @param subreddit The name of a subreddit ("reddit.com", "gaming", etc.)
      *        If the number of elements in subreddit is >= 2, treat 2nd element as "after" 
      */
-    private class DownloadThreadsTask extends AsyncTask<CharSequence, Integer, Boolean> {
+    private class DownloadThreadsTask extends AsyncTask<CharSequence, Long, Boolean>
+    		implements PropertyChangeListener {
     	
     	private ArrayList<ThingInfo> mThingInfos = new ArrayList<ThingInfo>();
     	private String _mUserError = "Error retrieving subreddit info.";
+    	// Progress bar
+    	private long _mContentLength = 0;
+    	private boolean _mIsSetProgressMax = false;
     	
     	public Boolean doInBackground(CharSequence... subreddit) {
     		HttpEntity entity = null;
@@ -556,10 +561,22 @@ public final class RedditIsFun extends ListActivity {
 	    		
     			HttpGet request = new HttpGet(url);
             	HttpResponse response = mClient.execute(request);
+
+            	// Read the header to get Content-Length since entity.getContentLength() returns -1
+            	Header contentLengthHeader = response.getFirstHeader("Content-Length");
+            	_mContentLength = Long.valueOf(contentLengthHeader.getValue());
+            	if (Constants.LOGGING) Log.d(TAG, "Content length: "+_mContentLength);
+
             	entity = response.getEntity();
             	InputStream in = entity.getContent();
-                try {
-                	parseSubredditJSON(in);
+            	
+            	// setup a special InputStream to report progress
+            	ProgressInputStream pin = new ProgressInputStream(in, _mContentLength);
+            	pin.addPropertyChangeListener(this);
+            	
+            	try {
+                	parseSubredditJSON(pin);
+                	pin.close();
                 	in.close();
                 	entity.consumeContent();
                 	mSettings.setSubreddit(subreddit[0]);
@@ -607,7 +624,6 @@ public final class RedditIsFun extends ListActivity {
     				// Only add entries that are threads. kind="t3"
     				if (Constants.THREAD_KIND.equals(tiContainer.getKind()))
     					mThingInfos.add(tiContainer.getData());
-    				publishProgress(++progressIndex);
     			}
     		} catch (Exception ex) {
     			if (Constants.LOGGING) Log.e(TAG, ex.getMessage());
@@ -633,7 +649,9 @@ public final class RedditIsFun extends ListActivity {
 	    		lodToast.setView(lodView);
 	    		lodToast.show();
 	    	}
-	    	showDialog(Constants.DIALOG_LOADING_THREADS_LIST);
+
+	    	getWindow().setFeatureInt(Window.FEATURE_PROGRESS, 0);
+	    	
 	    	if (Constants.FRONTPAGE_STRING.equals(mSettings.subreddit))
 	    		setTitle("reddit.com: what's new online!");
 	    	else
@@ -645,7 +663,9 @@ public final class RedditIsFun extends ListActivity {
     		synchronized (mCurrentDownloadThreadsTaskLock) {
     			mCurrentDownloadThreadsTask = null;
     		}
-    		dismissDialog(Constants.DIALOG_LOADING_THREADS_LIST);
+    		// 10000 tells progress bar to stop
+    		getWindow().setFeatureInt(Window.FEATURE_PROGRESS, 10000);
+
     		if (success) {
 	    		for (ThingInfo ti : mThingInfos)
 	        		mThreadsList.add(ti);
@@ -665,8 +685,13 @@ public final class RedditIsFun extends ListActivity {
     	}
     	
     	@Override
-    	public void onProgressUpdate(Integer... progress) {
-    		mLoadingThreadsProgress.setProgress(progress[0]);
+    	public void onProgressUpdate(Long... progress) {
+    		// 0-9999 is ok, 10000 means it's finished
+    		getWindow().setFeatureInt(Window.FEATURE_PROGRESS, progress[0].intValue() * 9999 / (int) _mContentLength);
+    	}
+    	
+    	public void propertyChange(PropertyChangeEvent event) {
+    		publishProgress((Long) event.getNewValue());
     	}
     }
     
@@ -1173,13 +1198,6 @@ public final class RedditIsFun extends ListActivity {
     		pdialog.setCancelable(false);
     		dialog = pdialog;
     		break;
-    	case Constants.DIALOG_LOADING_THREADS_LIST:
-    		mLoadingThreadsProgress = new AutoResetProgressDialog(this);
-    		mLoadingThreadsProgress.setProgressStyle(ProgressDialog.STYLE_HORIZONTAL);
-    		mLoadingThreadsProgress.setMessage("Loading subreddit...");
-    		mLoadingThreadsProgress.setCancelable(true);
-    		dialog = mLoadingThreadsProgress;
-    		break;
     	case Constants.DIALOG_LOADING_THREADS_CACHE:
     		pdialog = new ProgressDialog(this);
     		pdialog.setMessage("Loading cached subreddit...");
@@ -1303,13 +1321,7 @@ public final class RedditIsFun extends ListActivity {
     		});
     		
     		break;
-    		
-    	case Constants.DIALOG_LOADING_THREADS_LIST:
-    		// FIXME: if different number of threads in reddit.com settings (e.g., 100) it should display that as max instead,
-    		// since the JSON returns more than just 25 if that is the case.
-    		mLoadingThreadsProgress.setMax(mSettings.threadDownloadLimit);
-    		break;
-    		
+    	
 		default:
 			// No preparation based on app state is required.
 			break;
@@ -1510,7 +1522,6 @@ public final class RedditIsFun extends ListActivity {
         final int[] myDialogs = {
         	Constants.DIALOG_LOADING_LOOK_OF_DISAPPROVAL,
         	Constants.DIALOG_LOADING_THREADS_CACHE,
-        	Constants.DIALOG_LOADING_THREADS_LIST,
         	Constants.DIALOG_LOGGING_IN,
         	Constants.DIALOG_LOGIN,
         	Constants.DIALOG_SORT_BY,

@@ -95,8 +95,6 @@ public class Constants {
     static final int DIALOG_COMPOSE = 31;
     // progress dialogs
     static final int DIALOG_LOGGING_IN = 1000;
-    static final int DIALOG_LOADING_THREADS_LIST = 1001;
-    static final int DIALOG_LOADING_COMMENTS_LIST = 1002;
     static final int DIALOG_LOADING_LOOK_OF_DISAPPROVAL = 1003;
     static final int DIALOG_SUBMITTING = 1004;
     static final int DIALOG_REPLYING = 1005;

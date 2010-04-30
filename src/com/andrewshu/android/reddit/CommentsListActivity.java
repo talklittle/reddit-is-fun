@@ -19,6 +19,8 @@
 
 package com.andrewshu.android.reddit;
 
+import java.beans.PropertyChangeEvent;
+import java.beans.PropertyChangeListener;
 import java.io.BufferedReader;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
@@ -34,6 +36,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import org.apache.commons.lang.StringEscapeUtils;
+import org.apache.http.Header;
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpException;
 import org.apache.http.HttpResponse;
@@ -77,6 +80,7 @@ import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.Window;
 import android.view.ContextMenu.ContextMenuInfo;
 import android.view.View.OnClickListener;
 import android.view.View.OnKeyListener;
@@ -153,9 +157,6 @@ public class CommentsListActivity extends ListActivity
     private AsyncTask mCurrentDownloadCommentsTask = null;
     private final Object mCurrentDownloadCommentsTaskLock = new Object();
     
-    // ProgressDialogs with percentage bars
-    private AutoResetProgressDialog mLoadingCommentsProgress;
-    
     private boolean mCanChord = false;
     
     /**
@@ -171,7 +172,8 @@ public class CommentsListActivity extends ListActivity
         Common.loadRedditPreferences(this, mSettings, mClient);
         setRequestedOrientation(mSettings.rotation);
         setTheme(mSettings.theme);
-        
+        requestWindowFeature(Window.FEATURE_PROGRESS);
+    	
         setContentView(R.layout.comments_list_content);
         registerForContextMenu(getListView());
         // The above layout contains a list id "android:list"
@@ -656,9 +658,9 @@ public class CommentsListActivity extends ListActivity
      * mMoreChildrenId (can be "")
      * mSortByUrl
      */
-    class DownloadCommentsTask extends AsyncTask<Integer, Integer, Boolean> {
+    class DownloadCommentsTask extends AsyncTask<Integer, Long, Boolean>
+    		implements PropertyChangeListener {
     	
-    	private int _mNumComments = mNumVisibleComments;
     	// _mPositionOffset != 0 means that you're doing "load more comments"
     	private int _mPositionOffset;
     	private int _mIndentation;
@@ -667,6 +669,9 @@ public class CommentsListActivity extends ListActivity
     	// Temporary storage for new "load more comments" found in the JSON
     	private HashSet<Integer> _mNewMorePositions = new HashSet<Integer>();
     	private ArrayList<ThingInfo> _mNewThingInfos = new ArrayList<ThingInfo>();
+    	// Progress bar
+    	private long _mContentLength = 0;
+    	private boolean _mIsSetProgressMax = false;
     	
     	/**
     	 * Constructor to do normal comments page
@@ -702,12 +707,22 @@ public class CommentsListActivity extends ListActivity
 	        		.append("/z/").append(_mMoreChildrenId).append(".json?").append(mSortByUrl).append("&");
             	HttpGet request = new HttpGet(sb.toString());
                 HttpResponse response = mClient.execute(request);
-            	entity = response.getEntity();
             	
+                // Read the header to get Content-Length since entity.getContentLength() returns -1
+            	Header contentLengthHeader = response.getFirstHeader("Content-Length");
+            	_mContentLength = Long.valueOf(contentLengthHeader.getValue());
+            	if (Constants.LOGGING) Log.d(TAG, "Content length: "+_mContentLength);
+
+            	entity = response.getEntity();
             	InputStream in = entity.getContent();
                 
-                parseCommentsJSON(in);
+            	// setup a special InputStream to report progress
+            	ProgressInputStream pin = new ProgressInputStream(in, _mContentLength);
+            	pin.addPropertyChangeListener(this);
+            	
+            	parseCommentsJSON(pin);
                 
+            	pin.close();
                 in.close();
                 entity.consumeContent();
                 
@@ -787,7 +802,6 @@ public class CommentsListActivity extends ListActivity
 					}
 				}
 				// Pull other data from the OP
-				_mNumComments = mOpThingInfo.getNum_comments();
 				// We might not have a title if we've intercepted a plain link to a thread.
 				mOpThingInfo.setSSBSelftext(markdown.markdown(mOpThingInfo.getSelftext(), new SpannableStringBuilder(), mOpThingInfo.getUrls()));
 				mThreadTitle = mOpThingInfo.getTitle();
@@ -876,7 +890,9 @@ public class CommentsListActivity extends ListActivity
 	    		lodToast.setView(lodView);
 	    		lodToast.show();
 	    	}
-	    	showDialog(Constants.DIALOG_LOADING_COMMENTS_LIST);
+
+	    	getWindow().setFeatureInt(Window.FEATURE_PROGRESS, 0);
+	    	
 	    	if (mThreadTitle != null)
 	    		setTitle(mThreadTitle + " : " + mSettings.subreddit);
     	}
@@ -885,7 +901,9 @@ public class CommentsListActivity extends ListActivity
     		synchronized (mCurrentDownloadCommentsTaskLock) {
     			mCurrentDownloadCommentsTask = null;
     		}
-			dismissDialog(Constants.DIALOG_LOADING_COMMENTS_LIST);
+    		// 10000 tells progress bar to stop
+    		getWindow().setFeatureInt(Window.FEATURE_PROGRESS, 10000);
+    		
     		if (success) {
     			// We modified mCommentsList, which backs mCommentsAdapter, so mCommentsAdapter has changed too.
     			mCommentsAdapter.notifyDataSetChanged();
@@ -905,13 +923,14 @@ public class CommentsListActivity extends ListActivity
     		}
     	}
     	
-    	public void onProgressUpdate(Integer... progress) {
-    		// The number of comments may have been unknown before, and now found during parsing.
-    		if (_mNumComments < mNumVisibleComments) {
-    			mNumVisibleComments = _mNumComments;
-    			mLoadingCommentsProgress.setMax(_mNumComments);
-    		}
-    		mLoadingCommentsProgress.setProgress(progress[0]);
+    	@Override
+    	public void onProgressUpdate(Long... progress) {
+    		// 0-9999 is ok, 10000 means it's finished
+    		getWindow().setFeatureInt(Window.FEATURE_PROGRESS, progress[0].intValue() * 9999 / (int) _mContentLength);
+    	}
+    	
+    	public void propertyChange(PropertyChangeEvent event) {
+    		publishProgress((Long) event.getNewValue());
     	}
     }
     
@@ -1947,13 +1966,6 @@ public class CommentsListActivity extends ListActivity
     		pdialog.setCancelable(false);
     		dialog = pdialog;
     		break;
-    	case Constants.DIALOG_LOADING_COMMENTS_LIST:
-    		mLoadingCommentsProgress = new AutoResetProgressDialog(this);
-    		mLoadingCommentsProgress.setProgressStyle(ProgressDialog.STYLE_HORIZONTAL);
-    		mLoadingCommentsProgress.setMessage("Loading comments...");
-    		mLoadingCommentsProgress.setCancelable(true);
-    		dialog = mLoadingCommentsProgress;
-    		break;
     	case Constants.DIALOG_LOADING_COMMENTS_CACHE:
     		pdialog = new ProgressDialog(this);
     		pdialog.setMessage("Loading cached comments...");
@@ -2095,10 +2107,6 @@ public class CommentsListActivity extends ListActivity
     			EditText replyBodyView = (EditText) dialog.findViewById(R.id.body); 
     			replyBodyView.setText(mVoteTargetThing.getReplyDraft());
     		}
-    		break;
-    		
-    	case Constants.DIALOG_LOADING_COMMENTS_LIST:
-    		mLoadingCommentsProgress.setMax(mNumVisibleComments);
     		break;
     		
 		default:
@@ -2367,7 +2375,6 @@ public class CommentsListActivity extends ListActivity
         	Constants.DIALOG_EDIT,
         	Constants.DIALOG_EDITING,
         	Constants.DIALOG_LOADING_COMMENTS_CACHE,
-        	Constants.DIALOG_LOADING_COMMENTS_LIST,
         	Constants.DIALOG_LOGGING_IN,
         	Constants.DIALOG_LOGIN,
         	Constants.DIALOG_REPLY,
