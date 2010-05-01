@@ -107,6 +107,13 @@ public class Constants {
     static final int DIALOG_EDITING = 1009;
     static final int DIALOG_COMPOSING = 1012;
     
+	static final int SHARE_CONTEXT_ITEM = 1013;
+	static final int OPEN_IN_BROWSER_CONTEXT_ITEM = 1014;
+	static final int OPEN_COMMENTS_CONTEXT_ITEM = 1015;
+	static final int SAVE_CONTEXT_ITEM = 1016;
+	static final int UNSAVE_CONTEXT_ITEM = 1017;
+
+    
     // Special CSS for webviews to match themes
     static final String CSS_DARK = "<style>body{color:#c0c0c0;background-color:#191919}a:link{color:#ffffff}</style>";
 

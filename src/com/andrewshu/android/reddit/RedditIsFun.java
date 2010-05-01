@@ -92,12 +92,6 @@ public final class RedditIsFun extends ListActivity {
 	// DrawableManager helps with filling in thumbnails
 	private DrawableManager drawableManager = new DrawableManager();
 
-	private static final int SHARE_CONTEXT_ITEM = 0;
-	private static final int OPEN_IN_BROWSER_CONTEXT_ITEM = 1;
-	private static final int OPEN_COMMENTS_CONTEXT_ITEM = 2;
-	private static final int SAVE_CONTEXT_ITEM = 3;
-	private static final int UNSAVE_CONTEXT_ITEM = 4;
-	
     /** Custom list adapter that fits our threads data into the list. */
     private ThreadsListAdapter mThreadsAdapter = null;
     private ArrayList<ThingInfo> mThreadsList = null;
@@ -1098,15 +1092,15 @@ public final class RedditIsFun extends ListActivity {
     	
     	mVoteTargetThingInfo = _item;
     	
-    	menu.add(0, OPEN_IN_BROWSER_CONTEXT_ITEM, 0, "Open in browser");
-    	menu.add(0, SHARE_CONTEXT_ITEM, 0, "Share");
-    	menu.add(0, OPEN_COMMENTS_CONTEXT_ITEM, 0, "Comments");
+    	menu.add(0, Constants.OPEN_IN_BROWSER_CONTEXT_ITEM, 0, "Open in browser");
+    	menu.add(0, Constants.SHARE_CONTEXT_ITEM, 0, "Share");
+    	menu.add(0, Constants.OPEN_COMMENTS_CONTEXT_ITEM, 0, "Comments");
     	
     	if(mSettings.loggedIn){
-    		if(_item.isSaved()){
-    			menu.add(0, SAVE_CONTEXT_ITEM, 0, "Save");
+    		if(!_item.isSaved()){
+    			menu.add(0, Constants.SAVE_CONTEXT_ITEM, 0, "Save");
     		} else {
-    			menu.add(0, UNSAVE_CONTEXT_ITEM, 0, "Unsave");
+    			menu.add(0, Constants.UNSAVE_CONTEXT_ITEM, 0, "Unsave");
     		}
     	}
     }
@@ -1119,7 +1113,7 @@ public final class RedditIsFun extends ListActivity {
         ThingInfo _item = mThreadsAdapter.getItem(info.position);
         
         switch (item.getItemId()) {
-		case SHARE_CONTEXT_ITEM:
+		case Constants.SHARE_CONTEXT_ITEM:
 			Intent intent = new Intent();
 			intent.setAction(Intent.ACTION_SEND);
 			intent.setType("text/plain");
@@ -1132,11 +1126,11 @@ public final class RedditIsFun extends ListActivity {
 			}
 			
 			return true;
-		case OPEN_IN_BROWSER_CONTEXT_ITEM:
+		case Constants.OPEN_IN_BROWSER_CONTEXT_ITEM:
 			Common.launchBrowser(_item.getUrl(), this);
 			return true;
 			
-		case OPEN_COMMENTS_CONTEXT_ITEM:
+		case Constants.OPEN_COMMENTS_CONTEXT_ITEM:
 			Intent i = new Intent(getApplicationContext(), CommentsListActivity.class);
 			i.putExtra(Constants.EXTRA_SUBREDDIT, _item.getSubreddit());
 			i.putExtra(Constants.EXTRA_ID, _item.getId());
@@ -1144,11 +1138,11 @@ public final class RedditIsFun extends ListActivity {
 			i.putExtra(Constants.EXTRA_NUM_COMMENTS, _item.getNum_comments());
 			startActivity(i);
 		
-		case SAVE_CONTEXT_ITEM:
+		case Constants.SAVE_CONTEXT_ITEM:
 			new SaveTask(true).execute();
 			return true;
 			
-		case UNSAVE_CONTEXT_ITEM:
+		case Constants.UNSAVE_CONTEXT_ITEM:
 			new SaveTask(false).execute();
 			return true;
 			
