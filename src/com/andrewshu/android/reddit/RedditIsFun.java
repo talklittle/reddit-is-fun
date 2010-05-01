@@ -57,6 +57,7 @@ import android.text.Spanned;
 import android.text.style.ForegroundColorSpan;
 import android.text.style.TextAppearanceSpan;
 import android.util.Log;
+import android.view.ContextMenu;
 import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuInflater;
@@ -64,6 +65,7 @@ import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.Window;
+import android.view.ContextMenu.ContextMenuInfo;
 import android.view.View.OnClickListener;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
@@ -90,6 +92,11 @@ public final class RedditIsFun extends ListActivity {
 	// DrawableManager helps with filling in thumbnails
 	private DrawableManager drawableManager = new DrawableManager();
 
+	private static final int SHARE_CONTEXT_ITEM = 0;
+	private static final int OPEN_IN_BROWSER_CONTEXT_ITEM = 1;
+	private static final int OPEN_COMMENTS_CONTEXT_ITEM = 2;
+	private static final int SAVE_CONTEXT_ITEM = 3;
+	private static final int UNSAVE_CONTEXT_ITEM = 4;
 	
     /** Custom list adapter that fits our threads data into the list. */
     private ThreadsListAdapter mThreadsAdapter = null;
@@ -834,6 +841,110 @@ public final class RedditIsFun extends ListActivity {
     	}
     }
     
+    private class SaveTask extends AsyncTask<Void, Void, Boolean> {
+    	private static final String TAG = "SaveWorker";
+    	
+    	private ThingInfo _mTargetThingInfo;
+    	private String _mUserError = "Error voting.";
+    	private String _mUrl;
+    	private String _mExecuted;
+    	private boolean _mSave;
+    	
+    	SaveTask(boolean mSave){
+    		if(mSave){
+    			_mExecuted = "saved";
+    			_mUrl = "http://www.reddit.com/api/save";
+    		} else {
+    			_mExecuted = "unsaved";
+    			_mUrl = "http://www.reddit.com/api/unsave";
+    		}
+    		
+    		_mSave = mSave;
+    		
+    		_mTargetThingInfo = mVoteTargetThingInfo;
+    	}
+    	
+    	@Override
+    	public void onPreExecute() {
+    		if (!mSettings.loggedIn) {
+        		Common.showErrorToast("You must be logged in to save.", Toast.LENGTH_LONG, RedditIsFun.this);
+        		cancel(true);
+        		return;
+        	}
+    	}
+    	
+    	@Override
+    	public Boolean doInBackground(Void... v) {
+    		
+        	HttpEntity entity = null;
+        	
+        	if (!mSettings.loggedIn) {
+        		_mUserError = "You must be logged in to save.";
+        		return false;
+        	}
+        	
+        	// Update the modhash if necessary
+        	if (mSettings.modhash == null) {
+        		CharSequence modhash = Common.doUpdateModhash(mClient);
+        		if (modhash == null) {
+        			// doUpdateModhash should have given an error about credentials
+        			Common.doLogout(mSettings, mClient, getApplicationContext());
+        			if (Constants.LOGGING) Log.e(TAG, "updating save status failed because doUpdateModhash() failed");
+        			return false;
+        		}
+        		mSettings.setModhash(modhash);
+        	}
+        	
+        	List<NameValuePair> nvps = new ArrayList<NameValuePair>();
+			nvps.add(new BasicNameValuePair("id", _mTargetThingInfo.getName()));
+			nvps.add(new BasicNameValuePair("uh", mSettings.modhash.toString()));
+			//nvps.add(new BasicNameValuePair("executed", _mExecuted));
+    		
+			try {
+				HttpPost request = new HttpPost(_mUrl);
+				request.setHeader("Content-Type", "application/x-www-form-urlencoded");
+				request.setEntity(new UrlEncodedFormEntity(nvps, HTTP.UTF_8));
+				
+				HttpResponse response = mClient.execute(request);
+				entity = response.getEntity();
+    	    	
+    	    	String error = Common.checkResponseErrors(response, entity);
+    	    	if (error != null)
+    	    		throw new Exception(error);
+    	    	            	
+            	return true;
+            	
+			} catch (Exception e) {
+        		if (Constants.LOGGING) Log.e(TAG, "SaveTask:" + e.getMessage());
+        	} finally {
+        		if (entity != null) {
+        			try {
+        				entity.consumeContent();
+        			} catch (Exception e2) {
+        				if (Constants.LOGGING) Log.e(TAG, "entity.consumeContent:" + e2.getMessage());
+        			}
+        		}
+        	}
+			
+        	return false;
+    	}
+    	
+    	@Override
+    	public void onPostExecute(Boolean success) {
+    		if (success) {
+    			if(_mSave){
+    				_mTargetThingInfo.setSaved(true);
+    				Toast.makeText(RedditIsFun.this, "Saved!", Toast.LENGTH_LONG).show();
+    			} else {
+    				_mTargetThingInfo.setSaved(false);
+    				Toast.makeText(RedditIsFun.this, "Unsaved!", Toast.LENGTH_LONG).show();
+    			}
+        		mThreadsAdapter.notifyDataSetChanged();
+    		} else {
+    			Common.showErrorToast(_mUserError, Toast.LENGTH_LONG, RedditIsFun.this);
+    		}
+    	}
+    }
     
     private class VoteTask extends AsyncTask<Void, Void, Boolean> {
     	
@@ -997,6 +1108,76 @@ public final class RedditIsFun extends ListActivity {
         MenuInflater inflater = getMenuInflater();
         inflater.inflate(R.menu.subreddit, menu);
         return true;
+    }
+    
+    @Override
+    public void onCreateContextMenu(ContextMenu menu, View v, ContextMenuInfo menuInfo){
+    	super.onCreateContextMenu(menu, v, menuInfo);
+    	
+    	AdapterView.AdapterContextMenuInfo info;
+    	info = (AdapterView.AdapterContextMenuInfo) menuInfo;
+    	ThingInfo _item = mThreadsAdapter.getItem(info.position);
+    	
+    	mVoteTargetThingInfo = _item;
+    	
+    	menu.add(0, OPEN_IN_BROWSER_CONTEXT_ITEM, 0, "Open in browser");
+    	menu.add(0, SHARE_CONTEXT_ITEM, 0, "Share");
+    	menu.add(0, OPEN_COMMENTS_CONTEXT_ITEM, 0, "Comments");
+    	
+    	if(mSettings.loggedIn){
+    		if(_item.isSaved()){
+    			menu.add(0, SAVE_CONTEXT_ITEM, 0, "Save");
+    		} else {
+    			menu.add(0, UNSAVE_CONTEXT_ITEM, 0, "Unsave");
+    		}
+    	}
+    }
+    
+    @Override
+    public boolean onContextItemSelected(MenuItem item) {
+    	AdapterView.AdapterContextMenuInfo info;
+        info = (AdapterView.AdapterContextMenuInfo) item.getMenuInfo();
+        
+        ThingInfo _item = mThreadsAdapter.getItem(info.position);
+        
+        switch (item.getItemId()) {
+		case SHARE_CONTEXT_ITEM:
+			Intent intent = new Intent();
+			intent.setAction(Intent.ACTION_SEND);
+			intent.setType("text/plain");
+			intent.putExtra(Intent.EXTRA_TEXT, _item.getUrl());
+			
+			try {
+				startActivity(Intent.createChooser(intent, "Share Link"));
+			} catch (android.content.ActivityNotFoundException ex) {
+				
+			}
+			
+			return true;
+		case OPEN_IN_BROWSER_CONTEXT_ITEM:
+			Common.launchBrowser(_item.getUrl(), this);
+			return true;
+			
+		case OPEN_COMMENTS_CONTEXT_ITEM:
+			Intent i = new Intent(getApplicationContext(), CommentsListActivity.class);
+			i.putExtra(Constants.EXTRA_SUBREDDIT, _item.getSubreddit());
+			i.putExtra(Constants.EXTRA_ID, _item.getId());
+			i.putExtra(Constants.EXTRA_TITLE, _item.getTitle());
+			i.putExtra(Constants.EXTRA_NUM_COMMENTS, _item.getNum_comments());
+			startActivity(i);
+		
+		case SAVE_CONTEXT_ITEM:
+			new SaveTask(true).execute();
+			return true;
+			
+		case UNSAVE_CONTEXT_ITEM:
+			new SaveTask(false).execute();
+			return true;
+			
+		default:
+			return super.onContextItemSelected(item);
+		}
+    	
     }
     
     @Override
