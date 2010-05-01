@@ -258,7 +258,7 @@ public final class RedditIsFun extends ListActivity {
     }
     
     
-    private final class ThreadsListAdapter extends ArrayAdapter<ThingInfo> {
+    final class ThreadsListAdapter extends ArrayAdapter<ThingInfo> {
     	static final int THREAD_ITEM_VIEW_TYPE = 0;
     	static final int MORE_ITEM_VIEW_TYPE = 1;
     	// The number of view types
@@ -813,111 +813,6 @@ public final class RedditIsFun extends ListActivity {
     	}
     }
     
-    private class SaveTask extends AsyncTask<Void, Void, Boolean> {
-    	private static final String TAG = "SaveWorker";
-    	
-    	private ThingInfo _mTargetThingInfo;
-    	private String _mUserError = "Error voting.";
-    	private String _mUrl;
-    	private String _mExecuted;
-    	private boolean _mSave;
-    	
-    	SaveTask(boolean mSave){
-    		if(mSave){
-    			_mExecuted = "saved";
-    			_mUrl = "http://www.reddit.com/api/save";
-    		} else {
-    			_mExecuted = "unsaved";
-    			_mUrl = "http://www.reddit.com/api/unsave";
-    		}
-    		
-    		_mSave = mSave;
-    		
-    		_mTargetThingInfo = mVoteTargetThingInfo;
-    	}
-    	
-    	@Override
-    	public void onPreExecute() {
-    		if (!mSettings.loggedIn) {
-        		Common.showErrorToast("You must be logged in to save.", Toast.LENGTH_LONG, RedditIsFun.this);
-        		cancel(true);
-        		return;
-        	}
-    	}
-    	
-    	@Override
-    	public Boolean doInBackground(Void... v) {
-    		
-        	HttpEntity entity = null;
-        	
-        	if (!mSettings.loggedIn) {
-        		_mUserError = "You must be logged in to save.";
-        		return false;
-        	}
-        	
-        	// Update the modhash if necessary
-        	if (mSettings.modhash == null) {
-        		CharSequence modhash = Common.doUpdateModhash(mClient);
-        		if (modhash == null) {
-        			// doUpdateModhash should have given an error about credentials
-        			Common.doLogout(mSettings, mClient, getApplicationContext());
-        			if (Constants.LOGGING) Log.e(TAG, "updating save status failed because doUpdateModhash() failed");
-        			return false;
-        		}
-        		mSettings.setModhash(modhash);
-        	}
-        	
-        	List<NameValuePair> nvps = new ArrayList<NameValuePair>();
-			nvps.add(new BasicNameValuePair("id", _mTargetThingInfo.getName()));
-			nvps.add(new BasicNameValuePair("uh", mSettings.modhash.toString()));
-			//nvps.add(new BasicNameValuePair("executed", _mExecuted));
-    		
-			try {
-				HttpPost request = new HttpPost(_mUrl);
-				request.setHeader("Content-Type", "application/x-www-form-urlencoded");
-				request.setEntity(new UrlEncodedFormEntity(nvps, HTTP.UTF_8));
-				
-				HttpResponse response = mClient.execute(request);
-				entity = response.getEntity();
-    	    	
-    	    	String error = Common.checkResponseErrors(response, entity);
-    	    	if (error != null)
-    	    		throw new Exception(error);
-    	    	            	
-            	return true;
-            	
-			} catch (Exception e) {
-        		if (Constants.LOGGING) Log.e(TAG, "SaveTask:" + e.getMessage());
-        	} finally {
-        		if (entity != null) {
-        			try {
-        				entity.consumeContent();
-        			} catch (Exception e2) {
-        				if (Constants.LOGGING) Log.e(TAG, "entity.consumeContent:" + e2.getMessage());
-        			}
-        		}
-        	}
-			
-        	return false;
-    	}
-    	
-    	@Override
-    	public void onPostExecute(Boolean success) {
-    		if (success) {
-    			if(_mSave){
-    				_mTargetThingInfo.setSaved(true);
-    				Toast.makeText(RedditIsFun.this, "Saved!", Toast.LENGTH_LONG).show();
-    			} else {
-    				_mTargetThingInfo.setSaved(false);
-    				Toast.makeText(RedditIsFun.this, "Unsaved!", Toast.LENGTH_LONG).show();
-    			}
-        		mThreadsAdapter.notifyDataSetChanged();
-    		} else {
-    			Common.showErrorToast(_mUserError, Toast.LENGTH_LONG, RedditIsFun.this);
-    		}
-    	}
-    }
-    
     private class VoteTask extends AsyncTask<Void, Void, Boolean> {
     	
     	private static final String TAG = "VoteWorker";
@@ -1139,11 +1034,11 @@ public final class RedditIsFun extends ListActivity {
 			startActivity(i);
 		
 		case Constants.SAVE_CONTEXT_ITEM:
-			new SaveTask(true).execute();
+			new SaveTask(true, _item, mSettings, this, mThreadsAdapter).execute();
 			return true;
 			
 		case Constants.UNSAVE_CONTEXT_ITEM:
-			new SaveTask(false).execute();
+			new SaveTask(false, _item, mSettings, this, mThreadsAdapter).execute();
 			return true;
 			
 		default:
