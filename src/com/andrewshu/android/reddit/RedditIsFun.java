@@ -619,7 +619,6 @@ public final class RedditIsFun extends ListActivity {
     			mBefore = data.getBefore();
     			
     			// Go through the children and get the ThingInfos
-    			int progressIndex = 0;
     			for (ThingListing tiContainer : data.getChildren()) {
     				// Only add entries that are threads. kind="t3"
     				if (Constants.THREAD_KIND.equals(tiContainer.getKind()))

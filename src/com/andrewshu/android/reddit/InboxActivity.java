@@ -19,6 +19,8 @@
 
 package com.andrewshu.android.reddit;
 
+import java.beans.PropertyChangeEvent;
+import java.beans.PropertyChangeListener;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
@@ -29,6 +31,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import org.apache.commons.lang.StringEscapeUtils;
+import org.apache.http.Header;
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpException;
 import org.apache.http.HttpResponse;
@@ -39,10 +42,8 @@ import org.apache.http.client.methods.HttpPost;
 import org.apache.http.impl.client.DefaultHttpClient;
 import org.apache.http.message.BasicNameValuePair;
 import org.apache.http.protocol.HTTP;
-import org.codehaus.jackson.JsonFactory;
 import org.codehaus.jackson.JsonParseException;
-import org.codehaus.jackson.JsonParser;
-import org.codehaus.jackson.JsonToken;
+import org.codehaus.jackson.map.ObjectMapper;
 
 import android.app.Activity;
 import android.app.AlertDialog;
@@ -70,6 +71,7 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.Window;
 import android.view.View.OnClickListener;
 import android.view.View.OnKeyListener;
 import android.widget.ArrayAdapter;
@@ -100,7 +102,7 @@ public final class InboxActivity extends ListActivity
     // Group 1: whole error. Group 2: the time part
     private final Pattern RATELIMIT_RETRY_PATTERN = Pattern.compile("(you are trying to submit too fast. try again in (.+?)\\.)");
 
-    private final JsonFactory jsonFactory = new JsonFactory(); 
+    private final ObjectMapper om = new ObjectMapper();
     private final Markdown markdown = new Markdown();
     
     /** Custom list adapter that fits our threads data into the list. */
@@ -114,7 +116,7 @@ public final class InboxActivity extends ListActivity
     
     // UI State
     private View mVoteTargetView = null;
-    private MessageInfo mVoteTargetMessageInfo = null;
+    private ThingInfo mVoteTargetThingInfo = null;
     private URLSpan[] mVoteTargetSpans = null;
     private DownloadMessagesTask mCurrentDownloadMessagesTask = null;
     private final Object mCurrentDownloadMessagesTaskLock = new Object();
@@ -144,6 +146,7 @@ public final class InboxActivity extends ListActivity
         Common.loadRedditPreferences(this, mSettings, mClient);
         setRequestedOrientation(mSettings.rotation);
         setTheme(mSettings.theme);
+        requestWindowFeature(Window.FEATURE_PROGRESS);
         
         setContentView(R.layout.comments_list_content);
         registerForContextMenu(getListView());
@@ -200,7 +203,7 @@ public final class InboxActivity extends ListActivity
     }
     
     
-    private final class MessagesListAdapter extends ArrayAdapter<MessageInfo> {
+    private final class MessagesListAdapter extends ArrayAdapter<ThingInfo> {
     	public boolean mIsLoading = true;
     	
     	private LayoutInflater mInflater;
@@ -211,7 +214,7 @@ public final class InboxActivity extends ListActivity
     		return super.isEmpty();
     	}
     	
-        public MessagesListAdapter(Context context, List<MessageInfo> objects) {
+        public MessagesListAdapter(Context context, List<ThingInfo> objects) {
             super(context, 0, objects);
             mInflater = (LayoutInflater)context.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
         }
@@ -220,7 +223,7 @@ public final class InboxActivity extends ListActivity
         public View getView(int position, View convertView, ViewGroup parent) {
             View view;
             
-            MessageInfo item = this.getItem(position);
+            ThingInfo item = this.getItem(position);
             
             // Here view may be passed in for re-use, or we make a new one.
             if (convertView == null) {
@@ -236,7 +239,7 @@ public final class InboxActivity extends ListActivity
             TextView bodyView = (TextView) view.findViewById(R.id.body);
             
             // Highlight new messages in red
-            if (Constants.TRUE_STRING.equals(item.getNew()))
+            if (item.isNew())
             	fromInfoView.setTextColor(getResources().getColor(R.color.red));
             else
             	fromInfoView.setTextColor(getResources().getColor(R.color.dark_gray));
@@ -258,11 +261,11 @@ public final class InboxActivity extends ListActivity
             builder.append(authorSS);
             // When it was sent
             builder.append(" sent ");
-            builder.append(Util.getTimeAgo(Double.valueOf(item.getCreatedUtc())));
+            builder.append(Util.getTimeAgo(Double.valueOf(item.getCreated_utc())));
             fromInfoView.setText(builder);
             
             subjectView.setText(item.getSubject());
-            bodyView.setText(item.mSSBBody);
+            bodyView.setText(item.getSSBBody());
     
 	        return view;
         }
@@ -275,13 +278,13 @@ public final class InboxActivity extends ListActivity
      */
     @Override
     protected void onListItemClick(ListView l, View v, int position, long id) {
-        MessageInfo item = mMessagesAdapter.getItem(position);
+        ThingInfo item = mMessagesAdapter.getItem(position);
         
         // Mark the OP post/regular comment as selected
-        mVoteTargetMessageInfo = item;
+        mVoteTargetThingInfo = item;
         mVoteTargetView = v;
         
-        if (Constants.TRUE_STRING.equals(item.getWasComment()))
+        if (item.isWas_comment())
         	showDialog(Constants.DIALOG_COMMENT_CLICK);
         else
         	showDialog(Constants.DIALOG_MESSAGE_CLICK);
@@ -292,7 +295,7 @@ public final class InboxActivity extends ListActivity
      */
     public void resetUI() {
         // Reset the list to be empty.
-        List<MessageInfo> items = new ArrayList<MessageInfo>();
+        List<ThingInfo> items = new ArrayList<ThingInfo>();
         mMessagesAdapter = new MessagesListAdapter(this, items);
         setListAdapter(mMessagesAdapter);
         Common.updateListDrawables(this, mSettings.theme);
@@ -304,9 +307,11 @@ public final class InboxActivity extends ListActivity
      * Task takes in a subreddit name string and thread id, downloads its data, parses
      * out the comments, and communicates them back to the UI as they are read.
      */
-    private class DownloadMessagesTask extends AsyncTask<Integer, Integer, Void> {
+    private class DownloadMessagesTask extends AsyncTask<Integer, Long, Void>
+    		implements PropertyChangeListener {
     	
-    	private ArrayList<MessageInfo> mMessageInfos = new ArrayList<MessageInfo>();
+    	private ArrayList<ThingInfo> _mThingInfos = new ArrayList<ThingInfo>();
+    	private long _mContentLength;
     	
     	// XXX: maxComments is unused for now
     	public Void doInBackground(Integer... maxComments) {
@@ -314,11 +319,22 @@ public final class InboxActivity extends ListActivity
             try {
             	HttpGet request = new HttpGet("http://www.reddit.com/message/inbox/.json");
             	HttpResponse response = mClient.execute(request);
+            	
+            	// Read the header to get Content-Length since entity.getContentLength() returns -1
+            	Header contentLengthHeader = response.getFirstHeader("Content-Length");
+            	_mContentLength = Long.valueOf(contentLengthHeader.getValue());
+            	if (Constants.LOGGING) Log.d(TAG, "Content length: "+_mContentLength);
+
             	entity = response.getEntity();
             	InputStream in = entity.getContent();
+            	
+            	// setup a special InputStream to report progress
+            	ProgressInputStream pin = new ProgressInputStream(in, _mContentLength);
+            	pin.addPropertyChangeListener(this);
+            	
+                parseInboxJSON(pin);
                 
-                parseInboxJSON(in);
-                
+                pin.close();
                 in.close();
                 entity.consumeContent();
                 
@@ -343,93 +359,33 @@ public final class InboxActivity extends ListActivity
     	private void parseInboxJSON(InputStream in) throws IOException,
 		    	JsonParseException, IllegalStateException {
 		
-			JsonParser jp = jsonFactory.createJsonParser(in);
-			
-			if (jp.nextToken() == JsonToken.VALUE_NULL)
-				return;
-			
-			// --- Validate initial stuff, skip to the JSON List of threads ---
-			String genericListingError = "Not a subreddit listing";
-		//	if (JsonToken.START_OBJECT != jp.nextToken()) // starts with "{"
-		//		throw new IllegalStateException(genericListingError);
-			jp.nextToken();
-			if (!Constants.JSON_KIND.equals(jp.getCurrentName()))
-				throw new IllegalStateException(genericListingError);
-			jp.nextToken();
-			if (!Constants.JSON_LISTING.equals(jp.getText()))
-				throw new IllegalStateException(genericListingError);
-			jp.nextToken();
-			if (!Constants.JSON_DATA.equals(jp.getCurrentName()))
-				throw new IllegalStateException(genericListingError);
-			jp.nextToken();
-			if (JsonToken.START_OBJECT != jp.getCurrentToken())
-				throw new IllegalStateException(genericListingError);
-			jp.nextToken();
-			// Save the modhash
-			if (!Constants.JSON_MODHASH.equals(jp.getCurrentName()))
-				throw new IllegalStateException(genericListingError);
-			jp.nextToken();
-			if (Constants.EMPTY_STRING.equals(jp.getText()))
-				mSettings.setModhash(null);
-			else
-				mSettings.setModhash(jp.getText());
-			jp.nextToken();
-			if (!Constants.JSON_CHILDREN.equals(jp.getCurrentName()))
-				throw new IllegalStateException(genericListingError);
-			jp.nextToken();
-			if (jp.getCurrentToken() != JsonToken.START_ARRAY)
-				throw new IllegalStateException(genericListingError);
-			
-			// --- Main parsing ---
-//			int progressIndex = 0;
-			while (jp.nextToken() != JsonToken.END_ARRAY) {
-				if (jp.getCurrentToken() != JsonToken.START_OBJECT)
-					throw new IllegalStateException("Unexpected non-JSON-object in the children array");
-			
-				// Process JSON representing one message
-				MessageInfo mi = new MessageInfo();
-				while (jp.nextToken() != JsonToken.END_OBJECT) {
-					String fieldname = jp.getCurrentName();
-					jp.nextToken(); // move to value, or START_OBJECT/START_ARRAY
-				
-					if (Constants.JSON_KIND.equals(fieldname)) {
-						mi.put(Constants.JSON_KIND, jp.getText());
-					} else if (Constants.JSON_DATA.equals(fieldname)) { // contains an object
-						while (jp.nextToken() != JsonToken.END_OBJECT) {
-							String namefield = jp.getCurrentName();
-							jp.nextToken(); // move to value
-							// Should validate each field but I'm lazy
-							if (Constants.JSON_BODY.equals(namefield))
-								// Throw away the last argument (ArrayList<MarkdownURL>)
-								mi.mSSBBody = markdown.markdown(StringEscapeUtils.unescapeHtml(jp.getText().trim()),
-										new SpannableStringBuilder(), new ArrayList<MarkdownURL>());
-							else
-								mi.put(namefield, StringEscapeUtils.unescapeHtml(jp.getText().replaceAll("\r", "")));
-						}
-					} else {
-						throw new IllegalStateException("Unrecognized field '"+fieldname+"'!");
-					}
-				}
-				mMessageInfos.add(mi);
-//				publishProgress(progressIndex++);
-			}
-			// Get the "after"
-			jp.nextToken();
-			if (!Constants.JSON_AFTER.equals(jp.getCurrentName()))
-				throw new IllegalStateException(genericListingError);
-			jp.nextToken();
-			mAfter = jp.getText();
-			if (Constants.NULL_STRING.equals(mAfter))
-				mAfter = null;
-			// Get the "before"
-			jp.nextToken();
-			if (!Constants.JSON_BEFORE.equals(jp.getCurrentName()))
-				throw new IllegalStateException(genericListingError);
-			jp.nextToken();
-			mBefore = jp.getText();
-			if (Constants.NULL_STRING.equals(mBefore))
-				mBefore = null;
-		}
+    		String genericListingError = "Not an inbox listing";
+    		try {
+    			Listing listing = om.readValue(in, Listing.class);
+    			
+    			if (!Constants.JSON_LISTING.equals(listing.getKind()))
+    				throw new IllegalStateException(genericListingError);
+    			// Save the modhash, after, and before
+    			ListingData data = listing.getData();
+    			if (Constants.EMPTY_STRING.equals(data.getModhash()))
+    				mSettings.setModhash(null);
+    			else
+    				mSettings.setModhash(data.getModhash());
+    			mAfter = data.getAfter();
+    			mBefore = data.getBefore();
+    			
+    			// Go through the children and get the ThingInfos
+    			for (ThingListing tiContainer : data.getChildren()) {
+   					ThingInfo ti = tiContainer.getData();
+   					// do markdown
+   					ti.setBody(StringEscapeUtils.unescapeHtml(ti.getBody().trim().replaceAll("\r", "")));
+   					ti.setSSBBody(markdown.markdown(ti.getBody(), new SpannableStringBuilder(), ti.getUrls()));
+   					_mThingInfos.add(ti);
+    			}
+    		} catch (Exception ex) {
+    			if (Constants.LOGGING) Log.e(TAG, ex.getMessage());
+    		}
+    	}
 
 		@Override
     	public void onPreExecute() {
@@ -440,7 +396,7 @@ public final class InboxActivity extends ListActivity
 			}
     		resetUI();
     		mMessagesAdapter.mIsLoading = true;
-	    	showDialog(Constants.DIALOG_LOADING_INBOX);
+        	getWindow().setFeatureInt(Window.FEATURE_PROGRESS, 0);
     	}
     	
 		@Override
@@ -448,12 +404,24 @@ public final class InboxActivity extends ListActivity
 			synchronized (mCurrentDownloadMessagesTaskLock) {
 				mCurrentDownloadMessagesTask = null;
 			}
-			for (MessageInfo mi : mMessageInfos)
+    		// 10000 tells progress bar to stop
+    		getWindow().setFeatureInt(Window.FEATURE_PROGRESS, 10000);
+
+    		for (ThingInfo mi : _mThingInfos)
         		mMessagesAdapter.add(mi);
 			mMessagesAdapter.mIsLoading = false;
 			mMessagesAdapter.notifyDataSetChanged();
-			dismissDialog(Constants.DIALOG_LOADING_INBOX);
 			Common.cancelMailNotification(InboxActivity.this.getApplicationContext());
+    	}
+		
+    	@Override
+    	public void onProgressUpdate(Long... progress) {
+    		// 0-9999 is ok, 10000 means it's finished
+    		getWindow().setFeatureInt(Window.FEATURE_PROGRESS, progress[0].intValue() * 9999 / (int) _mContentLength);
+    	}
+    	
+    	public void propertyChange(PropertyChangeEvent event) {
+    		publishProgress((Long) event.getNewValue());
     	}
     }
     
@@ -496,12 +464,12 @@ public final class InboxActivity extends ListActivity
     
     private class MessageReplyTask extends AsyncTask<CharSequence, Void, Boolean> {
     	private CharSequence _mParentThingId;
-    	MessageInfo _mTargetMessageInfo;
+    	ThingInfo _mTargetThingInfo;
     	String _mUserError = "Error submitting reply. Please try again.";
     	
-    	MessageReplyTask(CharSequence parentThingId, MessageInfo targetMessageInfo) {
+    	MessageReplyTask(CharSequence parentThingId, ThingInfo targetThingInfo) {
     		_mParentThingId = parentThingId;
-    		_mTargetMessageInfo = targetMessageInfo;
+    		_mTargetThingInfo = targetThingInfo;
     	}
     	
     	@Override
@@ -613,7 +581,7 @@ public final class InboxActivity extends ListActivity
     	public void onPostExecute(Boolean success) {
     		dismissDialog(Constants.DIALOG_REPLYING);
     		if (success) {
-    			_mTargetMessageInfo.setReplyDraft("");
+    			_mTargetThingInfo.setReplyDraft("");
     			Toast.makeText(InboxActivity.this, "Reply sent.", Toast.LENGTH_SHORT).show();
     			// TODO: add the reply beneath the original, OR redirect to sent messages page
     		} else {
@@ -624,13 +592,13 @@ public final class InboxActivity extends ListActivity
     
     private class MessageComposeTask extends AsyncTask<CharSequence, Void, Boolean> {
     	Dialog _mDialog;  // needed to update CAPTCHA on failure
-    	MessageInfo _mTargetMessageInfo;
+    	ThingInfo _mTargetThingInfo;
     	String _mUserError = "Error composing message. Please try again.";
     	CharSequence _mCaptcha;
     	
-    	MessageComposeTask(Dialog dialog, MessageInfo targetMessageInfo, CharSequence captcha) {
+    	MessageComposeTask(Dialog dialog, ThingInfo targetThingInfo, CharSequence captcha) {
     		_mDialog = dialog;
-    		_mTargetMessageInfo = targetMessageInfo;
+    		_mTargetThingInfo = targetThingInfo;
     		_mCaptcha = captcha;
     	}
     	
@@ -661,8 +629,8 @@ public final class InboxActivity extends ListActivity
         		// Construct data
     			List<NameValuePair> nvps = new ArrayList<NameValuePair>();
     			nvps.add(new BasicNameValuePair("text", text[0].toString()));
-    			nvps.add(new BasicNameValuePair("subject", _mTargetMessageInfo.getSubject()));
-    			nvps.add(new BasicNameValuePair("to", _mTargetMessageInfo.getDest()));
+    			nvps.add(new BasicNameValuePair("subject", _mTargetThingInfo.getSubject()));
+    			nvps.add(new BasicNameValuePair("to", _mTargetThingInfo.getDest()));
     			nvps.add(new BasicNameValuePair("uh", mSettings.modhash.toString()));
     			nvps.add(new BasicNameValuePair("thing_id", ""));
     			if (mCaptchaIden != null) {
@@ -747,7 +715,7 @@ public final class InboxActivity extends ListActivity
     	public void onPostExecute(Boolean success) {
     		dismissDialog(Constants.DIALOG_COMPOSING);
     		if (success) {
-    			_mTargetMessageInfo.setReplyDraft("");
+    			_mTargetThingInfo.setReplyDraft("");
     			Toast.makeText(InboxActivity.this, "Message sent.", Toast.LENGTH_SHORT).show();
     			// TODO: add the reply beneath the original, OR redirect to sent messages page
     		} else {
@@ -905,12 +873,12 @@ public final class InboxActivity extends ListActivity
 //        public boolean onMenuItemClick(MenuItem item) {
 //        	switch (mAction) {
 //        	case Constants.DIALOG_OP:
-//        		mVoteTargetMessageInfo = mMessagesAdapter.getItem(0);
+//        		mVoteTargetThingInfo = mMessagesAdapter.getItem(0);
 //        		showDialog(Constants.DIALOG_THING_CLICK);
 //        		break;
 //        	case Constants.DIALOG_REPLY:
 //        		// From the menu, only used for the OP, which is a thread.
-//            	mVoteTargetMessageInfo = mMessagesAdapter.getItem(0);
+//            	mVoteTargetThingInfo = mMessagesAdapter.getItem(0);
 //                showDialog(mAction);
 //                break;
 //        	case Constants.DIALOG_LOGIN:
@@ -1011,7 +979,7 @@ public final class InboxActivity extends ListActivity
     				public void onClick(DialogInterface dialog, int id) {
     					dialog.dismiss();
     					Intent i = new Intent(getApplicationContext(), CommentsListActivity.class);
-    					i.putExtra(Constants.EXTRA_COMMENT_CONTEXT, mVoteTargetMessageInfo.getContext());
+    					i.putExtra(Constants.EXTRA_COMMENT_CONTEXT, mVoteTargetThingInfo.getContext());
     					startActivity(i);
     				}
     			})
@@ -1049,8 +1017,8 @@ public final class InboxActivity extends ListActivity
     		final Button replyCancelButton = (Button) dialog.findViewById(R.id.reply_cancel_button);
     		replySaveButton.setOnClickListener(new OnClickListener() {
     			public void onClick(View v) {
-    				if(mVoteTargetMessageInfo != null){
-        				new MessageReplyTask(mVoteTargetMessageInfo.getName(), mVoteTargetMessageInfo).execute(replyBody.getText());
+    				if(mVoteTargetThingInfo != null){
+        				new MessageReplyTask(mVoteTargetThingInfo.getName(), mVoteTargetThingInfo).execute(replyBody.getText());
         				dismissDialog(Constants.DIALOG_REPLY);
     				}
     				else{
@@ -1060,7 +1028,7 @@ public final class InboxActivity extends ListActivity
     		});
     		replyCancelButton.setOnClickListener(new OnClickListener() {
     			public void onClick(View v) {
-    				mVoteTargetMessageInfo.setReplyDraft(replyBody.getText().toString());
+    				mVoteTargetThingInfo.setReplyDraft(replyBody.getText().toString());
     				dismissDialog(Constants.DIALOG_REPLY);
     			}
     		});
@@ -1080,7 +1048,7 @@ public final class InboxActivity extends ListActivity
     		composeSendButton.setOnClickListener(new OnClickListener() {
 				@Override
 				public void onClick(View v) {
-		    		MessageInfo hi = new MessageInfo();
+		    		ThingInfo hi = new ThingInfo();
 		    		// reddit.com performs these sanity checks too.
 		    		if ("".equals(composeDestination.getText().toString().trim())) {
 		    			Toast.makeText(InboxActivity.this, "please enter a username", Toast.LENGTH_LONG).show();
@@ -1098,8 +1066,8 @@ public final class InboxActivity extends ListActivity
 		    			Toast.makeText(InboxActivity.this, "", Toast.LENGTH_LONG).show();
 		    			return;
 		    		}
-		    		hi.put(MessageInfo.DEST, composeDestination.getText().toString().trim());
-		    		hi.put(MessageInfo.SUBJECT, composeSubject.getText().toString().trim());
+		    		hi.setDest(composeDestination.getText().toString().trim());
+		    		hi.setSubject(composeSubject.getText().toString().trim());
 		    		new MessageComposeTask(composeDialog, hi, composeCaptcha.getText().toString().trim())
 		    			.execute(composeText.getText().toString().trim());
 		    		dismissDialog(Constants.DIALOG_COMPOSE);
@@ -1117,13 +1085,6 @@ public final class InboxActivity extends ListActivity
     	case Constants.DIALOG_LOGGING_IN:
     		pdialog = new ProgressDialog(this);
     		pdialog.setMessage("Logging in...");
-    		pdialog.setIndeterminate(true);
-    		pdialog.setCancelable(false);
-    		dialog = pdialog;
-    		break;
-    	case Constants.DIALOG_LOADING_INBOX:
-    		pdialog = new ProgressDialog(this);
-    		pdialog.setMessage("Loading messages...");
     		pdialog.setIndeterminate(true);
     		pdialog.setCancelable(false);
     		dialog = pdialog;
@@ -1164,19 +1125,15 @@ public final class InboxActivity extends ListActivity
     		break;
     		
     	case Constants.DIALOG_REPLY:
-    		if (mVoteTargetMessageInfo.getReplyDraft() != null) {
+    		if (mVoteTargetThingInfo.getReplyDraft() != null) {
     			EditText replyBodyView = (EditText) dialog.findViewById(R.id.body); 
-    			replyBodyView.setText(mVoteTargetMessageInfo.getReplyDraft());
+    			replyBodyView.setText(mVoteTargetThingInfo.getReplyDraft());
     		}
     		break;
     		
     	case Constants.DIALOG_COMPOSE:
     		new CheckCaptchaRequiredTask(dialog).execute();
     		break;
-    		
-//    	case Constants.DIALOG_LOADING_INBOX:
-//    		mLoadingCommentsProgress.setMax(mNumVisibleMessages);
-//    		break;
     		
 		default:
 			// No preparation based on app state is required.
@@ -1194,7 +1151,6 @@ public final class InboxActivity extends ListActivity
         super.onRestoreInstanceState(state);
         final int[] myDialogs = {
         	Constants.DIALOG_COMMENT_CLICK,
-        	Constants.DIALOG_LOADING_INBOX,
         	Constants.DIALOG_LOGGING_IN,
         	Constants.DIALOG_LOGIN,
         	Constants.DIALOG_MESSAGE_CLICK,

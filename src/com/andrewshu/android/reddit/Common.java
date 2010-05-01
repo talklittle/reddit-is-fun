@@ -463,7 +463,7 @@ public class Common {
 				// Should validate each field but I'm lazy
 				jp.nextToken(); // move to value
 				if (Constants.JSON_NEW.equals(namefield)) {
-					if (Constants.TRUE_STRING.equals(jp.getText()))
+					if ("true".equals(jp.getText()))
 						count++;
 					else
 						// Stop parsing on first old message

@@ -2236,7 +2236,10 @@ public class CommentsListActivity extends ListActivity
         			mMorePositions = (HashSet<Integer>) in.readObject();
         			mNumVisibleComments = in.readInt();
         			mOpThingInfo = (ThingInfo) in.readObject();
-        			mOpThingInfo.setSSBSelftext(markdown.markdown(mOpThingInfo.getSelftext(), new SpannableStringBuilder(), mOpThingInfo.getUrls()));
+        			// do markdown
+        			mOpThingInfo.setSelftext(StringEscapeUtils.unescapeHtml(mOpThingInfo.getSelftext().trim().replaceAll("\r", "")));
+        			mOpThingInfo.setSSBSelftext(markdown.markdown(mOpThingInfo.getBody(), new SpannableStringBuilder(), mOpThingInfo.getUrls()));
+        			
     		    	mSettings.setSubreddit((CharSequence) in.readObject());
     				mSettings.setThreadId((CharSequence) in.readObject());
     				mSortByUrl = (CharSequence) in.readObject();
