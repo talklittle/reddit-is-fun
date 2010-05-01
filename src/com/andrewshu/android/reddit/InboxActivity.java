@@ -118,6 +118,7 @@ public final class InboxActivity extends ListActivity
     private View mVoteTargetView = null;
     private ThingInfo mVoteTargetThingInfo = null;
     private URLSpan[] mVoteTargetSpans = null;
+    // TODO: String mVoteTargetId so when you rotate, you can find the TargetThingInfo again
     private DownloadMessagesTask mCurrentDownloadMessagesTask = null;
     private final Object mCurrentDownloadMessagesTaskLock = new Object();
     
@@ -1028,7 +1029,6 @@ public final class InboxActivity extends ListActivity
     		});
     		replyCancelButton.setOnClickListener(new OnClickListener() {
     			public void onClick(View v) {
-    				mVoteTargetThingInfo.setReplyDraft(replyBody.getText().toString());
     				dismissDialog(Constants.DIALOG_REPLY);
     			}
     		});
@@ -1125,7 +1125,7 @@ public final class InboxActivity extends ListActivity
     		break;
     		
     	case Constants.DIALOG_REPLY:
-    		if (mVoteTargetThingInfo.getReplyDraft() != null) {
+    		if (mVoteTargetThingInfo != null && mVoteTargetThingInfo.getReplyDraft() != null) {
     			EditText replyBodyView = (EditText) dialog.findViewById(R.id.body); 
     			replyBodyView.setText(mVoteTargetThingInfo.getReplyDraft());
     		}
