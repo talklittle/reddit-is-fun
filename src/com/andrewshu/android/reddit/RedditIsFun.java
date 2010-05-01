@@ -559,7 +559,14 @@ public final class RedditIsFun extends ListActivity {
 		    		mUrlToGetHereChanged = false;
 	    		}
 	    		
-    			HttpGet request = new HttpGet(url);
+    			HttpGet request;
+    			try {
+    				request = new HttpGet(url);
+    			} catch (IllegalArgumentException e) {
+    				_mUserError = "Invalid subreddit.";
+                	if (Constants.LOGGING) Log.e(TAG, e.getMessage());
+                	return false;
+    			}
             	HttpResponse response = mClient.execute(request);
 
             	// Read the header to get Content-Length since entity.getContentLength() returns -1
