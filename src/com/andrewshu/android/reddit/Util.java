@@ -92,4 +92,12 @@ public class Util {
 	public static String getTimeAgo(double utcTimeSeconds) {
 		return getTimeAgo((long)utcTimeSeconds);
 	}
+	
+	public static String showNumComments(int comments) {
+		if (comments == 1) {
+			return "1 comment";
+		} else {
+			return comments + " comments";
+		}
+	}
 }

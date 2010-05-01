@@ -12,6 +12,7 @@ Contributors:
 * jc4p
 * albertb
 * billyf
+* jaspervdj
 
 Android Market QR Codes
 ----------------

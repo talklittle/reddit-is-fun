@@ -381,7 +381,7 @@ public class CommentsListActivity extends ListActivity
 	                titleView.setText(builder);
 	                
 	                votesView.setText("" + mOpThingInfo.getScore());
-	                numCommentsView.setText(mOpThingInfo.getNum_comments()+" comments");
+	                numCommentsView.setText(Util.showNumComments(mOpThingInfo.getNum_comments()));
 	                subredditView.setText(mOpThingInfo.getSubreddit());
 	                submissionTimeView.setText(Util.getTimeAgo(mOpThingInfo.getCreated_utc()));
 	                submitterView.setText("by "+mOpThingInfo.getAuthor());

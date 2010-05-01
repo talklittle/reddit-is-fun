@@ -333,7 +333,7 @@ public final class RedditIsFun extends ListActivity {
 	            titleView.setText(builder);
 	            
 	            votesView.setText("" + item.getScore());
-	            numCommentsView.setText(item.getNum_comments()+" comments");
+	            numCommentsView.setText(Util.showNumComments(item.getNum_comments()));
 	            if (mSettings.isFrontpage) {
 	            	subredditView.setVisibility(View.VISIBLE);
 	            	subredditView.setText(item.getSubreddit());
