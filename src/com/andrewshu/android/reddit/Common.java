@@ -639,11 +639,39 @@ public class Common {
     			return;
     		}
     	}
-    	Intent browser = new Intent(Intent.ACTION_VIEW, Uri.parse(url.toString()));
+    	Uri uri = optimizeMobileUri(Uri.parse(url.toString()));
+    	Intent browser = new Intent(Intent.ACTION_VIEW, uri);
     	browser.putExtra(Browser.EXTRA_APPLICATION_ID, act.getPackageName());
     	act.startActivity(browser);
 	}
     
+    /**
+     * Creates mobile version of <code>uri</code> if applicable.
+     * 
+     * @return original uri if no mobile version of uri is known
+     */
+    static Uri optimizeMobileUri(Uri uri) {
+    	if (isWikipediaUri(uri)) {
+    		uri = createMobileWikpediaUri(uri);
+    	}
+    	return uri;
+    }
+    
+    /**
+     * @return if uri points to a non-mobile wikpedia uri.
+     */
+    static boolean isWikipediaUri(Uri uri) {
+    	String host = uri.getHost();
+    	return host.endsWith(".wikipedia.org") && !host.contains(".m.wikipedia.org");
+    }
+    
+    /**
+     * @return mobile version of a wikipedia uri
+     */
+    static Uri createMobileWikpediaUri(Uri uri) {
+    	String uriString = uri.toString();
+    	return Uri.parse(uriString.replace(".wikipedia.org/", ".m.wikipedia.org/"));
+    }
     
 	/**
 	 * http://hc.apache.org/httpcomponents-client/examples.html
