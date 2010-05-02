@@ -633,6 +633,7 @@ public class CommentsListActivity extends ListActivity
      * @param commentsAdapter A new CommentsListAdapter to use. Pass in null to create a new empty one.
      */
     public void resetUI(CommentsListAdapter commentsAdapter) {
+    	setContentView(R.layout.comments_list_content);
     	synchronized (COMMENT_ADAPTER_LOCK) {
 	    	if (commentsAdapter == null) {
 	    		// Reset the list to be empty.
@@ -642,12 +643,29 @@ public class CommentsListActivity extends ListActivity
 	    		mCommentsAdapter = commentsAdapter;
 	    	}
 	        setListAdapter(mCommentsAdapter);
+	        mCommentsAdapter.mIsLoading = false;
 	        mCommentsAdapter.notifyDataSetChanged();  // Just in case
     	}
         getListView().setDivider(null);
         Common.updateListDrawables(this, mSettings.theme);
         mHiddenComments.clear();
         mHiddenCommentHeads.clear();
+    }
+    
+    private void enableLoadingScreen() {
+    	if (mSettings.theme == R.style.Reddit_Light) {
+    		setContentView(R.layout.loading_light);
+    	} else {
+    		setContentView(R.layout.loading_dark);
+    	}
+    	synchronized (COMMENT_ADAPTER_LOCK) {
+	    	if (mCommentsAdapter != null)
+	    		mCommentsAdapter.mIsLoading = true;
+    	}
+    }
+    
+    private void disableLoadingScreen() {
+    	resetUI(mCommentsAdapter);
     }
 
     /**
@@ -910,9 +928,11 @@ public class CommentsListActivity extends ListActivity
 	    		mCurrentDownloadCommentsTask = this;
     		}
     		// Initialize mCommentsList and mCommentsAdapter
-    		if (_mPositionOffset == 0)
-    			resetUI(null);
-    		mCommentsAdapter.mIsLoading = true;
+    		synchronized (COMMENT_ADAPTER_LOCK) {
+	    		if (_mPositionOffset == 0)
+	    			resetUI(null);
+	    		enableLoadingScreen();
+    		}
     		// In case a ReadCacheTask tries to preempt this DownloadCommentsTask
     		mShouldUseCommentsCache = false;
 			
@@ -936,6 +956,7 @@ public class CommentsListActivity extends ListActivity
     		}
     		// 10000 tells progress bar to stop
     		getWindow().setFeatureInt(Window.FEATURE_PROGRESS, 10000);
+    		disableLoadingScreen();
     		
     		if (success) {
     			// We modified mCommentsList, which backs mCommentsAdapter, so mCommentsAdapter has changed too.

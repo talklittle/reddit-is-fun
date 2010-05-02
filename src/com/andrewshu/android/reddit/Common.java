@@ -72,6 +72,7 @@ import android.app.PendingIntent;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.content.res.Resources;
 import android.net.Uri;
 import android.os.AsyncTask;
 import android.preference.PreferenceManager;
@@ -111,11 +112,14 @@ public class Common {
      * Set the Drawable for the list selector etc. based on the current theme.
      */
 	static void updateListDrawables(ListActivity la, int theme) {
-		final ListView lv = la.getListView();
+		ListView lv = la.getListView();
+		Resources res = la.getResources();
 		if (theme == R.style.Reddit_Light) {
     		lv.setSelector(R.drawable.list_selector_blue);
+    		lv.setCacheColorHint(res.getColor(R.color.white));
     	} else if (theme == R.style.Reddit_Dark) {
     		lv.setSelector(android.R.drawable.list_selector_background);
+    		lv.setCacheColorHint(res.getColor(R.color.android_dark_background));
     	}
 	}
 	

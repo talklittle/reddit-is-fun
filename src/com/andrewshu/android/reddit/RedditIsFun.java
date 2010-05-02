@@ -96,6 +96,7 @@ public final class RedditIsFun extends ListActivity {
     /** Custom list adapter that fits our threads data into the list. */
     private ThreadsListAdapter mThreadsAdapter = null;
     private ArrayList<ThingInfo> mThreadsList = null;
+    private static final Object THREAD_ADAPTER_LOCK = new Object();
 
     private final DefaultHttpClient mClient = Common.getGzipHttpClient();
 	
@@ -141,19 +142,10 @@ public final class RedditIsFun extends ListActivity {
         setTheme(mSettings.theme);
         requestWindowFeature(Window.FEATURE_PROGRESS);
     	
-        setContentView(R.layout.threads_list_content);
+        enableLoadingScreen();
         // The above layout contains a list id "android:list"
         // which ListActivity adopts as its list -- we can
         // access it with getListView().
-        ListView lv = getListView();
-        lv.setOnItemLongClickListener(new AdapterView.OnItemLongClickListener() {
-        	@Override
-        	public boolean onItemLongClick(AdapterView<?> av, View v, int pos, long id) {
-        	   onLongListItemClick(v,pos,id);
-        	   return true; 
-        	}});
-        // allow the trackball to select next25 and prev25 buttons
-        lv.setItemsCanFocus(true);
 
         if (savedInstanceState != null) {
 	        CharSequence subreddit = savedInstanceState.getCharSequence(Constants.SUBREDDIT_KEY);
@@ -194,13 +186,24 @@ public final class RedditIsFun extends ListActivity {
     }
     
     /**
-     * Hack to explicitly set background color whenever changing ListView.
+     * Wrapper method to do additional changes associated with changing the content view.
      */
     public void setContentView(int layoutResID) {
     	super.setContentView(layoutResID);
+
     	// HACK: set background color directly for android 2.0
         if (mSettings.theme == R.style.Reddit_Light)
         	getListView().setBackgroundResource(R.color.white);
+
+        getListView().setOnItemLongClickListener(new AdapterView.OnItemLongClickListener() {
+        	@Override
+        	public boolean onItemLongClick(AdapterView<?> av, View v, int pos, long id) {
+        	   onLongListItemClick(v,pos,id);
+        	   return true; 
+        	}});
+        
+        // allow the trackball to select next25 and prev25 buttons
+        getListView().setItemsCanFocus(true);
     }
     
     @Override
@@ -518,16 +521,36 @@ public final class RedditIsFun extends ListActivity {
      * @param threadsAdapter A ThreadsListAdapter to use. Pass in null if you want a new empty one created.
      */
     void resetUI(ThreadsListAdapter threadsAdapter) {
-    	if (threadsAdapter == null) {
-            // Reset the list to be empty.
-	    	mThreadsList = new ArrayList<ThingInfo>();
-			mThreadsAdapter = new ThreadsListAdapter(this, mThreadsList);
-    	} else {
-    		mThreadsAdapter = threadsAdapter;
-    	}
-	    setListAdapter(mThreadsAdapter);
-	    mThreadsAdapter.notifyDataSetChanged();  // Just in case
+    	setContentView(R.layout.threads_list_content);
+    	synchronized (THREAD_ADAPTER_LOCK) {
+	    	if (threadsAdapter == null) {
+	            // Reset the list to be empty.
+		    	mThreadsList = new ArrayList<ThingInfo>();
+				mThreadsAdapter = new ThreadsListAdapter(this, mThreadsList);
+	    	} else {
+	    		mThreadsAdapter = threadsAdapter;
+	    	}
+		    setListAdapter(mThreadsAdapter);
+		    mThreadsAdapter.mIsLoading = false;
+		    mThreadsAdapter.notifyDataSetChanged();  // Just in case
+		}
 	    Common.updateListDrawables(this, mSettings.theme);
+    }
+    
+    private void enableLoadingScreen() {
+    	if (mSettings.theme == R.style.Reddit_Light) {
+    		setContentView(R.layout.loading_light);
+    	} else {
+    		setContentView(R.layout.loading_dark);
+    	}
+    	synchronized (THREAD_ADAPTER_LOCK) {
+	    	if (mThreadsAdapter != null)
+	    		mThreadsAdapter.mIsLoading = true;
+    	}
+    }
+    
+    private void disableLoadingScreen() {
+    	resetUI(mThreadsAdapter);
     }
     
     void resetUrlToGetHere() {
@@ -674,7 +697,7 @@ public final class RedditIsFun extends ListActivity {
 	    		mCurrentDownloadThreadsTask = this;
     		}
     		resetUI(null);
-    		mThreadsAdapter.mIsLoading = true;
+    		enableLoadingScreen();
     		// In case a ReadCacheTask tries to preempt this DownloadThreadsTask
     		mShouldUseThreadsCache = false;
 			
@@ -701,17 +724,20 @@ public final class RedditIsFun extends ListActivity {
     		}
     		// 10000 tells progress bar to stop
     		getWindow().setFeatureInt(Window.FEATURE_PROGRESS, 10000);
+    		disableLoadingScreen();
 
     		if (success) {
-	    		for (ThingInfo ti : mThingInfos)
-	        		mThreadsList.add(ti);
-	    		// "25 more" button.
-	    		if (mThreadsList.size() >= Constants.DEFAULT_THREAD_DOWNLOAD_LIMIT)
-	    			mThreadsList.add(new ThingInfo());
-	    		// Remember this time for caching purposes
-	    		mLastRefreshTime = System.currentTimeMillis();
-	    		mShouldUseThreadsCache = true;
-	    		resetUI(new ThreadsListAdapter(RedditIsFun.this, mThreadsList));
+    			synchronized (THREAD_ADAPTER_LOCK) {
+		    		for (ThingInfo ti : mThingInfos)
+		        		mThreadsList.add(ti);
+		    		// "25 more" button.
+		    		if (mThreadsList.size() >= Constants.DEFAULT_THREAD_DOWNLOAD_LIMIT)
+		    			mThreadsList.add(new ThingInfo());
+	    			// Remember this time for caching purposes
+		    		mLastRefreshTime = System.currentTimeMillis();
+		    		mShouldUseThreadsCache = true;
+		    		mThreadsAdapter.notifyDataSetChanged();
+    			}
 	    		// Point the list to last thread user was looking at, if any
 	    		jumpToThread();
     		} else {
@@ -1420,7 +1446,9 @@ public final class RedditIsFun extends ListActivity {
         			mSettings.setSubreddit((CharSequence) in.readObject());
         			mSortByUrl = (CharSequence) in.readObject();
         			mSortByUrlExtra = (CharSequence) in.readObject();
-        			mThreadsList = (ArrayList<ThingInfo>) in.readObject();
+        			synchronized (THREAD_ADAPTER_LOCK) {
+        				mThreadsList = (ArrayList<ThingInfo>) in.readObject();
+        			}
         			mUrlToGetHere = (CharSequence) in.readObject();
         			mUrlToGetHereChanged = in.readBoolean();
         	
@@ -1467,8 +1495,10 @@ public final class RedditIsFun extends ListActivity {
     		if (!isCancelled()) {
 	    		dismissDialog(Constants.DIALOG_LOADING_THREADS_CACHE);
 	    		if (success) {
-	    			// Use the cached threads list
-			    	resetUI(new ThreadsListAdapter(RedditIsFun.this, mThreadsList));
+	    			synchronized (THREAD_ADAPTER_LOCK) {
+		    			// Use the cached threads list
+				    	resetUI(new ThreadsListAdapter(RedditIsFun.this, mThreadsList));
+	    			}
 			    	// Set the title based on subreddit
 			    	if (Constants.FRONTPAGE_STRING.equals(mSettings.subreddit))
 			    		setTitle("reddit.com: what's new online!");

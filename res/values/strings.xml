@@ -25,7 +25,9 @@
     <string name="noThreads">No threads here</string>
     <string name="noComments">No comments here</string>
     <string name="noMessages">Your inbox is empty.</string>
-    <string name="noSubreddits">Loading...</string>
+    <string name="noSubreddits">No subreddits</string>
+    
+    <string name="loading_splash_text">Loading...</string>
     
     <string name="pick_subreddit_label">Subreddit name:</string>
     <string name="pick_subreddit_button">Go</string>

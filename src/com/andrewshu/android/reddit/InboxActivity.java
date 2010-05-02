@@ -152,8 +152,7 @@ public final class InboxActivity extends ListActivity
         setTheme(mSettings.theme);
         requestWindowFeature(Window.FEATURE_PROGRESS);
         
-        setContentView(R.layout.comments_list_content);
-        registerForContextMenu(getListView());
+        setContentView(R.layout.inbox_list_content);
         // The above layout contains a list id "android:list"
         // which ListActivity adopts as its list -- we can
         // access it with getListView().
@@ -177,6 +176,7 @@ public final class InboxActivity extends ListActivity
     	// HACK: set background color directly for android 2.0
         if (mSettings.theme == R.style.Reddit_Light)
         	getListView().setBackgroundResource(R.color.white);
+        registerForContextMenu(getListView());
     }
     
 	private void returnStatus(int status) {
@@ -357,15 +357,39 @@ public final class InboxActivity extends ListActivity
 
     /**
      * Resets the output UI list contents, retains session state.
+     * @param messagesAdapter A MessagesListAdapter to use. Pass in null if you want a new empty one created.
      */
-    public void resetUI() {
-        // Reset the list to be empty.
-        List<ThingInfo> items = new ArrayList<ThingInfo>();
-        synchronized(MESSAGE_ADAPTER_LOCK) {
-        	mMessagesAdapter = new MessagesListAdapter(this, items);
-        	setListAdapter(mMessagesAdapter);
-        }
+    void resetUI(MessagesListAdapter messagesAdapter) {
+    	setContentView(R.layout.inbox_list_content);
+    	synchronized (MESSAGE_ADAPTER_LOCK) {
+	    	if (messagesAdapter == null) {
+	            // Reset the list to be empty.
+	    		mMessagesAdapter = new MessagesListAdapter(this, new ArrayList<ThingInfo>());
+	    	} else {
+	    		mMessagesAdapter = messagesAdapter;
+	    	}
+		    setListAdapter(mMessagesAdapter);
+		    mMessagesAdapter.mIsLoading = false;
+		    mMessagesAdapter.notifyDataSetChanged();  // Just in case
+		}
+    	getListView().setDivider(null);
         Common.updateListDrawables(this, mSettings.theme);
+    }
+    
+    private void enableLoadingScreen() {
+    	if (mSettings.theme == R.style.Reddit_Light) {
+    		setContentView(R.layout.loading_light);
+    	} else {
+    		setContentView(R.layout.loading_dark);
+    	}
+    	synchronized (MESSAGE_ADAPTER_LOCK) {
+	    	if (mMessagesAdapter != null)
+	    		mMessagesAdapter.mIsLoading = true;
+    	}
+    }
+    
+    private void disableLoadingScreen() {
+    	resetUI(mMessagesAdapter);
     }
 
         
@@ -456,10 +480,8 @@ public final class InboxActivity extends ListActivity
 					mCurrentDownloadMessagesTask.cancel(true);
 				mCurrentDownloadMessagesTask = this;
 			}
-    		resetUI();
-    		synchronized(MESSAGE_ADAPTER_LOCK) {
-    			mMessagesAdapter.mIsLoading = true;
-    		}
+    		resetUI(null);
+    		enableLoadingScreen();
         	getWindow().setFeatureInt(Window.FEATURE_PROGRESS, 0);
     	}
     	
@@ -474,8 +496,7 @@ public final class InboxActivity extends ListActivity
     		synchronized(MESSAGE_ADAPTER_LOCK) {
     			for (ThingInfo mi : _mThingInfos)
     				mMessagesAdapter.add(mi);
-    			mMessagesAdapter.mIsLoading = false;
-    			mMessagesAdapter.notifyDataSetChanged();
+    			disableLoadingScreen();
     		}
 			Common.cancelMailNotification(InboxActivity.this.getApplicationContext());
     	}
