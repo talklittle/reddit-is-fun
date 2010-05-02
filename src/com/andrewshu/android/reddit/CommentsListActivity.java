@@ -433,9 +433,7 @@ public class CommentsListActivity extends ListActivity
 		            TextView leftIndent = (TextView) view.findViewById(R.id.left_indent);
 		            
 		            try {
-		            	votesView.setText(String.valueOf(
-		            			Integer.valueOf(item.getUps()) - Integer.valueOf(item.getDowns())
-		            			) + " points");
+		            	votesView.setText(Util.showNumPoints(item.getUps() - item.getDowns()));
 		            } catch (NumberFormatException e) {
 		            	// This happens because "ups" comes after the potentially long "replies" object,
 		            	// so the ListView might try to display the View before "ups" in JSON has been parsed.
@@ -498,9 +496,7 @@ public class CommentsListActivity extends ListActivity
 		            ImageView voteDownView = (ImageView) view.findViewById(R.id.vote_down_image);
 		            
 		            try {
-		            	votesView.setText(String.valueOf(
-		            			Integer.valueOf(item.getUps()) - Integer.valueOf(item.getDowns())
-		            			) + " points");
+		            	votesView.setText(Util.showNumPoints(item.getUps() - item.getDowns()));
 		            } catch (NumberFormatException e) {
 		            	// This happens because "ups" comes after the potentially long "replies" object,
 		            	// so the ListView might try to display the View before "ups" in JSON has been parsed.

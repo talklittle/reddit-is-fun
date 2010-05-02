@@ -100,4 +100,12 @@ public class Util {
 			return comments + " comments";
 		}
 	}
+	
+	public static String showNumPoints(int score) {
+		if (score == 1) {
+			return "1 point";
+		} else {
+			return score + " points";
+		}
+	}
 }
