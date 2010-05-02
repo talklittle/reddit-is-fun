@@ -155,6 +155,8 @@ public final class RedditIsFun extends ListActivity {
         	   onLongListItemClick(v,pos,id);
         	   return true; 
         	}});
+        // allow the trackball to select next25 and prev25 buttons
+        lv.setItemsCanFocus(true);
 
         if (savedInstanceState != null) {
 	        CharSequence subreddit = savedInstanceState.getCharSequence(Constants.SUBREDDIT_KEY);
