@@ -130,6 +130,7 @@ public class Constants {
     static final String EDIT_TARGET_BODY_KEY = "edit_target_body";
     static final String ID_KEY = "id";
     static final String JUMP_TO_COMMENT_ID_KEY = "jump_to_comment_id";
+    static final String JUMP_TO_COMMENT_CONTEXT_KEY = "jump_to_comment_context";
     static final String JUMP_TO_COMMENT_POSITION_KEY = "jump_to_comment_position";
     static final String JUMP_TO_THREAD_ID_KEY = "jump_to_thread_id";
     static final String REPLY_TARGET_NAME_KEY = "reply_target_name";

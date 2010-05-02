@@ -497,31 +497,31 @@ public class Common {
     }
     
     static void launchBrowser(CharSequence url, Activity act) {
-      Matcher matcher = REDDIT_LINK.matcher(url);
-      if (matcher.matches()) {
-        if (matcher.group(3) != null) {
-          Intent intent = new Intent(act.getApplicationContext(), CommentsListActivity.class);
-          intent.putExtra(Constants.EXTRA_COMMENT_CONTEXT, url);
-          act.startActivity(intent);
-          return;
-        } else if (matcher.group(2) != null) {
-          Intent intent = new Intent(act.getApplicationContext(), CommentsListActivity.class);
-          intent.putExtra(Constants.EXTRA_SUBREDDIT, matcher.group(1));
-          intent.putExtra(Constants.EXTRA_ID, matcher.group(2));
-          intent.putExtra(Constants.EXTRA_NUM_COMMENTS, Constants.DEFAULT_COMMENT_DOWNLOAD_LIMIT);
-          act.startActivity(intent);
-          return;
-        } else if (matcher.group(1) != null) {
-          Intent intent = new Intent(act.getApplicationContext(), RedditIsFun.class);
-          intent.putExtra(Constants.EXTRA_SUBREDDIT, matcher.group(1));
-          act.startActivity(intent);
-          return;
-        }
-      }
-      Intent browser = new Intent(Intent.ACTION_VIEW, Uri.parse(url.toString()));
-      browser.putExtra(Browser.EXTRA_APPLICATION_ID, act.getPackageName());
-      act.startActivity(browser);
-    }
+    	Matcher matcher = REDDIT_LINK.matcher(url);
+    	if (matcher.matches()) {
+    		if (matcher.group(3) != null) {
+    			Intent intent = new Intent(act.getApplicationContext(), CommentsListActivity.class);
+    			intent.putExtra(Constants.EXTRA_COMMENT_CONTEXT, url);
+    			act.startActivity(intent);
+    			return;
+    		} else if (matcher.group(2) != null) {
+    			Intent intent = new Intent(act.getApplicationContext(), CommentsListActivity.class);
+    			intent.putExtra(Constants.EXTRA_SUBREDDIT, matcher.group(1));
+    			intent.putExtra(Constants.EXTRA_ID, matcher.group(2));
+    			intent.putExtra(Constants.EXTRA_NUM_COMMENTS, Constants.DEFAULT_COMMENT_DOWNLOAD_LIMIT);
+    			act.startActivity(intent);
+    			return;
+    		} else if (matcher.group(1) != null) {
+    			Intent intent = new Intent(act.getApplicationContext(), RedditIsFun.class);
+    			intent.putExtra(Constants.EXTRA_SUBREDDIT, matcher.group(1));
+    			act.startActivity(intent);
+    			return;
+    		}
+    	}
+    	Intent browser = new Intent(Intent.ACTION_VIEW, Uri.parse(url.toString()));
+    	browser.putExtra(Browser.EXTRA_APPLICATION_ID, act.getPackageName());
+    	act.startActivity(browser);
+	}
     
     
     static boolean isFreshCache(long cacheTime) {

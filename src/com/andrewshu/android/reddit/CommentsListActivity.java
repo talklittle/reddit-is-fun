@@ -109,7 +109,7 @@ public class CommentsListActivity extends ListActivity
     // Group 1: fullname. Group 2: kind. Group 3: id36.
     private final Pattern NEW_ID_PATTERN = Pattern.compile("\"id\": \"((.+?)_(.+?))\"");
     // Group 2: subreddit name. Group 3: thread id36. Group 4: Comment id36.
-    private final Pattern COMMENT_CONTEXT_PATTERN = Pattern.compile("(http://www.reddit.com)?/r/(.+?)/comments/(.+?)/.+?/([a-zA-Z0-9]+)?");
+    private final Pattern COMMENT_CONTEXT_PATTERN = Pattern.compile("(http://www.reddit.com)?/r/(.+?)/comments/(.+?)/.+?/(?:([a-zA-Z0-9]+)(?:\\?context=(\\d+))?)?");
     // Group 1: whole error. Group 2: the time part
     private final Pattern RATELIMIT_RETRY_PATTERN = Pattern.compile("(you are trying to submit too fast. try again in (.+?)\\.)");
 
@@ -134,6 +134,7 @@ public class CommentsListActivity extends ListActivity
     // Navigation items to be cached
     private long mLastRefreshTime = 0;
     private CharSequence mJumpToCommentId = null;
+    private int mJumpToCommentContext = 0;
     private int mJumpToCommentPosition = 0;
 //    private CharSequence mMoreChildrenId = "";
     private HashSet<Integer> mMorePositions = new HashSet<Integer>();
@@ -197,11 +198,14 @@ public class CommentsListActivity extends ListActivity
     	// Comment context: a URL pointing directly at a comment, versus a thread
     	String commentContext = extras.getString(Constants.EXTRA_COMMENT_CONTEXT);
     	if (commentContext != null) {
+    		if (Constants.LOGGING) Log.d(TAG, "comment context: "+commentContext);
+    		
     		Matcher commentContextMatcher = COMMENT_CONTEXT_PATTERN.matcher(commentContext);
     		if (commentContextMatcher.find()) {
         		mSettings.setSubreddit(commentContextMatcher.group(2));
     			mSettings.setThreadId(commentContextMatcher.group(3));
     			mJumpToCommentId = commentContextMatcher.group(4);
+    			mJumpToCommentContext = Integer.valueOf(commentContextMatcher.group(5));
     		} else {
     			if (Constants.LOGGING) Log.d(TAG, "No info in Intent. Using comments cache instead.");
             	mShouldUseCommentsCache = true;
@@ -228,6 +232,7 @@ public class CommentsListActivity extends ListActivity
     	if (savedInstanceState != null) {
         	mSortByUrl = savedInstanceState.getCharSequence(Constants.CommentsSort.SORT_BY_KEY);
        		mJumpToCommentId = savedInstanceState.getCharSequence(Constants.JUMP_TO_COMMENT_ID_KEY);
+       		mJumpToCommentContext = savedInstanceState.getInt(Constants.JUMP_TO_COMMENT_CONTEXT_KEY);
         	mReplyTargetName = savedInstanceState.getCharSequence(Constants.REPLY_TARGET_NAME_KEY);
         	mEditTargetBody = savedInstanceState.getCharSequence(Constants.EDIT_TARGET_BODY_KEY);
         	mDeleteTargetKind = savedInstanceState.getString(Constants.DELETE_TARGET_KIND_KEY);
@@ -705,6 +710,9 @@ public class CommentsListActivity extends ListActivity
 	        		sb.append("/comments/")
 	        		.append(mSettings.threadId)
 	        		.append("/z/").append(_mMoreChildrenId).append(".json?").append(mSortByUrl).append("&");
+	        	if (mJumpToCommentContext != 0)
+	        		sb.append("context="+mJumpToCommentContext+"&");
+	        	
             	HttpGet request = new HttpGet(sb.toString());
                 HttpResponse response = mClient.execute(request);
             	
@@ -1857,48 +1865,57 @@ public class CommentsListActivity extends ListActivity
     		break;
 
     	case Constants.DIALOG_REPLY:
-    	case Constants.DIALOG_EDIT:
+    	{
     		dialog = new Dialog(this);
     		dialog.setContentView(R.layout.compose_reply_dialog);
     		final EditText replyBody = (EditText) dialog.findViewById(R.id.body);
     		final Button replySaveButton = (Button) dialog.findViewById(R.id.reply_save_button);
     		final Button replyCancelButton = (Button) dialog.findViewById(R.id.reply_cancel_button);
-    		if (id == Constants.DIALOG_REPLY) {
-	    		replySaveButton.setOnClickListener(new OnClickListener() {
-	    			public void onClick(View v) {
-	    				if (mReplyTargetName != null) {
-		    				new CommentReplyTask(mReplyTargetName).execute(replyBody.getText());
-		    				dismissDialog(Constants.DIALOG_REPLY);
-	    				}
-	    				else {
-	    					Common.showErrorToast("Error replying. Please try again.", Toast.LENGTH_SHORT, CommentsListActivity.this);
-	    				}
-	    			}
-	    		});
-	    		replyCancelButton.setOnClickListener(new OnClickListener() {
-	    			public void onClick(View v) {
+			replySaveButton.setOnClickListener(new OnClickListener() {
+    			public void onClick(View v) {
+    				if (mReplyTargetName != null) {
+	    				new CommentReplyTask(mReplyTargetName).execute(replyBody.getText());
 	    				dismissDialog(Constants.DIALOG_REPLY);
-	    			}
-	    		});
-    		} else /* if (id == Constants.DIALOG_EDIT) */ {
-    			replyBody.setText(mEditTargetBody);
-    			replySaveButton.setOnClickListener(new OnClickListener() {
-	    			public void onClick(View v) {
-	    				if (mReplyTargetName != null) {
-		    				new EditTask(mReplyTargetName).execute(replyBody.getText());
-		    				dismissDialog(Constants.DIALOG_EDIT);
-	    				}
-	    				else {
-	    					Common.showErrorToast("Error editing. Please try again.", Toast.LENGTH_SHORT, CommentsListActivity.this);
-	    				}
-	    			}
-	    		});
-    			replyCancelButton.setOnClickListener(new OnClickListener() {
-        			public void onClick(View v) {
-        				dismissDialog(Constants.DIALOG_EDIT);
-        			}
-        		});
-    		}
+    				}
+    				else {
+    					Common.showErrorToast("Error replying. Please try again.", Toast.LENGTH_SHORT, CommentsListActivity.this);
+    				}
+    			}
+    		});
+    		replyCancelButton.setOnClickListener(new OnClickListener() {
+    			public void onClick(View v) {
+    				dismissDialog(Constants.DIALOG_REPLY);
+    			}
+    		});
+    	}
+    		break;
+    		
+    	case Constants.DIALOG_EDIT:
+    	{
+    		dialog = new Dialog(this);
+    		dialog.setContentView(R.layout.compose_reply_dialog);
+    		final EditText replyBody = (EditText) dialog.findViewById(R.id.body);
+    		final Button replySaveButton = (Button) dialog.findViewById(R.id.reply_save_button);
+    		final Button replyCancelButton = (Button) dialog.findViewById(R.id.reply_cancel_button);
+		
+			replyBody.setText(mEditTargetBody);
+			replySaveButton.setOnClickListener(new OnClickListener() {
+    			public void onClick(View v) {
+    				if (mReplyTargetName != null) {
+	    				new EditTask(mReplyTargetName).execute(replyBody.getText());
+	    				dismissDialog(Constants.DIALOG_EDIT);
+    				}
+    				else {
+    					Common.showErrorToast("Error editing. Please try again.", Toast.LENGTH_SHORT, CommentsListActivity.this);
+    				}
+    			}
+    		});
+			replyCancelButton.setOnClickListener(new OnClickListener() {
+    			public void onClick(View v) {
+    				dismissDialog(Constants.DIALOG_EDIT);
+    			}
+    		});
+		}
     		break;
     		
     	case Constants.DIALOG_DELETE:
@@ -2232,6 +2249,7 @@ public class CommentsListActivity extends ListActivity
         				ci.setSSBBody(markdown.markdown(ci.getBody(), new SpannableStringBuilder(), ci.getUrls())); 
         			}
         			mJumpToCommentId = (CharSequence) in.readObject();
+        			mJumpToCommentContext = in.readInt();
         			mJumpToCommentPosition = in.readInt();
         			mMorePositions = (HashSet<Integer>) in.readObject();
         			mNumVisibleComments = in.readInt();
@@ -2309,6 +2327,7 @@ public class CommentsListActivity extends ListActivity
     	state.putCharSequence(Constants.CommentsSort.SORT_BY_KEY, mSortByUrl);
     	state.putInt(Constants.JUMP_TO_COMMENT_POSITION_KEY, mJumpToCommentPosition);
     	state.putCharSequence(Constants.JUMP_TO_COMMENT_ID_KEY, mJumpToCommentId);
+    	state.putInt(Constants.JUMP_TO_COMMENT_CONTEXT_KEY, mJumpToCommentContext);
     	state.putCharSequence(Constants.REPLY_TARGET_NAME_KEY, mReplyTargetName);
     	state.putCharSequence(Constants.EDIT_TARGET_BODY_KEY, mEditTargetBody);
     	state.putString(Constants.DELETE_TARGET_KIND_KEY, mDeleteTargetKind);
@@ -2343,6 +2362,7 @@ public class CommentsListActivity extends ListActivity
 			out = new ObjectOutputStream(fos);
 			out.writeObject(mCommentsList);
 			out.writeObject(mJumpToCommentId);
+			out.writeInt(mJumpToCommentContext);
 		    out.writeInt(mJumpToCommentPosition);
 		    out.writeObject(mMorePositions);
 			out.writeInt(mNumVisibleComments);

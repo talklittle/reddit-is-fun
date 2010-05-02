@@ -49,7 +49,7 @@ public class ThingInfo implements Serializable {
 	private String dest;					//     m
 	private String domain;					// t
 	private int downs;						// t c
-	private Integer first_message;			//     m
+	private Long first_message;				//     m
 	private boolean hidden;					// t
 	private String id;						// t c m
 	private boolean is_self;				// t
@@ -61,7 +61,7 @@ public class ThingInfo implements Serializable {
 	private boolean new_;					//     m
 	private int num_comments;				// t
 	private boolean over_18;				// t
-	private Integer parent_id;				//   c m
+	private String parent_id;				//   c m
 	private String permalink;				// t
 	private Listing replies;				//   c
 	private boolean saved;					// t
@@ -124,7 +124,7 @@ public class ThingInfo implements Serializable {
 		return downs;
 	}
 
-	public Integer getFirst_message() {
+	public Long getFirst_message() {
 		return first_message;
 	}
 
@@ -152,7 +152,7 @@ public class ThingInfo implements Serializable {
 		return num_comments;
 	}
 
-	public Integer getParent_id() {
+	public String getParent_id() {
 		return parent_id;
 	}
 
@@ -293,7 +293,7 @@ public class ThingInfo implements Serializable {
 		this.downs = downs;
 	}
 
-	public void setFirst_message(Integer first_message) {
+	public void setFirst_message(Long first_message) {
 		this.first_message = first_message;
 	}
 
@@ -337,7 +337,7 @@ public class ThingInfo implements Serializable {
 		this.over_18 = over_18;
 	}
 
-	public void setParent_id(Integer parent_id) {
+	public void setParent_id(String parent_id) {
 		this.parent_id = parent_id;
 	}
 

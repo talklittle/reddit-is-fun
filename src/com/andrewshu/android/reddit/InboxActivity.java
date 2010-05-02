@@ -65,6 +65,7 @@ import android.text.style.ForegroundColorSpan;
 import android.text.style.StyleSpan;
 import android.text.style.URLSpan;
 import android.util.Log;
+import android.view.ContextMenu;
 import android.view.KeyEvent;
 import android.view.LayoutInflater;
 import android.view.Menu;
@@ -72,6 +73,7 @@ import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.Window;
+import android.view.ContextMenu.ContextMenuInfo;
 import android.view.View.OnClickListener;
 import android.view.View.OnKeyListener;
 import android.widget.ArrayAdapter;
@@ -81,6 +83,7 @@ import android.widget.ImageView;
 import android.widget.ListView;
 import android.widget.TextView;
 import android.widget.Toast;
+import android.widget.AdapterView.AdapterContextMenuInfo;
 
 /**
  * Main Activity class representing a Subreddit, i.e., a ThreadsList.
@@ -107,6 +110,9 @@ public final class InboxActivity extends ListActivity
     
     /** Custom list adapter that fits our threads data into the list. */
     private MessagesListAdapter mMessagesAdapter;
+    // Lock used when modifying the mMessagesAdapter
+    private static final Object MESSAGE_ADAPTER_LOCK = new Object();
+    
     
     private final DefaultHttpClient mClient = Common.getGzipHttpClient();
     
@@ -117,6 +123,7 @@ public final class InboxActivity extends ListActivity
     // UI State
     private View mVoteTargetView = null;
     private ThingInfo mVoteTargetThingInfo = null;
+    private String mReplyTargetName = null;
     private URLSpan[] mVoteTargetSpans = null;
     // TODO: String mVoteTargetId so when you rotate, you can find the TargetThingInfo again
     private DownloadMessagesTask mCurrentDownloadMessagesTask = null;
@@ -160,6 +167,10 @@ public final class InboxActivity extends ListActivity
 		} else {
 			showDialog(Constants.DIALOG_LOGIN);
 		}
+		
+		if (savedInstanceState != null) {
+        	mReplyTargetName = savedInstanceState.getString(Constants.REPLY_TARGET_NAME_KEY);
+		}
     }
     
     /**
@@ -201,6 +212,22 @@ public final class InboxActivity extends ListActivity
     protected void onPause() {
     	super.onPause();
     	Common.saveRedditPreferences(this, mSettings);
+    }
+    
+    
+    /**
+     * Return the ThingInfo based on linear search over the names
+     */
+    private ThingInfo findThingInfoByName(String name) {
+    	if (name == null)
+    		return null;
+    	synchronized(MESSAGE_ADAPTER_LOCK) {
+    		for (int i = 0; i < mMessagesAdapter.getCount(); i++) {
+    			if (mMessagesAdapter.getItem(i).getName().equals(name))
+    				return mMessagesAdapter.getItem(i);
+    		}
+    	}
+    	return null;
     }
     
     
@@ -274,22 +301,58 @@ public final class InboxActivity extends ListActivity
 
     
     /**
-     * Called when user clicks an item in the list. Starts an activity to
-     * open the url for that item.
+     * Called when user clicks an item in the list. Mark message read.
+     * If item was already focused, open a dialog.
      */
     @Override
     protected void onListItemClick(ListView l, View v, int position, long id) {
         ThingInfo item = mMessagesAdapter.getItem(position);
         
-        // Mark the OP post/regular comment as selected
+        // Mark the message/comment as selected
         mVoteTargetThingInfo = item;
         mVoteTargetView = v;
+        mReplyTargetName = item.getName();
         
-        if (item.isWas_comment())
-        	showDialog(Constants.DIALOG_COMMENT_CLICK);
-        else
-        	showDialog(Constants.DIALOG_MESSAGE_CLICK);
+        new ReadMessageTask().execute();
     }
+    
+    @Override
+    public void onCreateContextMenu(ContextMenu menu, View v, ContextMenuInfo menuInfo) {
+    	super.onCreateContextMenu(menu, v, menuInfo);
+    	AdapterContextMenuInfo info = (AdapterContextMenuInfo) menuInfo;
+    	int rowId = (int) info.id;
+    	ThingInfo item = mMessagesAdapter.getItem(rowId);
+    	
+        // Mark the message/comment as selected
+        mVoteTargetThingInfo = item;
+        mVoteTargetView = v;
+        mReplyTargetName = item.getName();
+
+        if (item.isWas_comment()) {
+        	// TODO: include the context!
+        	menu.add(0, Constants.DIALOG_COMMENT_CLICK, Menu.NONE, "Go to comment");
+    	} else {
+            menu.add(0, Constants.DIALOG_MESSAGE_CLICK, Menu.NONE, "Reply");
+    	}
+    }
+    
+    @Override
+    public boolean onContextItemSelected(MenuItem item) {
+    	switch (item.getItemId()) {
+    	case Constants.DIALOG_COMMENT_CLICK:
+			Intent i = new Intent(getApplicationContext(), CommentsListActivity.class);
+			i.putExtra(Constants.EXTRA_COMMENT_CONTEXT, mVoteTargetThingInfo.getContext());
+			startActivity(i);
+			return true;
+    	case Constants.DIALOG_MESSAGE_CLICK:
+    		showDialog(Constants.DIALOG_REPLY);
+    		return true;
+		default:
+    		return super.onContextItemSelected(item);	
+    	}
+    }
+    	
+    
 
     /**
      * Resets the output UI list contents, retains session state.
@@ -297,8 +360,10 @@ public final class InboxActivity extends ListActivity
     public void resetUI() {
         // Reset the list to be empty.
         List<ThingInfo> items = new ArrayList<ThingInfo>();
-        mMessagesAdapter = new MessagesListAdapter(this, items);
-        setListAdapter(mMessagesAdapter);
+        synchronized(MESSAGE_ADAPTER_LOCK) {
+        	mMessagesAdapter = new MessagesListAdapter(this, items);
+        	setListAdapter(mMessagesAdapter);
+        }
         Common.updateListDrawables(this, mSettings.theme);
     }
 
@@ -339,11 +404,6 @@ public final class InboxActivity extends ListActivity
                 in.close();
                 entity.consumeContent();
                 
-    			// XXX: HACK: http://code.reddit.com/ticket/709
-            	// Marking messages as read is currently broken (even with mark=true)
-            	// For now, just send an extra request to the regular non-JSON inbox...
-    			mClient.execute(new HttpGet("http://www.reddit.com/message/inbox"));
-    			
             } catch (Exception e) {
             	if (Constants.LOGGING) Log.e(TAG, "failed:" + e.getMessage());
                 if (entity != null) {
@@ -396,7 +456,9 @@ public final class InboxActivity extends ListActivity
 				mCurrentDownloadMessagesTask = this;
 			}
     		resetUI();
-    		mMessagesAdapter.mIsLoading = true;
+    		synchronized(MESSAGE_ADAPTER_LOCK) {
+    			mMessagesAdapter.mIsLoading = true;
+    		}
         	getWindow().setFeatureInt(Window.FEATURE_PROGRESS, 0);
     	}
     	
@@ -408,10 +470,12 @@ public final class InboxActivity extends ListActivity
     		// 10000 tells progress bar to stop
     		getWindow().setFeatureInt(Window.FEATURE_PROGRESS, 10000);
 
-    		for (ThingInfo mi : _mThingInfos)
-        		mMessagesAdapter.add(mi);
-			mMessagesAdapter.mIsLoading = false;
-			mMessagesAdapter.notifyDataSetChanged();
+    		synchronized(MESSAGE_ADAPTER_LOCK) {
+    			for (ThingInfo mi : _mThingInfos)
+    				mMessagesAdapter.add(mi);
+    			mMessagesAdapter.mIsLoading = false;
+    			mMessagesAdapter.notifyDataSetChanged();
+    		}
 			Common.cancelMailNotification(InboxActivity.this.getApplicationContext());
     	}
 		
@@ -458,19 +522,126 @@ public final class InboxActivity extends ListActivity
     }
     
     
-    
-    
-    
+    private class ReadMessageTask extends AsyncTask<Void, Void, Boolean> {
+    	
+    	private static final String TAG = "ReadMessageTask";
+    	
+    	private String _mUserError = "Error marking messag read.";
+    	private ThingInfo _mTargetThingInfo;
+    	
+    	ReadMessageTask() {
+    		_mTargetThingInfo = mVoteTargetThingInfo;
+    	}
+    	
+    	@Override
+    	public Boolean doInBackground(Void... v) {
+        	String status = "";
+        	HttpEntity entity = null;
+        	
+        	if (!mSettings.loggedIn) {
+        		_mUserError = "You must be logged in to read the message.";
+        		return false;
+        	}
+        	
+        	// Update the modhash if necessary
+        	if (mSettings.modhash == null) {
+        		CharSequence modhash = Common.doUpdateModhash(mClient);
+        		if (modhash == null) {
+        			// doUpdateModhash should have given an error about credentials
+        			Common.doLogout(mSettings, mClient);
+        			if (Constants.LOGGING) Log.e(TAG, "Read message failed because doUpdateModhash() failed");
+        			return false;
+        		}
+        		mSettings.setModhash(modhash);
+        	}
+        	
+        	try {
+        		// Construct data
+    			List<NameValuePair> nvps = new ArrayList<NameValuePair>();
+    			nvps.add(new BasicNameValuePair("id", _mTargetThingInfo.getName()));
+    			nvps.add(new BasicNameValuePair("uh", mSettings.modhash.toString()));
+    			// Votehash is currently unused by reddit 
+//    				nvps.add(new BasicNameValuePair("vh", "0d4ab0ffd56ad0f66841c15609e9a45aeec6b015"));
+    			
+    			HttpPost httppost = new HttpPost("http://www.reddit.com/api/read_message");
+    	        httppost.setEntity(new UrlEncodedFormEntity(nvps, HTTP.UTF_8));
+    	        
+    	        if (Constants.LOGGING) Log.d(TAG, nvps.toString());
+    	        
+                // Perform the HTTP POST request
+    	    	HttpResponse response = mClient.execute(httppost);
+    	    	status = response.getStatusLine().toString();
+            	if (!status.contains("OK")) {
+            		_mUserError = "HTTP error when marking message read. Try again.";
+            		throw new HttpException(status);
+            	}
+            	
+            	entity = response.getEntity();
+
+            	BufferedReader in = new BufferedReader(new InputStreamReader(entity.getContent()));
+            	String line = in.readLine();
+            	in.close();
+            	if (line == null || Constants.EMPTY_STRING.equals(line)) {
+            		_mUserError = "Connection error when marking message read. Try again.";
+            		throw new HttpException("No content returned from read_message POST");
+            	}
+            	if (line.contains("WRONG_PASSWORD")) {
+            		_mUserError = "Wrong password.";
+            		throw new Exception("Wrong password.");
+            	}
+            	if (line.contains("USER_REQUIRED")) {
+            		// The modhash probably expired
+            		throw new Exception("User required. Huh?");
+            	}
+            	
+            	if (Constants.LOGGING) Common.logDLong(TAG, line);
+            	
+            	entity.consumeContent();
+            	return true;
+            	
+        	} catch (Exception e) {
+        		if (entity != null) {
+        			try {
+        				entity.consumeContent();
+        			} catch (Exception e2) {
+        				if (Constants.LOGGING) Log.e(TAG, e2.getMessage());
+        			}
+        		}
+        		if (Constants.LOGGING) Log.e(TAG, e.getMessage());
+        	}
+        	return false;
+        }
+    	
+    	@Override
+    	public void onPreExecute() {
+    		if (!mSettings.loggedIn) {
+        		Common.showErrorToast("You must be logged in to read message.", Toast.LENGTH_LONG, InboxActivity.this);
+        		cancel(true);
+        		return;
+        	}
+        	_mTargetThingInfo.setNew(false);
+    		mMessagesAdapter.notifyDataSetChanged();
+    	}
+    	
+    	@Override
+    	public void onPostExecute(Boolean success) {
+    		if (!success) {
+    			// Read message failed. Mark new again...
+            	_mTargetThingInfo.setLikes(true);
+        		mMessagesAdapter.notifyDataSetChanged();
+        		
+    			Common.showErrorToast(_mUserError, Toast.LENGTH_LONG, InboxActivity.this);
+    		}
+    	}
+    }
     
     
     private class MessageReplyTask extends AsyncTask<CharSequence, Void, Boolean> {
     	private CharSequence _mParentThingId;
-    	ThingInfo _mTargetThingInfo;
     	String _mUserError = "Error submitting reply. Please try again.";
     	
-    	MessageReplyTask(CharSequence parentThingId, ThingInfo targetThingInfo) {
+    	MessageReplyTask(CharSequence parentThingId) {
     		_mParentThingId = parentThingId;
-    		_mTargetThingInfo = targetThingInfo;
     	}
     	
     	@Override
@@ -582,7 +753,6 @@ public final class InboxActivity extends ListActivity
     	public void onPostExecute(Boolean success) {
     		dismissDialog(Constants.DIALOG_REPLYING);
     		if (success) {
-    			_mTargetThingInfo.setReplyDraft("");
     			Toast.makeText(InboxActivity.this, "Reply sent.", Toast.LENGTH_SHORT).show();
     			// TODO: add the reply beneath the original, OR redirect to sent messages page
     		} else {
@@ -716,7 +886,6 @@ public final class InboxActivity extends ListActivity
     	public void onPostExecute(Boolean success) {
     		dismissDialog(Constants.DIALOG_COMPOSING);
     		if (success) {
-    			_mTargetThingInfo.setReplyDraft("");
     			Toast.makeText(InboxActivity.this, "Message sent.", Toast.LENGTH_SHORT).show();
     			// TODO: add the reply beneath the original, OR redirect to sent messages page
     		} else {
@@ -839,9 +1008,8 @@ public final class InboxActivity extends ListActivity
 		}
 	}
     
-        
     
-
+    
     /**
      * Populates the menu.
      */
@@ -850,6 +1018,7 @@ public final class InboxActivity extends ListActivity
         super.onCreateOptionsMenu(menu);
         
         menu.add(0, Constants.DIALOG_COMPOSE, 0, "Compose Message");
+        menu.add(0, Constants.DIALOG_REFRESH, 0, "Refresh");
         
         return true;
     }
@@ -857,8 +1026,13 @@ public final class InboxActivity extends ListActivity
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
     	
-    	if(item.getItemId() == Constants.DIALOG_COMPOSE) {
-			showDialog(Constants.DIALOG_COMPOSE);
+    	switch (item.getItemId()) {
+    	case Constants.DIALOG_COMPOSE:
+    		showDialog(Constants.DIALOG_COMPOSE);
+    		break;
+    	case Constants.DIALOG_REFRESH:
+			new DownloadMessagesTask().execute(Constants.DEFAULT_COMMENT_DOWNLOAD_LIMIT);
+			break;
     	}
     	
     	return true;
@@ -972,44 +1146,6 @@ public final class InboxActivity extends ListActivity
     		});
     		break;
     		
-    	case Constants.DIALOG_COMMENT_CLICK:
-    		builder = new AlertDialog.Builder(this);
-    		builder.setMessage("Comment reply")
-    			.setCancelable(false)
-    			.setPositiveButton("Go to thread", new DialogInterface.OnClickListener() {
-    				public void onClick(DialogInterface dialog, int id) {
-    					dialog.dismiss();
-    					Intent i = new Intent(getApplicationContext(), CommentsListActivity.class);
-    					i.putExtra(Constants.EXTRA_COMMENT_CONTEXT, mVoteTargetThingInfo.getContext());
-    					startActivity(i);
-    				}
-    			})
-    			.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
-    				public void onClick(DialogInterface dialog, int id) {
-    					dialog.cancel();
-    				}
-    			});
-    		dialog = builder.create();
-    		break;
-    		
-		case Constants.DIALOG_MESSAGE_CLICK:
-			builder = new AlertDialog.Builder(this);
-    		builder.setMessage("Private message")
-				.setCancelable(false)
-				.setPositiveButton("Reply", new DialogInterface.OnClickListener() {
-					public void onClick(DialogInterface dialog, int id) {
-						dialog.dismiss();
-						showDialog(Constants.DIALOG_REPLY);
-					}
-				})
-				.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
-					public void onClick(DialogInterface dialog, int id) {
-						dialog.cancel();
-					}
-				});
-    		dialog = builder.create();
-    		break; 
-
     	case Constants.DIALOG_REPLY:
     		dialog = new Dialog(this);
     		dialog.setContentView(R.layout.compose_reply_dialog);
@@ -1018,8 +1154,8 @@ public final class InboxActivity extends ListActivity
     		final Button replyCancelButton = (Button) dialog.findViewById(R.id.reply_cancel_button);
     		replySaveButton.setOnClickListener(new OnClickListener() {
     			public void onClick(View v) {
-    				if(mVoteTargetThingInfo != null){
-        				new MessageReplyTask(mVoteTargetThingInfo.getName(), mVoteTargetThingInfo).execute(replyBody.getText());
+    				if(mReplyTargetName != null){
+        				new MessageReplyTask(mReplyTargetName).execute(replyBody.getText());
         				dismissDialog(Constants.DIALOG_REPLY);
     				}
     				else{
@@ -1139,6 +1275,12 @@ public final class InboxActivity extends ListActivity
 			// No preparation based on app state is required.
 			break;
     	}
+    }
+    
+    @Override
+    protected void onSaveInstanceState(Bundle state) {
+    	super.onSaveInstanceState(state);
+    	state.putCharSequence(Constants.REPLY_TARGET_NAME_KEY, mReplyTargetName);
     }
     
     /**
