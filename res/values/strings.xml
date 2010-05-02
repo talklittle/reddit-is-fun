@@ -154,8 +154,8 @@
         <item>MAIL_NOTIFICATION_STYLE_OFF</item>
     </string-array>
     
-    <string name="pref_mail_notification_service">Reddit mail system service</string>
-    <string name="pref_mail_notification_service_dialogtitle">Reddit mail system service</string>
+    <string name="pref_mail_notification_service">Check mail outside app</string>
+    <string name="pref_mail_notification_service_dialogtitle">Check mail outside app</string>
     <string-array name="pref_mail_notification_service_choices">
     	<item>Off</item>
     	<item>Every 5 minutes</item>
