@@ -48,6 +48,22 @@
             android:alphabeticShortcut="p" />
     </group>
 
+	<item android:id="@+id/find_base_id"
+		android:title="@string/find"
+		android:icon="@android:drawable/ic_menu_search"
+		android:titleCondensed="@string/find_brief">
+		<menu>
+			<item android:id="@+id/find_menu_id"
+				android:title="@string/find_new"
+				android:alphabeticShortcut="f"
+				android:titleCondensed="@string/find_new_brief" />
+
+			<item android:id="@+id/find_next_menu_id"
+				android:alphabeticShortcut="n" android:title="@string/find_next"
+				android:titleCondensed="@string/find_next_brief" />
+		</menu>
+	</item>
+
     <!-- these items are toggled in and out of @+id/login_logout_menu_id -->
     <item android:id="@+id/login_menu_id"
         android:title="@string/login" 

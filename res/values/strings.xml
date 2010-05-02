@@ -88,6 +88,17 @@
 	<string name="pick_subreddit">Pick subreddit</string>
 	<string name="login">Login</string>
 	<string name="logout">Logout</string>
+
+	<string name="find_brief">Find</string>
+	<string name="find">Find comment</string>
+	<string name="find_box_hint">comment text</string>
+	<string name="find_should_wrap">Wrap search</string>
+	<string name="find_not_found">\"%s\" not found</string>
+	<string name="find_new">Find new</string>
+	<string name="find_new_brief">New</string>
+	<string name="find_next">Find next</string>
+	<string name="find_next_brief">Next</string>
+
 	<string name="refresh">Refresh</string>
 	<string name="submit_link">Submit link</string>
 	<string name="op">OP</string>

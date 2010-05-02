@@ -88,6 +88,8 @@ public class Constants {
     static final int DIALOG_EDIT = 29;
     static final int DIALOG_DELETE = 30;
     static final int DIALOG_COMPOSE = 31;
+    static final int DIALOG_FIND = 32;
+
     // progress dialogs
     static final int DIALOG_LOGGING_IN = 1000;
     static final int DIALOG_LOADING_THREADS_LIST = 1001;
