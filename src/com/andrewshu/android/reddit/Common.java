@@ -641,8 +641,17 @@ public class Common {
 	}
     
     
-    static boolean isFreshCache(long cacheTime) {
-		long time = System.currentTimeMillis();
+    static boolean checkFreshCache(Context context) {
+    	long cacheTime;
+    	try {
+	    	FileInputStream fis = context.openFileInput(Constants.FILENAME_CACHE_TIME);
+	    	ObjectInputStream ois = new ObjectInputStream(fis);
+	    	cacheTime = ois.readLong();
+    	} catch (Exception e) {
+    		if (Constants.LOGGING) Log.e(TAG, e.getMessage());
+    		return false;
+    	}
+    	long time = System.currentTimeMillis();
 		return time - cacheTime <= Constants.DEFAULT_FRESH_DURATION;
 	}
     

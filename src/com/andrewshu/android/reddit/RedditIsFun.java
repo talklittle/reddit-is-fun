@@ -21,12 +21,9 @@ package com.andrewshu.android.reddit;
 
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
-import java.io.File;
-import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.util.ArrayList;
 import java.util.List;
@@ -121,7 +118,6 @@ public final class RedditIsFun extends ListActivity {
     private CharSequence mSortByUrlExtra = Constants.EMPTY_STRING;
     private volatile int mCount = Constants.DEFAULT_THREAD_DOWNLOAD_LIMIT;
     private CharSequence mJumpToThreadId = null;
-    private long mLastRefreshTime = 0;
     // End navigation variables
     
     // Menu
@@ -161,7 +157,7 @@ public final class RedditIsFun extends ListActivity {
         } else {
         	mSettings.setSubreddit(mSettings.homepage);
         }
-        new ReadCacheTask().execute();
+        new DownloadThreadsTask().execute(mSettings.subreddit);
     }
     
     @Override
@@ -180,7 +176,7 @@ public final class RedditIsFun extends ListActivity {
     	if (mSettings.loggedIn != previousLoggedIn)
     		mShouldUseThreadsCache = false;
     	if (mThreadsAdapter == null)
-    		new ReadCacheTask().execute();
+    		new DownloadThreadsTask().execute(mSettings.subreddit);
     	else
     		jumpToThread();
     	new Common.PeekEnvelopeTask(this, mClient, mSettings.mailNotificationStyle).execute();
@@ -576,7 +572,6 @@ public final class RedditIsFun extends ListActivity {
     	private String _mUserError = "Error retrieving subreddit info.";
     	// Progress bar
     	private long _mContentLength = 0;
-    	private boolean _mIsSetProgressMax = false;
     	
     	public Boolean doInBackground(CharSequence... subreddit) {
     		HttpEntity entity = null;
@@ -616,26 +611,69 @@ public final class RedditIsFun extends ListActivity {
 		    		mUrlToGetHereChanged = false;
 	    		}
 	    		
-    			HttpGet request;
-    			try {
-    				request = new HttpGet(url);
-    			} catch (IllegalArgumentException e) {
-    				_mUserError = "Invalid subreddit.";
-                	if (Constants.LOGGING) Log.e(TAG, e.getMessage());
-                	return false;
-    			}
-            	HttpResponse response = mClient.execute(request);
-
-            	// Read the header to get Content-Length since entity.getContentLength() returns -1
-            	Header contentLengthHeader = response.getFirstHeader("Content-Length");
-            	_mContentLength = Long.valueOf(contentLengthHeader.getValue());
-            	if (Constants.LOGGING) Log.d(TAG, "Content length: "+_mContentLength);
-
-            	entity = response.getEntity();
-            	InputStream in = entity.getContent();
+	    		InputStream in = null;
+	    		ProgressInputStream pin = null;
+	            boolean currentlyUsingCache = false;
+	    		
+	    		if (Constants.USE_CACHE) {
+	    			try {
+		    			if (Common.checkFreshCache(getApplicationContext())) {
+		    				in = openFileInput(Constants.FILENAME_SUBREDDIT_CACHE);
+		    				_mContentLength = getFileStreamPath(Constants.FILENAME_SUBREDDIT_CACHE).length();
+		    				currentlyUsingCache = true;
+		    				if (Constants.LOGGING) Log.d(TAG, "Using cached subreddit JSON, length=" + _mContentLength);
+		    			}
+	    			} catch (Exception cacheEx) {
+	    				if (Constants.LOGGING) Log.w(TAG, "skip cache because of: "+cacheEx.getMessage());
+	    			}
+	    		}
+	    		
+	    		if (!currentlyUsingCache) {
+		    		HttpGet request;
+	    			try {
+	    				request = new HttpGet(url);
+	    			} catch (IllegalArgumentException e) {
+	    				_mUserError = "Invalid subreddit.";
+	                	if (Constants.LOGGING) Log.e(TAG, e.getMessage());
+	                	return false;
+	    			}
+	            	HttpResponse response = mClient.execute(request);
+	
+	            	// Read the header to get Content-Length since entity.getContentLength() returns -1
+	            	Header contentLengthHeader = response.getFirstHeader("Content-Length");
+	            	_mContentLength = Long.valueOf(contentLengthHeader.getValue());
+	            	if (Constants.LOGGING) Log.d(TAG, "Content length: "+_mContentLength);
+	
+	            	entity = response.getEntity();
+	            	in = entity.getContent();
+	            	
+	            	if (Constants.USE_CACHE) {
+	                	// Get the data and write to cache file
+		            	FileOutputStream fos = openFileOutput(Constants.FILENAME_SUBREDDIT_CACHE, MODE_PRIVATE);
+		            	byte[] buf = new byte[1024];
+		            	int len = 0;
+		            	long total = 0;  // for debugging
+		            	while ((len = in.read(buf)) > 0) {
+		            		fos.write(buf, 0, len);
+		            		total += len;
+		            	}
+		            	if (Constants.LOGGING) Log.d(TAG, total + " bytes written to cache file");
+		            	fos.close();
+		            	in.close();
+		            	
+		            	// write current time to file
+		            	fos = openFileOutput(Constants.FILENAME_CACHE_TIME, MODE_PRIVATE);
+		            	ObjectOutputStream out = new ObjectOutputStream(fos);
+		            	out.writeLong(System.currentTimeMillis());
+		            	out.close();
+		            	fos.close();
+	            	
+		            	// setup a special InputStream to report progress
+		            	in = openFileInput(Constants.FILENAME_SUBREDDIT_CACHE);
+	            	}
+	    		}
             	
-            	// setup a special InputStream to report progress
-            	ProgressInputStream pin = new ProgressInputStream(in, _mContentLength);
+	    		pin = new ProgressInputStream(in, _mContentLength);
             	pin.addPropertyChangeListener(this);
             	
             	try {
@@ -696,9 +734,12 @@ public final class RedditIsFun extends ListActivity {
     	@Override
     	public void onPreExecute() {
     		synchronized (mCurrentDownloadThreadsTaskLock) {
-	    		if (mCurrentDownloadThreadsTask != null)
-	    			mCurrentDownloadThreadsTask.cancel(true);
-	    		mCurrentDownloadThreadsTask = this;
+	    		if (mCurrentDownloadThreadsTask != null) {
+	    			this.cancel(true);
+	    			return;
+	    		} else {
+	    			mCurrentDownloadThreadsTask = this;
+	    		}
     		}
     		resetUI(null);
     		enableLoadingScreen();
@@ -735,9 +776,7 @@ public final class RedditIsFun extends ListActivity {
 		    		// "25 more" button.
 		    		if (mThreadsList.size() >= Constants.DEFAULT_THREAD_DOWNLOAD_LIMIT)
 		    			mThreadsList.add(new ThingInfo());
-	    			// Remember this time for caching purposes
-		    		mLastRefreshTime = System.currentTimeMillis();
-		    		mShouldUseThreadsCache = true;
+	    			mShouldUseThreadsCache = true;
 		    		mThreadsAdapter.notifyDataSetChanged();
     			}
 	    		// Point the list to last thread user was looking at, if any
@@ -1036,6 +1075,7 @@ public final class RedditIsFun extends ListActivity {
     		mAfter = null;
     		mBefore = null;
     		mCount = Constants.DEFAULT_THREAD_DOWNLOAD_LIMIT;
+    		Common.deleteAllCaches(getApplicationContext());
     		new DownloadThreadsTask().execute(mSettings.subreddit);
     		break;
     	case R.id.submit_link_menu_id:
@@ -1415,127 +1455,6 @@ public final class RedditIsFun extends ListActivity {
     };
     
 	
-    private class ReadCacheTask extends AsyncTask<Void, Long, Boolean>
-    		implements PropertyChangeListener {
-    	
-    	private long _mCacheFileSize;
-    	
-    	@Override
-    	public Boolean doInBackground(Void... zzz) {
-    		FileInputStream fis = null;
-    		ProgressInputStream pin = null;
-    		ObjectInputStream in = null;
-    		if (!mShouldUseThreadsCache)
-    			return false;
-    		try {
-    			// read the time
-    			fis = openFileInput(Constants.FILENAME_CACHE_TIME);
-    			in = new ObjectInputStream(fis);
-    			mLastRefreshTime = in.readLong();
-    			in.close();
-    			fis.close();
-    			
-    			// Restore previous session from cache, if the cache isn't too old
-    		    if (Common.isFreshCache(mLastRefreshTime)) {
-    		    	File cacheFile = getFileStreamPath(Constants.FILENAME_CACHE_TIME);
-    		    	_mCacheFileSize = cacheFile.length();
-        			if (Constants.LOGGING) Log.d(TAG, "cache file size: "+_mCacheFileSize);
-        			
-        			fis = openFileInput(Constants.FILENAME_SUBREDDIT_CACHE);
-        			pin = new ProgressInputStream(fis, _mCacheFileSize);
-        			pin.addPropertyChangeListener(this);
-        			in = new ObjectInputStream(pin);
-        			
-        			mAfter = (CharSequence) in.readObject();
-        			mBefore = (CharSequence) in.readObject();
-        			mCount = in.readInt();
-        			mJumpToThreadId = (CharSequence) in.readObject();
-        			mSettings.setSubreddit((CharSequence) in.readObject());
-        			mSortByUrl = (CharSequence) in.readObject();
-        			mSortByUrlExtra = (CharSequence) in.readObject();
-        			synchronized (THREAD_ADAPTER_LOCK) {
-        				mThreadsList = (ArrayList<ThingInfo>) in.readObject();
-        			}
-        			mUrlToGetHere = (CharSequence) in.readObject();
-        			mUrlToGetHereChanged = in.readBoolean();
-        	
-        			return true;
-    		    }
-    		    // Cache is old
-    		    return false;
-    		} catch (Exception ex) {
-    			if (Constants.LOGGING) Log.e(TAG, ex.getMessage());
-        		deleteFile(Constants.FILENAME_SUBREDDIT_CACHE);
-        		return false;
-    		} finally {
-	    		try {
-	    			in.close();
-	    		} catch (Exception ignore) {}
-	    		try {
-	    			pin.close();
-	    		} catch (Exception ignore) {}
-	    		try {
-	    			fis.close();
-	    		} catch (Exception ignore) {}
-    		}
-    	}
-    	
-    	@Override
-    	public void onPreExecute() {
-    		synchronized (mCurrentDownloadThreadsTaskLock) {
-	    		if (mCurrentDownloadThreadsTask != null)
-	    			mCurrentDownloadThreadsTask.cancel(true);
-	    		mCurrentDownloadThreadsTask = this;
-    		}
-    		// If there are comments in the cache, open CommentsListActivity
-    		for (String file : fileList()) {
-        		if (file.equals(Constants.FILENAME_COMMENTS_CACHE)) {
-        			Intent i = new Intent(getApplicationContext(), CommentsListActivity.class);
-        			startActivity(i);
-        			// Stop reading the cache for subreddit
-        			this.cancel(true);
-        			return;
-        		}
-    		}
-    		enableLoadingScreen();
-    	}
-    	
-    	@Override
-    	public void onPostExecute(Boolean success) {
-    		disableLoadingScreen();
-
-    		if (!isCancelled()) {
-	    		if (success) {
-	    			synchronized (THREAD_ADAPTER_LOCK) {
-		    			// Use the cached threads list
-				    	resetUI(new ThreadsListAdapter(RedditIsFun.this, mThreadsList));
-	    			}
-			    	// Set the title based on subreddit
-			    	if (Constants.FRONTPAGE_STRING.equals(mSettings.subreddit))
-			    		setTitle("reddit.com: what's new online!");
-			    	else
-			    		setTitle("/r/"+mSettings.subreddit.toString().trim());
-	    		} else {
-	    			//Common.showErrorToast("Reading subreddit cache failed.", Toast.LENGTH_SHORT, RedditIsFun.this);
-	    			// Since it didn't read from cache, download normally from Internet.
-	    			new DownloadThreadsTask().execute(mSettings.subreddit);
-	    		}
-    		}
-    	}
-    	
-    	@Override
-    	public void onProgressUpdate(Long... progress) {
-    		// 0-9999 is ok, 10000 means it's finished
-    		getWindow().setFeatureInt(Window.FEATURE_PROGRESS, progress[0].intValue() * 9999 / (int) _mCacheFileSize);
-    	}
-    	
-    	public void propertyChange(PropertyChangeEvent event) {
-    		publishProgress((Long) event.getNewValue());
-    	}
-    }
-    
-
-	
 	@Override
     protected void onSaveInstanceState(Bundle state) {
     	super.onSaveInstanceState(state);
@@ -1544,56 +1463,6 @@ public final class RedditIsFun extends ListActivity {
     	state.putCharSequence(Constants.ThreadsSort.SORT_BY_KEY, mSortByUrl);
     	state.putCharSequence(Constants.JUMP_TO_THREAD_ID_KEY, mJumpToThreadId);
     	state.putInt(Constants.THREAD_COUNT, mCount);
-    	
-    	// Cache
-		if (mThreadsList == null)
-			return;
-		FileOutputStream fos = null;
-		ObjectOutputStream out = null;
-		try {
-			// write the time
-			fos = openFileOutput(Constants.FILENAME_CACHE_TIME, MODE_PRIVATE);
-			out = new ObjectOutputStream(fos);
-			out.writeLong(mLastRefreshTime);
-			out.close();
-			fos.close();
-		} catch (IOException ex) {
-			if (Constants.LOGGING) Log.e(TAG, ex.getLocalizedMessage());
-			deleteFile(Constants.FILENAME_SUBREDDIT_CACHE);
-		} finally {
-			try {
-				out.close();
-			} catch (Exception ignore) {}
-			try {
-				fos.close();
-			} catch (Exception ignore) {}			
-		}
-		
-		try {
-			// Write cache variables in alphabetical order by variable name.
-			fos = openFileOutput(Constants.FILENAME_SUBREDDIT_CACHE, MODE_PRIVATE);
-			out = new ObjectOutputStream(fos);
-			out.writeObject(mAfter);
-			out.writeObject(mBefore);
-			out.writeInt(mCount);
-			out.writeObject(mJumpToThreadId);
-			out.writeObject(mSettings.subreddit);
-			out.writeObject(mSortByUrl);
-			out.writeObject(mSortByUrlExtra);
-			out.writeObject(mThreadsList);
-			out.writeObject(mUrlToGetHere);
-			out.writeBoolean(mUrlToGetHereChanged);
-		} catch (IOException ex) {
-			if (Constants.LOGGING) Log.e(TAG, ex.getLocalizedMessage());
-			deleteFile(Constants.FILENAME_SUBREDDIT_CACHE);
-		} finally {
-			try {
-				out.close();
-			} catch (Exception ignore) {}
-			try {
-				fos.close();
-			} catch (Exception ignore) {}			
-		}
     }
     
     /**

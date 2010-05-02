@@ -78,7 +78,7 @@ public class ThingInfo implements Serializable {
 	private String url;						// t
 	private boolean was_comment;			//     m
 	
-	public final ArrayList<MarkdownURL> mUrls = new ArrayList<MarkdownURL>();
+	private final ArrayList<MarkdownURL> mUrls = new ArrayList<MarkdownURL>();
 	transient private SpannableStringBuilder mSSBSelftext = null;
 	transient private SpannableStringBuilder mSSBBody = null;
 	transient private SpannableString mSSAuthor = null;

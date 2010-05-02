@@ -125,8 +125,6 @@ public class CommentsListActivity extends ListActivity
     // Whether the cache should be used during onResume().
     volatile private boolean mShouldUseCommentsCache = true;
     
-    // Navigation items to be cached
-    private long mLastRefreshTime = 0;
     private CharSequence mJumpToCommentId = null;
     private int mJumpToCommentContext = 0;
     private int mJumpToCommentPosition = 0;
@@ -963,8 +961,6 @@ public class CommentsListActivity extends ListActivity
 	    			mThreadTitle = mOpThingInfo.getTitle().replaceAll("\n ", " ").replaceAll(" \n", " ").replaceAll("\n", " ");
 	    		}
     			setTitle(mThreadTitle + " : " + mSettings.subreddit);
-	    		// Remember this time for caching purposes
-	    		mLastRefreshTime = System.currentTimeMillis();
 	    		mShouldUseCommentsCache = true;
 	    		// Point the list to last comment user was looking at, if any
 	    		jumpToComment();
@@ -2053,7 +2049,7 @@ public class CommentsListActivity extends ListActivity
      */
     private void linkToEmbeddedURLs(Button linkButton) {
 		final ArrayList<String> urls = new ArrayList<String>();
-		final ArrayList<MarkdownURL> vtUrls = mVoteTargetThing.mUrls;
+		final ArrayList<MarkdownURL> vtUrls = mVoteTargetThing.getUrls();
 		int urlsCount = vtUrls.size();
 		for (int i = 0; i < urlsCount; i++)
 			urls.add(vtUrls.get(i).url);
@@ -2151,15 +2147,8 @@ public class CommentsListActivity extends ListActivity
     		ProgressInputStream pin = null;
     		ObjectInputStream in = null;
     		try {
-    			// read the time
-    			fis = openFileInput(Constants.FILENAME_CACHE_TIME);
-    			in = new ObjectInputStream(fis);
-    			mLastRefreshTime = in.readLong();
-    			in.close();
-    			fis.close();
-    			
     			// Restore previous session from cache, if the cache isn't too old
-    		    if (Common.isFreshCache(mLastRefreshTime)) {
+    		    if (Common.checkFreshCache(getApplicationContext())) {
     		    	File cacheFile = getFileStreamPath(Constants.FILENAME_CACHE_TIME);
     		    	_mCacheFileSize = cacheFile.length();
         			if (Constants.LOGGING) Log.d(TAG, "cache file size: "+_mCacheFileSize);
@@ -2281,7 +2270,7 @@ public class CommentsListActivity extends ListActivity
 			// write the time
 			fos = openFileOutput(Constants.FILENAME_CACHE_TIME, MODE_PRIVATE);
 			out = new ObjectOutputStream(fos);
-			out.writeLong(mLastRefreshTime);
+			out.writeLong(System.currentTimeMillis());
 			out.close();
 			fos.close();
 		} catch (IOException ex) {
