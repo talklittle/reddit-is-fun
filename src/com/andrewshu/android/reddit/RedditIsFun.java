@@ -194,6 +194,7 @@ public final class RedditIsFun extends ListActivity {
     	// HACK: set background color directly for android 2.0
         if (mSettings.theme == R.style.Reddit_Light)
         	getListView().setBackgroundResource(R.color.white);
+        registerForContextMenu(getListView());
 
         getListView().setOnItemLongClickListener(new AdapterView.OnItemLongClickListener() {
         	@Override

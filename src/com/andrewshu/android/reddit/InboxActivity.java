@@ -195,7 +195,6 @@ public final class InboxActivity extends ListActivity
     	if (mSettings.theme != previousTheme) {
     		setTheme(mSettings.theme);
     		setContentView(R.layout.threads_list_content);
-    		registerForContextMenu(getListView());
     		setListAdapter(mMessagesAdapter);
     		Common.updateListDrawables(this, mSettings.theme);
     	}

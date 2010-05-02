@@ -169,7 +169,6 @@ public class CommentsListActivity extends ListActivity
         requestWindowFeature(Window.FEATURE_PROGRESS);
     	
         setContentView(R.layout.comments_list_content);
-        registerForContextMenu(getListView());
         // The above layout contains a list id "android:list"
         // which ListActivity adopts as its list -- we can
         // access it with getListView().
@@ -243,6 +242,7 @@ public class CommentsListActivity extends ListActivity
     	// HACK: set background color directly for android 2.0
         if (mSettings.theme == R.style.Reddit_Light)
         	getListView().setBackgroundResource(R.color.white);
+        registerForContextMenu(getListView());
     }
     
     @Override
@@ -255,7 +255,6 @@ public class CommentsListActivity extends ListActivity
     	if (mSettings.theme != previousTheme) {
     		setTheme(mSettings.theme);
     		setContentView(R.layout.threads_list_content);
-    		registerForContextMenu(getListView());
     		setListAdapter(mCommentsAdapter);
     		getListView().setDivider(null);
     		Common.updateListDrawables(this, mSettings.theme);
@@ -1592,7 +1591,6 @@ public class CommentsListActivity extends ListActivity
     		}
     		setTheme(mSettings.theme);
     		setContentView(R.layout.threads_list_content);
-    		registerForContextMenu(getListView());
     		setListAdapter(mCommentsAdapter);
     		getListView().setDivider(null);
     		Common.updateListDrawables(this, mSettings.theme);
