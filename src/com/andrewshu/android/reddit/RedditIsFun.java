@@ -21,12 +21,10 @@ package com.andrewshu.android.reddit;
 
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
-import java.io.BufferedReader;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.InputStreamReader;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.util.ArrayList;
@@ -34,7 +32,6 @@ import java.util.List;
 
 import org.apache.http.Header;
 import org.apache.http.HttpEntity;
-import org.apache.http.HttpException;
 import org.apache.http.HttpResponse;
 import org.apache.http.NameValuePair;
 import org.apache.http.client.entity.UrlEncodedFormEntity;
@@ -618,7 +615,6 @@ public final class RedditIsFun extends ListActivity {
                 	parseSubredditJSON(pin);
                 	pin.close();
                 	in.close();
-                	entity.consumeContent();
                 	mSettings.setSubreddit(subreddit[0]);
                 	return true;
                 } catch (IllegalStateException e) {
@@ -626,16 +622,17 @@ public final class RedditIsFun extends ListActivity {
                 	if (Constants.LOGGING) Log.e(TAG, e.getMessage());
                 } catch (Exception e) {
                 	if (Constants.LOGGING) Log.e(TAG, e.getMessage());
-                	if (entity != null) {
-                		try {
-                			entity.consumeContent();
-                		} catch (Exception e2) {
-                			// Ignore.
-                		}
-                	}
                 }
             } catch (IOException e) {
             	if (Constants.LOGGING) Log.e(TAG, "failed:" + e.getMessage());
+            } finally {
+        		if (entity != null) {
+        			try {
+        				entity.consumeContent();
+        			} catch (Exception e2) {
+        				if (Constants.LOGGING) Log.e(TAG, e2.getMessage());
+        			}
+        		}
             }
             return false;
 	    }
@@ -792,7 +789,6 @@ public final class RedditIsFun extends ListActivity {
     	
     	@Override
     	public Boolean doInBackground(Void... v) {
-        	String status = "";
         	HttpEntity entity = null;
         	
         	if (!mSettings.loggedIn) {
@@ -829,36 +825,18 @@ public final class RedditIsFun extends ListActivity {
     	        
                 // Perform the HTTP POST request
     	    	HttpResponse response = mClient.execute(httppost);
-    	    	status = response.getStatusLine().toString();
-            	if (!status.contains("OK")) {
-            		_mUserError = "HTTP error when voting. Try again.";
-            		throw new HttpException(status);
-            	}
-            	
-            	entity = response.getEntity();
-
-            	BufferedReader in = new BufferedReader(new InputStreamReader(entity.getContent()));
-            	String line = in.readLine();
-            	in.close();
-            	if (line == null || Constants.EMPTY_STRING.equals(line)) {
-            		_mUserError = "Connection error when voting. Try again.";
-            		throw new HttpException("No content returned from vote POST");
-            	}
-            	if (line.contains("WRONG_PASSWORD")) {
-            		_mUserError = "Wrong password.";
-            		throw new Exception("Wrong password.");
-            	}
-            	if (line.contains("USER_REQUIRED")) {
-            		// The modhash probably expired
-            		throw new Exception("User required. Huh?");
-            	}
-            	
-            	if (Constants.LOGGING) Common.logDLong(TAG, line);
-            	
-            	entity.consumeContent();
+    	    	entity = response.getEntity();
+    	    	
+    	    	String error = Common.checkResponseErrors(response, entity);
+    	    	if (error != null)
+    	    		throw new Exception(error);
+    	    	
             	return true;
             	
         	} catch (Exception e) {
+        		if (Constants.LOGGING) Log.e(TAG, e.getMessage());
+        		_mUserError = e.getMessage();
+        	} finally {
         		if (entity != null) {
         			try {
         				entity.consumeContent();
@@ -866,7 +844,6 @@ public final class RedditIsFun extends ListActivity {
         				if (Constants.LOGGING) Log.e(TAG, e2.getMessage());
         			}
         		}
-        		if (Constants.LOGGING) Log.e(TAG, e.getMessage());
         	}
         	return false;
         }

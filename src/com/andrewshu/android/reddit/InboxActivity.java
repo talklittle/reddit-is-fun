@@ -100,10 +100,6 @@ public final class InboxActivity extends ListActivity
     private final Pattern CAPTCHA_IDEN_PATTERN = Pattern.compile("name=\"iden\" value=\"([^\"]+?)\"");
     // Group 2: Captcha image absolute path
     private final Pattern CAPTCHA_IMAGE_PATTERN = Pattern.compile("<img class=\"capimage\"( alt=\".*?\")? src=\"(/captcha/[^\"]+?)\"");
-    	// Group 1: fullname. Group 2: kind. Group 3: id36.
-    private final Pattern NEW_ID_PATTERN = Pattern.compile("\"id\": \"((.+?)_(.+?))\"");
-    // Group 1: whole error. Group 2: the time part
-    private final Pattern RATELIMIT_RETRY_PATTERN = Pattern.compile("(you are trying to submit too fast. try again in (.+?)\\.)");
 
     private final ObjectMapper om = new ObjectMapper();
     private final Markdown markdown = new Markdown();
@@ -402,17 +398,17 @@ public final class InboxActivity extends ListActivity
                 
                 pin.close();
                 in.close();
-                entity.consumeContent();
                 
             } catch (Exception e) {
             	if (Constants.LOGGING) Log.e(TAG, "failed:" + e.getMessage());
-                if (entity != null) {
-	                try {
-	                	entity.consumeContent();
-	                } catch (IOException e2) {
-	                	// Ignore.
-	                }
-                }
+        	} finally {
+        		if (entity != null) {
+        			try {
+        				entity.consumeContent();
+        			} catch (Exception e2) {
+        				if (Constants.LOGGING) Log.e(TAG, e2.getMessage());
+        			}
+        		}
             }
             return null;
 	    }
@@ -596,10 +592,11 @@ public final class InboxActivity extends ListActivity
             	
             	if (Constants.LOGGING) Common.logDLong(TAG, line);
             	
-            	entity.consumeContent();
             	return true;
             	
         	} catch (Exception e) {
+        		if (Constants.LOGGING) Log.e(TAG, e.getMessage());
+        	} finally {
         		if (entity != null) {
         			try {
         				entity.consumeContent();
@@ -607,7 +604,6 @@ public final class InboxActivity extends ListActivity
         				if (Constants.LOGGING) Log.e(TAG, e2.getMessage());
         			}
         		}
-        		if (Constants.LOGGING) Log.e(TAG, e.getMessage());
         	}
         	return false;
         }
@@ -683,55 +679,16 @@ public final class InboxActivity extends ListActivity
     	        
                 // Perform the HTTP POST request
     	    	HttpResponse response = mClient.execute(httppost);
-    	    	status = response.getStatusLine().toString();
-            	if (!status.contains("OK"))
-            		throw new HttpException(status);
-            	
-            	entity = response.getEntity();
+    	    	entity = response.getEntity();
 
-            	BufferedReader in = new BufferedReader(new InputStreamReader(entity.getContent()));
-            	String line = in.readLine();
-            	in.close();
-            	if (line == null || Constants.EMPTY_STRING.equals(line)) {
-            		throw new HttpException("No content returned from reply POST");
-            	}
-            	if (line.contains("WRONG_PASSWORD")) {
-            		throw new Exception("Wrong password");
-            	}
-            	if (line.contains("USER_REQUIRED")) {
-            		// The modhash probably expired
-            		mSettings.setModhash(null);
-            		throw new Exception("User required. Huh?");
-            	}
-            	
-            	if (Constants.LOGGING) Common.logDLong(TAG, line);
-
-            	Matcher idMatcher = NEW_ID_PATTERN.matcher(line);
-            	if (idMatcher.find()) {
-            		// Don't need id since reply isn't posted to inbox
-//            		newFullname = idMatcher.group(1);
-//            		newId = idMatcher.group(3);
-            	} else {
-            		if (line.contains("RATELIMIT")) {
-                		// Try to find the # of minutes using regex
-                    	Matcher rateMatcher = RATELIMIT_RETRY_PATTERN.matcher(line);
-                    	if (rateMatcher.find())
-                    		userError = rateMatcher.group(1);
-                    	else
-                    		userError = "you are trying to submit too fast. try again in a few minutes.";
-                		throw new Exception(userError);
-                	}
-            		if (line.contains("DELETED_LINK")) {
-            			_mUserError = "the link you are commenting on has been deleted";
-            			throw new Exception(_mUserError);
-            		}
-                	throw new Exception("No id returned by reply POST.");
-            	}
+            	// Don't need return value id since reply isn't posted to inbox
+            	Common.checkIDResponse(response, entity);
             	
             	return true;
             	
         	} catch (Exception e) {
         		if (Constants.LOGGING) Log.e(TAG, e.getMessage());
+        		_mUserError = e.getMessage();
         	} finally {
         		if (entity != null) {
         			try {
@@ -775,10 +732,8 @@ public final class InboxActivity extends ListActivity
     	
     	@Override
         public Boolean doInBackground(CharSequence... text) {
-        	String userError = "Error composing message. Please try again.";
         	HttpEntity entity = null;
         	
-        	String status = "";
         	if (!mSettings.loggedIn) {
         		Common.showErrorToast("You must be logged in to compose a message.", Toast.LENGTH_LONG, InboxActivity.this);
         		_mUserError = "Not logged in";
@@ -816,55 +771,20 @@ public final class InboxActivity extends ListActivity
     	        
                 // Perform the HTTP POST request
     	    	HttpResponse response = mClient.execute(httppost);
-    	    	status = response.getStatusLine().toString();
-            	if (!status.contains("OK"))
-            		throw new HttpException(status);
-            	
             	entity = response.getEntity();
 
-            	BufferedReader in = new BufferedReader(new InputStreamReader(entity.getContent()));
-            	String line = in.readLine();
-            	in.close();
-            	if (line == null || Constants.EMPTY_STRING.equals(line)) {
-            		throw new HttpException("No content returned from compose POST");
-            	}
-            	if (line.contains("WRONG_PASSWORD")) {
-            		throw new Exception("Wrong password");
-            	}
-            	if (line.contains("USER_REQUIRED")) {
-            		// The modhash probably expired
-            		mSettings.setModhash(null);
-            		throw new Exception("User required. Huh?");
-            	}
-            	
-            	if (Constants.LOGGING) Common.logDLong(TAG, line);
+           		// Don't need the return value ID since reply isn't posted to inbox
+            	Common.checkIDResponse(response, entity);
 
-            	Matcher idMatcher = NEW_ID_PATTERN.matcher(line);
-            	if (idMatcher.find()) {
-            		// Don't need id since reply isn't posted to inbox
-//            		newFullname = idMatcher.group(1);
-//            		newId = idMatcher.group(3);
-            	} else {
-            		if (line.contains("RATELIMIT")) {
-                		// Try to find the # of minutes using regex
-                    	Matcher rateMatcher = RATELIMIT_RETRY_PATTERN.matcher(line);
-                    	if (rateMatcher.find())
-                    		userError = rateMatcher.group(1);
-                    	else
-                    		userError = "you are trying to submit too fast. try again in a few minutes.";
-                		throw new Exception(userError);
-                	}
-            		if (line.contains("BAD_CAPTCHA")) {
-            			_mUserError = "Bad CAPTCHA. Try again.";
-            			new DownloadCaptchaTask(_mDialog).execute();
-            			return false;
-            		}
-            	}
-            	
             	return true;
             	
+        	} catch (CaptchaException e) {
+        		if (Constants.LOGGING) Log.e(TAG, e.getMessage());
+        		_mUserError = e.getMessage();
+    			new DownloadCaptchaTask(_mDialog).execute();
         	} catch (Exception e) {
         		if (Constants.LOGGING) Log.e(TAG, e.getMessage());
+        		_mUserError = e.getMessage();
         	} finally {
         		if (entity != null) {
         			try {
@@ -916,23 +836,22 @@ public final class InboxActivity extends ListActivity
             	if (idenMatcher.find() && urlMatcher.find()) {
             		mCaptchaIden = idenMatcher.group(1);
             		mCaptchaUrl = urlMatcher.group(2);
-            		entity.consumeContent();
             		return true;
             	} else {
             		mCaptchaIden = null;
             		mCaptchaUrl = null;
-            		entity.consumeContent();
             		return false;
             	}
 			} catch (Exception e) {
-				if (entity != null) {
-					try {
-						entity.consumeContent();
-					} catch (Exception e2) {
-						if (Constants.LOGGING) Log.e(TAG, e2.getMessage());
-					}
-				}
 				if (Constants.LOGGING) Log.e(TAG, "Error accessing http://www.reddit.com/message/compose/ to check for CAPTCHA");
+        	} finally {
+        		if (entity != null) {
+        			try {
+        				entity.consumeContent();
+        			} catch (Exception e2) {
+        				if (Constants.LOGGING) Log.e(TAG, e2.getMessage());
+        			}
+        		}
 			}
 			return null;
 		}

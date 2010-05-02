@@ -382,6 +382,113 @@ public class Common {
     	}
     }
     
+    static String checkResponseErrors(HttpResponse response, HttpEntity entity) {
+    	String status = response.getStatusLine().toString();
+    	String line;
+    	
+    	if (!status.contains("OK")) {
+    		return "HTTP error. Status = "+status;
+    	}
+    	
+    	try {
+    		BufferedReader in = new BufferedReader(new InputStreamReader(entity.getContent()));
+    		line = in.readLine();
+    		if (Constants.LOGGING) Common.logDLong(TAG, line);
+        	in.close();
+    	} catch (IOException e) {
+    		if (Constants.LOGGING) Log.e(TAG, e.getMessage());
+    		return "Error reading retrieved data.";
+    	}
+    	
+    	if (line == null || Constants.EMPTY_STRING.equals(line)) {
+    		return "API returned empty data.";
+    	}
+    	if (line.contains("WRONG_PASSWORD")) {
+    		return "Wrong password.";
+    	}
+    	if (line.contains("USER_REQUIRED")) {
+    		// The modhash probably expired
+    		return "Login expired.";
+    	}
+    	if (line.contains("SUBREDDIT_NOEXIST")) {
+    		return "That subreddit does not exist.";
+    	}
+    	if (line.contains("SUBREDDIT_NOTALLOWED")) {
+    		return "You are not allowed to post to that subreddit.";
+    	}
+    	
+    	return null;
+    }
+    
+
+	static String checkIDResponse(HttpResponse response, HttpEntity entity) throws CaptchaException, Exception {
+	    // Group 1: fullname. Group 2: kind. Group 3: id36.
+	    final Pattern NEW_ID_PATTERN = Pattern.compile("\"id\": \"((.+?)_(.+?))\"");
+	    // Group 1: whole error. Group 2: the time part
+	    final Pattern RATELIMIT_RETRY_PATTERN = Pattern.compile("(you are trying to submit too fast. try again in (.+?)\\.)");
+
+	    String status = response.getStatusLine().toString();
+    	String line;
+    	
+    	if (!status.contains("OK")) {
+    		throw new Exception("HTTP error. Status = "+status);
+    	}
+    	
+    	try {
+    		BufferedReader in = new BufferedReader(new InputStreamReader(entity.getContent()));
+    		line = in.readLine();
+    		if (Constants.LOGGING) Common.logDLong(TAG, line);
+        	in.close();
+    	} catch (IOException e) {
+    		if (Constants.LOGGING) Log.e(TAG, e.getMessage());
+    		throw new Exception("Error reading retrieved data.");
+    	}
+    	
+    	if (line == null || Constants.EMPTY_STRING.equals(line)) {
+    		throw new Exception("API returned empty data.");
+    	}
+    	if (line.contains("WRONG_PASSWORD")) {
+    		throw new Exception("Wrong password.");
+    	}
+    	if (line.contains("USER_REQUIRED")) {
+    		// The modhash probably expired
+    		throw new Exception("Login expired.");
+    	}
+    	if (line.contains("SUBREDDIT_NOEXIST")) {
+    		throw new Exception("That subreddit does not exist.");
+    	}
+    	if (line.contains("SUBREDDIT_NOTALLOWED")) {
+    		throw new Exception("You are not allowed to post to that subreddit.");
+    	}
+    	
+    	String newId;
+    	Matcher idMatcher = NEW_ID_PATTERN.matcher(line);
+    	if (idMatcher.find()) {
+    		newId = idMatcher.group(3);
+    	} else {
+    		if (line.contains("RATELIMIT")) {
+        		// Try to find the # of minutes using regex
+            	Matcher rateMatcher = RATELIMIT_RETRY_PATTERN.matcher(line);
+            	if (rateMatcher.find())
+            		throw new Exception(rateMatcher.group(1));
+            	else
+            		throw new Exception("you are trying to submit too fast. try again in a few minutes.");
+        	}
+    		if (line.contains("DELETED_LINK")) {
+    			throw new Exception("the link you are commenting on has been deleted");
+    		}
+    		if (line.contains("BAD_CAPTCHA")) {
+    			throw new CaptchaException("Bad CAPTCHA. Try again.");
+    		}
+        	// No id returned by reply POST.
+    		return null;
+    	}
+    	
+    	// Getting here means success.
+    	return newId;
+	}
+    
+	
     static class PeekEnvelopeTask extends AsyncTask<Void, Void, Integer> {
     	private Context mContext;
     	private DefaultHttpClient mClient;
