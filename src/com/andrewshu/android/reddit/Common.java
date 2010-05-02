@@ -203,7 +203,7 @@ public class Common {
         rSettings.setMailNotificationService(sessionPrefs.getString(Constants.PREF_MAIL_NOTIFICATION_SERVICE, Constants.PREF_MAIL_NOTIFICATION_SERVICE_OFF));
 
         //OnClickAction
-        rSettings.setOnClickAction(sessionPrefs.getString(Constants.PREF_ON_CLICK, Constants.PREF_ON_CLICK_OPEN_DIALOG));
+        rSettings.setOnClickAction(sessionPrefs.getString(Constants.PREF_ON_CLICK, Constants.PREF_ON_CLICK_FIRST_TIME));
     }
     
     /**

@@ -300,7 +300,7 @@ public final class PickSubredditActivity extends ListActivity {
 			pdialog = new ProgressDialog(this);
 			pdialog.setMessage("Loading your reddits...");
 			pdialog.setIndeterminate(true);
-			pdialog.setCancelable(false);
+			pdialog.setCancelable(true);
 			dialog = pdialog;
 			break;
 		default:

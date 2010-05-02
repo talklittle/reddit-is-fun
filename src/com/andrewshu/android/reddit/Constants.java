@@ -93,6 +93,7 @@ public class Constants {
     static final int DIALOG_EDIT = 29;
     static final int DIALOG_DELETE = 30;
     static final int DIALOG_COMPOSE = 31;
+    static final int DIALOG_FIRST_ON_CLICK = 32;
     // progress dialogs
     static final int DIALOG_LOGGING_IN = 1000;
     static final int DIALOG_LOADING_LOOK_OF_DISAPPROVAL = 1003;
@@ -259,6 +260,7 @@ public class Constants {
     static final String PREF_ON_CLICK = "on_click";
     static final String PREF_ON_CLICK_OPEN_LINK = "ON_CLICK_OPEN_LINK";
     static final String PREF_ON_CLICK_OPEN_DIALOG = "ON_CLICK_OPEN_DIALOG";
+    static final String PREF_ON_CLICK_FIRST_TIME = "ON_CLICK_FIRST_TIME";
     
     // A short HTML file returned by reddit, so we can get the modhash
     static final String MODHASH_URL = "http://www.reddit.com/r";

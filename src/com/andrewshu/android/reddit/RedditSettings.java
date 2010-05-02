@@ -42,7 +42,7 @@ public class RedditSettings {
 	String mailNotificationStyle = Constants.PREF_MAIL_NOTIFICATION_STYLE_DEFAULT;
 	String mailNotificationService = Constants.PREF_MAIL_NOTIFICATION_SERVICE_OFF;
 	
-	String onClickAction = Constants.PREF_ON_CLICK_OPEN_DIALOG;
+	String onClickAction = Constants.PREF_ON_CLICK_FIRST_TIME;
 	
 	// --- States that change frequently. ---
 	CharSequence subreddit = Constants.FRONTPAGE_STRING;
