@@ -21,6 +21,7 @@ package com.andrewshu.android.reddit;
 
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
+import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -548,10 +549,12 @@ public final class RedditIsFun extends ListActivity {
 	    	if (mThreadsAdapter != null)
 	    		mThreadsAdapter.mIsLoading = true;
     	}
+    	getWindow().setFeatureInt(Window.FEATURE_PROGRESS, 0);
     }
     
     private void disableLoadingScreen() {
     	resetUI(mThreadsAdapter);
+    	getWindow().setFeatureInt(Window.FEATURE_PROGRESS, 10000);
     }
     
     void resetUrlToGetHere() {
@@ -723,8 +726,6 @@ public final class RedditIsFun extends ListActivity {
     		synchronized (mCurrentDownloadThreadsTaskLock) {
     			mCurrentDownloadThreadsTask = null;
     		}
-    		// 10000 tells progress bar to stop
-    		getWindow().setFeatureInt(Window.FEATURE_PROGRESS, 10000);
     		disableLoadingScreen();
 
     		if (success) {
@@ -1259,13 +1260,6 @@ public final class RedditIsFun extends ListActivity {
     		pdialog.setCancelable(true);
     		dialog = pdialog;
     		break;
-    	case Constants.DIALOG_LOADING_THREADS_CACHE:
-    		pdialog = new ProgressDialog(this);
-    		pdialog.setMessage("Loading cached subreddit...");
-    		pdialog.setIndeterminate(true);
-    		pdialog.setCancelable(true);
-    		dialog = pdialog;
-    		break;
     	case Constants.DIALOG_LOADING_LOOK_OF_DISAPPROVAL:
     		pdialog = new ProgressDialog(this);
     		pdialog.setIndeterminate(true);
@@ -1421,10 +1415,15 @@ public final class RedditIsFun extends ListActivity {
     };
     
 	
-    private class ReadCacheTask extends AsyncTask<Void, Void, Boolean> {
+    private class ReadCacheTask extends AsyncTask<Void, Long, Boolean>
+    		implements PropertyChangeListener {
+    	
+    	private long _mCacheFileSize;
+    	
     	@Override
     	public Boolean doInBackground(Void... zzz) {
     		FileInputStream fis = null;
+    		ProgressInputStream pin = null;
     		ObjectInputStream in = null;
     		if (!mShouldUseThreadsCache)
     			return false;
@@ -1438,8 +1437,15 @@ public final class RedditIsFun extends ListActivity {
     			
     			// Restore previous session from cache, if the cache isn't too old
     		    if (Common.isFreshCache(mLastRefreshTime)) {
-    		    	fis = openFileInput(Constants.FILENAME_SUBREDDIT_CACHE);
-        			in = new ObjectInputStream(fis);
+    		    	File cacheFile = getFileStreamPath(Constants.FILENAME_CACHE_TIME);
+    		    	_mCacheFileSize = cacheFile.length();
+        			if (Constants.LOGGING) Log.d(TAG, "cache file size: "+_mCacheFileSize);
+        			
+        			fis = openFileInput(Constants.FILENAME_SUBREDDIT_CACHE);
+        			pin = new ProgressInputStream(fis, _mCacheFileSize);
+        			pin.addPropertyChangeListener(this);
+        			in = new ObjectInputStream(pin);
+        			
         			mAfter = (CharSequence) in.readObject();
         			mBefore = (CharSequence) in.readObject();
         			mCount = in.readInt();
@@ -1466,6 +1472,9 @@ public final class RedditIsFun extends ListActivity {
 	    			in.close();
 	    		} catch (Exception ignore) {}
 	    		try {
+	    			pin.close();
+	    		} catch (Exception ignore) {}
+	    		try {
 	    			fis.close();
 	    		} catch (Exception ignore) {}
     		}
@@ -1488,13 +1497,14 @@ public final class RedditIsFun extends ListActivity {
         			return;
         		}
     		}
-    		showDialog(Constants.DIALOG_LOADING_THREADS_CACHE);
+    		enableLoadingScreen();
     	}
     	
     	@Override
     	public void onPostExecute(Boolean success) {
+    		disableLoadingScreen();
+
     		if (!isCancelled()) {
-	    		dismissDialog(Constants.DIALOG_LOADING_THREADS_CACHE);
 	    		if (success) {
 	    			synchronized (THREAD_ADAPTER_LOCK) {
 		    			// Use the cached threads list
@@ -1511,6 +1521,16 @@ public final class RedditIsFun extends ListActivity {
 	    			new DownloadThreadsTask().execute(mSettings.subreddit);
 	    		}
     		}
+    	}
+    	
+    	@Override
+    	public void onProgressUpdate(Long... progress) {
+    		// 0-9999 is ok, 10000 means it's finished
+    		getWindow().setFeatureInt(Window.FEATURE_PROGRESS, progress[0].intValue() * 9999 / (int) _mCacheFileSize);
+    	}
+    	
+    	public void propertyChange(PropertyChangeEvent event) {
+    		publishProgress((Long) event.getNewValue());
     	}
     }
     
@@ -1586,7 +1606,6 @@ public final class RedditIsFun extends ListActivity {
         super.onRestoreInstanceState(state);
         final int[] myDialogs = {
         	Constants.DIALOG_LOADING_LOOK_OF_DISAPPROVAL,
-        	Constants.DIALOG_LOADING_THREADS_CACHE,
         	Constants.DIALOG_LOGGING_IN,
         	Constants.DIALOG_LOGIN,
         	Constants.DIALOG_SORT_BY,

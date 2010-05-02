@@ -100,11 +100,8 @@ public class Constants {
     static final int DIALOG_SUBMITTING = 1004;
     static final int DIALOG_REPLYING = 1005;
     static final int DIALOG_LOADING_REDDITS_LIST = 1006;
-    static final int DIALOG_LOADING_INBOX = 1007;
     static final int DIALOG_DELETING = 1008;
     static final int DIALOG_EDITING = 1009;
-    static final int DIALOG_LOADING_THREADS_CACHE = 1010;
-    static final int DIALOG_LOADING_COMMENTS_CACHE = 1011;
     static final int DIALOG_COMPOSING = 1012;
     
     // Special CSS for webviews to match themes

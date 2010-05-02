@@ -21,6 +21,7 @@ package com.andrewshu.android.reddit;
 
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
+import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -657,10 +658,12 @@ public class CommentsListActivity extends ListActivity
 	    	if (mCommentsAdapter != null)
 	    		mCommentsAdapter.mIsLoading = true;
     	}
+    	getWindow().setFeatureInt(Window.FEATURE_PROGRESS, 0);
     }
     
     private void disableLoadingScreen() {
     	resetUI(mCommentsAdapter);
+    	getWindow().setFeatureInt(Window.FEATURE_PROGRESS, 10000);
     }
 
     /**
@@ -922,12 +925,15 @@ public class CommentsListActivity extends ListActivity
 	    			mCurrentDownloadCommentsTask.cancel(true);
 	    		mCurrentDownloadCommentsTask = this;
     		}
+    		
     		// Initialize mCommentsList and mCommentsAdapter
     		synchronized (COMMENT_ADAPTER_LOCK) {
 	    		if (_mPositionOffset == 0)
 	    			resetUI(null);
-	    		enableLoadingScreen();
     		}
+
+    		enableLoadingScreen();
+    		
     		// In case a ReadCacheTask tries to preempt this DownloadCommentsTask
     		mShouldUseCommentsCache = false;
 			
@@ -939,8 +945,6 @@ public class CommentsListActivity extends ListActivity
 	    		lodToast.show();
 	    	}
 
-	    	getWindow().setFeatureInt(Window.FEATURE_PROGRESS, 0);
-	    	
 	    	if (mThreadTitle != null)
 	    		setTitle(mThreadTitle + " : " + mSettings.subreddit);
     	}
@@ -949,8 +953,6 @@ public class CommentsListActivity extends ListActivity
     		synchronized (mCurrentDownloadCommentsTaskLock) {
     			mCurrentDownloadCommentsTask = null;
     		}
-    		// 10000 tells progress bar to stop
-    		getWindow().setFeatureInt(Window.FEATURE_PROGRESS, 10000);
     		disableLoadingScreen();
     		
     		if (success) {
@@ -1903,13 +1905,6 @@ public class CommentsListActivity extends ListActivity
     		pdialog.setCancelable(false);
     		dialog = pdialog;
     		break;
-    	case Constants.DIALOG_LOADING_COMMENTS_CACHE:
-    		pdialog = new ProgressDialog(this);
-    		pdialog.setMessage("Loading cached comments...");
-    		pdialog.setIndeterminate(true);
-    		pdialog.setCancelable(true);
-    		dialog = pdialog;
-    		break;
     	case Constants.DIALOG_REPLYING:
     		pdialog = new ProgressDialog(this);
     		pdialog.setMessage("Sending reply...");
@@ -2143,12 +2138,17 @@ public class CommentsListActivity extends ListActivity
     };
     
     
-    private class ReadCacheTask extends AsyncTask<Void, Void, Boolean> {
+    private class ReadCacheTask extends AsyncTask<Void, Long, Boolean>
+    		implements PropertyChangeListener {
+    	
+    	private long _mCacheFileSize;
+    	
     	@Override
     	public Boolean doInBackground(Void... zzz) {
     		if (!mShouldUseCommentsCache)
     			return false;
     		FileInputStream fis = null;
+    		ProgressInputStream pin = null;
     		ObjectInputStream in = null;
     		try {
     			// read the time
@@ -2160,7 +2160,13 @@ public class CommentsListActivity extends ListActivity
     			
     			// Restore previous session from cache, if the cache isn't too old
     		    if (Common.isFreshCache(mLastRefreshTime)) {
+    		    	File cacheFile = getFileStreamPath(Constants.FILENAME_CACHE_TIME);
+    		    	_mCacheFileSize = cacheFile.length();
+        			if (Constants.LOGGING) Log.d(TAG, "cache file size: "+_mCacheFileSize);
+
         			fis = openFileInput(Constants.FILENAME_COMMENTS_CACHE);
+        			pin = new ProgressInputStream(fis, _mCacheFileSize);
+        			pin.addPropertyChangeListener(this);
         			in = new ObjectInputStream(fis);
         			
         			mCommentsList = (ArrayList<ThingInfo>) in.readObject();
@@ -2200,6 +2206,9 @@ public class CommentsListActivity extends ListActivity
 	    			in.close();
 	    		} catch (Exception ignore) {}
 	    		try {
+	    			pin.close();
+	    		} catch (Exception ignore) {}
+	    		try {
 	    			fis.close();
 	    		} catch (Exception ignore) {}
     		}
@@ -2212,16 +2221,12 @@ public class CommentsListActivity extends ListActivity
 	    			mCurrentDownloadCommentsTask.cancel(true);
 	    		mCurrentDownloadCommentsTask = this;
     		}
-    		showDialog(Constants.DIALOG_LOADING_COMMENTS_CACHE);
+    		enableLoadingScreen();
     	}
     	
     	@Override
     	public void onPostExecute(Boolean success) {
-    		try {
-    			dismissDialog(Constants.DIALOG_LOADING_COMMENTS_CACHE);
-    		} catch (Exception e) {
-    			// Ignore. Probably caused by screen rotation.
-    		}
+    		disableLoadingScreen();
     		if (success) {
     			// Use the cached comments list
 		    	resetUI(new CommentsListAdapter(CommentsListActivity.this, mCommentsList));
@@ -2241,6 +2246,16 @@ public class CommentsListActivity extends ListActivity
 	    			finish();
     			}
     		}
+    	}
+    	
+    	@Override
+    	public void onProgressUpdate(Long... progress) {
+    		// 0-9999 is ok, 10000 means it's finished
+    		getWindow().setFeatureInt(Window.FEATURE_PROGRESS, progress[0].intValue() * 9999 / (int) _mCacheFileSize);
+    	}
+    	
+    	public void propertyChange(PropertyChangeEvent event) {
+    		publishProgress((Long) event.getNewValue());
     	}
     }
     
@@ -2322,7 +2337,6 @@ public class CommentsListActivity extends ListActivity
         	Constants.DIALOG_DELETING,
         	Constants.DIALOG_EDIT,
         	Constants.DIALOG_EDITING,
-        	Constants.DIALOG_LOADING_COMMENTS_CACHE,
         	Constants.DIALOG_LOGGING_IN,
         	Constants.DIALOG_LOGIN,
         	Constants.DIALOG_REPLY,

@@ -385,10 +385,12 @@ public final class InboxActivity extends ListActivity
 	    	if (mMessagesAdapter != null)
 	    		mMessagesAdapter.mIsLoading = true;
     	}
+    	getWindow().setFeatureInt(Window.FEATURE_PROGRESS, 0);
     }
     
     private void disableLoadingScreen() {
     	resetUI(mMessagesAdapter);
+    	getWindow().setFeatureInt(Window.FEATURE_PROGRESS, 10000);
     }
 
         
@@ -481,7 +483,6 @@ public final class InboxActivity extends ListActivity
 			}
     		resetUI(null);
     		enableLoadingScreen();
-        	getWindow().setFeatureInt(Window.FEATURE_PROGRESS, 0);
     	}
     	
 		@Override
@@ -489,14 +490,11 @@ public final class InboxActivity extends ListActivity
 			synchronized (mCurrentDownloadMessagesTaskLock) {
 				mCurrentDownloadMessagesTask = null;
 			}
-    		// 10000 tells progress bar to stop
-    		getWindow().setFeatureInt(Window.FEATURE_PROGRESS, 10000);
-
     		synchronized(MESSAGE_ADAPTER_LOCK) {
     			for (ThingInfo mi : _mThingInfos)
     				mMessagesAdapter.add(mi);
-    			disableLoadingScreen();
     		}
+			disableLoadingScreen();
 			Common.cancelMailNotification(InboxActivity.this.getApplicationContext());
     	}
 		
