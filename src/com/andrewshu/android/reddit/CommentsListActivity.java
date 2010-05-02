@@ -1564,10 +1564,8 @@ public class CommentsListActivity extends ListActivity
     	if (mSettings.loggedIn) {
 	        menu.findItem(R.id.login_logout_menu_id).setTitle(
 	        		getResources().getString(R.string.logout)+": " + mSettings.username);
-	        menu.findItem(R.id.inbox_menu_id).setVisible(true);
     	} else {
             menu.findItem(R.id.login_logout_menu_id).setTitle(getResources().getString(R.string.login));
-            menu.findItem(R.id.inbox_menu_id).setVisible(false);
     	}
     	
     	// Edit and delete
