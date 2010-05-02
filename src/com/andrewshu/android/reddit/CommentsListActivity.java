@@ -810,9 +810,11 @@ public class CommentsListActivity extends ListActivity
 					}
 				}
 				// Pull other data from the OP
+				// do markdown
+				mOpThingInfo.setSelftext(StringEscapeUtils.unescapeHtml(mOpThingInfo.getSelftext().trim().replaceAll("\r", "")));
+    			mOpThingInfo.setSSBSelftext(markdown.markdown(mOpThingInfo.getSelftext(), new SpannableStringBuilder(), mOpThingInfo.getUrls()));
 				// We might not have a title if we've intercepted a plain link to a thread.
-				mOpThingInfo.setSSBSelftext(markdown.markdown(mOpThingInfo.getSelftext(), new SpannableStringBuilder(), mOpThingInfo.getUrls()));
-				mThreadTitle = mOpThingInfo.getTitle();
+    			mThreadTitle = mOpThingInfo.getTitle();
 				mSettings.setSubreddit(mOpThingInfo.getSubreddit());
 				
 				// listings[1] is a comment Listing for the comments
@@ -2244,7 +2246,9 @@ public class CommentsListActivity extends ListActivity
         			mCommentsList = (ArrayList<ThingInfo>) in.readObject();
         			// Process nonserializable (transient) members of the CommentInfos
         			for (ThingInfo ci : mCommentsList) {
-        				ci.setSSBBody(markdown.markdown(ci.getBody(), new SpannableStringBuilder(), ci.getUrls())); 
+        				// do markdown
+        				ci.setBody(StringEscapeUtils.unescapeHtml(ci.getBody().trim().replaceAll("\r", "")));
+        				ci.setSSBBody(markdown.markdown(ci.getBody(), new SpannableStringBuilder(), ci.getUrls()));
         			}
         			mJumpToCommentId = (CharSequence) in.readObject();
         			mJumpToCommentContext = in.readInt();
@@ -2254,7 +2258,7 @@ public class CommentsListActivity extends ListActivity
         			mOpThingInfo = (ThingInfo) in.readObject();
         			// do markdown
         			mOpThingInfo.setSelftext(StringEscapeUtils.unescapeHtml(mOpThingInfo.getSelftext().trim().replaceAll("\r", "")));
-        			mOpThingInfo.setSSBSelftext(markdown.markdown(mOpThingInfo.getBody(), new SpannableStringBuilder(), mOpThingInfo.getUrls()));
+        			mOpThingInfo.setSSBSelftext(markdown.markdown(mOpThingInfo.getSelftext(), new SpannableStringBuilder(), mOpThingInfo.getUrls()));
         			
     		    	mSettings.setSubreddit((CharSequence) in.readObject());
     				mSettings.setThreadId((CharSequence) in.readObject());
