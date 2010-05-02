@@ -309,7 +309,12 @@ public final class InboxActivity extends ListActivity
         mVoteTargetView = v;
         mReplyTargetName = item.getName();
         
-        new ReadMessageTask().execute();
+        // If new, mark the message read. Otherwise handle it.
+        if (item.isNew()) {
+        	new ReadMessageTask().execute();
+        } else {
+            openContextMenu(v);
+        }
     }
     
     @Override
