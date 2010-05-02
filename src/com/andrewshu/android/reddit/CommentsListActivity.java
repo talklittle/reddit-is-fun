@@ -448,7 +448,10 @@ public class CommentsListActivity extends ListActivity
 		            	// so the ListView might try to display the View before "ups" in JSON has been parsed.
 		            	if (Constants.LOGGING) Log.e(TAG, e.getMessage());
 		            }
-		            submitterView.setText(item.getAuthor());
+		            if (mOpThingInfo != null && item.getAuthor().equals(mOpThingInfo.getAuthor()))
+		            	submitterView.setText(item.getAuthor() + " [S]");
+		            else
+		            	submitterView.setText(item.getAuthor());
 		            submissionTimeView.setText(Util.getTimeAgo(item.getCreated_utc()));
 		            switch (item.getIndent()) {
 		            case 0:  leftIndent.setText(""); break;
@@ -510,7 +513,10 @@ public class CommentsListActivity extends ListActivity
 		            	// so the ListView might try to display the View before "ups" in JSON has been parsed.
 		            	if (Constants.LOGGING) Log.e(TAG, e.getMessage());
 		            }
-		            submitterView.setText(item.getAuthor());
+		            if (item.getSSAuthor() != null)
+		            	submitterView.setText(item.getSSAuthor());
+		            else
+		            	submitterView.setText(item.getAuthor());
 		            submissionTimeView.setText(Util.getTimeAgo(item.getCreated_utc()));
 		            bodyView.setText(item.getSSBBody());
 		            switch (item.getIndent()) {
@@ -651,7 +657,30 @@ public class CommentsListActivity extends ListActivity
         mHiddenCommentHeads.clear();
     }
 
-        
+    /**
+     * Mark the OP submitter comments
+     */
+    private void markSubmitterComments() {
+    	if (mOpThingInfo == null || mCommentsAdapter == null)
+    		return;
+    	
+		SpannableString authorSS = new SpannableString(mOpThingInfo.getAuthor() + " [S]");
+        ForegroundColorSpan fcs;
+        if (mSettings.theme == R.style.Reddit_Light)
+        	fcs = new ForegroundColorSpan(getResources().getColor(R.color.blue));
+        else
+        	fcs = new ForegroundColorSpan(getResources().getColor(R.color.pale_blue));
+        authorSS.setSpan(fcs, 0, authorSS.length(), Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
+	
+        synchronized (COMMENT_ADAPTER_LOCK) {
+    		for (int i = 0; i < mCommentsAdapter.getCount(); i++) {
+    			ThingInfo ci = mCommentsAdapter.getItem(i);
+    			// if it's the OP, mark his name
+    			if (mOpThingInfo.getAuthor().equals(ci.getAuthor()))
+    	            ci.setSSAuthor(authorSS);
+    		}
+    	}
+    }
     
     /**
      * Task takes in a subreddit name string and thread id, downloads its data, parses
@@ -759,6 +788,8 @@ public class CommentsListActivity extends ListActivity
                 	// Merge the new "load more comments" positions
 		    		mMorePositions.addAll(_mNewMorePositions);
 		    	}
+                // label the OP's comments with [S]
+                markSubmitterComments();
 				
                 return true;
                 
@@ -859,7 +890,7 @@ public class CommentsListActivity extends ListActivity
 				return;
 			}
 			
-    		// do markdown
+	        // do markdown
     		ci.setBody(StringEscapeUtils.unescapeHtml(ci.getBody().trim().replaceAll("\r", "")));
 			ci.setSSBBody(markdown.markdown(ci.getBody(), new SpannableStringBuilder(), ci.getUrls()));
 			
@@ -1678,6 +1709,10 @@ public class CommentsListActivity extends ListActivity
     		setListAdapter(mCommentsAdapter);
     		getListView().setDivider(null);
     		Common.updateListDrawables(this, mSettings.theme);
+    		if (mCommentsAdapter != null) {
+    			markSubmitterComments();
+    			mCommentsAdapter.notifyDataSetChanged();
+    		}
     		break;
         case R.id.inbox_menu_id:
         	Intent inboxIntent = new Intent(getApplicationContext(), InboxActivity.class);
@@ -2244,26 +2279,28 @@ public class CommentsListActivity extends ListActivity
         			in = new ObjectInputStream(fis);
         			
         			mCommentsList = (ArrayList<ThingInfo>) in.readObject();
-        			// Process nonserializable (transient) members of the CommentInfos
-        			for (ThingInfo ci : mCommentsList) {
-        				// do markdown
-        				ci.setBody(StringEscapeUtils.unescapeHtml(ci.getBody().trim().replaceAll("\r", "")));
-        				ci.setSSBBody(markdown.markdown(ci.getBody(), new SpannableStringBuilder(), ci.getUrls()));
-        			}
         			mJumpToCommentId = (CharSequence) in.readObject();
         			mJumpToCommentContext = in.readInt();
         			mJumpToCommentPosition = in.readInt();
         			mMorePositions = (HashSet<Integer>) in.readObject();
         			mNumVisibleComments = in.readInt();
         			mOpThingInfo = (ThingInfo) in.readObject();
-        			// do markdown
-        			mOpThingInfo.setSelftext(StringEscapeUtils.unescapeHtml(mOpThingInfo.getSelftext().trim().replaceAll("\r", "")));
-        			mOpThingInfo.setSSBSelftext(markdown.markdown(mOpThingInfo.getSelftext(), new SpannableStringBuilder(), mOpThingInfo.getUrls()));
         			
     		    	mSettings.setSubreddit((CharSequence) in.readObject());
     				mSettings.setThreadId((CharSequence) in.readObject());
     				mSortByUrl = (CharSequence) in.readObject();
     				mThreadTitle = (CharSequence) in.readObject();
+
+        			// do markdown
+        			mOpThingInfo.setSelftext(StringEscapeUtils.unescapeHtml(mOpThingInfo.getSelftext().trim().replaceAll("\r", "")));
+        			mOpThingInfo.setSSBSelftext(markdown.markdown(mOpThingInfo.getSelftext(), new SpannableStringBuilder(), mOpThingInfo.getUrls()));
+
+        			// Process nonserializable (transient) members of the CommentInfos
+        			for (ThingInfo ci : mCommentsList) {
+        				// do markdown
+        				ci.setBody(StringEscapeUtils.unescapeHtml(ci.getBody().trim().replaceAll("\r", "")));
+        				ci.setSSBBody(markdown.markdown(ci.getBody(), new SpannableStringBuilder(), ci.getUrls()));
+        			}
     				
     				return true;
     		    }
@@ -2303,6 +2340,7 @@ public class CommentsListActivity extends ListActivity
     		if (success) {
     			// Use the cached comments list
 		    	resetUI(new CommentsListAdapter(CommentsListActivity.this, mCommentsList));
+		    	markSubmitterComments();
 		    	setTitle(mThreadTitle + " : " + mSettings.subreddit);
 		    	// Point the list to whichever comment the user was looking at
 		    	jumpToComment();

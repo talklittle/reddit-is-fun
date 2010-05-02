@@ -24,6 +24,7 @@ import java.util.ArrayList;
 
 import org.codehaus.jackson.annotate.JsonAnySetter;
 
+import android.text.SpannableString;
 import android.text.SpannableStringBuilder;
 
 /**
@@ -80,6 +81,7 @@ public class ThingInfo implements Serializable {
 	public final ArrayList<MarkdownURL> mUrls = new ArrayList<MarkdownURL>();
 	transient private SpannableStringBuilder mSSBSelftext = null;
 	transient private SpannableStringBuilder mSSBBody = null;
+	transient private SpannableString mSSAuthor = null;
 	
 	private int mIndent = 0;
 	private String mReplyDraft = null;
@@ -88,10 +90,6 @@ public class ThingInfo implements Serializable {
 		return author;
 	}
 	
-	//
-	// Getters and setters
-	//
-
 	public String getBody() {
 		return body;
 	}
@@ -180,6 +178,10 @@ public class ThingInfo implements Serializable {
 		return selftext_html;
 	}
 
+	public SpannableString getSSAuthor() {
+		return mSSAuthor;
+	}
+	
 	public SpannableStringBuilder getSSBBody() {
 		return mSSBBody;
 	}
@@ -367,6 +369,10 @@ public class ThingInfo implements Serializable {
 
 	public void setSelftext_html(String selftext_html) {
 		this.selftext_html = selftext_html;
+	}
+	
+	public void setSSAuthor(SpannableString ssAuthor) {
+		mSSAuthor = ssAuthor;
 	}
 	
 	public void setSSBBody(SpannableStringBuilder ssbBody) {
