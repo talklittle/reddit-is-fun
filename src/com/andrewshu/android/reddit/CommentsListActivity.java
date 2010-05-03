@@ -878,7 +878,7 @@ public class CommentsListActivity extends ListActivity
     		// handle "more" entry
     		if (Constants.MORE_KIND.equals(commentThingListing.getKind())) {
     			_mNewMorePositions.add(_mPositionOffset + _mListIndex);
-    			if (Constants.LOGGING) Log.d(TAG, "new more position at " + (_mPositionOffset + _mListIndex));
+    			if (Constants.LOGGING) Log.v(TAG, "new more position at " + (_mPositionOffset + _mListIndex));
 		    	return;
     		}
     		
@@ -1556,6 +1556,7 @@ public class CommentsListActivity extends ListActivity
         	}
     		break;
     	case R.id.refresh_menu_id:
+    		CacheInfo.invalidateAllCaches(getApplicationContext());
     		new DownloadCommentsTask().execute(Constants.DEFAULT_COMMENT_DOWNLOAD_LIMIT);
     		break;
     	case R.id.reply_thread_menu_id:

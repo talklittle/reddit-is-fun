@@ -617,6 +617,7 @@ public class Common {
     static void launchBrowser(CharSequence url, Activity act) {
     	Matcher matcher = REDDIT_LINK.matcher(url);
     	if (matcher.matches()) {
+    		CacheInfo.invalidateAllCaches(act);
     		if (matcher.group(3) != null) {
     			Intent intent = new Intent(act.getApplicationContext(), CommentsListActivity.class);
     			intent.putExtra(Constants.EXTRA_COMMENT_CONTEXT, url);

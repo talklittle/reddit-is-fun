@@ -228,6 +228,7 @@ public final class RedditIsFun extends ListActivity {
 	    		String newTitle = extras.getString(Constants.EXTRA_TITLE);
 	    		mSettings.setSubreddit(newSubreddit);
 	    		// Start up comments list with the new thread
+	    		CacheInfo.invalidateCachedThreadId(getApplicationContext());
 	    		Intent i = new Intent(getApplicationContext(), CommentsListActivity.class);
 				i.putExtra(Constants.EXTRA_SUBREDDIT, newSubreddit);
 				i.putExtra(Constants.EXTRA_ID, newId);
@@ -1053,7 +1054,7 @@ public final class RedditIsFun extends ListActivity {
     		mAfter = null;
     		mBefore = null;
     		mCount = Constants.DEFAULT_THREAD_DOWNLOAD_LIMIT;
-    		CacheInfo.deleteAllCaches(getApplicationContext());
+    		CacheInfo.invalidateAllCaches(getApplicationContext());
     		new DownloadThreadsTask().execute(mSettings.subreddit);
     		break;
     	case R.id.submit_link_menu_id:
@@ -1384,6 +1385,7 @@ public final class RedditIsFun extends ListActivity {
     			public void onClick(View v) {
     				dismissDialog(Constants.DIALOG_THING_CLICK);
     				// Launch an Intent for CommentsListActivity
+    				CacheInfo.invalidateCachedThreadId(getApplicationContext());
     				Intent i = new Intent(getApplicationContext(), CommentsListActivity.class);
     				i.putExtra(Constants.EXTRA_SUBREDDIT, mVoteTargetThingInfo.getSubreddit());
     				i.putExtra(Constants.EXTRA_ID, mVoteTargetThingInfo.getId());

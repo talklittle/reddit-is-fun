@@ -83,12 +83,6 @@ public class CacheInfo implements Serializable {
 		return time - threadTime <= Constants.DEFAULT_FRESH_DURATION;
     }
     
-    static void deleteAllCaches(Context context) {
-    	for (String fileName : context.fileList()) {
-    		context.deleteFile(fileName);
-    	}
-    }
-    
     static CacheInfo getCacheInfo(Context context) throws IOException, ClassNotFoundException {
     	FileInputStream fis = context.openFileInput(Constants.FILENAME_CACHE_INFO);
     	ObjectInputStream ois = new ObjectInputStream(fis);
