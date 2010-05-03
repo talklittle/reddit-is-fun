@@ -568,16 +568,6 @@ public class CommentsListActivity extends ListActivity
     }
     
     
-    @Override
-    public boolean onKeyDown(int keyCode, KeyEvent event) {
-        if (keyCode == KeyEvent.KEYCODE_BACK) {
-            // When the user presses back, clear the comments cache.
-            deleteFile(Constants.FILENAME_THREAD_CACHE);
-        }
-        return super.onKeyDown(keyCode, event);
-    }
-
-    
     /**
      * Try jumping to mJumpToCommentPosition. failing that, try mJumpToCommentId.
      */
@@ -755,6 +745,11 @@ public class CommentsListActivity extends ListActivity
 	            	
 	            	if (Constants.USE_CACHE) {
 	                	in = CacheInfo.writeThenRead(getApplicationContext(), in, Constants.FILENAME_THREAD_CACHE);
+	                	try {
+	                		CacheInfo.setCachedThreadId(getApplicationContext(), mOpThingInfo.getId());
+	                	} catch (IOException e) {
+	                		if (Constants.LOGGING) Log.e(TAG, "error on setCachedThreadId: " + e.getMessage());
+	                	}
 	            	}
 	        	}
                 

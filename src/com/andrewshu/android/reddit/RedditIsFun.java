@@ -642,6 +642,11 @@ public final class RedditIsFun extends ListActivity {
 	            	
 	            	if (Constants.USE_CACHE) {
 	                	in = CacheInfo.writeThenRead(getApplicationContext(), in, Constants.FILENAME_SUBREDDIT_CACHE);
+	                	try {
+	                		CacheInfo.setCachedSubreddit(getApplicationContext(), mSettings.subreddit.toString());
+	                	} catch (IOException e) {
+	                		if (Constants.LOGGING) Log.e(TAG, "error on setCachedSubreddit: " + e.getMessage());
+	                	}
 	            	}
 	    		}
             	
