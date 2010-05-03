@@ -44,19 +44,15 @@ import android.app.Activity;
 import android.app.Dialog;
 import android.app.ProgressDialog;
 import android.app.TabActivity;
-import android.content.DialogInterface;
 import android.content.Intent;
-import android.content.DialogInterface.OnCancelListener;
 import android.graphics.drawable.Drawable;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.util.Log;
-import android.view.KeyEvent;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.View.OnClickListener;
-import android.view.View.OnKeyListener;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.FrameLayout;
@@ -560,50 +556,13 @@ public class SubmitLinkActivity extends TabActivity {
 		ProgressDialog pdialog;
 		switch (id) {
 		case Constants.DIALOG_LOGIN:
-    		dialog = new Dialog(this);
-    		dialog.setContentView(R.layout.login_dialog);
-    		dialog.setTitle("Login to reddit.com");
-    		// If user presses "back" then quit.
-    		dialog.setOnCancelListener(new OnCancelListener() {
-    			public void onCancel(DialogInterface d) {
-    				if (!mSettings.loggedIn) {
-	        			returnStatus(Activity.RESULT_CANCELED);
-    				}
-    			}
-    		});
-    		final EditText loginUsernameInput = (EditText) dialog.findViewById(R.id.login_username_input);
-    		final EditText loginPasswordInput = (EditText) dialog.findViewById(R.id.login_password_input);
-    		loginUsernameInput.setOnKeyListener(new OnKeyListener() {
-    			public boolean onKey(View v, int keyCode, KeyEvent event) {
-    		        if ((event.getAction() == KeyEvent.ACTION_DOWN)
-    		        		&& (keyCode == KeyEvent.KEYCODE_ENTER || keyCode == KeyEvent.KEYCODE_TAB)) {
-    		        	loginPasswordInput.requestFocus();
-    		        	return true;
-    		        }
-    		        return false;
-    		    }
-    		});
-    		loginPasswordInput.setOnKeyListener(new OnKeyListener() {
-    			public boolean onKey(View v, int keyCode, KeyEvent event) {
-    		        if ((event.getAction() == KeyEvent.ACTION_DOWN) && (keyCode == KeyEvent.KEYCODE_ENTER)) {
-        				CharSequence user = loginUsernameInput.getText();
-        				CharSequence password = loginPasswordInput.getText();
-        				dismissDialog(Constants.DIALOG_LOGIN);
-    		        	new LoginTask(user, password).execute(); 
-    		        	return true;
-    		        }
-    		        return false;
-    		    }
-    		});
-    		final Button loginButton = (Button) dialog.findViewById(R.id.login_button);
-    		loginButton.setOnClickListener(new OnClickListener() {
-    			public void onClick(View v) {
-    				CharSequence user = loginUsernameInput.getText();
-    				CharSequence password = loginPasswordInput.getText();
-    				dismissDialog(Constants.DIALOG_LOGIN);
+			dialog = new LoginDialog(this, mSettings, true) {
+				@Override
+				public void onLoginChosen(CharSequence user, CharSequence password) {
+					dismissDialog(Constants.DIALOG_LOGIN);
     				new LoginTask(user, password).execute();
-    		    }
-    		});
+				}
+			};
     		break;
 
        	// "Please wait"

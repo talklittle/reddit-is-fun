@@ -56,7 +56,6 @@ import android.text.Spanned;
 import android.text.style.ForegroundColorSpan;
 import android.text.style.TextAppearanceSpan;
 import android.util.Log;
-import android.view.KeyEvent;
 import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuInflater;
@@ -65,13 +64,11 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.view.Window;
 import android.view.View.OnClickListener;
-import android.view.View.OnKeyListener;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.CheckBox;
 import android.widget.CompoundButton;
-import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.ListView;
 import android.widget.TextView;
@@ -1103,42 +1100,13 @@ public final class RedditIsFun extends ListActivity {
     	
     	switch (id) {
     	case Constants.DIALOG_LOGIN:
-    		dialog = new Dialog(this);
-    		dialog.setContentView(R.layout.login_dialog);
-    		dialog.setTitle("Login to reddit.com");
-    		final EditText loginUsernameInput = (EditText) dialog.findViewById(R.id.login_username_input);
-    		final EditText loginPasswordInput = (EditText) dialog.findViewById(R.id.login_password_input);
-    		loginUsernameInput.setOnKeyListener(new OnKeyListener() {
-    			public boolean onKey(View v, int keyCode, KeyEvent event) {
-    		        if ((event.getAction() == KeyEvent.ACTION_DOWN)
-    		        		&& (keyCode == KeyEvent.KEYCODE_ENTER || keyCode == KeyEvent.KEYCODE_TAB)) {
-    		        	loginPasswordInput.requestFocus();
-    		        	return true;
-    		        }
-    		        return false;
-    		    }
-    		});
-    		loginPasswordInput.setOnKeyListener(new OnKeyListener() {
-    			public boolean onKey(View v, int keyCode, KeyEvent event) {
-    		        if ((event.getAction() == KeyEvent.ACTION_DOWN) && (keyCode == KeyEvent.KEYCODE_ENTER)) {
-        				CharSequence user = loginUsernameInput.getText().toString().trim();
-        				CharSequence password = loginPasswordInput.getText();
-        				dismissDialog(Constants.DIALOG_LOGIN);
-    		        	new LoginTask(user, password).execute(); 
-    		        	return true;
-    		        }
-    		        return false;
-    		    }
-    		});
-    		final Button loginButton = (Button) dialog.findViewById(R.id.login_button);
-    		loginButton.setOnClickListener(new OnClickListener() {
-    			public void onClick(View v) {
-    				CharSequence user = loginUsernameInput.getText().toString().trim();
-    				CharSequence password = loginPasswordInput.getText();
-    				dismissDialog(Constants.DIALOG_LOGIN);
-    				new LoginTask(user, password).execute();
-    		    }
-    		});
+    		dialog = new LoginDialog(this, mSettings, false) {
+				@Override
+				public void onLoginChosen(CharSequence user, CharSequence password) {
+					dismissDialog(Constants.DIALOG_LOGIN);
+		        	new LoginTask(user, password).execute(); 
+				}
+			};
     		break;
     		
     	case Constants.DIALOG_THING_CLICK:

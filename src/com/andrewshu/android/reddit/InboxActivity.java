@@ -51,9 +51,7 @@ import android.app.Dialog;
 import android.app.ListActivity;
 import android.app.ProgressDialog;
 import android.content.Context;
-import android.content.DialogInterface;
 import android.content.Intent;
-import android.content.DialogInterface.OnCancelListener;
 import android.graphics.Typeface;
 import android.graphics.drawable.Drawable;
 import android.os.AsyncTask;
@@ -66,7 +64,6 @@ import android.text.style.StyleSpan;
 import android.text.style.URLSpan;
 import android.util.Log;
 import android.view.ContextMenu;
-import android.view.KeyEvent;
 import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -75,7 +72,6 @@ import android.view.ViewGroup;
 import android.view.Window;
 import android.view.ContextMenu.ContextMenuInfo;
 import android.view.View.OnClickListener;
-import android.view.View.OnKeyListener;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.EditText;
@@ -1043,49 +1039,13 @@ public final class InboxActivity extends ListActivity
     	
     	switch (id) {
     	case Constants.DIALOG_LOGIN:
-    		dialog = new Dialog(this);
-    		dialog.setContentView(R.layout.login_dialog);
-    		dialog.setTitle("Login to reddit.com");
-    		dialog.setOnCancelListener(new OnCancelListener() {
-    			public void onCancel(DialogInterface d) {
-    				if (!mSettings.loggedIn) {
-	        			returnStatus(Activity.RESULT_CANCELED);
-    				}
-    			}
-    		});
-    		final EditText loginUsernameInput = (EditText) dialog.findViewById(R.id.login_username_input);
-    		final EditText loginPasswordInput = (EditText) dialog.findViewById(R.id.login_password_input);
-    		loginUsernameInput.setOnKeyListener(new OnKeyListener() {
-    			public boolean onKey(View v, int keyCode, KeyEvent event) {
-    		        if ((event.getAction() == KeyEvent.ACTION_DOWN)
-    		        		&& (keyCode == KeyEvent.KEYCODE_ENTER || keyCode == KeyEvent.KEYCODE_TAB)) {
-    		        	loginPasswordInput.requestFocus();
-    		        	return true;
-    		        }
-    		        return false;
-    		    }
-    		});
-    		loginPasswordInput.setOnKeyListener(new OnKeyListener() {
-    			public boolean onKey(View v, int keyCode, KeyEvent event) {
-    		        if ((event.getAction() == KeyEvent.ACTION_DOWN) && (keyCode == KeyEvent.KEYCODE_ENTER)) {
-        				CharSequence user = loginUsernameInput.getText();
-        				CharSequence password = loginPasswordInput.getText();
-        				dismissDialog(Constants.DIALOG_LOGIN);
-    		        	new LoginTask(user, password).execute();
-    		        	return true;
-    		        }
-    		        return false;
-    		    }
-    		});
-    		final Button loginButton = (Button) dialog.findViewById(R.id.login_button);
-    		loginButton.setOnClickListener(new OnClickListener() {
-    			public void onClick(View v) {
-    				CharSequence user = loginUsernameInput.getText();
-    				CharSequence password = loginPasswordInput.getText();
-    				dismissDialog(Constants.DIALOG_LOGIN);
-    				new LoginTask(user, password).execute();
-		        }
-    		});
+    		dialog = new LoginDialog(this, mSettings, true) {
+				@Override
+				public void onLoginChosen(CharSequence user, CharSequence password) {
+					dismissDialog(Constants.DIALOG_LOGIN);
+		        	new LoginTask(user, password).execute();
+				}
+			};
     		break;
     		
     	case Constants.DIALOG_REPLY:
