@@ -746,7 +746,7 @@ public class CommentsListActivity extends ListActivity
 	            	if (Constants.USE_CACHE) {
 	                	in = CacheInfo.writeThenRead(getApplicationContext(), in, Constants.FILENAME_THREAD_CACHE);
 	                	try {
-	                		CacheInfo.setCachedThreadId(getApplicationContext(), mOpThingInfo.getId());
+	                		CacheInfo.setCachedThreadId(getApplicationContext(), mSettings.threadId.toString());
 	                	} catch (IOException e) {
 	                		if (Constants.LOGGING) Log.e(TAG, "error on setCachedThreadId: " + e.getMessage());
 	                	}
@@ -758,6 +758,7 @@ public class CommentsListActivity extends ListActivity
             	pin.addPropertyChangeListener(this);
             	
             	parseCommentsJSON(pin);
+            	if (Constants.LOGGING) Log.d(TAG, "parseCommentsJSON completed");
                 
             	pin.close();
                 in.close();
@@ -793,7 +794,7 @@ public class CommentsListActivity extends ListActivity
                 return true;
                 
             } catch (Exception e) {
-            	if (Constants.LOGGING) Log.e(TAG, "failed:" + e.getMessage());
+            	if (Constants.LOGGING) Log.e(TAG, "DownloadCommentsTask:" + e.getMessage());
             } finally {
         		if (entity != null) {
         			try {
@@ -882,8 +883,6 @@ public class CommentsListActivity extends ListActivity
     		
     		// Regular comment
     		
-    		if (Constants.LOGGING) Log.d(TAG, "comment at index " + (_mPositionOffset + _mListIndex));
-	    	
     		// Skip things that are not comments, which shouldn't happen
 			if (!Constants.COMMENT_KIND.equals(commentThingListing.getKind())) {
 				if (Constants.LOGGING) Log.e(TAG, "comment whose kind is \""+commentThingListing.getKind()+"\" (expected "+Constants.COMMENT_KIND+")");
@@ -1483,16 +1482,18 @@ public class CommentsListActivity extends ListActivity
     	}
     	
     	// Edit and delete
-    	if (mSettings.username != null && mSettings.username.equals(mOpThingInfo.getAuthor())) {
-			if (mOpThingInfo.getSelftext_html() != null)
-				menu.findItem(R.id.op_edit_menu_id).setVisible(true);
-			else
+    	if (mOpThingInfo != null) {
+	    	if (mSettings.username != null && mSettings.username.equals(mOpThingInfo.getAuthor())) {
+				if (mOpThingInfo.getSelftext_html() != null)
+					menu.findItem(R.id.op_edit_menu_id).setVisible(true);
+				else
+					menu.findItem(R.id.op_edit_menu_id).setVisible(false);
+				menu.findItem(R.id.op_delete_menu_id).setVisible(true);
+			} else {
 				menu.findItem(R.id.op_edit_menu_id).setVisible(false);
-			menu.findItem(R.id.op_delete_menu_id).setVisible(true);
-		} else {
-			menu.findItem(R.id.op_edit_menu_id).setVisible(false);
-			menu.findItem(R.id.op_delete_menu_id).setVisible(false);
-		}
+				menu.findItem(R.id.op_delete_menu_id).setVisible(false);
+			}
+    	}
     	
     	// Theme: Light/Dark
     	src = mSettings.theme == R.style.Reddit_Light ?

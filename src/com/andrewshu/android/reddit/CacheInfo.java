@@ -150,6 +150,8 @@ public class CacheInfo implements Serializable {
 	    	ci.subreddit = null;
 	    	ci.subredditTime = 0;
 	    	oos.writeObject(ci);
+	    	oos.close();
+	    	fos.close();
     	} catch (IOException e) {
     		if (Constants.LOGGING) Log.e(TAG, e.getMessage());
     	}
@@ -171,6 +173,8 @@ public class CacheInfo implements Serializable {
 	    	ci.threadId = null;
 	    	ci.threadTime = 0;
 	    	oos.writeObject(ci);
+	    	oos.close();
+	    	fos.close();
     	} catch (IOException e) {
     		if (Constants.LOGGING) Log.e(TAG, "error w/ getCacheInfo:" + e.getMessage());
     	}
@@ -191,6 +195,8 @@ public class CacheInfo implements Serializable {
     	ci.subreddit = subreddit;
     	ci.subredditTime = System.currentTimeMillis();
     	oos.writeObject(ci);
+    	oos.close();
+    	fos.close();
     }
 
     static void setCachedThreadId(Context context, String threadId) throws IOException {
@@ -208,5 +214,7 @@ public class CacheInfo implements Serializable {
     	ci.threadId = threadId;
     	ci.threadTime = System.currentTimeMillis();
     	oos.writeObject(ci);
+    	oos.close();
+    	fos.close();
     }
 }

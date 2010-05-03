@@ -667,7 +667,7 @@ public final class RedditIsFun extends ListActivity {
                 	in.close();
                 }
             } catch (IOException e) {
-            	if (Constants.LOGGING) Log.e(TAG, "failed:" + e.getMessage());
+            	if (Constants.LOGGING) Log.e(TAG, "DownloadThreadsTask IOException:" + e.getMessage());
             } finally {
         		if (entity != null) {
         			try {
