@@ -929,7 +929,9 @@ public class CommentsListActivity extends ListActivity
 	    			resetUI(null);
     		}
 
-    		enableLoadingScreen();
+    		// Do loading screen when loading new thread; otherwise when "loading more comments" don't show it
+    		if (_mPositionOffset == 0)
+    			enableLoadingScreen();
     		
 	    	if (mSettings.subreddit != null && "jailbait".equals(mSettings.subreddit.toString())) {
 	    		Toast lodToast = Toast.makeText(CommentsListActivity.this, "", Toast.LENGTH_LONG);
@@ -947,7 +949,12 @@ public class CommentsListActivity extends ListActivity
     		synchronized (mCurrentDownloadCommentsTaskLock) {
     			mCurrentDownloadCommentsTask = null;
     		}
-    		disableLoadingScreen();
+    		
+    		// if loading new thread, disable loading screen. otherwise "load more comments" so just stop the progress bar
+    		if (_mPositionOffset == 0)
+    			disableLoadingScreen();
+    		else
+    			getWindow().setFeatureInt(Window.FEATURE_PROGRESS, 10000);
     		
     		if (success) {
     			// We modified mCommentsList, which backs mCommentsAdapter, so mCommentsAdapter has changed too.
