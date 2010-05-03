@@ -20,11 +20,9 @@
 package com.andrewshu.android.reddit;
 
 import java.io.BufferedReader;
-import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.io.ObjectInputStream;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
@@ -640,52 +638,6 @@ public class Common {
     	act.startActivity(browser);
 	}
     
-    
-    static boolean checkFreshCache(Context context) {
-    	long cacheTime;
-    	try {
-	    	FileInputStream fis = context.openFileInput(Constants.FILENAME_CACHE_TIME);
-	    	ObjectInputStream ois = new ObjectInputStream(fis);
-	    	cacheTime = ois.readLong();
-    	} catch (Exception e) {
-    		if (Constants.LOGGING) Log.e(TAG, e.getMessage());
-    		return false;
-    	}
-    	long time = System.currentTimeMillis();
-		return time - cacheTime <= Constants.DEFAULT_FRESH_DURATION;
-	}
-    
-    static void deleteAllCaches(Context context) {
-    	for (String fileName : context.fileList()) {
-    		context.deleteFile(fileName);
-    	}
-    }
-    
-    static void deleteCachesOlderThan(Context context, long someTime) {
-    	FileInputStream fis = null;
-    	ObjectInputStream in = null;
-    	
-		try {
-	    	fis = context.openFileInput(Constants.FILENAME_CACHE_TIME);
-			in = new ObjectInputStream(fis);
-			long cacheTime = in.readLong();
-			
-			// If at least one file is new enough, don't delete caches.
-			if (cacheTime >= someTime)
-				return;
-    	} catch (Exception e) {
-    		// Bad or missing time file. Delete cache.
-    	} finally {
-    		try {
-    			in.close();
-    		} catch (Exception ignore) {}
-    		try {
-    			fis.close();
-    		} catch (Exception ignore) {}
-    	}
-    	deleteAllCaches(context);
-    }
-	
     
 	/**
 	 * http://hc.apache.org/httpcomponents-client/examples.html

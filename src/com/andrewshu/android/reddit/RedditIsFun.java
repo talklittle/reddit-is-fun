@@ -21,10 +21,8 @@ package com.andrewshu.android.reddit;
 
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.ObjectOutputStream;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -106,9 +104,6 @@ public final class RedditIsFun extends ListActivity {
     private AsyncTask mCurrentDownloadThreadsTask = null;
     private final Object mCurrentDownloadThreadsTaskLock = new Object();
 
-    // Whether it should use the cache. Otherwise download from Internet.
-    volatile private boolean mShouldUseThreadsCache = true;
-    
     // Navigation that can be cached
     private CharSequence mAfter = null;
     private CharSequence mBefore = null;
@@ -173,8 +168,6 @@ public final class RedditIsFun extends ListActivity {
     		setListAdapter(mThreadsAdapter);
     		Common.updateListDrawables(this, mSettings.theme);
     	}
-    	if (mSettings.loggedIn != previousLoggedIn)
-    		mShouldUseThreadsCache = false;
     	if (mThreadsAdapter == null)
     		new DownloadThreadsTask().execute(mSettings.subreddit);
     	else
@@ -612,12 +605,11 @@ public final class RedditIsFun extends ListActivity {
 	    		}
 	    		
 	    		InputStream in = null;
-	    		ProgressInputStream pin = null;
-	            boolean currentlyUsingCache = false;
+	    		boolean currentlyUsingCache = false;
 	    		
 	    		if (Constants.USE_CACHE) {
 	    			try {
-		    			if (Common.checkFreshCache(getApplicationContext())) {
+		    			if (CacheInfo.checkFreshSubredditCache(getApplicationContext())) {
 		    				in = openFileInput(Constants.FILENAME_SUBREDDIT_CACHE);
 		    				_mContentLength = getFileStreamPath(Constants.FILENAME_SUBREDDIT_CACHE).length();
 		    				currentlyUsingCache = true;
@@ -628,6 +620,7 @@ public final class RedditIsFun extends ListActivity {
 	    			}
 	    		}
 	    		
+	    		// If we couldn't use the cache, then do HTTP request
 	    		if (!currentlyUsingCache) {
 		    		HttpGet request;
 	    			try {
@@ -648,38 +641,15 @@ public final class RedditIsFun extends ListActivity {
 	            	in = entity.getContent();
 	            	
 	            	if (Constants.USE_CACHE) {
-	                	// Get the data and write to cache file
-		            	FileOutputStream fos = openFileOutput(Constants.FILENAME_SUBREDDIT_CACHE, MODE_PRIVATE);
-		            	byte[] buf = new byte[1024];
-		            	int len = 0;
-		            	long total = 0;  // for debugging
-		            	while ((len = in.read(buf)) > 0) {
-		            		fos.write(buf, 0, len);
-		            		total += len;
-		            	}
-		            	if (Constants.LOGGING) Log.d(TAG, total + " bytes written to cache file");
-		            	fos.close();
-		            	in.close();
-		            	
-		            	// write current time to file
-		            	fos = openFileOutput(Constants.FILENAME_CACHE_TIME, MODE_PRIVATE);
-		            	ObjectOutputStream out = new ObjectOutputStream(fos);
-		            	out.writeLong(System.currentTimeMillis());
-		            	out.close();
-		            	fos.close();
-	            	
-		            	// setup a special InputStream to report progress
-		            	in = openFileInput(Constants.FILENAME_SUBREDDIT_CACHE);
+	                	in = CacheInfo.writeThenRead(getApplicationContext(), in, Constants.FILENAME_SUBREDDIT_CACHE);
 	            	}
 	    		}
             	
-	    		pin = new ProgressInputStream(in, _mContentLength);
+	    		ProgressInputStream pin = new ProgressInputStream(in, _mContentLength);
             	pin.addPropertyChangeListener(this);
             	
             	try {
                 	parseSubredditJSON(pin);
-                	pin.close();
-                	in.close();
                 	mSettings.setSubreddit(subreddit[0]);
                 	return true;
                 } catch (IllegalStateException e) {
@@ -687,6 +657,9 @@ public final class RedditIsFun extends ListActivity {
                 	if (Constants.LOGGING) Log.e(TAG, e.getMessage());
                 } catch (Exception e) {
                 	if (Constants.LOGGING) Log.e(TAG, e.getMessage());
+                } finally {
+                	pin.close();
+                	in.close();
                 }
             } catch (IOException e) {
             	if (Constants.LOGGING) Log.e(TAG, "failed:" + e.getMessage());
@@ -743,8 +716,6 @@ public final class RedditIsFun extends ListActivity {
     		}
     		resetUI(null);
     		enableLoadingScreen();
-    		// In case a ReadCacheTask tries to preempt this DownloadThreadsTask
-    		mShouldUseThreadsCache = false;
 			
 	    	if ("jailbait".equals(mSettings.subreddit.toString())) {
 	    		Toast lodToast = Toast.makeText(RedditIsFun.this, "", Toast.LENGTH_LONG);
@@ -776,7 +747,6 @@ public final class RedditIsFun extends ListActivity {
 		    		// "25 more" button.
 		    		if (mThreadsList.size() >= Constants.DEFAULT_THREAD_DOWNLOAD_LIMIT)
 		    			mThreadsList.add(new ThingInfo());
-	    			mShouldUseThreadsCache = true;
 		    		mThreadsAdapter.notifyDataSetChanged();
     			}
 	    		// Point the list to last thread user was looking at, if any
@@ -1075,7 +1045,7 @@ public final class RedditIsFun extends ListActivity {
     		mAfter = null;
     		mBefore = null;
     		mCount = Constants.DEFAULT_THREAD_DOWNLOAD_LIMIT;
-    		Common.deleteAllCaches(getApplicationContext());
+    		CacheInfo.deleteAllCaches(getApplicationContext());
     		new DownloadThreadsTask().execute(mSettings.subreddit);
     		break;
     	case R.id.submit_link_menu_id:

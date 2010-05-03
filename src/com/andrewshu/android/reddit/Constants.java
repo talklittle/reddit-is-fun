@@ -30,9 +30,12 @@ public class Constants {
 	// File containing the serialized variables of last subreddit viewed
 	static final String FILENAME_SUBREDDIT_CACHE = "subreddit.dat";
 	// File containing the serialized variables of last comments viewed
-	static final String FILENAME_COMMENTS_CACHE = "comments.dat";
+	static final String FILENAME_THREAD_CACHE = "thread.dat";
 	// File containing a long integer System.currentTimeMillis(). Timestamp is shared among caches.
-	static final String FILENAME_CACHE_TIME = "cachetime.dat";
+	static final String FILENAME_CACHE_INFO = "cacheinfo.dat";
+	static final String[] FILENAMES_CACHE = {
+		FILENAME_SUBREDDIT_CACHE, FILENAME_THREAD_CACHE, FILENAME_CACHE_INFO
+	};
 	
 	static final String COMMENT_KIND = "t1";
 	static final String THREAD_KIND = "t3";
