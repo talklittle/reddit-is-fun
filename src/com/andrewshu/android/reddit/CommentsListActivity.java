@@ -719,7 +719,8 @@ public class CommentsListActivity extends ListActivity
 	    		
 	        	if (Constants.USE_CACHE) {
 	    			try {
-		    			if (CacheInfo.checkFreshThreadCache(getApplicationContext())) {
+		    			if (CacheInfo.checkFreshThreadCache(getApplicationContext())
+		    					&& mSettings.threadId.equals(CacheInfo.getCachedThreadId(getApplicationContext()))) {
 		    				in = openFileInput(Constants.FILENAME_THREAD_CACHE);
 		    				_mContentLength = getFileStreamPath(Constants.FILENAME_THREAD_CACHE).length();
 		    				currentlyUsingCache = true;
@@ -988,7 +989,7 @@ public class CommentsListActivity extends ListActivity
     	
     	@Override
     	public String doInBackground(Void... v) {
-    		return Common.doLogin(mUsername, mPassword, mClient, mSettings);
+    		return Common.doLogin(mUsername, mPassword, mSettings, mClient, getApplicationContext());
         }
     	
     	protected void onPreExecute() {
@@ -999,6 +1000,7 @@ public class CommentsListActivity extends ListActivity
     		dismissDialog(Constants.DIALOG_LOGGING_IN);
     		if (errorMessage == null) {
     			Toast.makeText(CommentsListActivity.this, "Logged in as "+mUsername, Toast.LENGTH_SHORT).show();
+    			CacheInfo.invalidateAllCaches(getApplicationContext());
     			// Check mail
     			new Common.PeekEnvelopeTask(CommentsListActivity.this, mClient, mSettings.mailNotificationStyle).execute();
 	    		// Refresh the comments list
@@ -1034,7 +1036,7 @@ public class CommentsListActivity extends ListActivity
         		CharSequence modhash = Common.doUpdateModhash(mClient);
         		if (modhash == null) {
         			// doUpdateModhash should have given an error about credentials
-        			Common.doLogout(mSettings, mClient);
+        			Common.doLogout(mSettings, mClient, getApplicationContext());
         			if (Constants.LOGGING) Log.e(TAG, "Reply failed because doUpdateModhash() failed");
         			return null;
         		}
@@ -1095,6 +1097,7 @@ public class CommentsListActivity extends ListActivity
     		} else {
     			// Refresh
     			mJumpToCommentId = newId;
+    			CacheInfo.invalidateCachedThreadId(getApplicationContext());
     			new DownloadCommentsTask().execute(Constants.DEFAULT_COMMENT_DOWNLOAD_LIMIT);
     		}
     	}
@@ -1121,7 +1124,7 @@ public class CommentsListActivity extends ListActivity
         		CharSequence modhash = Common.doUpdateModhash(mClient);
         		if (modhash == null) {
         			// doUpdateModhash should have given an error about credentials
-        			Common.doLogout(mSettings, mClient);
+        			Common.doLogout(mSettings, mClient, getApplicationContext());
         			if (Constants.LOGGING) Log.e(TAG, "Reply failed because doUpdateModhash() failed");
         			return null;
         		}
@@ -1179,6 +1182,7 @@ public class CommentsListActivity extends ListActivity
     		} else {
     			// Refresh
     			mJumpToCommentId = newId;
+    			CacheInfo.invalidateCachedThreadId(getApplicationContext());
     			new DownloadCommentsTask().execute(Constants.DEFAULT_COMMENT_DOWNLOAD_LIMIT);
     		}
     	}
@@ -1207,7 +1211,7 @@ public class CommentsListActivity extends ListActivity
         		CharSequence modhash = Common.doUpdateModhash(mClient);
         		if (modhash == null) {
         			// doUpdateModhash should have given an error about credentials
-        			Common.doLogout(mSettings, mClient);
+        			Common.doLogout(mSettings, mClient, getApplicationContext());
         			if (Constants.LOGGING) Log.e(TAG, "Reply failed because doUpdateModhash() failed");
         			return false;
         		}
@@ -1266,6 +1270,7 @@ public class CommentsListActivity extends ListActivity
     	public void onPostExecute(Boolean success) {
     		dismissDialog(Constants.DIALOG_DELETING);
     		if (success) {
+    			CacheInfo.invalidateCachedThreadId(getApplicationContext());
     			if (Constants.THREAD_KIND.equals(_mKind)) {
     				Toast.makeText(CommentsListActivity.this, "Deleted thread.", Toast.LENGTH_LONG).show();
     				finish();
@@ -1315,7 +1320,7 @@ public class CommentsListActivity extends ListActivity
         		CharSequence modhash = Common.doUpdateModhash(mClient); 
         		if (modhash == null) {
         			// doUpdateModhash should have given an error about credentials
-        			Common.doLogout(mSettings, mClient);
+        			Common.doLogout(mSettings, mClient, getApplicationContext());
         			if (Constants.LOGGING) Log.e(TAG, "Vote failed because doUpdateModhash() failed");
         			return false;
         		}
@@ -1425,7 +1430,9 @@ public class CommentsListActivity extends ListActivity
     	}
     	
     	public void onPostExecute(Boolean success) {
-    		if (!success) {
+    		if (success) {
+    			CacheInfo.invalidateCachedThreadId(getApplicationContext());
+    		} else {
     			// Vote failed. Undo the arrow and score.
             	int oldImageResourceUp, oldImageResourceDown;
         		if (_mPreviousLikes == null) {
@@ -1539,7 +1546,7 @@ public class CommentsListActivity extends ListActivity
     		break;
     	case R.id.login_logout_menu_id:
         	if (mSettings.loggedIn) {
-        		Common.doLogout(mSettings, mClient);
+        		Common.doLogout(mSettings, mClient, getApplicationContext());
         		Toast.makeText(this, "You have been logged out.", Toast.LENGTH_SHORT).show();
         		new DownloadCommentsTask().execute(Constants.DEFAULT_COMMENT_DOWNLOAD_LIMIT);
         	} else {

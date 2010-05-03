@@ -229,7 +229,7 @@ public class SubmitLinkActivity extends TabActivity {
     	
     	@Override
     	public String doInBackground(Void... v) {
-    		return Common.doLogin(mUsername, mPassword, mClient, mSettings);
+    		return Common.doLogin(mUsername, mPassword, mSettings, mClient, getApplicationContext());
         }
     	
     	@Override
@@ -283,7 +283,7 @@ public class SubmitLinkActivity extends TabActivity {
         		CharSequence modhash = Common.doUpdateModhash(mClient);
         		if (modhash == null) {
         			// doUpdateModhash should have given an error about credentials
-        			Common.doLogout(mSettings, mClient);
+        			Common.doLogout(mSettings, mClient, getApplicationContext());
         			if (Constants.LOGGING) Log.e(TAG, "Reply failed because doUpdateModhash() failed");
         			return null;
         		}

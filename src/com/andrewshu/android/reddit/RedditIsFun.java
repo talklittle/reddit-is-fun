@@ -609,7 +609,8 @@ public final class RedditIsFun extends ListActivity {
 	    		
 	    		if (Constants.USE_CACHE) {
 	    			try {
-		    			if (CacheInfo.checkFreshSubredditCache(getApplicationContext())) {
+		    			if (CacheInfo.checkFreshSubredditCache(getApplicationContext())
+		    					&& mSettings.subreddit.equals(CacheInfo.getCachedSubreddit(getApplicationContext()))) {
 		    				in = openFileInput(Constants.FILENAME_SUBREDDIT_CACHE);
 		    				_mContentLength = getFileStreamPath(Constants.FILENAME_SUBREDDIT_CACHE).length();
 		    				currentlyUsingCache = true;
@@ -784,7 +785,7 @@ public final class RedditIsFun extends ListActivity {
     	
     	@Override
     	public String doInBackground(Void... v) {
-    		return Common.doLogin(mUsername, mPassword, mClient, mSettings);
+    		return Common.doLogin(mUsername, mPassword, mSettings, mClient, getApplicationContext());
         }
     	
     	@Override
@@ -797,6 +798,7 @@ public final class RedditIsFun extends ListActivity {
     		dismissDialog(Constants.DIALOG_LOGGING_IN);
     		if (errorMessage == null) {
     			Toast.makeText(RedditIsFun.this, "Logged in as "+mUsername, Toast.LENGTH_SHORT).show();
+    			CacheInfo.invalidateAllCaches(getApplicationContext());
     			// Check mail
     			new Common.PeekEnvelopeTask(getApplicationContext(), mClient, mSettings.mailNotificationStyle).execute();
     			// Refresh the threads list
@@ -843,7 +845,7 @@ public final class RedditIsFun extends ListActivity {
         		CharSequence modhash = Common.doUpdateModhash(mClient);
         		if (modhash == null) {
         			// doUpdateModhash should have given an error about credentials
-        			Common.doLogout(mSettings, mClient);
+        			Common.doLogout(mSettings, mClient, getApplicationContext());
         			if (Constants.LOGGING) Log.e(TAG, "Vote failed because doUpdateModhash() failed");
         			return false;
         		}
@@ -946,7 +948,9 @@ public final class RedditIsFun extends ListActivity {
     	
     	@Override
     	public void onPostExecute(Boolean success) {
-    		if (!success) {
+    		if (success) {
+    			CacheInfo.invalidateCachedSubreddit(getApplicationContext());
+    		} else {
     			// Vote failed. Undo the arrow and score.
             	int oldImageResourceUp, oldImageResourceDown;
         		if (_mPreviousLikes == null) {
@@ -1036,7 +1040,7 @@ public final class RedditIsFun extends ListActivity {
     		break;
     	case R.id.login_logout_menu_id:
         	if (mSettings.loggedIn) {
-        		Common.doLogout(mSettings, mClient);
+        		Common.doLogout(mSettings, mClient, getApplicationContext());
         		Toast.makeText(this, "You have been logged out.", Toast.LENGTH_SHORT).show();
         		new DownloadThreadsTask().execute(mSettings.subreddit);
         	} else {

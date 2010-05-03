@@ -520,7 +520,7 @@ public final class InboxActivity extends ListActivity
     	
     	@Override
     	public String doInBackground(Void... v) {
-    		return Common.doLogin(mUsername, mPassword, mClient, mSettings);
+    		return Common.doLogin(mUsername, mPassword, mSettings, mClient, getApplicationContext());
         }
     	
     	protected void onPreExecute() {
@@ -567,7 +567,7 @@ public final class InboxActivity extends ListActivity
         		CharSequence modhash = Common.doUpdateModhash(mClient);
         		if (modhash == null) {
         			// doUpdateModhash should have given an error about credentials
-        			Common.doLogout(mSettings, mClient);
+        			Common.doLogout(mSettings, mClient, getApplicationContext());
         			if (Constants.LOGGING) Log.e(TAG, "Read message failed because doUpdateModhash() failed");
         			return false;
         		}
@@ -679,7 +679,7 @@ public final class InboxActivity extends ListActivity
         		CharSequence modhash = Common.doUpdateModhash(mClient);
         		if (modhash == null) {
         			// doUpdateModhash should have given an error about credentials
-        			Common.doLogout(mSettings, mClient);
+        			Common.doLogout(mSettings, mClient, getApplicationContext());
         			if (Constants.LOGGING) Log.e(TAG, "Reply failed because doUpdateModhash() failed");
         			return false;
         		}
@@ -767,7 +767,7 @@ public final class InboxActivity extends ListActivity
         		CharSequence modhash = Common.doUpdateModhash(mClient);
         		if (modhash == null) {
         			// doUpdateModhash should have given an error about credentials
-        			Common.doLogout(mSettings, mClient);
+        			Common.doLogout(mSettings, mClient, getApplicationContext());
         			if (Constants.LOGGING) Log.e(TAG, "Message compose failed because doUpdateModhash() failed");
         			return false;
         		}

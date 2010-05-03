@@ -214,7 +214,7 @@ public class Common {
      * Should be called from a background thread.
      * @return Error message, or null on success
      */
-    static String doLogin(CharSequence username, CharSequence password, DefaultHttpClient client, RedditSettings settings) {
+    static String doLogin(CharSequence username, CharSequence password, RedditSettings settings, DefaultHttpClient client, Context context) {
 		String status = "";
     	String userError = "Error logging in. Please try again.";
     	HttpEntity entity = null;
@@ -294,6 +294,8 @@ public class Common {
         	settings.setUsername(username);
         	settings.setLoggedIn(true);
         	
+        	CacheInfo.invalidateAllCaches(context);
+        	
         	return null;
 
     	} catch (Exception e) {
@@ -311,8 +313,9 @@ public class Common {
     }
     
         
-    static void doLogout(RedditSettings settings, DefaultHttpClient client) {
+    static void doLogout(RedditSettings settings, DefaultHttpClient client, Context context) {
     	client.getCookieStore().clear();
+    	CacheInfo.invalidateAllCaches(context);
     	settings.setUsername(null);
         settings.setLoggedIn(false);
     }
