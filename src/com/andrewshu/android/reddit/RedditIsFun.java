@@ -135,9 +135,19 @@ public final class RedditIsFun extends ListActivity {
         requestWindowFeature(Window.FEATURE_PROGRESS);
     	
         enableLoadingScreen();
+        
+		Bundle extras = getIntent().getExtras();
+		if (extras != null) {
+			String newSubreddit = extras.getString(Constants.EXTRA_SUBREDDIT);
+			if (newSubreddit != null && !"".equals(newSubreddit)) {
+				if (Constants.LOGGING) Log.d(TAG, "valid EXTRA_SUBREDDIT: " + newSubreddit);
+				mSettings.setSubreddit(newSubreddit);
+			}
+		}
 
         if (savedInstanceState != null) {
-	        CharSequence subreddit = savedInstanceState.getCharSequence(Constants.SUBREDDIT_KEY);
+        	if (Constants.LOGGING) Log.d(TAG, "using savedInstanceState");
+			CharSequence subreddit = savedInstanceState.getCharSequence(Constants.SUBREDDIT_KEY);
 	        if (subreddit != null)
 	        	mSettings.setSubreddit(subreddit);
 	        else
@@ -146,8 +156,6 @@ public final class RedditIsFun extends ListActivity {
 		    mCount = savedInstanceState.getInt(Constants.THREAD_COUNT);
 		    mSortByUrl = savedInstanceState.getCharSequence(Constants.ThreadsSort.SORT_BY_KEY);
 		    mJumpToThreadId = savedInstanceState.getCharSequence(Constants.JUMP_TO_THREAD_ID_KEY);
-        } else {
-        	mSettings.setSubreddit(mSettings.homepage);
         }
         new DownloadThreadsTask().execute(mSettings.subreddit);
     }
