@@ -484,9 +484,7 @@ public final class RedditIsFun extends ListActivity {
         // if mThreadsAdapter.getCount() - 1 contains the "next 25, prev 25" buttons,
         // or if there are fewer than 25 threads...
         if (position < mThreadsAdapter.getCount() - 1 || mThreadsAdapter.getCount() < Constants.DEFAULT_THREAD_DOWNLOAD_LIMIT + 1) {
-            if (mSettings.onClickAction.equals(Constants.PREF_ON_CLICK_FIRST_TIME)) {
-            	showDialog(Constants.DIALOG_FIRST_ON_CLICK);
-            } else if (mSettings.onClickAction.equals(Constants.PREF_ON_CLICK_OPEN_LINK)) {
+            if (mSettings.onClickAction.equals(Constants.PREF_ON_CLICK_OPEN_LINK)) {
                 Common.launchBrowser(item.getUrl(), RedditIsFun.this);
             } else {
                 onLongListItemClick(v, position, id);
@@ -1151,7 +1149,7 @@ public final class RedditIsFun extends ListActivity {
     		
     	case Constants.DIALOG_FIRST_ON_CLICK:
     		builder = new AlertDialog.Builder(this);
-    		builder.setMessage("Always open link immediately?\n(Long click to open dialog.)\nYou can always change this in Settings.")
+    		builder.setMessage("Always open link immediately?\n(Long click to open vote/link/comments dialog.)\nYou can always change this in Settings.")
     			.setPositiveButton("Always open link", new DialogInterface.OnClickListener() {
     				public void onClick(DialogInterface dialog, int id) {
     					dialog.dismiss();
@@ -1159,11 +1157,11 @@ public final class RedditIsFun extends ListActivity {
     	                Common.launchBrowser(mVoteTargetThingInfo.getUrl(), RedditIsFun.this);
     				}
     			})
-    			.setNegativeButton("Show dialog", new DialogInterface.OnClickListener() {
+    			.setNegativeButton("Show vote/link/comments dialog", new DialogInterface.OnClickListener() {
     				public void onClick(DialogInterface dialog, int id) {
     					dialog.dismiss();
     					mSettings.setOnClickAction(Constants.PREF_ON_CLICK_OPEN_DIALOG);
-    					showDialog(Constants.DIALOG_THING_CLICK);
+    	                Common.launchBrowser(mVoteTargetThingInfo.getUrl(), RedditIsFun.this);
     				}
     			});
     		dialog = builder.create();
@@ -1365,8 +1363,12 @@ public final class RedditIsFun extends ListActivity {
             	linkButton.setOnClickListener(new OnClickListener() {
     				public void onClick(View v) {
     					dismissDialog(Constants.DIALOG_THING_CLICK);
-    					// Launch Intent to goto the URL
-    					Common.launchBrowser(url, RedditIsFun.this);
+    					if (mSettings.onClickAction.equals(Constants.PREF_ON_CLICK_FIRST_TIME)) {
+    						showDialog(Constants.DIALOG_FIRST_ON_CLICK);
+    					} else {
+	    					// Launch Intent to goto the URL
+	    					Common.launchBrowser(url, RedditIsFun.this);
+    					}
     				}
     			});
             	linkButton.setEnabled(true);
