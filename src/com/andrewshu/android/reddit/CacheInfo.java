@@ -40,8 +40,8 @@ public class CacheInfo implements Serializable {
 	public long threadTime = 0;
 	
 	// the ids for the cached JSON objects
-	public String subreddit = null;
-	public String threadId = null;
+	public String subredditUrl = null;
+	public String threadUrl = null;
 
 	
 	
@@ -92,9 +92,9 @@ public class CacheInfo implements Serializable {
     	return ci;
     }
     
-    static String getCachedSubreddit(Context context) {
+    static String getCachedSubredditUrl(Context context) {
     	try {
-    		return getCacheInfo(context).subreddit;
+    		return getCacheInfo(context).subredditUrl;
     	} catch (Exception e) {
     		if (Constants.LOGGING) Log.e(TAG, "error w/ getCacheInfo:" + e.getMessage());
     		return null;
@@ -110,9 +110,9 @@ public class CacheInfo implements Serializable {
     	}
     }
 
-    static String getCachedThreadId(Context context) {
+    static String getCachedThreadUrl(Context context) {
     	try {
-    		return getCacheInfo(context).threadId;
+    		return getCacheInfo(context).threadUrl;
     	} catch (Exception e) {
     		if (Constants.LOGGING) Log.e(TAG, "error w/ getCacheInfo:" + e.getMessage());
     		return null;
@@ -153,7 +153,7 @@ public class CacheInfo implements Serializable {
     	try {
 	    	FileOutputStream fos = context.openFileOutput(Constants.FILENAME_CACHE_INFO, Context.MODE_PRIVATE);
 	    	ObjectOutputStream oos = new ObjectOutputStream(fos);
-	    	ci.subreddit = null;
+	    	ci.subredditUrl = null;
 	    	ci.subredditTime = 0;
 	    	oos.writeObject(ci);
 	    	oos.close();
@@ -163,7 +163,7 @@ public class CacheInfo implements Serializable {
     	}
     }
     
-    static void invalidateCachedThreadId(Context context) {
+    static void invalidateCachedThread(Context context) {
     	CacheInfo ci = null;
     	try {
     		ci = getCacheInfo(context);
@@ -176,7 +176,7 @@ public class CacheInfo implements Serializable {
     	try {
 	    	FileOutputStream fos = context.openFileOutput(Constants.FILENAME_CACHE_INFO, Context.MODE_PRIVATE);
 	    	ObjectOutputStream oos = new ObjectOutputStream(fos);
-	    	ci.threadId = null;
+	    	ci.threadUrl = null;
 	    	ci.threadTime = 0;
 	    	oos.writeObject(ci);
 	    	oos.close();
@@ -186,7 +186,7 @@ public class CacheInfo implements Serializable {
     	}
     }
     
-    static void setCachedSubreddit(Context context, String subreddit) throws IOException {
+    static void setCachedSubredditUrl(Context context, String subredditUrl) throws IOException {
     	CacheInfo ci = null;
     	try {
     		ci = getCacheInfo(context);
@@ -198,14 +198,14 @@ public class CacheInfo implements Serializable {
     	
 		FileOutputStream fos = context.openFileOutput(Constants.FILENAME_CACHE_INFO, Context.MODE_PRIVATE);
     	ObjectOutputStream oos = new ObjectOutputStream(fos);
-    	ci.subreddit = subreddit;
+    	ci.subredditUrl = subredditUrl;
     	ci.subredditTime = System.currentTimeMillis();
     	oos.writeObject(ci);
     	oos.close();
     	fos.close();
     }
 
-    static void setCachedThreadId(Context context, String threadId) throws IOException {
+    static void setCachedThreadUrl(Context context, String threadUrl) throws IOException {
     	CacheInfo ci = null;
     	try {
     		ci = getCacheInfo(context);
@@ -217,7 +217,7 @@ public class CacheInfo implements Serializable {
 
 		FileOutputStream fos = context.openFileOutput(Constants.FILENAME_CACHE_INFO, Context.MODE_PRIVATE);
     	ObjectOutputStream oos = new ObjectOutputStream(fos);
-    	ci.threadId = threadId;
+    	ci.threadUrl = threadUrl;
     	ci.threadTime = System.currentTimeMillis();
     	oos.writeObject(ci);
     	oos.close();

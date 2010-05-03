@@ -714,13 +714,15 @@ public class CommentsListActivity extends ListActivity
 	        	if (mJumpToCommentContext != 0)
 	        		sb.append("context="+mJumpToCommentContext+"&");
 	        	
+	        	String url = sb.toString();
+	        	
 	        	InputStream in = null;
 	    		boolean currentlyUsingCache = false;
 	    		
 	        	if (Constants.USE_CACHE) {
 	    			try {
 		    			if (CacheInfo.checkFreshThreadCache(getApplicationContext())
-		    					&& mSettings.threadId.equals(CacheInfo.getCachedThreadId(getApplicationContext()))) {
+		    					&& url.equals(CacheInfo.getCachedThreadUrl(getApplicationContext()))) {
 		    				in = openFileInput(Constants.FILENAME_THREAD_CACHE);
 		    				_mContentLength = getFileStreamPath(Constants.FILENAME_THREAD_CACHE).length();
 		    				currentlyUsingCache = true;
@@ -733,7 +735,7 @@ public class CommentsListActivity extends ListActivity
 	    		
 	    		// If we couldn't use the cache, then do HTTP request
 	        	if (!currentlyUsingCache) {
-			    	HttpGet request = new HttpGet(sb.toString());
+			    	HttpGet request = new HttpGet(url);
 	                HttpResponse response = mClient.execute(request);
 	            	
 	                // Read the header to get Content-Length since entity.getContentLength() returns -1
@@ -747,7 +749,7 @@ public class CommentsListActivity extends ListActivity
 	            	if (Constants.USE_CACHE) {
 	                	in = CacheInfo.writeThenRead(getApplicationContext(), in, Constants.FILENAME_THREAD_CACHE);
 	                	try {
-	                		CacheInfo.setCachedThreadId(getApplicationContext(), mSettings.threadId.toString());
+	                		CacheInfo.setCachedThreadUrl(getApplicationContext(), url);
 	                	} catch (IOException e) {
 	                		if (Constants.LOGGING) Log.e(TAG, "error on setCachedThreadId: " + e.getMessage());
 	                	}
@@ -1099,7 +1101,7 @@ public class CommentsListActivity extends ListActivity
     		} else {
     			// Refresh
     			mJumpToCommentId = newId;
-    			CacheInfo.invalidateCachedThreadId(getApplicationContext());
+    			CacheInfo.invalidateCachedThread(getApplicationContext());
     			new DownloadCommentsTask().execute(Constants.DEFAULT_COMMENT_DOWNLOAD_LIMIT);
     		}
     	}
@@ -1184,7 +1186,7 @@ public class CommentsListActivity extends ListActivity
     		} else {
     			// Refresh
     			mJumpToCommentId = newId;
-    			CacheInfo.invalidateCachedThreadId(getApplicationContext());
+    			CacheInfo.invalidateCachedThread(getApplicationContext());
     			new DownloadCommentsTask().execute(Constants.DEFAULT_COMMENT_DOWNLOAD_LIMIT);
     		}
     	}
@@ -1272,7 +1274,7 @@ public class CommentsListActivity extends ListActivity
     	public void onPostExecute(Boolean success) {
     		dismissDialog(Constants.DIALOG_DELETING);
     		if (success) {
-    			CacheInfo.invalidateCachedThreadId(getApplicationContext());
+    			CacheInfo.invalidateCachedThread(getApplicationContext());
     			if (Constants.THREAD_KIND.equals(_mKind)) {
     				Toast.makeText(CommentsListActivity.this, "Deleted thread.", Toast.LENGTH_LONG).show();
     				finish();
@@ -1433,7 +1435,7 @@ public class CommentsListActivity extends ListActivity
     	
     	public void onPostExecute(Boolean success) {
     		if (success) {
-    			CacheInfo.invalidateCachedThreadId(getApplicationContext());
+    			CacheInfo.invalidateCachedThread(getApplicationContext());
     		} else {
     			// Vote failed. Undo the arrow and score.
             	int oldImageResourceUp, oldImageResourceDown;

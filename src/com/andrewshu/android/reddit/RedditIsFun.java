@@ -228,7 +228,7 @@ public final class RedditIsFun extends ListActivity {
 	    		String newTitle = extras.getString(Constants.EXTRA_TITLE);
 	    		mSettings.setSubreddit(newSubreddit);
 	    		// Start up comments list with the new thread
-	    		CacheInfo.invalidateCachedThreadId(getApplicationContext());
+	    		CacheInfo.invalidateCachedThread(getApplicationContext());
 	    		Intent i = new Intent(getApplicationContext(), CommentsListActivity.class);
 				i.putExtra(Constants.EXTRA_SUBREDDIT, newSubreddit);
 				i.putExtra(Constants.EXTRA_ID, newId);
@@ -611,7 +611,7 @@ public final class RedditIsFun extends ListActivity {
 	    		if (Constants.USE_CACHE) {
 	    			try {
 		    			if (CacheInfo.checkFreshSubredditCache(getApplicationContext())
-		    					&& mSettings.subreddit.equals(CacheInfo.getCachedSubreddit(getApplicationContext()))) {
+		    					&& url.equals(CacheInfo.getCachedSubredditUrl(getApplicationContext()))) {
 		    				in = openFileInput(Constants.FILENAME_SUBREDDIT_CACHE);
 		    				_mContentLength = getFileStreamPath(Constants.FILENAME_SUBREDDIT_CACHE).length();
 		    				currentlyUsingCache = true;
@@ -645,7 +645,7 @@ public final class RedditIsFun extends ListActivity {
 	            	if (Constants.USE_CACHE) {
 	                	in = CacheInfo.writeThenRead(getApplicationContext(), in, Constants.FILENAME_SUBREDDIT_CACHE);
 	                	try {
-	                		CacheInfo.setCachedSubreddit(getApplicationContext(), mSettings.subreddit.toString());
+	                		CacheInfo.setCachedSubredditUrl(getApplicationContext(), url);
 	                	} catch (IOException e) {
 	                		if (Constants.LOGGING) Log.e(TAG, "error on setCachedSubreddit: " + e.getMessage());
 	                	}
@@ -1385,7 +1385,7 @@ public final class RedditIsFun extends ListActivity {
     			public void onClick(View v) {
     				dismissDialog(Constants.DIALOG_THING_CLICK);
     				// Launch an Intent for CommentsListActivity
-    				CacheInfo.invalidateCachedThreadId(getApplicationContext());
+    				CacheInfo.invalidateCachedThread(getApplicationContext());
     				Intent i = new Intent(getApplicationContext(), CommentsListActivity.class);
     				i.putExtra(Constants.EXTRA_SUBREDDIT, mVoteTargetThingInfo.getSubreddit());
     				i.putExtra(Constants.EXTRA_ID, mVoteTargetThingInfo.getId());
