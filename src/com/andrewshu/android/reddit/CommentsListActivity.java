@@ -411,7 +411,7 @@ public class CommentsListActivity extends ListActivity
 		            } catch (NumberFormatException e) {
 		            	// This happens because "ups" comes after the potentially long "replies" object,
 		            	// so the ListView might try to display the View before "ups" in JSON has been parsed.
-		            	if (Constants.LOGGING) Log.e(TAG, e.getMessage());
+		            	if (Constants.LOGGING) Log.e(TAG, "NumberFormatException:" + e.getMessage());
 		            }
 		            if (mOpThingInfo != null && item.getAuthor().equals(mOpThingInfo.getAuthor()))
 		            	submitterView.setText(item.getAuthor() + " [S]");
@@ -474,7 +474,7 @@ public class CommentsListActivity extends ListActivity
 		            } catch (NumberFormatException e) {
 		            	// This happens because "ups" comes after the potentially long "replies" object,
 		            	// so the ListView might try to display the View before "ups" in JSON has been parsed.
-		            	if (Constants.LOGGING) Log.e(TAG, e.getMessage());
+		            	if (Constants.LOGGING) Log.e(TAG, "NumberFormatException:" + e.getMessage());
 		            }
 		            if (item.getSSAuthor() != null)
 		            	submitterView.setText(item.getSSAuthor());
@@ -799,7 +799,7 @@ public class CommentsListActivity extends ListActivity
         			try {
         				entity.consumeContent();
         			} catch (Exception e2) {
-        				if (Constants.LOGGING) Log.e(TAG, e2.getMessage());
+        				if (Constants.LOGGING) Log.e(TAG, "entity.consumeContent():" + e2.getMessage());
         			}
         		}
             }
@@ -857,7 +857,7 @@ public class CommentsListActivity extends ListActivity
 					insertNestedComment(commentThingListing, 0);
 				}
 			} catch (Exception ex) {
-				if (Constants.LOGGING) Log.e(TAG, ex.getMessage());
+				if (Constants.LOGGING) Log.e(TAG, "parseCommentsJSON:" + ex.getMessage());
 			}
 		}
     	
@@ -1069,14 +1069,14 @@ public class CommentsListActivity extends ListActivity
             	return Common.checkIDResponse(response, entity);
             	
         	} catch (Exception e) {
-        		if (Constants.LOGGING) Log.e(TAG, e.getMessage());
+        		if (Constants.LOGGING) Log.e(TAG, "CommentReplyTask:" + e.getMessage());
         		_mUserError = e.getMessage();
         	} finally {
         		if (entity != null) {
         			try {
         				entity.consumeContent();
         			} catch (Exception e2) {
-        				if (Constants.LOGGING) Log.e(TAG, e2.getMessage());
+        				if (Constants.LOGGING) Log.e(TAG, "entity.consumeContent():" + e2.getMessage());
         			}
         		}
         	}
@@ -1153,14 +1153,14 @@ public class CommentsListActivity extends ListActivity
     	    	return Common.checkIDResponse(response, entity);
             	
         	} catch (Exception e) {
-        		if (Constants.LOGGING) Log.e(TAG, e.getMessage());
+        		if (Constants.LOGGING) Log.e(TAG, "EditTask:" + e.getMessage());
         		_mUserError = e.getMessage();
         	} finally {
         		if (entity != null) {
         			try {
         				entity.consumeContent();
         			} catch (Exception e2) {
-        				if (Constants.LOGGING) Log.e(TAG, e2.getMessage());
+        				if (Constants.LOGGING) Log.e(TAG, "entity.consumeContent():" + e2.getMessage());
         			}
         		}
         	}
@@ -1244,14 +1244,14 @@ public class CommentsListActivity extends ListActivity
             	return true;
             	
         	} catch (Exception e) {
-        		if (Constants.LOGGING) Log.e(TAG, e.getMessage());
+        		if (Constants.LOGGING) Log.e(TAG, "DeleteTask:" + e.getMessage());
         		_mUserError = e.getMessage();
         	} finally {
         		if (entity != null) {
         			try {
         				entity.consumeContent();
         			} catch (Exception e2) {
-        				if (Constants.LOGGING) Log.e(TAG, e2.getMessage());
+        				if (Constants.LOGGING) Log.e(TAG, "entity.consumeContent():" + e2.getMessage());
         			}
         		}
         	}
@@ -1348,14 +1348,14 @@ public class CommentsListActivity extends ListActivity
 
             	return true;
         	} catch (Exception e) {
-        		if (Constants.LOGGING) Log.e(TAG, e.getMessage());
+        		if (Constants.LOGGING) Log.e(TAG, "VoteTask:" + e.getMessage());
         		_mUserError = e.getMessage();
         	} finally {
         		if (entity != null) {
         			try {
         				entity.consumeContent();
         			} catch (Exception e2) {
-        				if (Constants.LOGGING) Log.e(TAG, e2.getMessage());
+        				if (Constants.LOGGING) Log.e(TAG, "entity.consumeContent():" + e2.getMessage());
         			}
         		}
         	}

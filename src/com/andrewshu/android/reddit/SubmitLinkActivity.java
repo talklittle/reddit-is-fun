@@ -390,10 +390,10 @@ public class SubmitLinkActivity extends TabActivity {
         			try {
         				entity.consumeContent();
         			} catch (Exception e2) {
-        				if (Constants.LOGGING) Log.e(TAG, e2.getMessage());
+        				if (Constants.LOGGING) Log.e(TAG, "entity.consumeContent():" + e2.getMessage());
         			}
         		}
-        		if (Constants.LOGGING) Log.e(TAG, e.getMessage());
+        		if (Constants.LOGGING) Log.e(TAG, "SubmitLinkTask:" + e.getMessage());
         	}
         	return null;
         }
@@ -454,14 +454,14 @@ public class SubmitLinkActivity extends TabActivity {
 					try {
 						in.close();
 					} catch (Exception e2) {
-						if (Constants.LOGGING) Log.e(TAG, e2.getMessage());
+						if (Constants.LOGGING) Log.e(TAG, "in.close():" + e2.getMessage());
 					}
 				}
 				if (entity != null) {
 					try {
 						entity.consumeContent();
 					} catch (Exception e2) {
-						if (Constants.LOGGING) Log.e(TAG, e2.getMessage());
+						if (Constants.LOGGING) Log.e(TAG, "entity.consumeContent():" + e2.getMessage());
 					}
 				}
 			}

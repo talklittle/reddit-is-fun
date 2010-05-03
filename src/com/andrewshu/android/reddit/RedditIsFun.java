@@ -627,7 +627,7 @@ public final class RedditIsFun extends ListActivity {
 	    				request = new HttpGet(url);
 	    			} catch (IllegalArgumentException e) {
 	    				_mUserError = "Invalid subreddit.";
-	                	if (Constants.LOGGING) Log.e(TAG, e.getMessage());
+	                	if (Constants.LOGGING) Log.e(TAG, "IllegalArgumentException:" + e.getMessage());
 	                	return false;
 	    			}
 	            	HttpResponse response = mClient.execute(request);
@@ -659,9 +659,9 @@ public final class RedditIsFun extends ListActivity {
                 	return true;
                 } catch (IllegalStateException e) {
                 	_mUserError = "Invalid subreddit.";
-                	if (Constants.LOGGING) Log.e(TAG, e.getMessage());
+                	if (Constants.LOGGING) Log.e(TAG, "IllegalStateException:" + e.getMessage());
                 } catch (Exception e) {
-                	if (Constants.LOGGING) Log.e(TAG, e.getMessage());
+                	if (Constants.LOGGING) Log.e(TAG, "Exception:" + e.getMessage());
                 } finally {
                 	pin.close();
                 	in.close();
@@ -673,7 +673,7 @@ public final class RedditIsFun extends ListActivity {
         			try {
         				entity.consumeContent();
         			} catch (Exception e2) {
-        				if (Constants.LOGGING) Log.e(TAG, e2.getMessage());
+        				if (Constants.LOGGING) Log.e(TAG, "entity.consumeContent():" + e2.getMessage());
         			}
         		}
             }
@@ -705,7 +705,7 @@ public final class RedditIsFun extends ListActivity {
     					mThingInfos.add(tiContainer.getData());
     			}
     		} catch (Exception ex) {
-    			if (Constants.LOGGING) Log.e(TAG, ex.getMessage());
+    			if (Constants.LOGGING) Log.e(TAG, "parseSubredditJSON:" + ex.getMessage());
     		}
     	}
     	
@@ -876,14 +876,14 @@ public final class RedditIsFun extends ListActivity {
             	return true;
             	
         	} catch (Exception e) {
-        		if (Constants.LOGGING) Log.e(TAG, e.getMessage());
+        		if (Constants.LOGGING) Log.e(TAG, "VoteTask:" + e.getMessage());
         		_mUserError = e.getMessage();
         	} finally {
         		if (entity != null) {
         			try {
         				entity.consumeContent();
         			} catch (Exception e2) {
-        				if (Constants.LOGGING) Log.e(TAG, e2.getMessage());
+        				if (Constants.LOGGING) Log.e(TAG, "entity.consumeContent:" + e2.getMessage());
         			}
         		}
         	}

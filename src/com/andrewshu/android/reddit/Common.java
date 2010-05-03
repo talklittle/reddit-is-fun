@@ -301,10 +301,10 @@ public class Common {
     			try {
     				entity.consumeContent();
     			} catch (Exception e2) {
-    				if (Constants.LOGGING) Log.e(TAG, e.getMessage());
+    				if (Constants.LOGGING) Log.e(TAG, "entity.consumeContent():" + e.getMessage());
     			}
     		}
-    		if (Constants.LOGGING) Log.e(TAG, e.getMessage());
+    		if (Constants.LOGGING) Log.e(TAG, "doLogin():" + e.getMessage());
         }
     	settings.setLoggedIn(false);
         return userError;
@@ -376,10 +376,10 @@ public class Common {
     			try {
     				entity.consumeContent();
     			} catch (Exception e2) {
-    				if (Constants.LOGGING) Log.e(TAG, e.getMessage());
+    				if (Constants.LOGGING) Log.e(TAG, "entity.consumeContent():" + e.getMessage());
     			}
     		}
-    		if (Constants.LOGGING) Log.e(TAG, e.getMessage());
+    		if (Constants.LOGGING) Log.e(TAG, "doUpdateModhash():" + e.getMessage());
     		return null;
     	}
     }
@@ -398,7 +398,7 @@ public class Common {
     		if (Constants.LOGGING) Common.logDLong(TAG, line);
         	in.close();
     	} catch (IOException e) {
-    		if (Constants.LOGGING) Log.e(TAG, e.getMessage());
+    		if (Constants.LOGGING) Log.e(TAG, "IOException:" + e.getMessage());
     		return "Error reading retrieved data.";
     	}
     	
@@ -442,7 +442,7 @@ public class Common {
     		if (Constants.LOGGING) Common.logDLong(TAG, line);
         	in.close();
     	} catch (IOException e) {
-    		if (Constants.LOGGING) Log.e(TAG, e.getMessage());
+    		if (Constants.LOGGING) Log.e(TAG, "IOException:" + e.getMessage());
     		throw new Exception("Error reading retrieved data.");
     	}
     	

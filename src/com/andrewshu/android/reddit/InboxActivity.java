@@ -436,7 +436,7 @@ public final class InboxActivity extends ListActivity
         			try {
         				entity.consumeContent();
         			} catch (Exception e2) {
-        				if (Constants.LOGGING) Log.e(TAG, e2.getMessage());
+        				if (Constants.LOGGING) Log.e(TAG, "entity.consumeContent():" + e2.getMessage());
         			}
         		}
             }
@@ -470,7 +470,7 @@ public final class InboxActivity extends ListActivity
    					_mThingInfos.add(ti);
     			}
     		} catch (Exception ex) {
-    			if (Constants.LOGGING) Log.e(TAG, ex.getMessage());
+    			if (Constants.LOGGING) Log.e(TAG, "parseInboxJSON:" + ex.getMessage());
     		}
     	}
 
@@ -618,13 +618,13 @@ public final class InboxActivity extends ListActivity
             	return true;
             	
         	} catch (Exception e) {
-        		if (Constants.LOGGING) Log.e(TAG, e.getMessage());
+        		if (Constants.LOGGING) Log.e(TAG, "ReadMessageTask:" + e.getMessage());
         	} finally {
         		if (entity != null) {
         			try {
         				entity.consumeContent();
         			} catch (Exception e2) {
-        				if (Constants.LOGGING) Log.e(TAG, e2.getMessage());
+        				if (Constants.LOGGING) Log.e(TAG, "entity.consumeContent():" + e2.getMessage());
         			}
         		}
         	}
@@ -710,14 +710,14 @@ public final class InboxActivity extends ListActivity
             	return true;
             	
         	} catch (Exception e) {
-        		if (Constants.LOGGING) Log.e(TAG, e.getMessage());
+        		if (Constants.LOGGING) Log.e(TAG, "MessageReplyTask:" + e.getMessage());
         		_mUserError = e.getMessage();
         	} finally {
         		if (entity != null) {
         			try {
         				entity.consumeContent();
         			} catch (IOException e2) {
-        				if (Constants.LOGGING) Log.e(TAG, e2.getMessage());
+        				if (Constants.LOGGING) Log.e(TAG, "entity.consumeContent():" + e2.getMessage());
         			}
         		}
         	}
@@ -802,18 +802,18 @@ public final class InboxActivity extends ListActivity
             	return true;
             	
         	} catch (CaptchaException e) {
-        		if (Constants.LOGGING) Log.e(TAG, e.getMessage());
+        		if (Constants.LOGGING) Log.e(TAG, "CaptchaException:" + e.getMessage());
         		_mUserError = e.getMessage();
     			new DownloadCaptchaTask(_mDialog).execute();
         	} catch (Exception e) {
-        		if (Constants.LOGGING) Log.e(TAG, e.getMessage());
+        		if (Constants.LOGGING) Log.e(TAG, "MessageComposeTask:" + e.getMessage());
         		_mUserError = e.getMessage();
         	} finally {
         		if (entity != null) {
         			try {
         				entity.consumeContent();
         			} catch (IOException e2) {
-        				if (Constants.LOGGING) Log.e(TAG, e2.getMessage());
+        				if (Constants.LOGGING) Log.e(TAG, "entity.consumeContent():" + e2.getMessage());
         			}
         		}
         	}
@@ -872,7 +872,7 @@ public final class InboxActivity extends ListActivity
         			try {
         				entity.consumeContent();
         			} catch (Exception e2) {
-        				if (Constants.LOGGING) Log.e(TAG, e2.getMessage());
+        				if (Constants.LOGGING) Log.e(TAG, "entity.consumeContent():" + e2.getMessage());
         			}
         		}
 			}
