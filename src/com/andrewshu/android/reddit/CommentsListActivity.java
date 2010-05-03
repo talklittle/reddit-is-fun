@@ -913,8 +913,10 @@ public class CommentsListActivity extends ListActivity
     		if (mSettings.threadId == null)
 	    		this.cancel(true);
     		synchronized (mCurrentDownloadCommentsTaskLock) {
-	    		if (mCurrentDownloadCommentsTask != null)
-	    			mCurrentDownloadCommentsTask.cancel(true);
+	    		if (mCurrentDownloadCommentsTask != null) {
+	    			this.cancel(true);
+	    			return;
+	    		}
 	    		mCurrentDownloadCommentsTask = this;
     		}
     		

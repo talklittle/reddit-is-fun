@@ -716,9 +716,8 @@ public final class RedditIsFun extends ListActivity {
 	    		if (mCurrentDownloadThreadsTask != null) {
 	    			this.cancel(true);
 	    			return;
-	    		} else {
-	    			mCurrentDownloadThreadsTask = this;
 	    		}
+    			mCurrentDownloadThreadsTask = this;
     		}
     		resetUI(null);
     		enableLoadingScreen();
