@@ -101,7 +101,7 @@ public final class RedditIsFun extends ListActivity {
     
     // UI State
     private ThingInfo mVoteTargetThingInfo = null;
-    private AsyncTask mCurrentDownloadThreadsTask = null;
+    private AsyncTask<?, ?, ?> mCurrentDownloadThreadsTask = null;
     private final Object mCurrentDownloadThreadsTaskLock = new Object();
 
     // Navigation that can be cached
@@ -135,9 +135,6 @@ public final class RedditIsFun extends ListActivity {
         requestWindowFeature(Window.FEATURE_PROGRESS);
     	
         enableLoadingScreen();
-        // The above layout contains a list id "android:list"
-        // which ListActivity adopts as its list -- we can
-        // access it with getListView().
 
         if (savedInstanceState != null) {
 	        CharSequence subreddit = savedInstanceState.getCharSequence(Constants.SUBREDDIT_KEY);
@@ -159,7 +156,6 @@ public final class RedditIsFun extends ListActivity {
     protected void onResume() {
     	super.onResume();
     	int previousTheme = mSettings.theme;
-    	boolean previousLoggedIn = mSettings.loggedIn;
     	Common.loadRedditPreferences(getApplicationContext(), mSettings, mClient);
     	setRequestedOrientation(mSettings.rotation);
     	if (mSettings.theme != previousTheme) {
@@ -798,7 +794,6 @@ public final class RedditIsFun extends ListActivity {
     		dismissDialog(Constants.DIALOG_LOGGING_IN);
     		if (errorMessage == null) {
     			Toast.makeText(RedditIsFun.this, "Logged in as "+mUsername, Toast.LENGTH_SHORT).show();
-    			CacheInfo.invalidateAllCaches(getApplicationContext());
     			// Check mail
     			new Common.PeekEnvelopeTask(getApplicationContext(), mClient, mSettings.mailNotificationStyle).execute();
     			// Refresh the threads list
@@ -951,19 +946,8 @@ public final class RedditIsFun extends ListActivity {
     		if (success) {
     			CacheInfo.invalidateCachedSubreddit(getApplicationContext());
     		} else {
-    			// Vote failed. Undo the arrow and score.
-            	int oldImageResourceUp, oldImageResourceDown;
-        		if (_mPreviousLikes == null) {
-            		oldImageResourceUp = R.drawable.vote_up_gray;
-            		oldImageResourceDown = R.drawable.vote_down_gray;
-        		} else if (_mPreviousLikes == true) {
-        			oldImageResourceUp = R.drawable.vote_up_red;
-            		oldImageResourceDown = R.drawable.vote_down_gray;
-            	} else {
-            		oldImageResourceUp = R.drawable.vote_up_gray;
-            		oldImageResourceDown = R.drawable.vote_down_blue;
-            	}
-        		_mTargetThingInfo.setLikes(_mPreviousLikes);
+    			// Vote failed. Undo the score.
+            	_mTargetThingInfo.setLikes(_mPreviousLikes);
         		_mTargetThingInfo.setScore(_mPreviousScore);
         		mThreadsAdapter.notifyDataSetChanged();
         		
@@ -1054,7 +1038,7 @@ public final class RedditIsFun extends ListActivity {
     		mAfter = null;
     		mBefore = null;
     		mCount = Constants.DEFAULT_THREAD_DOWNLOAD_LIMIT;
-    		CacheInfo.invalidateAllCaches(getApplicationContext());
+    		CacheInfo.invalidateCachedSubreddit(getApplicationContext());
     		new DownloadThreadsTask().execute(mSettings.subreddit);
     		break;
     	case R.id.submit_link_menu_id:

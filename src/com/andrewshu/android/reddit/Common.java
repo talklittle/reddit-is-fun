@@ -617,13 +617,14 @@ public class Common {
     static void launchBrowser(CharSequence url, Activity act) {
     	Matcher matcher = REDDIT_LINK.matcher(url);
     	if (matcher.matches()) {
-    		CacheInfo.invalidateAllCaches(act);
     		if (matcher.group(3) != null) {
+    			CacheInfo.invalidateCachedThread(act);
     			Intent intent = new Intent(act.getApplicationContext(), CommentsListActivity.class);
     			intent.putExtra(Constants.EXTRA_COMMENT_CONTEXT, url);
     			act.startActivity(intent);
     			return;
     		} else if (matcher.group(2) != null) {
+    			CacheInfo.invalidateCachedThread(act);
     			Intent intent = new Intent(act.getApplicationContext(), CommentsListActivity.class);
     			intent.putExtra(Constants.EXTRA_SUBREDDIT, matcher.group(1));
     			intent.putExtra(Constants.EXTRA_ID, matcher.group(2));
@@ -631,6 +632,7 @@ public class Common {
     			act.startActivity(intent);
     			return;
     		} else if (matcher.group(1) != null) {
+    			CacheInfo.invalidateCachedSubreddit(act);
     			Intent intent = new Intent(act.getApplicationContext(), RedditIsFun.class);
     			intent.putExtra(Constants.EXTRA_SUBREDDIT, matcher.group(1));
     			act.startActivity(intent);

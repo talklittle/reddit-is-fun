@@ -177,7 +177,7 @@ public class CommentsListActivity extends ListActivity
         		mSettings.setSubreddit(commentContextMatcher.group(2));
     			mSettings.setThreadId(commentContextMatcher.group(3));
     			mJumpToCommentId = commentContextMatcher.group(4);
-    			mJumpToCommentContext = Integer.valueOf(commentContextMatcher.group(5));
+    			mJumpToCommentContext = commentContextMatcher.group(5) != null ? Integer.valueOf(commentContextMatcher.group(5)) : 0;
     		} else {
     			if (Constants.LOGGING) Log.e(TAG, "Quitting because of bad comment context.");
     			finish();
@@ -1004,7 +1004,6 @@ public class CommentsListActivity extends ListActivity
     		dismissDialog(Constants.DIALOG_LOGGING_IN);
     		if (errorMessage == null) {
     			Toast.makeText(CommentsListActivity.this, "Logged in as "+mUsername, Toast.LENGTH_SHORT).show();
-    			CacheInfo.invalidateAllCaches(getApplicationContext());
     			// Check mail
     			new Common.PeekEnvelopeTask(CommentsListActivity.this, mClient, mSettings.mailNotificationStyle).execute();
 	    		// Refresh the comments list
@@ -1558,7 +1557,7 @@ public class CommentsListActivity extends ListActivity
         	}
     		break;
     	case R.id.refresh_menu_id:
-    		CacheInfo.invalidateAllCaches(getApplicationContext());
+    		CacheInfo.invalidateCachedThread(getApplicationContext());
     		new DownloadCommentsTask().execute(Constants.DEFAULT_COMMENT_DOWNLOAD_LIMIT);
     		break;
     	case R.id.reply_thread_menu_id:

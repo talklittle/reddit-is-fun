@@ -26,6 +26,7 @@ import java.io.InputStream;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.Serializable;
+import java.util.ArrayList;
 
 import android.content.Context;
 import android.util.Log;
@@ -38,10 +39,12 @@ public class CacheInfo implements Serializable {
 	// timestamps for each cache
 	public long subredditTime = 0;
 	public long threadTime = 0;
+	public long subredditListTime = 0;
 	
 	// the ids for the cached JSON objects
 	public String subredditUrl = null;
 	public String threadUrl = null;
+	public ArrayList<String> subredditList = null;
 
 	
 	
@@ -83,6 +86,12 @@ public class CacheInfo implements Serializable {
 		return time - threadTime <= Constants.DEFAULT_FRESH_DURATION;
     }
     
+    static boolean checkFreshSubredditListCache(Context context) {
+    	long time = System.currentTimeMillis();
+    	long subredditListTime = getCachedSubredditListTime(context);
+    	return time - subredditListTime <= Constants.DEFAULT_FRESH_SUBREDDIT_LIST_DURATION;
+    }
+    
     static CacheInfo getCacheInfo(Context context) throws IOException, ClassNotFoundException {
     	FileInputStream fis = context.openFileInput(Constants.FILENAME_CACHE_INFO);
     	ObjectInputStream ois = new ObjectInputStream(fis);
@@ -122,6 +131,24 @@ public class CacheInfo implements Serializable {
     static long getCachedThreadTime(Context context) {
     	try {
     		return getCacheInfo(context).threadTime;
+    	} catch (Exception e) {
+    		if (Constants.LOGGING) Log.e(TAG, "error w/ getCacheInfo:" + e.getMessage());
+    		return 0;
+    	}
+    }
+    
+    static ArrayList<String> getCachedSubredditList(Context context) {
+    	try {
+    		return getCacheInfo(context).subredditList;
+    	} catch (Exception e) {
+    		if (Constants.LOGGING) Log.e(TAG, "error w/ getCacheInfo:" + e.getMessage());
+    		return null;
+    	}
+    }
+    
+    static long getCachedSubredditListTime(Context context) {
+    	try {
+    		return getCacheInfo(context).subredditListTime;
     	} catch (Exception e) {
     		if (Constants.LOGGING) Log.e(TAG, "error w/ getCacheInfo:" + e.getMessage());
     		return 0;
@@ -219,6 +246,25 @@ public class CacheInfo implements Serializable {
     	ObjectOutputStream oos = new ObjectOutputStream(fos);
     	ci.threadUrl = threadUrl;
     	ci.threadTime = System.currentTimeMillis();
+    	oos.writeObject(ci);
+    	oos.close();
+    	fos.close();
+    }
+    
+    static void setCachedSubredditList(Context context, ArrayList<String> subredditList) throws IOException {
+    	CacheInfo ci = null;
+    	try {
+    		ci = getCacheInfo(context);
+    	} catch (Exception e) {
+    		if (Constants.LOGGING) Log.e(TAG, "error w/ getCacheInfo:" + e.getMessage());
+    	}
+		if (ci == null)
+			ci = new CacheInfo();
+
+		FileOutputStream fos = context.openFileOutput(Constants.FILENAME_CACHE_INFO, Context.MODE_PRIVATE);
+    	ObjectOutputStream oos = new ObjectOutputStream(fos);
+    	ci.subredditList = subredditList;
+    	ci.subredditListTime = System.currentTimeMillis();
     	oos.writeObject(ci);
     	oos.close();
     	fos.close();

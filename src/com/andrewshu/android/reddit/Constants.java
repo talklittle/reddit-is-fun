@@ -49,6 +49,7 @@ public class Constants {
 	static final int DEFAULT_THREAD_DOWNLOAD_LIMIT = 25;
     static final int DEFAULT_COMMENT_DOWNLOAD_LIMIT = 200;
     static final long DEFAULT_FRESH_DURATION = 1800000;  // 30 minutes
+    static final long DEFAULT_FRESH_SUBREDDIT_LIST_DURATION = 86400000;  // 24 hours
 
     // startActivityForResult request codes
     static final int ACTIVITY_PICK_SUBREDDIT = 0;

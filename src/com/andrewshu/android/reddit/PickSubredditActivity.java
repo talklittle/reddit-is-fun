@@ -20,6 +20,7 @@
 package com.andrewshu.android.reddit;
 
 import java.io.BufferedReader;
+import java.io.IOException;
 import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -46,6 +47,7 @@ import android.view.KeyEvent;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.Window;
 import android.view.View.OnClickListener;
 import android.view.View.OnKeyListener;
 import android.widget.ArrayAdapter;
@@ -66,8 +68,13 @@ public final class PickSubredditActivity extends ListActivity {
 	private RedditSettings mSettings = new RedditSettings();
 	private DefaultHttpClient mClient = Common.getGzipHttpClient();
 	
-	private PickSubredditAdapter mAdapter;
+	private PickSubredditAdapter mSubredditsAdapter;
+	private ArrayList<String> mSubredditsList;
+	private static final Object ADAPTER_LOCK = new Object();
 	private EditText mEt;
+	
+    private AsyncTask<?, ?, ?> mCurrentTask = null;
+    private final Object mCurrentTaskLock = new Object();
 	
     public static final String[] SUBREDDITS_MINUS_FRONTPAGE = {
     	"reddit.com",
@@ -106,27 +113,10 @@ public final class PickSubredditActivity extends ListActivity {
     	Common.loadRedditPreferences(this, mSettings, mClient);
     	setRequestedOrientation(mSettings.rotation);
     	setTheme(mSettings.theme);
+    	requestWindowFeature(Window.FEATURE_PROGRESS);
     	
         setContentView(R.layout.pick_subreddit_view);
         
-        // Set the EditText to do same thing as onListItemClick
-        mEt = (EditText) findViewById(R.id.pick_subreddit_input);
-		mEt.setOnKeyListener(new OnKeyListener() {
-			public boolean onKey(View v, int keyCode, KeyEvent event) {
-		        if ((event.getAction() == KeyEvent.ACTION_DOWN) && (keyCode == KeyEvent.KEYCODE_ENTER)) {
-		        	returnSubreddit(mEt.getText().toString());
-		        	return true;
-		        }
-		        return false;
-		    }
-		});
-        final Button goButton = (Button) findViewById(R.id.pick_subreddit_button);
-        goButton.setOnClickListener(new OnClickListener() {
-        	public void onClick(View v) {
-        		returnSubreddit(mEt.getText().toString());
-        	}
-        });
-
         new DownloadRedditsTask().execute();
     }
     
@@ -138,11 +128,52 @@ public final class PickSubredditActivity extends ListActivity {
     	// HACK: set background color directly for android 2.0
         if (mSettings.theme == R.style.Reddit_Light)
         	getListView().setBackgroundResource(R.color.white);
+        registerForContextMenu(getListView());
+
+        // Set the EditText to do same thing as onListItemClick
+        mEt = (EditText) findViewById(R.id.pick_subreddit_input);
+        if (mEt != null) {
+			mEt.setOnKeyListener(new OnKeyListener() {
+				public boolean onKey(View v, int keyCode, KeyEvent event) {
+			        if ((event.getAction() == KeyEvent.ACTION_DOWN) && (keyCode == KeyEvent.KEYCODE_ENTER)) {
+			        	returnSubreddit(mEt.getText().toString());
+			        	return true;
+			        }
+			        return false;
+			    }
+			});
+        }
+        Button goButton = (Button) findViewById(R.id.pick_subreddit_button);
+        if (goButton != null) {
+	        goButton.setOnClickListener(new OnClickListener() {
+	        	public void onClick(View v) {
+	        		returnSubreddit(mEt.getText().toString());
+	        	}
+	        });
+        }
     }
+    
+    void resetUI(PickSubredditAdapter adapter) {
+    	setContentView(R.layout.pick_subreddit_view);
+    	synchronized (ADAPTER_LOCK) {
+	    	if (adapter == null) {
+	            // Reset the list to be empty.
+		    	mSubredditsList = new ArrayList<String>();
+		    	mSubredditsAdapter = new PickSubredditAdapter(this, mSubredditsList);
+	    	} else {
+	    		mSubredditsAdapter = adapter;
+	    	}
+		    setListAdapter(mSubredditsAdapter);
+		    mSubredditsAdapter.mLoading = false;
+		    mSubredditsAdapter.notifyDataSetChanged();  // Just in case
+		}
+	    Common.updateListDrawables(this, mSettings.theme);
+    }
+    
         
     @Override
     protected void onListItemClick(ListView l, View v, int position, long id) {
-        String item = mAdapter.getItem(position);
+        String item = mSubredditsAdapter.getItem(position);
         returnSubreddit(item);
     }
     
@@ -155,35 +186,76 @@ public final class PickSubredditActivity extends ListActivity {
        	finish();	
     }
     
+    private void enableLoadingScreen() {
+    	if (mSettings.theme == R.style.Reddit_Light) {
+    		setContentView(R.layout.loading_light);
+    	} else {
+    		setContentView(R.layout.loading_dark);
+    	}
+    	synchronized (ADAPTER_LOCK) {
+	    	if (mSubredditsAdapter != null)
+	    		mSubredditsAdapter.mLoading = true;
+    	}
+    	getWindow().setFeatureInt(Window.FEATURE_PROGRESS, 0);
+    }
+    
+    private void disableLoadingScreen() {
+    	resetUI(mSubredditsAdapter);
+    	getWindow().setFeatureInt(Window.FEATURE_PROGRESS, 10000);
+    }
+    
     class DownloadRedditsTask extends AsyncTask<Void, Void, ArrayList<String>> {
     	@Override
     	public ArrayList<String> doInBackground(Void... voidz) {
-    		ArrayList<String> reddits = new ArrayList<String>();
+    		ArrayList<String> reddits = null;
     		HttpEntity entity = null;
             try {
-            	HttpGet request = new HttpGet("http://www.reddit.com/reddits");
-            	// Set timeout to 15 seconds
-                HttpParams params = request.getParams();
-    	        HttpConnectionParams.setConnectionTimeout(params, 15000);
-    	        HttpConnectionParams.setSoTimeout(params, 15000);
-    	        
-    	        HttpResponse response = mClient.execute(request);
-            	entity = response.getEntity();
-            	BufferedReader in = new BufferedReader(new InputStreamReader(entity.getContent()));
-                
-                String line = in.readLine();
-                in.close();
-                entity.consumeContent();
-                
-                Matcher outer = MY_SUBREDDITS_OUTER.matcher(line);
-                if (outer.find()) {
-                	Matcher inner = MY_SUBREDDITS_INNER.matcher(outer.group(1));
-                	while (inner.find()) {
-                		reddits.add(inner.group(3));
-                	}
-                } else {
-                	return null;
-                }
+            	
+            	if (Constants.USE_CACHE) {
+            		if (CacheInfo.checkFreshSubredditListCache(getApplicationContext())) {
+            			reddits = CacheInfo.getCachedSubredditList(getApplicationContext());
+            			if (Constants.LOGGING) Log.d(TAG, "cached subreddit list:" + reddits);
+            		}
+            	}
+            	
+            	if (reddits == null) {
+            		reddits = new ArrayList<String>();
+            		
+	            	HttpGet request = new HttpGet("http://www.reddit.com/reddits");
+	            	// Set timeout to 15 seconds
+	                HttpParams params = request.getParams();
+	    	        HttpConnectionParams.setConnectionTimeout(params, 15000);
+	    	        HttpConnectionParams.setSoTimeout(params, 15000);
+	    	        
+	    	        HttpResponse response = mClient.execute(request);
+	            	entity = response.getEntity();
+	            	BufferedReader in = new BufferedReader(new InputStreamReader(entity.getContent()));
+	                
+	                String line = in.readLine();
+	                in.close();
+	                entity.consumeContent();
+	                
+	                Matcher outer = MY_SUBREDDITS_OUTER.matcher(line);
+	                if (outer.find()) {
+	                	Matcher inner = MY_SUBREDDITS_INNER.matcher(outer.group(1));
+	                	while (inner.find()) {
+	                		reddits.add(inner.group(3));
+	                	}
+	                } else {
+	                	return null;
+	                }
+	                
+	                if (Constants.LOGGING) Log.d(TAG, "new subreddit list size: " + reddits.size());
+	                
+	                if (Constants.USE_CACHE) {
+	                	try {
+	                		CacheInfo.setCachedSubredditList(getApplicationContext(), reddits);
+	                		if (Constants.LOGGING) Log.d(TAG, "wrote subreddit list to cache:" + reddits);
+	                	} catch (IOException e) {
+	                		if (Constants.LOGGING) Log.e(TAG, "error on setCachedSubredditList: " + e.getMessage());
+	                	}
+	                }
+            	}
                 
                 return reddits;
                 
@@ -202,31 +274,41 @@ public final class PickSubredditActivity extends ListActivity {
     	
     	@Override
     	public void onPreExecute() {
-    		showDialog(Constants.DIALOG_LOADING_REDDITS_LIST);
+    		synchronized (mCurrentTaskLock) {
+	    		if (mCurrentTask != null) {
+	    			this.cancel(true);
+	    			return;
+	    		}
+    			mCurrentTask = this;
+    		}
+    		resetUI(null);
+    		enableLoadingScreen();
     	}
     	
     	@Override
     	public void onPostExecute(ArrayList<String> reddits) {
-    		dismissDialog(Constants.DIALOG_LOADING_REDDITS_LIST);
-			ArrayList<String> items;
+    		synchronized (mCurrentTaskLock) {
+    			mCurrentTask = null;
+    		}
+    		disableLoadingScreen();
+			
     		if (reddits == null || reddits.size() == 0) {
     			// Need to make a copy because Arrays.asList returns List backed by original array
-    	        items = new ArrayList<String>();
-    			items.addAll(Arrays.asList(SUBREDDITS_MINUS_FRONTPAGE));
+    	        mSubredditsList = new ArrayList<String>();
+    	        mSubredditsList.addAll(Arrays.asList(SUBREDDITS_MINUS_FRONTPAGE));
     		} else {
-    			items = reddits;
+    			mSubredditsList = reddits;
     		}
     	    // Insert front page into subreddits list, unless suppressed by Intent extras
     		Bundle extras = getIntent().getExtras();
     	    if (extras != null) {
 	        	boolean shouldHideFrontpage = extras.getBoolean(Constants.EXTRA_HIDE_FRONTPAGE_STRING, false);
 	        	if (!shouldHideFrontpage)
-	        		items.add(0, Constants.FRONTPAGE_STRING);
+	        		mSubredditsList.add(0, Constants.FRONTPAGE_STRING);
 	        } else {
-	        	items.add(0, Constants.FRONTPAGE_STRING);
+	        	mSubredditsList.add(0, Constants.FRONTPAGE_STRING);
 	        }
-	        mAdapter = new PickSubredditAdapter(PickSubredditActivity.this, items);
-	        getListView().setAdapter(mAdapter);
+	        resetUI(new PickSubredditAdapter(PickSubredditActivity.this, mSubredditsList));
 	        Common.updateListDrawables(PickSubredditActivity.this, mSettings.theme);
 	        
 	        // Enable EditText focus, but set focus to ListView, so soft keyboard doesn't pop up.
@@ -284,7 +366,7 @@ public final class PickSubredditActivity extends ListActivity {
             }
                         
             TextView text = (TextView) view.findViewById(android.R.id.text1);
-            text.setText(mAdapter.getItem(position));
+            text.setText(mSubredditsAdapter.getItem(position));
             
             return view;
         }
