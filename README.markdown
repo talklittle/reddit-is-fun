@@ -19,13 +19,13 @@ Contributors:
 Android Market QR Codes
 ----------------
 
-Free
+Free - ads by AdMob
 
 ![reddit is fun QR
 Code](http://chart.apis.google.com/chart?cht=qr&chs=120x120&chl=market%3A%2F%2Fdetails%3Fid%3Dcom.andrewshu.android.reddit
  "Scan with a QR Code reader")
 
-$1 Donation (same features)
+$1 Donation
 
 ![reddit is fun donation QR
 Code](http://chart.apis.google.com/chart?cht=qr&chs=120x120&chl=market%3A%2F%2Fdetails%3Fid%3Dcom.andrewshu.android.redditdonation
