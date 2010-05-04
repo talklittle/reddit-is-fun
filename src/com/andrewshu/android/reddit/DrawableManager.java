@@ -50,20 +50,20 @@ public class DrawableManager {
     		return drawableMap.get(urlString);
     	}
 
-    	Log.d(this.getClass().getSimpleName(), "image url:" + urlString);
+    	if (Constants.LOGGING) Log.d(this.getClass().getSimpleName(), "image url:" + urlString);
     	try {
     		InputStream is = fetch(urlString);
     		Drawable drawable = Drawable.createFromStream(is, "src");
     		drawableMap.put(urlString, drawable);
-    		Log.d(this.getClass().getSimpleName(), "got a thumbnail drawable: " + drawable.getBounds() + ", "
+    		if (Constants.LOGGING) Log.d(this.getClass().getSimpleName(), "got a thumbnail drawable: " + drawable.getBounds() + ", "
     				+ drawable.getIntrinsicHeight() + "," + drawable.getIntrinsicWidth() + ", "
     				+ drawable.getMinimumHeight() + "," + drawable.getMinimumWidth());
     		return drawable;
     	} catch (MalformedURLException e) {
-    		Log.e(this.getClass().getSimpleName(), "fetchDrawable failed", e);
+    		if (Constants.LOGGING) Log.e(this.getClass().getSimpleName(), "fetchDrawable failed", e);
     		return null;
     	} catch (IOException e) {
-    		Log.e(this.getClass().getSimpleName(), "fetchDrawable failed", e);
+    		if (Constants.LOGGING) Log.e(this.getClass().getSimpleName(), "fetchDrawable failed", e);
     		return null;
     	}
     }
@@ -71,6 +71,7 @@ public class DrawableManager {
     public void fetchDrawableOnThread(final String urlString, final ImageView imageView) {
     	if (drawableMap.containsKey(urlString)) {
     		imageView.setImageDrawable(drawableMap.get(urlString));
+    		return;
     	}
 
     	final Handler handler = new Handler() {

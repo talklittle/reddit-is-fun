@@ -85,6 +85,9 @@ public final class RedditIsFun extends ListActivity {
 	private static final String TAG = "RedditIsFun";
 	
 	private final ObjectMapper om = new ObjectMapper();
+	// DrawableManager helps with filling in thumbnails
+	private final DrawableManager drawableManager = new DrawableManager();
+
 	
     /** Custom list adapter that fits our threads data into the list. */
     private ThreadsListAdapter mThreadsAdapter = null;
@@ -379,6 +382,8 @@ public final class RedditIsFun extends ListActivity {
 	            			Common.launchBrowser(url, RedditIsFun.this);
 	            		}
 	            	});
+	            	if (item.getThumbnail() != null && !Constants.EMPTY_STRING.equals(item.getThumbnail()))
+	            		drawableManager.fetchDrawableOnThread(item.getThumbnail(), thumbnailView);
 	            }
 	//            view.getThumbnail().
 	

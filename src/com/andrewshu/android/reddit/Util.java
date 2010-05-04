@@ -25,7 +25,7 @@ import android.text.style.URLSpan;
 
 public class Util {
 	
-    public static ArrayList<String> extractUris(URLSpan[] spans) {
+	public static ArrayList<String> extractUris(URLSpan[] spans) {
         int size = spans.length;
         ArrayList<String> accumulator = new ArrayList<String>();
 
