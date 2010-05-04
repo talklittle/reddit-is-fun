@@ -21,6 +21,7 @@ package com.andrewshu.android.reddit;
 
 import java.util.ArrayList;
 
+import android.net.Uri;
 import android.text.style.URLSpan;
 
 public class Util {
@@ -108,4 +109,39 @@ public class Util {
 			return score + " points";
 		}
 	}
+	
+	static String absolutePathToURL(String path) {
+		if (path.startsWith("/"))
+			return "http://www.reddit.com" + path;
+		return path;
+	}
+	
+    /**
+     * Creates mobile version of <code>uri</code> if applicable.
+     * 
+     * @return original uri if no mobile version of uri is known
+     */
+    static Uri optimizeMobileUri(Uri uri) {
+    	if (isWikipediaUri(uri)) {
+    		uri = createMobileWikpediaUri(uri);
+    	}
+    	return uri;
+    }
+    
+    /**
+     * @return if uri points to a non-mobile wikpedia uri.
+     */
+    static boolean isWikipediaUri(Uri uri) {
+    	String host = uri.getHost();
+    	return host.endsWith(".wikipedia.org") && !host.contains(".m.wikipedia.org");
+    }
+    
+    /**
+     * @return mobile version of a wikipedia uri
+     */
+    static Uri createMobileWikpediaUri(Uri uri) {
+    	String uriString = uri.toString();
+    	return Uri.parse(uriString.replace(".wikipedia.org/", ".m.wikipedia.org/"));
+    }
+    
 }

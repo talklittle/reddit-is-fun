@@ -382,8 +382,9 @@ public final class RedditIsFun extends ListActivity {
 	            			Common.launchBrowser(url, RedditIsFun.this);
 	            		}
 	            	});
+	            	// Fill in the thumbnail using a Thread. Note that thumbnail URL can be absolute path.
 	            	if (item.getThumbnail() != null && !Constants.EMPTY_STRING.equals(item.getThumbnail()))
-	            		drawableManager.fetchDrawableOnThread(item.getThumbnail(), thumbnailView);
+	            		drawableManager.fetchDrawableOnThread(Util.absolutePathToURL(item.getThumbnail()), thumbnailView);
 	            }
 	//            view.getThumbnail().
 	
