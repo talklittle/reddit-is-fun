@@ -484,17 +484,25 @@ public final class RedditIsFun extends ListActivity {
     protected void onListItemClick(ListView l, View v, int position, long id) {
         ThingInfo item = mThreadsAdapter.getItem(position);
         
-        // Mark the thread as selected
-        mVoteTargetThingInfo = item;
-        mJumpToThreadId = item.getId();
-        
         // if mThreadsAdapter.getCount() - 1 contains the "next 25, prev 25" buttons,
         // or if there are fewer than 25 threads...
         if (position < mThreadsAdapter.getCount() - 1 || mThreadsAdapter.getCount() < Constants.DEFAULT_THREAD_DOWNLOAD_LIMIT + 1) {
             if (mSettings.onClickAction.equals(Constants.PREF_ON_CLICK_OPEN_LINK)) {
+            	// Mark the thread as selected
+            	mVoteTargetThingInfo = item;
+            	mJumpToThreadId = item.getId();
                 Common.launchBrowser(item.getUrl(), RedditIsFun.this);
             } else {
-                onLongListItemClick(v, position, id);
+                if (!mVoteTargetThingInfo.isIs_self()) {
+                    Common.launchBrowser(item.getUrl(), RedditIsFun.this);
+                } else {
+                    Intent i = new Intent(getApplicationContext(), CommentsListActivity.class);
+                    i.putExtra(Constants.EXTRA_SUBREDDIT, mVoteTargetThingInfo.getSubreddit());
+                    i.putExtra(Constants.EXTRA_ID, mVoteTargetThingInfo.getId());
+                    i.putExtra(Constants.EXTRA_TITLE, mVoteTargetThingInfo.getTitle());
+                    i.putExtra(Constants.EXTRA_NUM_COMMENTS, Integer.valueOf(mVoteTargetThingInfo.getNum_comments()));
+                    startActivity(i);
+                }
             }
         } else {
         	// 25 more. Use buttons.
@@ -1117,26 +1125,6 @@ public final class RedditIsFun extends ListActivity {
     		dialog = builder.setView(inflater.inflate(R.layout.thread_click_dialog, null)).create();
     		break;
     		
-    	case Constants.DIALOG_FIRST_ON_CLICK:
-    		builder = new AlertDialog.Builder(this);
-    		builder.setMessage("Always open link immediately?\n(Long click to open vote/link/comments dialog.)\nYou can always change this in Settings.")
-    			.setPositiveButton("Always open link", new DialogInterface.OnClickListener() {
-    				public void onClick(DialogInterface dialog, int id) {
-    					dialog.dismiss();
-    					mSettings.setOnClickAction(Constants.PREF_ON_CLICK_OPEN_LINK);
-    	                Common.launchBrowser(mVoteTargetThingInfo.getUrl(), RedditIsFun.this);
-    				}
-    			})
-    			.setNegativeButton("Show vote/link/comments dialog", new DialogInterface.OnClickListener() {
-    				public void onClick(DialogInterface dialog, int id) {
-    					dialog.dismiss();
-    					mSettings.setOnClickAction(Constants.PREF_ON_CLICK_OPEN_DIALOG);
-    	                Common.launchBrowser(mVoteTargetThingInfo.getUrl(), RedditIsFun.this);
-    				}
-    			});
-    		dialog = builder.create();
-    		break;
-    		
     	case Constants.DIALOG_SORT_BY:
     		builder = new AlertDialog.Builder(this);
     		builder.setTitle("Sort by:");
@@ -1236,7 +1224,7 @@ public final class RedditIsFun extends ListActivity {
     		pdialog = new ProgressDialog(this);
     		pdialog.setMessage("Logging in...");
     		pdialog.setIndeterminate(true);
-    		pdialog.setCancelable(true);
+    		pdialog.setCancelable(false);
     		dialog = pdialog;
     		break;
     	
@@ -1325,12 +1313,8 @@ public final class RedditIsFun extends ListActivity {
             	linkButton.setOnClickListener(new OnClickListener() {
     				public void onClick(View v) {
     					dismissDialog(Constants.DIALOG_THING_CLICK);
-    					if (mSettings.onClickAction.equals(Constants.PREF_ON_CLICK_FIRST_TIME)) {
-    						showDialog(Constants.DIALOG_FIRST_ON_CLICK);
-    					} else {
-	    					// Launch Intent to goto the URL
-	    					Common.launchBrowser(url, RedditIsFun.this);
-    					}
+    					// Launch Intent to goto the URL
+    					Common.launchBrowser(url, RedditIsFun.this);
     				}
     			});
             	linkButton.setEnabled(true);

@@ -1124,21 +1124,21 @@ public final class InboxActivity extends ListActivity
     		pdialog = new ProgressDialog(this);
     		pdialog.setMessage("Logging in...");
     		pdialog.setIndeterminate(true);
-    		pdialog.setCancelable(true);
+    		pdialog.setCancelable(false);
     		dialog = pdialog;
     		break;
     	case Constants.DIALOG_REPLYING:
     		pdialog = new ProgressDialog(this);
     		pdialog.setMessage("Sending reply...");
     		pdialog.setIndeterminate(true);
-    		pdialog.setCancelable(true);
+    		pdialog.setCancelable(false);
     		dialog = pdialog;
     		break;   		
     	case Constants.DIALOG_COMPOSING:
     		pdialog = new ProgressDialog(this);
     		pdialog.setMessage("Composing message...");
     		pdialog.setIndeterminate(true);
-    		pdialog.setCancelable(true);
+    		pdialog.setCancelable(false);
     		dialog = pdialog;
     		break;
     		
