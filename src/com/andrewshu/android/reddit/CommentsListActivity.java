@@ -932,14 +932,6 @@ public class CommentsListActivity extends ListActivity
     		if (_mPositionOffset == 0)
     			enableLoadingScreen();
     		
-	    	if (mSettings.subreddit != null && "jailbait".equals(mSettings.subreddit.toString())) {
-	    		Toast lodToast = Toast.makeText(CommentsListActivity.this, "", Toast.LENGTH_LONG);
-	    		View lodView = ((LayoutInflater) getSystemService(Context.LAYOUT_INFLATER_SERVICE))
-	    			.inflate(R.layout.look_of_disapproval_view, null);
-	    		lodToast.setView(lodView);
-	    		lodToast.show();
-	    	}
-
 	    	if (mThreadTitle != null)
 	    		setTitle(mThreadTitle + " : " + mSettings.subreddit);
     	}

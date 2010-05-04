@@ -43,9 +43,6 @@ public class Constants {
 	static final String SUBREDDIT_KIND = "t5";
 	static final String MORE_KIND = "more";
     
-	// Requires a non-default font
-	static final String LOOK_OF_DISAPPROVAL = "\u0ca0\u005f\u0ca0";
-
 	static final int DEFAULT_THREAD_DOWNLOAD_LIMIT = 25;
     static final int DEFAULT_COMMENT_DOWNLOAD_LIMIT = 200;
     static final long DEFAULT_FRESH_DURATION = 1800000;  // 30 minutes
@@ -104,7 +101,6 @@ public class Constants {
 
     // progress dialogs
     static final int DIALOG_LOGGING_IN = 1000;
-    static final int DIALOG_LOADING_LOOK_OF_DISAPPROVAL = 1003;
     static final int DIALOG_SUBMITTING = 1004;
     static final int DIALOG_REPLYING = 1005;
     static final int DIALOG_LOADING_REDDITS_LIST = 1006;

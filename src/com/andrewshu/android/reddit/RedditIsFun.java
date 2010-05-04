@@ -732,14 +732,6 @@ public final class RedditIsFun extends ListActivity {
     		resetUI(null);
     		enableLoadingScreen();
 			
-	    	if ("jailbait".equals(mSettings.subreddit.toString())) {
-	    		Toast lodToast = Toast.makeText(RedditIsFun.this, "", Toast.LENGTH_LONG);
-	    		View lodView = ((LayoutInflater) getSystemService(Context.LAYOUT_INFLATER_SERVICE))
-	    			.inflate(R.layout.look_of_disapproval_view, null);
-	    		lodToast.setView(lodView);
-	    		lodToast.show();
-	    	}
-
 	    	getWindow().setFeatureInt(Window.FEATURE_PROGRESS, 0);
 	    	
 	    	if (Constants.FRONTPAGE_STRING.equals(mSettings.subreddit))
@@ -1247,14 +1239,6 @@ public final class RedditIsFun extends ListActivity {
     		pdialog.setCancelable(true);
     		dialog = pdialog;
     		break;
-    	case Constants.DIALOG_LOADING_LOOK_OF_DISAPPROVAL:
-    		pdialog = new ProgressDialog(this);
-    		pdialog.setIndeterminate(true);
-    		pdialog.setCancelable(true);
-    		pdialog.requestWindowFeature(Window.FEATURE_INDETERMINATE_PROGRESS);
-    		pdialog.setFeatureDrawableResource(Window.FEATURE_INDETERMINATE_PROGRESS, R.drawable.look_of_disapproval);
-    		dialog = pdialog;
-    		break;
     	
     	default:
     		throw new IllegalArgumentException("Unexpected dialog id "+id);
@@ -1427,7 +1411,6 @@ public final class RedditIsFun extends ListActivity {
     protected void onRestoreInstanceState(Bundle state) {
         super.onRestoreInstanceState(state);
         final int[] myDialogs = {
-        	Constants.DIALOG_LOADING_LOOK_OF_DISAPPROVAL,
         	Constants.DIALOG_LOGGING_IN,
         	Constants.DIALOG_LOGIN,
         	Constants.DIALOG_SORT_BY,
