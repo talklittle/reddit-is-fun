@@ -310,6 +310,7 @@ public final class RedditIsFun extends ListActivity {
 	//            TextView submissionTimeView = (TextView) view.findViewById(R.id.submissionTime);
 	            ImageView voteUpView = (ImageView) view.findViewById(R.id.vote_up_image);
 	            ImageView voteDownView = (ImageView) view.findViewById(R.id.vote_down_image);
+	            ImageView thumbnailView = (ImageView) view.findViewById(R.id.thumbnail);
 	            
 	            // Set the title and domain using a SpannableStringBuilder
 	            SpannableStringBuilder builder = new SpannableStringBuilder();
@@ -370,7 +371,15 @@ public final class RedditIsFun extends ListActivity {
 	        		votesView.setTextColor(res.getColor(R.color.gray));
 	            }
 	            
-	            // TODO?: Thumbnail
+	            // Thumbnails open links
+	            if (thumbnailView != null) {
+	            	final String url = item.getUrl();
+	            	thumbnailView.setOnClickListener(new OnClickListener() {
+	            		public void onClick(View v) {
+	            			Common.launchBrowser(url, RedditIsFun.this);
+	            		}
+	            	});
+	            }
 	//            view.getThumbnail().
 	
 	            // TODO: If thumbnail, download it and create ImageView
