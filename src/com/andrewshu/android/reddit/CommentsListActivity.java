@@ -2059,8 +2059,15 @@ public class CommentsListActivity extends ListActivity
     		if (comment_body == null) continue;
 
     		if (comment_body.toLowerCase().contains(search_text)) {
-				setSelection(i);
-				getListView().requestFocus();
+    			final int position = i;
+    			getListView().post(new Runnable() {
+	    			@Override
+	    			public void run() {
+	    				setSelection(position);
+	    				getListView().requestFocus();
+	    			}
+    			});
+
 				last_found_position = i;
 				return true;
     		}
