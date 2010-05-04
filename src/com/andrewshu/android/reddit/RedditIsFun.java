@@ -153,6 +153,7 @@ public final class RedditIsFun extends ListActivity {
 		    mCount = savedInstanceState.getInt(Constants.THREAD_COUNT);
 		    mSortByUrl = savedInstanceState.getCharSequence(Constants.ThreadsSort.SORT_BY_KEY);
 		    mJumpToThreadId = savedInstanceState.getCharSequence(Constants.JUMP_TO_THREAD_ID_KEY);
+		    mVoteTargetThingInfo = savedInstanceState.getParcelable(Constants.VOTE_TARGET_THING_INFO_KEY);
         }
         new DownloadThreadsTask().execute(mSettings.subreddit);
     }
@@ -1405,6 +1406,7 @@ public final class RedditIsFun extends ListActivity {
     	state.putCharSequence(Constants.ThreadsSort.SORT_BY_KEY, mSortByUrl);
     	state.putCharSequence(Constants.JUMP_TO_THREAD_ID_KEY, mJumpToThreadId);
     	state.putInt(Constants.THREAD_COUNT, mCount);
+    	state.putParcelable(Constants.VOTE_TARGET_THING_INFO_KEY, mVoteTargetThingInfo);
     }
     
     /**

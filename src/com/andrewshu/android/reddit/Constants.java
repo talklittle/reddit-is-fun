@@ -143,6 +143,7 @@ public class Constants {
     static final String REPLY_TARGET_NAME_KEY = "reply_target_name";
     static final String SUBREDDIT_KEY = "subreddit";
     static final String URL_TO_GET_HERE_KEY = "url_to_get_here";
+    static final String VOTE_TARGET_THING_INFO_KEY = "vote_target_thing_info";
     
     static final String THREAD_COUNT = "threadCount";
     

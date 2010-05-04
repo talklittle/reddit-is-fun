@@ -27,13 +27,16 @@ import org.codehaus.jackson.annotate.JsonAnySetter;
 import android.text.SpannableString;
 import android.text.SpannableStringBuilder;
 
+import android.os.Parcel;
+import android.os.Parcelable;
+
 /**
  * Class representing a thread posting in reddit API.
  * 
  * @author TalkLittle
  *
  */
-public class ThingInfo implements Serializable {
+public class ThingInfo implements Serializable, Parcelable {
 	static final long serialVersionUID = 39;
 	
 	// thread: t
@@ -85,6 +88,10 @@ public class ThingInfo implements Serializable {
 	
 	private int mIndent = 0;
 	private String mReplyDraft = null;
+
+	public ThingInfo() {
+		super();
+	}
 	
 	public String getAuthor() {
 		return author;
@@ -414,4 +421,103 @@ public class ThingInfo implements Serializable {
 	public void setWas_comment(boolean was_comment) {
 		this.was_comment = was_comment;
 	}
+
+	//Parcelable interface
+	//We are using write/read value for non primitives to support nulls
+
+	public int describeContents() {
+		return 0;
+	}
+
+	public void writeToParcel(Parcel out, int flags) {
+		out.writeValue(author);
+		out.writeValue(body);
+		out.writeValue(body_html);
+		out.writeValue(context);
+		out.writeDouble(created);
+		out.writeDouble(created_utc);
+		out.writeValue(dest);
+		out.writeValue(domain);
+		out.writeInt(downs);
+		out.writeValue(first_message);
+		out.writeValue(id);
+		out.writeValue(link_id);
+		out.writeValue(name);
+		out.writeInt(num_comments);
+		out.writeValue(parent_id);
+		out.writeValue(permalink);
+		out.writeInt(score);
+		out.writeValue(selftext);
+		out.writeValue(selftext_html);
+		out.writeValue(subject);
+		out.writeValue(subreddit);
+		out.writeValue(subreddit_id);
+		out.writeValue(thumbnail);
+		out.writeValue(title);
+		out.writeInt(ups);
+		out.writeValue(url);
+		out.writeValue(likes);
+
+		boolean booleans[] = new boolean[7];
+		booleans[0] = clicked;
+		booleans[1] = hidden;
+		booleans[2] = is_self;
+		booleans[3] = new_;
+		booleans[4] = over_18;
+		booleans[5] = saved;
+		booleans[6] = was_comment;
+		out.writeBooleanArray(booleans);
+	}
+
+	private ThingInfo(Parcel in) {
+		author = (String) in.readValue(null);
+		body = (String) in.readValue(null);
+		body_html = (String) in.readValue(null);
+		context = (String) in.readValue(null);
+		created = in.readDouble();
+		created_utc = in.readDouble();
+		dest = (String) in.readValue(null);
+		domain = (String) in.readValue(null);
+		downs = in.readInt();
+		first_message = (Long) in.readValue(null);
+		id = (String) in.readValue(null);
+		link_id = (String) in.readValue(null);
+		name = (String) in.readValue(null);
+		num_comments = in.readInt();
+		parent_id = (String) in.readValue(null);
+		permalink = (String) in.readValue(null);
+		score = in.readInt();
+		selftext = (String) in.readValue(null);
+		selftext_html = (String) in.readValue(null);
+		subject = (String) in.readValue(null);
+		subreddit = (String) in.readValue(null);
+		subreddit_id = (String) in.readValue(null);
+		thumbnail = (String) in.readValue(null);
+		title = (String) in.readValue(null);
+		ups = in.readInt();
+		url = (String) in.readValue(null);
+		likes = (Boolean) in.readValue(null);
+
+		boolean booleans[] = new boolean[7];
+		in.readBooleanArray(booleans);
+		clicked = booleans[0];
+		hidden = booleans[1];
+		is_self = booleans[2];
+		new_ = booleans[3];
+		over_18 = booleans[4];
+		saved = booleans[5];
+		was_comment = booleans[6];
+	}
+
+	public static final Parcelable.Creator<ThingInfo> CREATOR
+		= new  Parcelable.Creator<ThingInfo>() {
+		public ThingInfo createFromParcel(Parcel in) {
+			return new ThingInfo(in);
+		}
+
+		public ThingInfo[] newArray(int size){
+			return new ThingInfo[size];
+		}
+	};
+
 }
