@@ -114,10 +114,8 @@ public class Common {
 		Resources res = la.getResources();
 		if (theme == R.style.Reddit_Light) {
     		lv.setSelector(R.drawable.list_selector_blue);
-    		lv.setCacheColorHint(res.getColor(R.color.white));
     	} else if (theme == R.style.Reddit_Dark) {
     		lv.setSelector(android.R.drawable.list_selector_background);
-    		lv.setCacheColorHint(res.getColor(R.color.android_dark_background));
     	}
 	}
 	

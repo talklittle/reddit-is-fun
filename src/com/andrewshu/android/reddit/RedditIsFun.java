@@ -348,10 +348,6 @@ public final class RedditIsFun extends ListActivity {
 	            } else {
 	            	subredditView.setVisibility(View.GONE);
 	            }
-	//            submitterView.setText(item.getAuthor());
-	            // TODO: convert submission time to a displayable time
-	//            Date submissionTimeDate = new Date((long) (Double.parseDouble(item.getCreated()) / 1000));
-	//            submissionTimeView.setText("5 hours ago");
 	            
 	            // Set the up and down arrow colors based on whether user likes
 	            if (mSettings.loggedIn) {
@@ -385,62 +381,15 @@ public final class RedditIsFun extends ListActivity {
 	            	// Fill in the thumbnail using a Thread. Note that thumbnail URL can be absolute path.
 	            	if (item.getThumbnail() != null && !Constants.EMPTY_STRING.equals(item.getThumbnail()))
 	            		drawableManager.fetchDrawableOnThread(Util.absolutePathToURL(item.getThumbnail()), thumbnailView);
+	            	else
+	            		thumbnailView.setImageResource(R.drawable.go_arrow);
+	            	
+	            	// Set thumbnail background based on current theme
+	            	if (mSettings.theme == R.style.Reddit_Light)
+	            		thumbnailView.setBackgroundResource(R.drawable.thumbnail_background_light);
+	            	else
+	            		thumbnailView.setBackgroundResource(R.drawable.thumbnail_background_dark);
 	            }
-	//            view.getThumbnail().
-	
-	            // TODO: If thumbnail, download it and create ImageView
-	            // Some thumbnails may be absolute paths instead of URLs:
-	            // "/static/noimage.png"
-	            
-	            // Set the proper icon (star or presence or nothing)
-	//            ImageView presenceView = cache.presenceView;
-	//            if ((mMode & MODE_MASK_NO_PRESENCE) == 0) {
-	//                int serverStatus;
-	//                if (!cursor.isNull(SERVER_STATUS_COLUMN_INDEX)) {
-	//                    serverStatus = cursor.getInt(SERVER_STATUS_COLUMN_INDEX);
-	//                    presenceView.setImageResource(
-	//                            Presence.getPresenceIconResourceId(serverStatus));
-	//                    presenceView.setVisibility(View.VISIBLE);
-	//                } else {
-	//                    presenceView.setVisibility(View.GONE);
-	//                }
-	//            } else {
-	//                presenceView.setVisibility(View.GONE);
-	//            }
-	//
-	//            // Set the photo, if requested
-	//            if (mDisplayPhotos) {
-	//                Bitmap photo = null;
-	//
-	//                // Look for the cached bitmap
-	//                int pos = cursor.getPosition();
-	//                SoftReference<Bitmap> ref = mBitmapCache.get(pos);
-	//                if (ref != null) {
-	//                    photo = ref.get();
-	//                }
-	//
-	//                if (photo == null) {
-	//                    // Bitmap cache miss, decode it from the cursor
-	//                    if (!cursor.isNull(PHOTO_COLUMN_INDEX)) {
-	//                        try {
-	//                            byte[] photoData = cursor.getBlob(PHOTO_COLUMN_INDEX);
-	//                            photo = BitmapFactory.decodeByteArray(photoData, 0,
-	//                                    photoData.length);
-	//                            mBitmapCache.put(pos, new SoftReference<Bitmap>(photo));
-	//                        } catch (OutOfMemoryError e) {
-	//                            // Not enough memory for the photo, use the default one instead
-	//                            photo = null;
-	//                        }
-	//                    }
-	//                }
-	//
-	//                // Bind the photo, or use the fallback no photo resource
-	//                if (photo != null) {
-	//                    cache.photoView.setImageBitmap(photo);
-	//                } else {
-	//                    cache.photoView.setImageResource(R.drawable.ic_contact_list_picture);
-	//                }
-	//            }
             } else {
             	// The "25 more" list item
             	if (convertView == null)
@@ -490,23 +439,24 @@ public final class RedditIsFun extends ListActivity {
     protected void onListItemClick(ListView l, View v, int position, long id) {
         ThingInfo item = mThreadsAdapter.getItem(position);
         
-        // if mThreadsAdapter.getCount() - 1 contains the "next 25, prev 25" buttons,
+    	// Mark the thread as selected
+    	mVoteTargetThingInfo = item;
+    	mJumpToThreadId = item.getId();
+
+    	// if mThreadsAdapter.getCount() - 1 contains the "next 25, prev 25" buttons,
         // or if there are fewer than 25 threads...
         if (position < mThreadsAdapter.getCount() - 1 || mThreadsAdapter.getCount() < Constants.DEFAULT_THREAD_DOWNLOAD_LIMIT + 1) {
             if (mSettings.onClickAction.equals(Constants.PREF_ON_CLICK_OPEN_LINK)) {
-            	// Mark the thread as selected
-            	mVoteTargetThingInfo = item;
-            	mJumpToThreadId = item.getId();
                 Common.launchBrowser(item.getUrl(), RedditIsFun.this);
             } else {
-                if (!mVoteTargetThingInfo.isIs_self()) {
-                    Common.launchBrowser(item.getUrl(), RedditIsFun.this);
+                if (!item.isIs_self()) {
+                    showDialog(Constants.DIALOG_THING_CLICK);
                 } else {
                     Intent i = new Intent(getApplicationContext(), CommentsListActivity.class);
-                    i.putExtra(Constants.EXTRA_SUBREDDIT, mVoteTargetThingInfo.getSubreddit());
-                    i.putExtra(Constants.EXTRA_ID, mVoteTargetThingInfo.getId());
-                    i.putExtra(Constants.EXTRA_TITLE, mVoteTargetThingInfo.getTitle());
-                    i.putExtra(Constants.EXTRA_NUM_COMMENTS, Integer.valueOf(mVoteTargetThingInfo.getNum_comments()));
+                    i.putExtra(Constants.EXTRA_SUBREDDIT, item.getSubreddit());
+                    i.putExtra(Constants.EXTRA_ID, item.getId());
+                    i.putExtra(Constants.EXTRA_TITLE, item.getTitle());
+                    i.putExtra(Constants.EXTRA_NUM_COMMENTS, Integer.valueOf(item.getNum_comments()));
                     startActivity(i);
                 }
             }
