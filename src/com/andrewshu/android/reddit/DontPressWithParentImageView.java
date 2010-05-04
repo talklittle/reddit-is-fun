@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.andrewshu.android.reddit.ui.widget;
+package com.andrewshu.android.reddit;
 
 import android.content.Context;
 import android.util.AttributeSet;

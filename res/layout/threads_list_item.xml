@@ -74,17 +74,6 @@
 				android:src="@drawable/vote_down_gray"
 				/>
 		    
-		    <!-- Thumbnail invisible by default -->
-		    <ImageView android:id="@+id/thumbnail"
-		        android:layout_width="wrap_content"
-		        android:layout_height="wrap_content"
-		        android:layout_toRightOf="@id/votes"
-		
-				android:visibility="invisible"
-		        android:gravity="center"
-		        android:scaleType="centerInside"
-		    />
-		    
 	    </RelativeLayout>
 	
 		<RelativeLayout
@@ -95,7 +84,7 @@
 		    
 		    <LinearLayout android:id="@+id/thumbnail_view"
 			  	android:layout_width="wrap_content"
-  				android:layout_height="wrap_content"
+  				android:layout_height="fill_parent"
   				android:layout_alignParentRight="true"
   				android:orientation="horizontal">
   				
@@ -107,7 +96,7 @@
   					android:background="@drawable/divider_vertical_dark"
   				/>
 			
-			    <ImageView android:id="@+id/thumbnail"
+			    <com.andrewshu.android.reddit.DontPressWithParentImageView android:id="@+id/thumbnail"
 			        android:layout_width="?android:attr/listPreferredItemHeight"
 			        android:layout_height="?android:attr/listPreferredItemHeight"
 			        android:layout_gravity="top"
@@ -117,6 +106,7 @@
 			        android:src="@drawable/icon"
 			        android:gravity="center"
 			        android:scaleType="fitXY"
+			        android:background="@color/white"
 		    	/>
 	    	</LinearLayout>
     	
