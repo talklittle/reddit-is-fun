@@ -15,6 +15,7 @@ Contributors:
 * billyf
 * jaspervdj
 * kostmo
+* armooo
 
 Android Market QR Codes
 ----------------
