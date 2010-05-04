@@ -26,20 +26,9 @@
  -->
 
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-		xmlns:app="http://schemas.android.com/apk/res/com.andrewshu.android.reddit"
-		android:layout_width="fill_parent"
+        android:layout_width="fill_parent"
         android:layout_height="fill_parent"
         android:orientation="vertical">
-
-    <com.admob.android.ads.AdView  
-            android:id="@+id/ad" 
-            android:layout_width="fill_parent" 
-            android:layout_height="wrap_content"
-            app:backgroundColor="#000000"
-            app:primaryTextColor="#FFFFFF"
-            app:secondaryTextColor="#CCCCCC"
-            app:keywords="reddit is fun social news aggregator geek technology"
-    />
 
     <ListView android:id="@android:id/list"
     	android:layout_width="fill_parent"
