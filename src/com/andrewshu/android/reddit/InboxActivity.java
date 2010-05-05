@@ -147,6 +147,7 @@ public final class InboxActivity extends ListActivity
         setRequestedOrientation(mSettings.rotation);
         setTheme(mSettings.theme);
         requestWindowFeature(Window.FEATURE_PROGRESS);
+        requestWindowFeature(Window.FEATURE_INDETERMINATE_PROGRESS);
         
         setContentView(R.layout.inbox_list_content);
         // The above layout contains a list id "android:list"

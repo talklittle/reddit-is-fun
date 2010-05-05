@@ -133,6 +133,7 @@ public final class RedditIsFun extends ListActivity {
         setRequestedOrientation(mSettings.rotation);
         setTheme(mSettings.theme);
         requestWindowFeature(Window.FEATURE_PROGRESS);
+        requestWindowFeature(Window.FEATURE_INDETERMINATE_PROGRESS);
     	
         enableLoadingScreen();
         
