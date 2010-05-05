@@ -28,9 +28,8 @@
             android:alphabeticShortcut="r" />
         <item android:id="@+id/reply_thread_menu_id"
             android:title="@string/reply_thread" />
-        <item android:id="@+id/inbox_menu_id"
-            android:title="@string/inbox" />
-        
+        <item android:id="@+id/sort_by_menu_id"
+            android:alphabeticShortcut="s" />
         <item android:id="@+id/op_edit_menu_id"
         	android:title="@string/op_edit" />
         <item android:id="@+id/op_delete_menu_id"
@@ -38,8 +37,8 @@
         <item android:id="@+id/light_dark_menu_id" />
         <item android:id="@+id/open_browser_menu_id"
         	android:title="@string/open_browser" />
-        <item android:id="@+id/sort_by_menu_id"
-            android:alphabeticShortcut="s" />
+        <item android:id="@+id/inbox_menu_id"
+            android:title="@string/inbox" />
         <!-- 
         <item android:id="@+id/user_profile_menu_id"
             android:title="@string/user_profile" />
