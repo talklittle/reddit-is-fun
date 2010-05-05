@@ -1755,8 +1755,8 @@ public class CommentsListActivity extends ListActivity
     	int rowId = (int) info.id;
     	
     	if (rowId == 0) {
-    		if (mSettings.loggedIn)
-    			menu.add(0, Constants.DIALOG_REPORT, Menu.NONE, "Report thread");
+//    		if (mSettings.loggedIn)
+//    			menu.add(0, Constants.DIALOG_REPORT, Menu.NONE, "Report thread");
     	} else if (mMorePositions.contains(rowId)) {
     		menu.add(0, Constants.DIALOG_GOTO_PARENT, Menu.NONE, "Go to parent");
     	} else if (mHiddenCommentHeads.contains(rowId)) {
@@ -1770,8 +1770,8 @@ public class CommentsListActivity extends ListActivity
 	    		}
     		}
     		menu.add(0, Constants.DIALOG_HIDE_COMMENT, Menu.NONE, "Hide comment");
-    		if (mSettings.loggedIn)
-    			menu.add(0, Constants.DIALOG_REPORT, Menu.NONE, "Report comment");
+//    		if (mSettings.loggedIn)
+//    			menu.add(0, Constants.DIALOG_REPORT, Menu.NONE, "Report comment");
     		menu.add(0, Constants.DIALOG_GOTO_PARENT, Menu.NONE, "Go to parent");
     	}
     }
