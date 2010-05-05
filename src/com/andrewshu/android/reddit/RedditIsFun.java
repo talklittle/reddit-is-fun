@@ -86,7 +86,7 @@ public final class RedditIsFun extends ListActivity {
 	
 	private final ObjectMapper om = new ObjectMapper();
 	// DrawableManager helps with filling in thumbnails
-	private final DrawableManager drawableManager = new DrawableManager();
+	private DrawableManager drawableManager = new DrawableManager();
 
 	
     /** Custom list adapter that fits our threads data into the list. */
@@ -715,6 +715,7 @@ public final class RedditIsFun extends ListActivity {
 		    		// "25 more" button.
 		    		if (mThreadsList.size() >= Constants.DEFAULT_THREAD_DOWNLOAD_LIMIT)
 		    			mThreadsList.add(new ThingInfo());
+		    		drawableManager = new DrawableManager();  // clear thumbnails
 		    		mThreadsAdapter.notifyDataSetChanged();
     			}
 	    		// Point the list to last thread user was looking at, if any

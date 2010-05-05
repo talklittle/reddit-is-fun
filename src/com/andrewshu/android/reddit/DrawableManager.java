@@ -41,6 +41,7 @@ import android.widget.ImageView;
 
 public class DrawableManager {
     private Map<String, SoftReference<Drawable>> drawableMap;
+    private DefaultHttpClient mClient = Common.getGzipHttpClient();
     
     public DrawableManager() {
     	drawableMap = new HashMap<String, SoftReference<Drawable>>();
@@ -107,9 +108,8 @@ public class DrawableManager {
     }
 
     private InputStream fetch(String urlString) throws MalformedURLException, IOException {
-    	DefaultHttpClient httpClient = new DefaultHttpClient();
     	HttpGet request = new HttpGet(urlString);
-    	HttpResponse response = httpClient.execute(request);
+    	HttpResponse response = mClient.execute(request);
     	return response.getEntity().getContent();
     }
 
