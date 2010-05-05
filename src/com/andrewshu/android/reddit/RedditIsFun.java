@@ -447,18 +447,9 @@ public final class RedditIsFun extends ListActivity {
         // or if there are fewer than 25 threads...
         if (position < mThreadsAdapter.getCount() - 1 || mThreadsAdapter.getCount() < Constants.DEFAULT_THREAD_DOWNLOAD_LIMIT + 1) {
             if (mSettings.onClickAction.equals(Constants.PREF_ON_CLICK_OPEN_LINK)) {
-                Common.launchBrowser(item.getUrl(), RedditIsFun.this);
+           		Common.launchBrowser(item.getUrl(), RedditIsFun.this);
             } else {
-                if (!item.isIs_self()) {
-                    showDialog(Constants.DIALOG_THING_CLICK);
-                } else {
-                    Intent i = new Intent(getApplicationContext(), CommentsListActivity.class);
-                    i.putExtra(Constants.EXTRA_SUBREDDIT, item.getSubreddit());
-                    i.putExtra(Constants.EXTRA_ID, item.getId());
-                    i.putExtra(Constants.EXTRA_TITLE, item.getTitle());
-                    i.putExtra(Constants.EXTRA_NUM_COMMENTS, Integer.valueOf(item.getNum_comments()));
-                    startActivity(i);
-                }
+                showDialog(Constants.DIALOG_THING_CLICK);
             }
         } else {
         	// 25 more. Use buttons.
@@ -641,8 +632,8 @@ public final class RedditIsFun extends ListActivity {
                 	pin.close();
                 	in.close();
                 }
-            } catch (IOException e) {
-            	if (Constants.LOGGING) Log.e(TAG, "DownloadThreadsTask IOException:" + e.getMessage());
+            } catch (Exception e) {
+            	if (Constants.LOGGING) Log.e(TAG, "DownloadThreadsTask:" + e.getMessage());
             } finally {
         		if (entity != null) {
         			try {

@@ -24,6 +24,7 @@ under the License.
 */
 import java.io.IOException;
 import java.io.InputStream;
+import java.lang.ref.SoftReference;
 import java.net.MalformedURLException;
 import java.util.HashMap;
 import java.util.Map;
@@ -39,26 +40,32 @@ import android.util.Log;
 import android.widget.ImageView;
 
 public class DrawableManager {
-    private final Map<String, Drawable> drawableMap;
-
+    private Map<String, SoftReference<Drawable>> drawableMap;
+    
     public DrawableManager() {
-    	drawableMap = new HashMap<String, Drawable>();
+    	drawableMap = new HashMap<String, SoftReference<Drawable>>();
     }
 
     public Drawable fetchDrawable(String urlString) {
-    	if (drawableMap.containsKey(urlString)) {
-    		return drawableMap.get(urlString);
+    	SoftReference<Drawable> drawableRef = drawableMap.get(urlString);
+    	if (drawableRef != null) {
+    		Drawable drawable = drawableRef.get();
+    		if (drawable != null)
+    			return drawable;
+    		// Reference has expired so remove the key from drawableMap
+    		drawableMap.remove(urlString);
     	}
 
     	if (Constants.LOGGING) Log.d(this.getClass().getSimpleName(), "image url:" + urlString);
     	try {
     		InputStream is = fetch(urlString);
     		Drawable drawable = Drawable.createFromStream(is, "src");
-    		drawableMap.put(urlString, drawable);
+    		drawableRef = new SoftReference<Drawable>(drawable);
+    		drawableMap.put(urlString, drawableRef);
     		if (Constants.LOGGING) Log.d(this.getClass().getSimpleName(), "got a thumbnail drawable: " + drawable.getBounds() + ", "
     				+ drawable.getIntrinsicHeight() + "," + drawable.getIntrinsicWidth() + ", "
     				+ drawable.getMinimumHeight() + "," + drawable.getMinimumWidth());
-    		return drawable;
+    		return drawableRef.get();
     	} catch (MalformedURLException e) {
     		if (Constants.LOGGING) Log.e(this.getClass().getSimpleName(), "fetchDrawable failed", e);
     		return null;
@@ -69,9 +76,15 @@ public class DrawableManager {
     }
 
     public void fetchDrawableOnThread(final String urlString, final ImageView imageView) {
-    	if (drawableMap.containsKey(urlString)) {
-    		imageView.setImageDrawable(drawableMap.get(urlString));
-    		return;
+    	SoftReference<Drawable> drawableRef = drawableMap.get(urlString);
+    	if (drawableRef != null) {
+    		Drawable drawable = drawableRef.get();
+    		if (drawable != null) {
+	    		imageView.setImageDrawable(drawableRef.get());
+	    		return;
+    		}
+    		// Reference has expired so remove the key from drawableMap
+    		drawableMap.remove(urlString);
     	}
 
     	final Handler handler = new Handler() {

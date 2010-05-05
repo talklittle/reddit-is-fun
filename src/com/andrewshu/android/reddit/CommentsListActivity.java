@@ -395,21 +395,11 @@ public class CommentsListActivity extends ListActivity
 		            // Thumbnails open links
 		            if (thumbnailView != null) {
 		            	final String url = item.getUrl();
-		            	thumbnailView.setOnClickListener(new OnClickListener() {
-		            		public void onClick(View v) {
-		            			Common.launchBrowser(url, CommentsListActivity.this);
-		            		}
-		            	});
 		            	// Fill in the thumbnail using a Thread. Note that thumbnail URL can be absolute path.
 		            	if (item.getThumbnail() != null && !Constants.EMPTY_STRING.equals(item.getThumbnail())) {
 		            		dividerView.setVisibility(View.VISIBLE);
 		            		thumbnailView.setVisibility(View.VISIBLE);
 		            		drawableManager.fetchDrawableOnThread(Util.absolutePathToURL(item.getThumbnail()), thumbnailView);
-			            	// Set thumbnail background based on current theme
-			            	if (mSettings.theme == R.style.Reddit_Light)
-			            		thumbnailView.setBackgroundResource(R.drawable.thumbnail_background_light);
-			            	else
-			            		thumbnailView.setBackgroundResource(R.drawable.thumbnail_background_dark);
 		            	} else {
 		            		// if no thumbnail image, hide thumbnail icon
 		            		dividerView.setVisibility(View.GONE);
