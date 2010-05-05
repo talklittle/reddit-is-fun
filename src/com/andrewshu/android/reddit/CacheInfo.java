@@ -35,6 +35,7 @@ public class CacheInfo implements Serializable {
 	static final long serialVersionUID = 39;
 	static final String TAG = "CacheInfo";
 	
+	static final Object CACHE_LOCK = new Object();
 	
 	// timestamps for each cache
 	public long subredditTime = 0;
@@ -58,17 +59,19 @@ public class CacheInfo implements Serializable {
 	 * @throws IOException
 	 */
 	static FileInputStream writeThenRead(Context context, InputStream in, String filename) throws IOException {
-    	FileOutputStream fos = context.openFileOutput(filename, Context.MODE_PRIVATE);
-    	byte[] buf = new byte[1024];
-    	int len = 0;
-    	long total = 0;  // for debugging
-    	while ((len = in.read(buf)) > 0) {
-    		fos.write(buf, 0, len);
-    		total += len;
+    	synchronized (CACHE_LOCK) {
+			FileOutputStream fos = context.openFileOutput(filename, Context.MODE_PRIVATE);
+	    	byte[] buf = new byte[1024];
+	    	int len = 0;
+	    	long total = 0;  // for debugging
+	    	while ((len = in.read(buf)) > 0) {
+	    		fos.write(buf, 0, len);
+	    		total += len;
+	    	}
+	    	if (Constants.LOGGING) Log.d(TAG, total + " bytes written to cache file: " + filename);
+	    	fos.close();
+	    	in.close();
     	}
-    	if (Constants.LOGGING) Log.d(TAG, total + " bytes written to cache file: " + filename);
-    	fos.close();
-    	in.close();
     	
     	// return a new InputStream
    		return context.openFileInput(filename);
@@ -93,11 +96,14 @@ public class CacheInfo implements Serializable {
     }
     
     static CacheInfo getCacheInfo(Context context) throws IOException, ClassNotFoundException {
-    	FileInputStream fis = context.openFileInput(Constants.FILENAME_CACHE_INFO);
-    	ObjectInputStream ois = new ObjectInputStream(fis);
-    	CacheInfo ci = (CacheInfo) ois.readObject();
-    	ois.close();
-    	fis.close();
+    	CacheInfo ci;
+    	synchronized (CACHE_LOCK) {
+	    	FileInputStream fis = context.openFileInput(Constants.FILENAME_CACHE_INFO);
+	    	ObjectInputStream ois = new ObjectInputStream(fis);
+	    	ci = (CacheInfo) ois.readObject();
+	    	ois.close();
+	    	fis.close();
+    	}
     	return ci;
     }
     
@@ -157,11 +163,13 @@ public class CacheInfo implements Serializable {
     
     static void invalidateAllCaches(Context context) {
     	try {
-	    	FileOutputStream fos = context.openFileOutput(Constants.FILENAME_CACHE_INFO, Context.MODE_PRIVATE);
-	    	ObjectOutputStream oos = new ObjectOutputStream(fos);
-	    	oos.writeObject(new CacheInfo());
-	    	oos.close();
-	    	fos.close();
+    		synchronized (CACHE_LOCK) {
+		    	FileOutputStream fos = context.openFileOutput(Constants.FILENAME_CACHE_INFO, Context.MODE_PRIVATE);
+		    	ObjectOutputStream oos = new ObjectOutputStream(fos);
+		    	oos.writeObject(new CacheInfo());
+		    	oos.close();
+		    	fos.close();
+    		}
     	} catch (IOException e) {
     		if (Constants.LOGGING) Log.e(TAG, "invalidateAllCaches: Error writing CacheInfo:" + e.getMessage());
     	}
@@ -178,13 +186,15 @@ public class CacheInfo implements Serializable {
 			ci = new CacheInfo();
     	
     	try {
-	    	FileOutputStream fos = context.openFileOutput(Constants.FILENAME_CACHE_INFO, Context.MODE_PRIVATE);
-	    	ObjectOutputStream oos = new ObjectOutputStream(fos);
-	    	ci.subredditUrl = null;
-	    	ci.subredditTime = 0;
-	    	oos.writeObject(ci);
-	    	oos.close();
-	    	fos.close();
+    		synchronized (CACHE_LOCK) {
+		    	FileOutputStream fos = context.openFileOutput(Constants.FILENAME_CACHE_INFO, Context.MODE_PRIVATE);
+		    	ObjectOutputStream oos = new ObjectOutputStream(fos);
+		    	ci.subredditUrl = null;
+		    	ci.subredditTime = 0;
+		    	oos.writeObject(ci);
+		    	oos.close();
+		    	fos.close();
+    		}
     	} catch (IOException e) {
     		if (Constants.LOGGING) Log.e(TAG, "invalidateCachedSubreddit: Error writing CacheInfo:" + e.getMessage());
     	}
@@ -201,13 +211,15 @@ public class CacheInfo implements Serializable {
 			ci = new CacheInfo();
     	
     	try {
-	    	FileOutputStream fos = context.openFileOutput(Constants.FILENAME_CACHE_INFO, Context.MODE_PRIVATE);
-	    	ObjectOutputStream oos = new ObjectOutputStream(fos);
-	    	ci.threadUrl = null;
-	    	ci.threadTime = 0;
-	    	oos.writeObject(ci);
-	    	oos.close();
-	    	fos.close();
+    		synchronized (CACHE_LOCK) {
+		    	FileOutputStream fos = context.openFileOutput(Constants.FILENAME_CACHE_INFO, Context.MODE_PRIVATE);
+		    	ObjectOutputStream oos = new ObjectOutputStream(fos);
+		    	ci.threadUrl = null;
+		    	ci.threadTime = 0;
+		    	oos.writeObject(ci);
+		    	oos.close();
+		    	fos.close();
+    		}
     	} catch (IOException e) {
     		if (Constants.LOGGING) Log.e(TAG, "invalidateCachedThreadId: Error writing CacheInfo:" + e.getMessage());
     	}
@@ -223,13 +235,15 @@ public class CacheInfo implements Serializable {
 		if (ci == null)
 			ci = new CacheInfo();
     	
-		FileOutputStream fos = context.openFileOutput(Constants.FILENAME_CACHE_INFO, Context.MODE_PRIVATE);
-    	ObjectOutputStream oos = new ObjectOutputStream(fos);
-    	ci.subredditUrl = subredditUrl;
-    	ci.subredditTime = System.currentTimeMillis();
-    	oos.writeObject(ci);
-    	oos.close();
-    	fos.close();
+		synchronized (CACHE_LOCK) {
+			FileOutputStream fos = context.openFileOutput(Constants.FILENAME_CACHE_INFO, Context.MODE_PRIVATE);
+	    	ObjectOutputStream oos = new ObjectOutputStream(fos);
+	    	ci.subredditUrl = subredditUrl;
+	    	ci.subredditTime = System.currentTimeMillis();
+	    	oos.writeObject(ci);
+	    	oos.close();
+	    	fos.close();
+		}
     }
 
     static void setCachedThreadUrl(Context context, String threadUrl) throws IOException {
@@ -242,13 +256,15 @@ public class CacheInfo implements Serializable {
 		if (ci == null)
 			ci = new CacheInfo();
 
-		FileOutputStream fos = context.openFileOutput(Constants.FILENAME_CACHE_INFO, Context.MODE_PRIVATE);
-    	ObjectOutputStream oos = new ObjectOutputStream(fos);
-    	ci.threadUrl = threadUrl;
-    	ci.threadTime = System.currentTimeMillis();
-    	oos.writeObject(ci);
-    	oos.close();
-    	fos.close();
+		synchronized (CACHE_LOCK) {
+			FileOutputStream fos = context.openFileOutput(Constants.FILENAME_CACHE_INFO, Context.MODE_PRIVATE);
+	    	ObjectOutputStream oos = new ObjectOutputStream(fos);
+	    	ci.threadUrl = threadUrl;
+	    	ci.threadTime = System.currentTimeMillis();
+	    	oos.writeObject(ci);
+	    	oos.close();
+	    	fos.close();
+		}
     }
     
     static void setCachedSubredditList(Context context, ArrayList<String> subredditList) throws IOException {
@@ -261,12 +277,14 @@ public class CacheInfo implements Serializable {
 		if (ci == null)
 			ci = new CacheInfo();
 
-		FileOutputStream fos = context.openFileOutput(Constants.FILENAME_CACHE_INFO, Context.MODE_PRIVATE);
-    	ObjectOutputStream oos = new ObjectOutputStream(fos);
-    	ci.subredditList = subredditList;
-    	ci.subredditListTime = System.currentTimeMillis();
-    	oos.writeObject(ci);
-    	oos.close();
-    	fos.close();
+		synchronized (CACHE_LOCK) {
+			FileOutputStream fos = context.openFileOutput(Constants.FILENAME_CACHE_INFO, Context.MODE_PRIVATE);
+	    	ObjectOutputStream oos = new ObjectOutputStream(fos);
+	    	ci.subredditList = subredditList;
+	    	ci.subredditListTime = System.currentTimeMillis();
+	    	oos.writeObject(ci);
+	    	oos.close();
+	    	fos.close();
+		}
     }
 }
