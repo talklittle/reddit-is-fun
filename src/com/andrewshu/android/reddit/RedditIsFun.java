@@ -25,7 +25,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.regex.Pattern;
 
 import org.apache.http.Header;
 import org.apache.http.HttpEntity;
@@ -105,7 +104,6 @@ public final class RedditIsFun extends ListActivity {
     private ThingInfo mVoteTargetThingInfo = null;
     private AsyncTask<?, ?, ?> mCurrentDownloadThreadsTask = null;
     private final Object mCurrentDownloadThreadsTaskLock = new Object();
-    private final Pattern nsfwPattern = Pattern.compile("^.*?nsfw.*?$", Pattern.CASE_INSENSITIVE);
     
     // Navigation that can be cached
     private CharSequence mAfter = null;
@@ -354,7 +352,7 @@ public final class RedditIsFun extends ListActivity {
 	            	subredditView.setVisibility(View.GONE);
 	            }
 
-                if(nsfwPattern.matcher(title).matches()){
+                if(item.isOver_18()){
                     nsfwView.setVisibility(View.VISIBLE);
                 } else {
                     nsfwView.setVisibility(View.GONE);
