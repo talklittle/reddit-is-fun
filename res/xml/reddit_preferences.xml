@@ -39,6 +39,11 @@
         		android:entryValues="@array/pref_theme_values"
         		android:dialogTitle="@string/pref_theme_dialogtitle" />
         		
+        <CheckBoxPreference
+                android:key="load_thumbnails"
+                android:defaultValue="true"
+                android:title="@string/pref_load_thumbnails" />
+                   
    		<ListPreference
    				android:key="rotation"
         		android:title="@string/pref_rotation"
@@ -63,14 +68,6 @@
         		android:entryValues="@array/pref_mail_notification_service_values"
         		android:dialogTitle="@string/pref_mail_notification_service_dialogtitle" />
 
-        <ListPreference
-        		android:key="on_click"
-        		android:title="@string/pref_on_click"
-        		android:entries="@array/pref_click_choices"
-        		android:dialogTitle="@string/pref_click_dialogtitle"
-        		android:entryValues="@array/pref_click_values"
-        		android:defaultValue="ON_CLICK_OPEN_LINK"/>
-
 		<!-- 
         <ListPreference
                 android:key="text_size"
@@ -81,13 +78,6 @@
                 android:dialogTitle="@string/pref_text_size_dialogtitle" />
         -->
 
-		<!-- 
-        <CheckBoxPreference
-                android:key="load_thumbnails"
-                android:defaultValue="true"
-                android:title="@string/pref_content_load_thumbnails"
-                android:summary="@string/pref_content_load_thumbnails_summary" />   
-        -->
     </PreferenceCategory>
 
 </PreferenceScreen>

@@ -257,8 +257,6 @@ public final class RedditIsFun extends ListActivity {
     	static final int VIEW_TYPE_COUNT = 2;
     	public boolean mIsLoading = true;
     	private LayoutInflater mInflater;
-//        private boolean mDisplayThumbnails = false; // TODO: use this
-//        private SparseArray<SoftReference<Bitmap>> mBitmapCache = null; // TODO?: use this?
     	private int mFrequentSeparatorPos = ListView.INVALID_POSITION;
         
         public ThreadsListAdapter(Context context, List<ThingInfo> objects) {
@@ -314,6 +312,7 @@ public final class RedditIsFun extends ListActivity {
 	            ImageView voteUpView = (ImageView) view.findViewById(R.id.vote_up_image);
 	            ImageView voteDownView = (ImageView) view.findViewById(R.id.vote_down_image);
 	            ImageView thumbnailView = (ImageView) view.findViewById(R.id.thumbnail);
+	            View dividerView = view.findViewById(R.id.divider);
 	            
 	            // Set the title and domain using a SpannableStringBuilder
 	            SpannableStringBuilder builder = new SpannableStringBuilder();
@@ -372,23 +371,32 @@ public final class RedditIsFun extends ListActivity {
 	            
 	            // Thumbnails open links
 	            if (thumbnailView != null) {
-	            	final String url = item.getUrl();
-	            	thumbnailView.setOnClickListener(new OnClickListener() {
-	            		public void onClick(View v) {
-	            			Common.launchBrowser(url, RedditIsFun.this);
-	            		}
-	            	});
-	            	// Fill in the thumbnail using a Thread. Note that thumbnail URL can be absolute path.
-	            	if (item.getThumbnail() != null && !Constants.EMPTY_STRING.equals(item.getThumbnail()))
-	            		drawableManager.fetchDrawableOnThread(Util.absolutePathToURL(item.getThumbnail()), thumbnailView);
-	            	else
-	            		thumbnailView.setImageResource(R.drawable.go_arrow);
-	            	
-	            	// Set thumbnail background based on current theme
-	            	if (mSettings.theme == R.style.Reddit_Light)
-	            		thumbnailView.setBackgroundResource(R.drawable.thumbnail_background_light);
-	            	else
-	            		thumbnailView.setBackgroundResource(R.drawable.thumbnail_background_dark);
+	            	if (mSettings.loadThumbnails) {
+	            		dividerView.setVisibility(View.VISIBLE);
+	            		thumbnailView.setVisibility(View.VISIBLE);
+	            		
+		            	final String url = item.getUrl();
+		            	thumbnailView.setOnClickListener(new OnClickListener() {
+		            		public void onClick(View v) {
+		            			Common.launchBrowser(url, RedditIsFun.this);
+		            		}
+		            	});
+		            	// Fill in the thumbnail using a Thread. Note that thumbnail URL can be absolute path.
+		            	if (item.getThumbnail() != null && !Constants.EMPTY_STRING.equals(item.getThumbnail()))
+		            		drawableManager.fetchDrawableOnThread(Util.absolutePathToURL(item.getThumbnail()), thumbnailView);
+		            	else
+		            		thumbnailView.setImageResource(R.drawable.go_arrow);
+		            	
+		            	// Set thumbnail background based on current theme
+		            	if (mSettings.theme == R.style.Reddit_Light)
+		            		thumbnailView.setBackgroundResource(R.drawable.thumbnail_background_light);
+		            	else
+		            		thumbnailView.setBackgroundResource(R.drawable.thumbnail_background_dark);
+	            	} else {
+	            		// if thumbnails disabled, hide thumbnail icon
+	            		dividerView.setVisibility(View.GONE);
+	            		thumbnailView.setVisibility(View.GONE);
+	            	}
 	            }
             } else {
             	// The "25 more" list item
@@ -446,11 +454,7 @@ public final class RedditIsFun extends ListActivity {
     	// if mThreadsAdapter.getCount() - 1 contains the "next 25, prev 25" buttons,
         // or if there are fewer than 25 threads...
         if (position < mThreadsAdapter.getCount() - 1 || mThreadsAdapter.getCount() < Constants.DEFAULT_THREAD_DOWNLOAD_LIMIT + 1) {
-            if (mSettings.onClickAction.equals(Constants.PREF_ON_CLICK_OPEN_LINK)) {
-           		Common.launchBrowser(item.getUrl(), RedditIsFun.this);
-            } else {
-                showDialog(Constants.DIALOG_THING_CLICK);
-            }
+            showDialog(Constants.DIALOG_THING_CLICK);
         } else {
         	// 25 more. Use buttons.
         }

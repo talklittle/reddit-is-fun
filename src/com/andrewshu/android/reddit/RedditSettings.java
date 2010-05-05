@@ -38,11 +38,10 @@ public class RedditSettings {
 	// --- Themes ---
 	int theme = R.style.Reddit_Light;
 	int rotation = -1;  // -1 means unspecified
+	boolean loadThumbnails = true;
 	
 	String mailNotificationStyle = Constants.PREF_MAIL_NOTIFICATION_STYLE_DEFAULT;
 	String mailNotificationService = Constants.PREF_MAIL_NOTIFICATION_SERVICE_OFF;
-	
-	String onClickAction = Constants.PREF_ON_CLICK_OPEN_DIALOG;
 	
 	// --- States that change frequently. ---
 	CharSequence subreddit = Constants.FRONTPAGE_STRING;
@@ -114,6 +113,10 @@ public class RedditSettings {
 		this.homepage = homepage;
 	}
 	
+	void setLoadThumbnails(boolean loadThumbnails) {
+		this.loadThumbnails = loadThumbnails;
+	}
+	
 	void setLoggedIn(boolean loggedIn) {
 		this.loggedIn = loggedIn;
 	}
@@ -129,10 +132,6 @@ public class RedditSettings {
 	
 	void setModhash(CharSequence modhash) {
 		this.modhash = modhash;
-	}
-	
-	void setOnClickAction (String action)	{
-		this.onClickAction = action;
 	}
 	
 	void setRedditSessionCookie(Cookie redditSessionCookie) {

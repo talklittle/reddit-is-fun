@@ -394,14 +394,20 @@ public class CommentsListActivity extends ListActivity
 	            	
 		            // Thumbnails open links
 		            if (thumbnailView != null) {
-		            	final String url = item.getUrl();
-		            	// Fill in the thumbnail using a Thread. Note that thumbnail URL can be absolute path.
-		            	if (item.getThumbnail() != null && !Constants.EMPTY_STRING.equals(item.getThumbnail())) {
-		            		dividerView.setVisibility(View.VISIBLE);
-		            		thumbnailView.setVisibility(View.VISIBLE);
-		            		drawableManager.fetchDrawableOnThread(Util.absolutePathToURL(item.getThumbnail()), thumbnailView);
+		            	if (mSettings.loadThumbnails) {
+			            	final String url = item.getUrl();
+			            	// Fill in the thumbnail using a Thread. Note that thumbnail URL can be absolute path.
+			            	if (item.getThumbnail() != null && !Constants.EMPTY_STRING.equals(item.getThumbnail())) {
+			            		dividerView.setVisibility(View.VISIBLE);
+			            		thumbnailView.setVisibility(View.VISIBLE);
+			            		drawableManager.fetchDrawableOnThread(Util.absolutePathToURL(item.getThumbnail()), thumbnailView);
+			            	} else {
+			            		// if no thumbnail image, hide thumbnail icon
+			            		dividerView.setVisibility(View.GONE);
+			            		thumbnailView.setVisibility(View.GONE);
+			            	}
 		            	} else {
-		            		// if no thumbnail image, hide thumbnail icon
+		            		// if thumbnails disabled, hide thumbnail icon
 		            		dividerView.setVisibility(View.GONE);
 		            		thumbnailView.setVisibility(View.GONE);
 		            	}
