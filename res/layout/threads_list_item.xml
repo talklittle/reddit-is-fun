@@ -106,6 +106,18 @@
 			        android:src="@drawable/go_arrow"
 			        android:scaleType="fitCenter"
 		    	/>
+		    	
+		    	<ProgressBar android:id="@+id/indeterminate_progress"
+		    		android:layout_width="?android:attr/listPreferredItemHeight"
+			        android:layout_height="?android:attr/listPreferredItemHeight"
+			        android:layout_gravity="center"
+			        android:layout_centerHorizontal="true"
+			        android:layout_marginTop="5dip"
+			        android:layout_marginBottom="5dip"
+			        android:visibility="gone"
+			        android:indeterminate="true"
+			        />
+			        
 	    	</LinearLayout>
     	
 		    

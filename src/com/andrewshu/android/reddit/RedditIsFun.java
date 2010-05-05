@@ -71,6 +71,7 @@ import android.widget.CheckBox;
 import android.widget.CompoundButton;
 import android.widget.ImageView;
 import android.widget.ListView;
+import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -314,6 +315,7 @@ public final class RedditIsFun extends ListActivity {
 	            ImageView voteDownView = (ImageView) view.findViewById(R.id.vote_down_image);
 	            ImageView thumbnailView = (ImageView) view.findViewById(R.id.thumbnail);
 	            View dividerView = view.findViewById(R.id.divider);
+	            ProgressBar indeterminateProgressBar = (ProgressBar) view.findViewById(R.id.indeterminate_progress);
 	            
 	            // Set the title and domain using a SpannableStringBuilder
 	            SpannableStringBuilder builder = new SpannableStringBuilder();
@@ -375,6 +377,7 @@ public final class RedditIsFun extends ListActivity {
 	            	if (mSettings.loadThumbnails) {
 	            		dividerView.setVisibility(View.VISIBLE);
 	            		thumbnailView.setVisibility(View.VISIBLE);
+	            		indeterminateProgressBar.setVisibility(View.GONE);
 	            		
 		            	final String url = item.getUrl();
 		            	final String jumpToId = item.getId();
@@ -385,10 +388,14 @@ public final class RedditIsFun extends ListActivity {
 		            		}
 		            	});
 		            	// Fill in the thumbnail using a Thread. Note that thumbnail URL can be absolute path.
-		            	if (item.getThumbnail() != null && !Constants.EMPTY_STRING.equals(item.getThumbnail()))
-		            		drawableManager.fetchDrawableOnThread(Util.absolutePathToURL(item.getThumbnail()), thumbnailView);
-		            	else
+		            	if (item.getThumbnail() != null && !Constants.EMPTY_STRING.equals(item.getThumbnail())) {
+		            		drawableManager.fetchDrawableOnThread(Util.absolutePathToURL(item.getThumbnail()),
+		            				thumbnailView, indeterminateProgressBar, RedditIsFun.this);
+		            	} else {
+		            		indeterminateProgressBar.setVisibility(View.GONE);
+		            		thumbnailView.setVisibility(View.VISIBLE);
 		            		thumbnailView.setImageResource(R.drawable.go_arrow);
+		            	}
 		            	
 		            	// Set thumbnail background based on current theme
 		            	if (mSettings.theme == R.style.Reddit_Light)
@@ -399,6 +406,7 @@ public final class RedditIsFun extends ListActivity {
 	            		// if thumbnails disabled, hide thumbnail icon
 	            		dividerView.setVisibility(View.GONE);
 	            		thumbnailView.setVisibility(View.GONE);
+	            		indeterminateProgressBar.setVisibility(View.GONE);
 	            	}
 	            }
             } else {
