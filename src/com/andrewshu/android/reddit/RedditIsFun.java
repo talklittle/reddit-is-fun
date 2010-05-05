@@ -376,8 +376,10 @@ public final class RedditIsFun extends ListActivity {
 	            		thumbnailView.setVisibility(View.VISIBLE);
 	            		
 		            	final String url = item.getUrl();
+		            	final String jumpToId = item.getId();
 		            	thumbnailView.setOnClickListener(new OnClickListener() {
 		            		public void onClick(View v) {
+		            			mJumpToThreadId = jumpToId;
 		            			Common.launchBrowser(url, RedditIsFun.this);
 		            		}
 		            	});
