@@ -104,7 +104,7 @@
 			        android:layout_marginTop="5dip"
 			        android:layout_marginBottom="5dip"
 			        android:src="@drawable/go_arrow"
-			        android:scaleType="centerInside"
+			        android:scaleType="fitCenter"
 		    	/>
 	    	</LinearLayout>
     	
