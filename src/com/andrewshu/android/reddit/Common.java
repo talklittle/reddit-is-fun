@@ -224,10 +224,10 @@ public class Common {
             HttpPost httppost = new HttpPost("http://www.reddit.com/api/login/"+username);
             httppost.setEntity(new UrlEncodedFormEntity(nvps, HTTP.UTF_8));
             
-            // Set timeout to 30 seconds for login
+            // Set timeout to 45 seconds for login
             HttpParams params = httppost.getParams();
-	        HttpConnectionParams.setConnectionTimeout(params, 30000);
-	        HttpConnectionParams.setSoTimeout(params, 30000);
+	        HttpConnectionParams.setConnectionTimeout(params, 45000);
+	        HttpConnectionParams.setSoTimeout(params, 45000);
 	        
             // Perform the HTTP POST request
         	HttpResponse response = client.execute(httppost);
