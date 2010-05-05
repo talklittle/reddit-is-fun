@@ -134,12 +134,24 @@
 		    
 		    <!-- Next row -->
 		    
-	        <TextView android:id="@+id/numComments"
-		        android:layout_width="wrap_content"
+		    <TextView android:id="@+id/nsfw"
+		  		android:layout_width="wrap_content"
 		        android:layout_height="wrap_content"
 		        android:layout_below="@id/title"
 		        android:layout_alignLeft="@id/title"
 		        android:layout_marginRight="5dip"
+		        android:textSize="10sp"
+		        android:text="nsfw"
+		        android:textColor="#f00"
+		    />
+		    
+	        <TextView android:id="@+id/numComments"
+		        android:layout_width="wrap_content"
+		        android:layout_height="wrap_content"
+		        android:layout_toRightOf="@id/nsfw"
+		        android:layout_marginRight="5dip"
+		        android:layout_alignBaseline="@id/nsfw"
+		        android:layout_below="@id/title"
 		        android:text="0 cmts"
 		
 		        android:singleLine="true"
@@ -157,14 +169,14 @@
 		        android:textSize="10sp"
 		        android:text="funny"
 		    />
-	
+		    
 			<!-- A bottommost row used for OP posts in commentslist -->		
 		
 			<TextView android:id="@+id/submissionTime"
 		        android:layout_width="wrap_content"
 		        android:layout_height="wrap_content"
 				android:layout_below="@id/numComments"
-			    android:layout_alignLeft="@id/numComments"
+			    android:layout_alignLeft="@id/title"
 			    android:layout_marginRight="4dip"
 			    android:text="very recently"
 		        android:visibility="gone"

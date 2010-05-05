@@ -25,6 +25,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.regex.Pattern;
 
 import org.apache.http.Header;
 import org.apache.http.HttpEntity;
@@ -104,7 +105,8 @@ public final class RedditIsFun extends ListActivity {
     private ThingInfo mVoteTargetThingInfo = null;
     private AsyncTask<?, ?, ?> mCurrentDownloadThreadsTask = null;
     private final Object mCurrentDownloadThreadsTaskLock = new Object();
-
+    private final Pattern nsfwPattern = Pattern.compile("^.*?nsfw.*?$", Pattern.CASE_INSENSITIVE);
+    
     // Navigation that can be cached
     private CharSequence mAfter = null;
     private CharSequence mBefore = null;
@@ -310,6 +312,7 @@ public final class RedditIsFun extends ListActivity {
 	            TextView votesView = (TextView) view.findViewById(R.id.votes);
 	            TextView numCommentsView = (TextView) view.findViewById(R.id.numComments);
 	            TextView subredditView = (TextView) view.findViewById(R.id.subreddit);
+	            TextView nsfwView = (TextView) view.findViewById(R.id.nsfw);
 	//            TextView submissionTimeView = (TextView) view.findViewById(R.id.submissionTime);
 	            ImageView voteUpView = (ImageView) view.findViewById(R.id.vote_up_image);
 	            ImageView voteDownView = (ImageView) view.findViewById(R.id.vote_down_image);
@@ -350,7 +353,13 @@ public final class RedditIsFun extends ListActivity {
 	            } else {
 	            	subredditView.setVisibility(View.GONE);
 	            }
-	            
+
+                if(nsfwPattern.matcher(title).matches()){
+                    nsfwView.setVisibility(View.VISIBLE);
+                } else {
+                    nsfwView.setVisibility(View.GONE);
+                }
+                
 	            // Set the up and down arrow colors based on whether user likes
 	            if (mSettings.loggedIn) {
 	            	if (item.getLikes() == null) {
