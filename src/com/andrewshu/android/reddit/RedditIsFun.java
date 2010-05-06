@@ -405,10 +405,13 @@ public final class RedditIsFun extends ListActivity {
 		            	}
 		            	
 		            	// Set thumbnail background based on current theme
-		            	if (mSettings.theme == R.style.Reddit_Light)
+		            	if (mSettings.theme == R.style.Reddit_Light) {
 		            		thumbnailView.setBackgroundResource(R.drawable.thumbnail_background_light);
-		            	else
+		            		indeterminateProgressBar.setBackgroundResource(R.drawable.thumbnail_background_light);
+		            	} else {
 		            		thumbnailView.setBackgroundResource(R.drawable.thumbnail_background_dark);
+		            		indeterminateProgressBar.setBackgroundResource(R.drawable.thumbnail_background_dark);
+		            	}
 	            	} else {
 	            		// if thumbnails disabled, hide thumbnail icon
 	            		dividerView.setVisibility(View.GONE);
