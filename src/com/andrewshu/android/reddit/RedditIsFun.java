@@ -273,7 +273,8 @@ public final class RedditIsFun extends ListActivity {
                 // We don't want the separator view to be recycled.
                 return IGNORE_ITEM_VIEW_TYPE;
             }
-            if (position < getCount() - 1 || getCount() < Constants.DEFAULT_THREAD_DOWNLOAD_LIMIT + 1)
+        	// If we are on a subsequent page, return the item view type 
+            if (position < getCount() - 1 || (mAfter == null && mBefore == null))
         		return THREAD_ITEM_VIEW_TYPE;
         	return MORE_ITEM_VIEW_TYPE;
         }
@@ -295,7 +296,7 @@ public final class RedditIsFun extends ListActivity {
             View view;
             Resources res = getResources();
 
-            if (position < getCount() - 1 || getCount() < Constants.DEFAULT_THREAD_DOWNLOAD_LIMIT + 1) {
+            if (position < getCount() - 1 || (mAfter == null && mBefore == null)) {
 	            // Here view may be passed in for re-use, or we make a new one.
 	            if (convertView == null) {
 	                view = mInflater.inflate(R.layout.threads_list_item, null);
