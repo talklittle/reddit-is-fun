@@ -26,6 +26,7 @@ import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.apache.commons.lang.StringEscapeUtils;
 import org.apache.http.Header;
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpResponse;
@@ -320,7 +321,7 @@ public final class RedditIsFun extends ListActivity {
 	            
 	            // Set the title and domain using a SpannableStringBuilder
 	            SpannableStringBuilder builder = new SpannableStringBuilder();
-	            String title = item.getTitle().replaceAll("\n ", " ").replaceAll(" \n", " ").replaceAll("\n", " ");
+	            String title = item.getTitle();
 	            SpannableString titleSS = new SpannableString(title);
 	            int titleLen = title.length();
 	            TextAppearanceSpan titleTAS = new TextAppearanceSpan(getApplicationContext(), R.style.TextAppearance_14sp);
@@ -699,8 +700,15 @@ public final class RedditIsFun extends ListActivity {
     			// Go through the children and get the ThingInfos
     			for (ThingListing tiContainer : data.getChildren()) {
     				// Only add entries that are threads. kind="t3"
-    				if (Constants.THREAD_KIND.equals(tiContainer.getKind()))
+    				if (Constants.THREAD_KIND.equals(tiContainer.getKind())) {
+    					ThingInfo ti = tiContainer.getData();
+    					
+    					// Additional formatting on the threads
+    					ti.setTitle(StringEscapeUtils.unescapeHtml(ti.getTitle().trim()
+    							.replaceAll("\r", "").replaceAll("\n ", " ").replaceAll(" \n", " ").replaceAll("\n", " ")));
+    					
     					mThingInfos.add(tiContainer.getData());
+    				}
     			}
     		} catch (Exception ex) {
     			if (Constants.LOGGING) Log.e(TAG, "parseSubredditJSON:" + ex.getMessage());
@@ -1243,7 +1251,7 @@ public final class RedditIsFun extends ListActivity {
     		final Button linkButton = (Button) dialog.findViewById(R.id.thread_link_button);
     		final Button commentsButton = (Button) dialog.findViewById(R.id.thread_comments_button);
     		
-    		titleView.setText(mVoteTargetThingInfo.getTitle().replaceAll("\n ", " ").replaceAll(" \n", " ").replaceAll("\n", " "));
+    		titleView.setText(mVoteTargetThingInfo.getTitle());
     		urlView.setText(mVoteTargetThingInfo.getUrl());
     		sb = new StringBuilder(Util.getTimeAgo(mVoteTargetThingInfo.getCreated_utc()))
     			.append(" by ").append(mVoteTargetThingInfo.getAuthor());

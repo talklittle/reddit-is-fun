@@ -320,6 +320,7 @@ public class CommentsListActivity extends ListActivity
 	                TextView votesView = (TextView) view.findViewById(R.id.votes);
 	                TextView numCommentsView = (TextView) view.findViewById(R.id.numComments);
 	                TextView subredditView = (TextView) view.findViewById(R.id.subreddit);
+	                TextView nsfwView = (TextView) view.findViewById(R.id.nsfw);
 	                TextView submissionTimeView = (TextView) view.findViewById(R.id.submissionTime);
 	                TextView submitterView = (TextView) view.findViewById(R.id.submitter);
 	                ImageView voteUpView = (ImageView) view.findViewById(R.id.vote_up_image);
@@ -334,7 +335,7 @@ public class CommentsListActivity extends ListActivity
 	                
 	                // Set the title and domain using a SpannableStringBuilder
 	                SpannableStringBuilder builder = new SpannableStringBuilder();
-	                String title = mOpThingInfo.getTitle().replaceAll("\n ", " ").replaceAll(" \n", " ").replaceAll("\n", " ");
+	                String title = mOpThingInfo.getTitle();
 	                SpannableString titleSS = new SpannableString(title);
 	                int titleLen = title.length();
 	                TextAppearanceSpan titleTAS = new TextAppearanceSpan(getApplicationContext(), R.style.TextAppearance_14sp);
@@ -364,7 +365,13 @@ public class CommentsListActivity extends ListActivity
 	                submissionTimeView.setText(Util.getTimeAgo(mOpThingInfo.getCreated_utc()));
 	                submitterView.setText("by "+mOpThingInfo.getAuthor());
 	                
-	                // Set the up and down arrow colors based on whether user likes
+	                if(item.isOver_18()){
+	                    nsfwView.setVisibility(View.VISIBLE);
+	                } else {
+	                    nsfwView.setVisibility(View.GONE);
+	                }
+	                
+		            // Set the up and down arrow colors based on whether user likes
 	                if (mSettings.loggedIn) {
 	                	if (mOpThingInfo.getLikes() == null) {
 	                		voteUpView.setImageResource(R.drawable.vote_up_gray);
@@ -886,6 +893,8 @@ public class CommentsListActivity extends ListActivity
 					}
 				}
 				// Pull other data from the OP
+				mOpThingInfo.setTitle(StringEscapeUtils.unescapeHtml(mOpThingInfo.getTitle().trim()
+						.replaceAll("\r", "").replaceAll("\n ", " ").replaceAll(" \n", " ").replaceAll("\n", " ")));
 				// do markdown
 				mOpThingInfo.setSelftext(StringEscapeUtils.unescapeHtml(mOpThingInfo.getSelftext().trim().replaceAll("\r", "")));
     			mOpThingInfo.setSSBSelftext(markdown.markdown(mOpThingInfo.getSelftext(), new SpannableStringBuilder(), mOpThingInfo.getUrls()));
@@ -992,10 +1001,8 @@ public class CommentsListActivity extends ListActivity
     			// We modified mCommentsList, which backs mCommentsAdapter, so mCommentsAdapter has changed too.
     			mCommentsAdapter.notifyDataSetChanged();
     			// Set title in android titlebar
-    			if (mThreadTitle == null) {
-	    			mThreadTitle = mOpThingInfo.getTitle().replaceAll("\n ", " ").replaceAll(" \n", " ").replaceAll("\n", " ");
-	    		}
-    			setTitle(mThreadTitle + " : " + mSettings.subreddit);
+    			if (mThreadTitle != null)
+    				setTitle(mThreadTitle + " : " + mSettings.subreddit);
 	    		// Point the list to last comment user was looking at, if any
 	    		jumpToComment();
     		} else {
@@ -2070,7 +2077,7 @@ public class CommentsListActivity extends ListActivity
     		if (mVoteTargetThing == mOpThingInfo) {
 				likes = mVoteTargetThing.getLikes();
     			titleView.setVisibility(View.VISIBLE);
-    			titleView.setText(mOpThingInfo.getTitle().replaceAll("\n ", " ").replaceAll(" \n", " ").replaceAll("\n", " "));
+    			titleView.setText(mOpThingInfo.getTitle());
     			urlView.setVisibility(View.VISIBLE);
     			urlView.setText(mOpThingInfo.getUrl());
     			submissionStuffView.setVisibility(View.VISIBLE);
