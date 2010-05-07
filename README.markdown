@@ -16,6 +16,8 @@ Contributors:
 * jaspervdj
 * kostmo
 * armooo
+* fberger
+* faux
 
 Android Market QR Codes
 ----------------
