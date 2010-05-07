@@ -134,13 +134,13 @@ public class Constants {
     static final String JUMP_TO_COMMENT_CONTEXT_KEY = "jump_to_comment_context";
     static final String JUMP_TO_COMMENT_POSITION_KEY = "jump_to_comment_position";
     static final String JUMP_TO_THREAD_ID_KEY = "jump_to_thread_id";
+    static final String LAST_AFTER_KEY = "last_after";
+    static final String LAST_BEFORE_KEY = "last_before";
     static final String REPORT_TARGET_NAME_KEY = "report_target_name";
     static final String REPLY_TARGET_NAME_KEY = "reply_target_name";
     static final String SUBREDDIT_KEY = "subreddit";
-    static final String URL_TO_GET_HERE_KEY = "url_to_get_here";
+    static final String THREAD_COUNT_KEY = "thread_count";
     static final String VOTE_TARGET_THING_INFO_KEY = "vote_target_thing_info";
-    
-    static final String THREAD_COUNT = "threadCount";
     
     static final String SUBMIT_KIND_LINK = "link";
     static final String SUBMIT_KIND_SELF = "self";
