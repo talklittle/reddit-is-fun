@@ -211,13 +211,6 @@ public final class RedditIsFun extends ListActivity {
         	getListView().setBackgroundResource(R.color.white);
         registerForContextMenu(getListView());
 
-        getListView().setOnItemLongClickListener(new AdapterView.OnItemLongClickListener() {
-        	@Override
-        	public boolean onItemLongClick(AdapterView<?> av, View v, int pos, long id) {
-        	   onLongListItemClick(v,pos,id);
-        	   return true; 
-        	}});
-        
         // allow the trackball to select next25 and prev25 buttons
         getListView().setItemsCanFocus(true);
     }
@@ -510,22 +503,6 @@ public final class RedditIsFun extends ListActivity {
         } else {
         	// 25 more. Use buttons.
         }
-    }
-
-    protected void onLongListItemClick(View v, int position, long id)
-    {
-    	ThingInfo item = mThreadsAdapter.getItem(position);
-    
-	    // if mThreadsAdapter.getCount() - 1 contains the "next 25, prev 25" buttons,
-	    // or if there are fewer than 25 threads...
-	    if (position < mThreadsAdapter.getCount() - 1 || mThreadsAdapter.getCount() < Constants.DEFAULT_THREAD_DOWNLOAD_LIMIT + 1) {
-	        // Mark the thread as selected
-	        mVoteTargetThingInfo = item;
-	        mJumpToThreadId = item.getId();
-	        showDialog(Constants.DIALOG_THING_CLICK);
-	    } else {
-	    	// 25 more. Use buttons.
-	    }
     }
 
     /**
