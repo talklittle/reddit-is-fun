@@ -12,6 +12,7 @@ Contributors:
 * jc4p
 * albertb
 * samongoose
+* fernandotakai
 * billyf
 * jaspervdj
 * kostmo
