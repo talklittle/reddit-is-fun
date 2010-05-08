@@ -18,6 +18,7 @@ import org.apache.http.protocol.HTTP;
 import android.content.Context;
 import android.os.AsyncTask;
 import android.util.Log;
+import android.widget.ArrayAdapter;
 import android.widget.Toast;
 
 class SaveTask extends AsyncTask<Void, Void, Boolean> {
@@ -29,13 +30,13 @@ class SaveTask extends AsyncTask<Void, Void, Boolean> {
 	private boolean mSave;
 	private RedditSettings mSettings;
 	private Context mContext;
-	private RedditIsFun.ThreadsListAdapter mThreadsListAdapter;
+	private ArrayAdapter mThreadsListAdapter;
 	
 	private final DefaultHttpClient mClient = Common.getGzipHttpClient();
 	
 	public SaveTask(boolean mSave, ThingInfo mVoteTargetThreadInfo, 
 								RedditSettings mSettings, Context mContext, 
-								RedditIsFun.ThreadsListAdapter mThreadsListAdapter){
+								ArrayAdapter mThreadsListAdapter){
 		if(mSave){
 			this.mUrl = "http://www.reddit.com/api/save";
 		} else {
@@ -146,7 +147,8 @@ class SaveTask extends AsyncTask<Void, Void, Boolean> {
 				mTargetThreadInfo.setSaved(false);
 				Toast.makeText(mContext, "Unsaved!", Toast.LENGTH_LONG).show();
 			}
-			mThreadsListAdapter.notifyDataSetChanged();
+			if(mThreadsListAdapter != null)
+				mThreadsListAdapter.notifyDataSetChanged();
 		} else {
 			Common.showErrorToast(mUserError, Toast.LENGTH_LONG, mContext);
 		}
