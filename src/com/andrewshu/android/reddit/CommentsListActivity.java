@@ -1764,8 +1764,13 @@ public class CommentsListActivity extends ListActivity
     	int rowId = (int) info.id;
     	
     	if (rowId == 0) {
-//    		if (mSettings.loggedIn)
-//    			menu.add(0, Constants.DIALOG_REPORT, Menu.NONE, "Report thread");
+    		if(mOpThingInfo.isSaved()){
+    			menu.add(0, Constants.UNSAVE_CONTEXT_ITEM, Menu.NONE, "Unsave");
+    		} else {
+    			menu.add(0, Constants.SAVE_CONTEXT_ITEM, Menu.NONE, "Save");
+    		}
+    		
+    		menu.add(0, Constants.SHARE_CONTEXT_ITEM, Menu.NONE, "Share");
     	} else if (mMorePositions.contains(rowId)) {
     		menu.add(0, Constants.DIALOG_GOTO_PARENT, Menu.NONE, "Go to parent");
     	} else if (mHiddenCommentHeads.contains(rowId)) {
@@ -1791,12 +1796,37 @@ public class CommentsListActivity extends ListActivity
     	int rowId = (int) info.id;
     	
     	switch (item.getItemId()) {
+    	case Constants.SAVE_CONTEXT_ITEM:
+    		new SaveTask(true, mOpThingInfo, mSettings, this, mCommentsAdapter).execute();
+    		return true;
+    		
+    	case Constants.UNSAVE_CONTEXT_ITEM:
+    		new SaveTask(false, mOpThingInfo, mSettings, this, mCommentsAdapter).execute();
+    		return true;
+    		
+    	case Constants.SHARE_CONTEXT_ITEM:
+    		Intent intent = new Intent();
+			intent.setAction(Intent.ACTION_SEND);
+			intent.setType("text/plain");
+
+			intent.putExtra(Intent.EXTRA_TEXT, mOpThingInfo.getUrl());
+			
+			try {
+				startActivity(Intent.createChooser(intent, "Share Link"));
+			} catch (android.content.ActivityNotFoundException ex) {
+				
+			}
+			
+			return true;
+			
     	case Constants.DIALOG_HIDE_COMMENT:
     		hideComment(rowId);
     		return true;
+    		
     	case Constants.DIALOG_SHOW_COMMENT:
     		showComment(rowId);
     		return true;
+    		
     	case Constants.DIALOG_GOTO_PARENT:
     		synchronized (COMMENT_ADAPTER_LOCK) {
     			int myIndent = mCommentsAdapter.getItem(rowId).getIndent();
@@ -1807,6 +1837,7 @@ public class CommentsListActivity extends ListActivity
 	    		getListView().setSelectionFromTop(parentRowId, 10);
     		}
     		return true;
+    		
     	case Constants.DIALOG_EDIT:
     		synchronized (COMMENT_ADAPTER_LOCK) {
 	    		mReplyTargetName = mCommentsAdapter.getItem(rowId).getName();
@@ -1814,6 +1845,7 @@ public class CommentsListActivity extends ListActivity
     		}
     		showDialog(Constants.DIALOG_EDIT);
     		return true;
+    		
     	case Constants.DIALOG_DELETE:
     		synchronized (COMMENT_ADAPTER_LOCK) {
     			mReplyTargetName = mCommentsAdapter.getItem(rowId).getName();
@@ -1822,12 +1854,14 @@ public class CommentsListActivity extends ListActivity
     		mDeleteTargetKind = Constants.COMMENT_KIND;
     		showDialog(Constants.DIALOG_DELETE);
     		return true;
+    		
     	case Constants.DIALOG_REPORT:
     		synchronized (COMMENT_ADAPTER_LOCK) {
     			mReportTargetName = mCommentsAdapter.getItem(rowId).getName();
     		}
     		showDialog(Constants.DIALOG_REPORT);
     		return true;
+    		
 		default:
     		return super.onContextItemSelected(item);	
     	}
