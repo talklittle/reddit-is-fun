@@ -1032,6 +1032,7 @@ public final class RedditIsFun extends ListActivity {
 			i.putExtra(Constants.EXTRA_TITLE, _item.getTitle());
 			i.putExtra(Constants.EXTRA_NUM_COMMENTS, _item.getNum_comments());
 			startActivity(i);
+			return true;
 		
 		case Constants.SAVE_CONTEXT_ITEM:
 			new SaveTask(true, _item, mSettings, this, mThreadsAdapter).execute();
