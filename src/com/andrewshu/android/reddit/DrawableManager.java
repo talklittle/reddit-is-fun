@@ -83,7 +83,6 @@ public class DrawableManager {
     	}
 
     	final Runnable progressBarShow = new Runnable() {
-    		@Override
     		public void run() {
     			if (indeterminateProgressBar != null) {
     				imageView.setVisibility(View.GONE);
@@ -92,7 +91,6 @@ public class DrawableManager {
     		}
     	};
     	final Runnable progressBarHide = new Runnable() {
-    		@Override
     		public void run() {
     			if (indeterminateProgressBar != null) {
     				indeterminateProgressBar.setVisibility(View.GONE);
