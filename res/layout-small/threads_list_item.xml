@@ -74,23 +74,12 @@
 				android:src="@drawable/vote_down_gray"
 				/>
 		    
-		    <!-- Thumbnail invisible by default -->
-		    <ImageView android:id="@+id/thumbnail"
-		        android:layout_width="wrap_content"
-		        android:layout_height="wrap_content"
-		        android:layout_toRightOf="@id/votes"
-		
-				android:visibility="invisible"
-		        android:gravity="center"
-		        android:scaleType="centerInside"
-		    />
-		    
 	    </RelativeLayout>
 	
 		<RelativeLayout
 		    android:layout_width="fill_parent"
 		    android:layout_height="wrap_content"
-		    android:paddingLeft="14dip"
+		    android:paddingLeft="5dip"
 		    android:paddingRight="5dip">
 	
 			<!-- Top row -->
@@ -105,12 +94,24 @@
 		    
 		    <!-- Next row -->
 		    
-	        <TextView android:id="@+id/numComments"
-		        android:layout_width="wrap_content"
+		    <TextView android:id="@+id/nsfw"
+		  		android:layout_width="wrap_content"
 		        android:layout_height="wrap_content"
 		        android:layout_below="@id/title"
 		        android:layout_alignLeft="@id/title"
 		        android:layout_marginRight="5dip"
+		        android:textSize="10sp"
+		        android:text="nsfw"
+		        android:textColor="#f00"
+		    />
+		    
+	        <TextView android:id="@+id/numComments"
+		        android:layout_width="wrap_content"
+		        android:layout_height="wrap_content"
+		        android:layout_toRightOf="@id/nsfw"
+		        android:layout_alignBaseline="@id/nsfw"
+		        android:layout_marginRight="5dip"
+		        android:layout_below="@id/title"
 		        android:text="0 cmts"
 		
 		        android:singleLine="true"
