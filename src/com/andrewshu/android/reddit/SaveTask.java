@@ -57,6 +57,13 @@ class SaveTask extends AsyncTask<Void, Void, Boolean> {
     		cancel(true);
     		return;
     	}
+		if (mSave) {
+			mTargetThreadInfo.setSaved(true);
+			Toast.makeText(mContext, "Saved!", Toast.LENGTH_SHORT).show();
+		} else {
+			mTargetThreadInfo.setSaved(false);
+			Toast.makeText(mContext, "Unsaved!", Toast.LENGTH_SHORT).show();
+		}
 	}
 	
 	@Override
@@ -139,17 +146,7 @@ class SaveTask extends AsyncTask<Void, Void, Boolean> {
 	
 	@Override
 	public void onPostExecute(Boolean success) {
-		if (success) {
-			if(mSave){
-				mTargetThreadInfo.setSaved(true);
-				Toast.makeText(mContext, "Saved!", Toast.LENGTH_LONG).show();
-			} else {
-				mTargetThreadInfo.setSaved(false);
-				Toast.makeText(mContext, "Unsaved!", Toast.LENGTH_LONG).show();
-			}
-			if(mThreadsListAdapter != null)
-				mThreadsListAdapter.notifyDataSetChanged();
-		} else {
+		if (!success) {
 			Common.showErrorToast(mUserError, Toast.LENGTH_LONG, mContext);
 		}
 	}
