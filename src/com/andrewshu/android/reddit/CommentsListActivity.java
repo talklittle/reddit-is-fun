@@ -623,11 +623,17 @@ public class CommentsListActivity extends ListActivity
 	    if (mJumpToCommentPosition != 0) {
 			getListView().setSelectionFromTop(mJumpToCommentPosition, 10);
 			mJumpToCommentPosition = 0;
-		} else if (mJumpToCommentId != null && mCommentsAdapter != null) {
+	    } else if (mJumpToCommentId != null && mCommentsAdapter != null) {
 			synchronized (COMMENT_ADAPTER_LOCK) {
 				for (int k = 0; k < mCommentsAdapter.getCount(); k++) {
-					if (mJumpToCommentId.equals(mCommentsAdapter.getItem(k).getId())) {
-						getListView().setSelectionFromTop(k, 10);
+					ThingInfo item = mCommentsAdapter.getItem(k);
+					if (mJumpToCommentId.equals(item.getId())) {
+						// jump to comment with correct amount of context
+						int targetIndex = k;
+						int desiredIndent = item.getIndent() - mJumpToCommentContext;
+						while (item.getIndent() > 0 && mCommentsAdapter.getItem(targetIndex).getIndent() != desiredIndent)
+							targetIndex--;
+						getListView().setSelectionFromTop(targetIndex, 10);
 						mJumpToCommentId = null;
 						break;
 					}
