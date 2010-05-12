@@ -631,8 +631,9 @@ public class CommentsListActivity extends ListActivity
 						// jump to comment with correct amount of context
 						int targetIndex = k;
 						int desiredIndent = item.getIndent() - mJumpToCommentContext;
-						while (item.getIndent() > 0 && mCommentsAdapter.getItem(targetIndex).getIndent() != desiredIndent)
-							targetIndex--;
+						item = mCommentsAdapter.getItem(targetIndex);
+						while (item.getIndent() > 0 && item.getIndent() != desiredIndent)
+							item = mCommentsAdapter.getItem(--targetIndex);
 						getListView().setSelectionFromTop(targetIndex, 10);
 						mJumpToCommentId = null;
 						break;
