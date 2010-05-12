@@ -426,6 +426,11 @@ public final class InboxActivity extends ListActivity
                 pin.close();
                 in.close();
                 
+                // XXX: HACK: http://code.reddit.com/ticket/709
+                // Marking messages as read is currently broken (even with mark=
+                // For now, just send an extra request to the regular non-JSON i
+                mClient.execute(new HttpGet("http://www.reddit.com/message/inbox"));
+
             } catch (Exception e) {
             	if (Constants.LOGGING) Log.e(TAG, "failed:" + e.getMessage());
         	} finally {
