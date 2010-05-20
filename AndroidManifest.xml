@@ -44,6 +44,6 @@
 	    <activity android:name=".RedditPreferencesPage"></activity>
 	    <service android:name=".EnvelopeService" android:label="@string/pref_mail_notification_service"></service>
 	</application>
-    <uses-sdk android:minSdkVersion="3" android:targetSdkVersion="4" />
+    <uses-sdk android:minSdkVersion="4" android:targetSdkVersion="4" />
     <supports-screens />
 </manifest> 
