@@ -46,4 +46,5 @@
 	</application>
     <uses-sdk android:minSdkVersion="4" android:targetSdkVersion="4" />
     <supports-screens />
+<uses-permission android:name="android.permission.ACCESS_NETWORK_STATE"></uses-permission>
 </manifest> 

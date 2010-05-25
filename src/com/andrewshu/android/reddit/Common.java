@@ -148,6 +148,8 @@ public class Common {
     	
     	// Thumbnails
     	editor.putBoolean(Constants.PREF_LOAD_THUMBNAILS, rSettings.loadThumbnails);
+    	// Thumbnails over wifi
+    	editor.putBoolean(Constants.PREF_LOAD_THUMBNAILS_ONLY_WIFI, rSettings.loadThumbnailsOnlyWifi);
     	
     	// Notifications
     	editor.putString(Constants.PREF_MAIL_NOTIFICATION_STYLE, rSettings.mailNotificationStyle);
@@ -198,7 +200,9 @@ public class Common {
         
         // Thumbnails
         rSettings.setLoadThumbnails(sessionPrefs.getBoolean(Constants.PREF_LOAD_THUMBNAILS, true));
-
+        // Thumbnails on Wifi
+        rSettings.setLoadThumbnailsOnlyWifi(sessionPrefs.getBoolean(Constants.PREF_LOAD_THUMBNAILS_ONLY_WIFI, false));
+        
         // Notifications
         rSettings.setMailNotificationStyle(sessionPrefs.getString(Constants.PREF_MAIL_NOTIFICATION_STYLE, Constants.PREF_MAIL_NOTIFICATION_STYLE_DEFAULT));
         rSettings.setMailNotificationService(sessionPrefs.getString(Constants.PREF_MAIL_NOTIFICATION_SERVICE, Constants.PREF_MAIL_NOTIFICATION_SERVICE_OFF));

@@ -39,11 +39,10 @@
         		android:entryValues="@array/pref_theme_values"
         		android:dialogTitle="@string/pref_theme_dialogtitle" />
         		
-        <CheckBoxPreference
-                android:key="load_thumbnails"
-                android:defaultValue="true"
-                android:title="@string/pref_load_thumbnails" />
+        
                    
+   		
+
    		<ListPreference
    				android:key="rotation"
         		android:title="@string/pref_rotation"
@@ -78,6 +77,8 @@
                 android:dialogTitle="@string/pref_text_size_dialogtitle" />
         -->
 
-    </PreferenceCategory>
+    
+
+</PreferenceCategory><PreferenceCategory android:title="@string/pref_thumbnail_category"><CheckBoxPreference android:key="load_thumbnails" android:defaultValue="true" android:title="@string/pref_load_thumbnails" /><CheckBoxPreference android:key="load_thumbnails_only_wifi" android:title="@string/pref_load_thumbnails_only_wifi" android:defaultValue="false" android:dependency="load_thumbnails" /></PreferenceCategory>
 
 </PreferenceScreen>

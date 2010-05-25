@@ -39,6 +39,7 @@ public class RedditSettings {
 	int theme = R.style.Reddit_Light;
 	int rotation = -1;  // -1 means unspecified
 	boolean loadThumbnails = true;
+	boolean loadThumbnailsOnlyWifi = false;
 	
 	String mailNotificationStyle = Constants.PREF_MAIL_NOTIFICATION_STYLE_DEFAULT;
 	String mailNotificationService = Constants.PREF_MAIL_NOTIFICATION_SERVICE_OFF;
@@ -115,6 +116,10 @@ public class RedditSettings {
 	
 	void setLoadThumbnails(boolean loadThumbnails) {
 		this.loadThumbnails = loadThumbnails;
+	}
+	
+	void setLoadThumbnailsOnlyWifi(boolean loadThumbnails) {
+		this.loadThumbnailsOnlyWifi = loadThumbnails;
 	}
 	
 	void setLoggedIn(boolean loggedIn) {
