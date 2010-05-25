@@ -45,6 +45,10 @@ import android.app.Dialog;
 import android.app.ProgressDialog;
 import android.app.TabActivity;
 import android.content.Intent;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
+import android.graphics.Matrix;
+import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.Drawable;
 import android.os.AsyncTask;
 import android.os.Bundle;
@@ -526,7 +530,21 @@ public class SubmitLinkActivity extends TabActivity {
 	    	
 				InputStream in = response.getEntity().getContent();
 				
-				return Drawable.createFromStream(in, "captcha");
+				//get image as bitmap
+				Bitmap captchaOrg  = BitmapFactory.decodeStream(in);
+
+				// create matrix for the manipulation
+				Matrix matrix = new Matrix();
+				// resize the bit map
+				matrix.postScale(2f, 2f);
+
+				// recreate the new Bitmap
+				Bitmap resizedBitmap = Bitmap.createScaledBitmap (captchaOrg,
+						captchaOrg.getWidth() * 3, captchaOrg.getHeight() * 3, true);
+			 
+				BitmapDrawable bmd = new BitmapDrawable(resizedBitmap);
+				
+				return bmd;
 			
 			} catch (Exception e) {
 				Common.showErrorToast("Error downloading captcha.", Toast.LENGTH_LONG, SubmitLinkActivity.this);
@@ -543,10 +561,10 @@ public class SubmitLinkActivity extends TabActivity {
 			}
 			final ImageView linkCaptchaView = (ImageView) findViewById(R.id.submit_link_captcha_image);
 			final ImageView textCaptchaView = (ImageView) findViewById(R.id.submit_text_captcha_image);
-			linkCaptchaView.setVisibility(View.VISIBLE);
 			linkCaptchaView.setImageDrawable(captcha);
-			textCaptchaView.setVisibility(View.VISIBLE);
+			linkCaptchaView.setVisibility(View.VISIBLE);
 			textCaptchaView.setImageDrawable(captcha);
+			textCaptchaView.setVisibility(View.VISIBLE);
 		}
 	}
     
