@@ -157,7 +157,10 @@ public final class RedditIsFun extends ListActivity {
         if (savedInstanceState != null) {
         	if (Constants.LOGGING) Log.d(TAG, "using savedInstanceState");
 			CharSequence subreddit = savedInstanceState.getCharSequence(Constants.SUBREDDIT_KEY);
-	        if (subreddit != null)
+	        
+			
+			
+			if (subreddit != null)
 	        	mSettings.setSubreddit(subreddit);
 	        else
 	        	mSettings.setSubreddit(mSettings.homepage);
@@ -167,6 +170,9 @@ public final class RedditIsFun extends ListActivity {
 	        mSortByUrl = savedInstanceState.getCharSequence(Constants.ThreadsSort.SORT_BY_KEY);
 		    mJumpToThreadId = savedInstanceState.getCharSequence(Constants.JUMP_TO_THREAD_ID_KEY);
 		    mVoteTargetThingInfo = savedInstanceState.getParcelable(Constants.VOTE_TARGET_THING_INFO_KEY);
+        }
+        else {
+        	mSettings.setSubreddit(mSettings.homepage);
         }
     }
     
