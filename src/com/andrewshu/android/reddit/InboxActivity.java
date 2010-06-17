@@ -1108,7 +1108,6 @@ public final class InboxActivity extends ListActivity
     		final Button composeCancelButton = (Button) layout.findViewById(R.id.compose_cancel_button);
     		final EditText composeCaptcha = (EditText) layout.findViewById(R.id.compose_captcha_input);
     		composeSendButton.setOnClickListener(new OnClickListener() {
-				@Override
 				public void onClick(View v) {
 		    		ThingInfo hi = new ThingInfo();
 		    		// reddit.com performs these sanity checks too.
@@ -1136,7 +1135,6 @@ public final class InboxActivity extends ListActivity
 				}
     		});
     		composeCancelButton.setOnClickListener(new OnClickListener() {
-				@Override
 				public void onClick(View v) {
 					dismissDialog(Constants.DIALOG_COMPOSE);
 				}
