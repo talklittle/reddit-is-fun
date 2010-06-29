@@ -33,7 +33,7 @@ import android.widget.Toast;
  * 
  * @author Hamilton Turner <hamiltont@gmail.com>
  */
-public class UploadAsyncTask extends AsyncTask<Uri, Void, String> {
+public class UploadAsyncTask extends AsyncTask<Uri, String, String> {
 
 	private static final String IMGUR_API_KEY = "347ec991d0079db6ea067c8471b74348";
 	private static final String IMGUR_POST_URI = "http://imgur.com/api/upload.json";
@@ -53,6 +53,11 @@ public class UploadAsyncTask extends AsyncTask<Uri, Void, String> {
 		super.onPostExecute(result);
 
 		test_.onPostUpload(result);
+	}
+
+	@Override
+	protected void onProgressUpdate(String... progress) {
+		test_.onUploadStateProgress(progress[0]);
 	}
 
 	/**
@@ -91,6 +96,7 @@ public class UploadAsyncTask extends AsyncTask<Uri, Void, String> {
 
 		// Open the InputStream
 		InputStream is = null;
+		publishProgress("Opening image stream . . . ");
 		try {
 			is = context_.getContentResolver().openInputStream(uri);
 		} catch (FileNotFoundException e) {
@@ -101,11 +107,13 @@ public class UploadAsyncTask extends AsyncTask<Uri, Void, String> {
 		}
 
 		// Create the post
+		publishProgress("Creating the post . . . ");
 		HttpClient client = new DefaultHttpClient();
 		HttpPost post = new HttpPost(IMGUR_POST_URI);
 		MultipartEntity entity = new MultipartEntity(
 				HttpMultipartMode.BROWSER_COMPATIBLE);
 
+		publishProgress("Adding image to post . . . ");
 		HttpResponse response;
 		String jsonResponse = null;
 		try {
@@ -125,6 +133,7 @@ public class UploadAsyncTask extends AsyncTask<Uri, Void, String> {
 			entity.addPart("key", new StringBody(IMGUR_API_KEY));
 			post.setEntity(entity);
 
+			publishProgress("Uploading . . . ");
 			response = client.execute(post);
 
 			// TODO Might be nice to show a better error message
@@ -138,6 +147,7 @@ public class UploadAsyncTask extends AsyncTask<Uri, Void, String> {
 			}
 
 			// Read in the response
+			publishProgress("Downloading response . . . ");
 			InputStream content = response.getEntity().getContent();
 			ByteArrayOutputStream responseBody = new ByteArrayOutputStream();
 			final int BUF_SIZE = 1 << 8; // 1KiB buffer
@@ -171,6 +181,8 @@ public class UploadAsyncTask extends AsyncTask<Uri, Void, String> {
 	}
 
 	private String getImgurLink(JSONObject jsonResponse) {
+		publishProgress("Parsing response . . . ");
+
 		try {
 			JSONObject rsp = jsonResponse.getJSONObject("rsp");
 			String stat = rsp.getString("stat");

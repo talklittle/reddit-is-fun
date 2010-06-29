@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+	android:layout_width="wrap_content" android:layout_height="wrap_content">
+
+	<ImageView android:id="@+id/imgur_preview"
+		android:layout_width="50px" android:layout_height="50px"
+		android:scaleType="fitXY" />
+
+	<ProgressBar android:layout_width="wrap_content"
+		android:layout_height="wrap_content" android:layout_alignBaseline="@id/imgur_preview"
+		android:id="@+id/imgur_progress" />
+
+	<TextView android:id="@+id/imgur_status"
+		android:layout_toRightOf="@id/imgur_preview" android:paddingLeft="10sp"
+		android:layout_alignTop="@id/imgur_preview" android:paddingTop="10sp"
+		android:layout_width="wrap_content" android:layout_height="wrap_content" />
+
+	<TextView android:id="@+id/imgur_progress"
+		android:layout_below="@id/imgur_status" android:layout_alignLeft="@id/imgur_status"
+		android:paddingLeft="10sp" android:layout_width="wrap_content"
+		android:layout_height="wrap_content" />
+
+
+</RelativeLayout>
