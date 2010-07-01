@@ -129,10 +129,10 @@ public class UploadAsyncTask extends AsyncTask<Uri, String, String> implements
 		publishProgress("Creating the post . . . ");
 		HttpClient client = new DefaultHttpClient();
 		HttpPost post = new HttpPost(IMGUR_POST_URI);
-		MultipartEntity entity = new MultipartEntity(
-				HttpMultipartMode.BROWSER_COMPATIBLE);
+		//MultipartEntity entity = new MultipartEntity(
+		//		HttpMultipartMode.BROWSER_COMPATIBLE);
 
-		// CountingMultiPartEntity entity = new CountingMultiPartEntity(this);
+		 CountingMultiPartEntity entity = new CountingMultiPartEntity(this);
 
 		publishProgress("Adding image to post . . . ");
 		HttpResponse response;
@@ -154,13 +154,13 @@ public class UploadAsyncTask extends AsyncTask<Uri, String, String> implements
 			entity.addPart("key", new StringBody(IMGUR_API_KEY));
 			post.setEntity(entity);
 
-			/*
-			 * long length = getImageLength(uri); if (length != -1) {
-			 * couldDetermineImageLength = true;
-			 * 
-			 * // TODO - add in length for the other parts of the HTTP Post
-			 * publishProgress("Length", Long.toString(length)); }
-			 */
+			long length = getImageLength(uri);
+			if (length != -1) {
+				couldDetermineImageLength = true;
+
+				// TODO - add in length for the other parts of the HTTP Post
+				publishProgress("Length", Long.toString(length));
+			}
 
 			publishProgress("Uploading . . . ");
 			response = client.execute(post);
