@@ -19,9 +19,9 @@ import org.json.JSONObject;
 
 import android.content.Context;
 import android.content.Intent;
+import android.content.res.AssetFileDescriptor;
 import android.net.Uri;
 import android.os.AsyncTask;
-import android.widget.Toast;
 
 /**
  * Version 1 of uploading an image will just show a spinning image until the
@@ -33,10 +33,13 @@ import android.widget.Toast;
  * 
  * @author Hamilton Turner <hamiltont@gmail.com>
  */
-public class UploadAsyncTask extends AsyncTask<Uri, String, String> {
+public class UploadAsyncTask extends AsyncTask<Uri, String, String> implements
+		UploadProgressListener {
 
 	private static final String IMGUR_API_KEY = "347ec991d0079db6ea067c8471b74348";
 	private static final String IMGUR_POST_URI = "http://imgur.com/api/upload.json";
+
+	private boolean couldDetermineImageLength = false;
 
 	private Context context_;
 	private Test test_;
@@ -56,8 +59,24 @@ public class UploadAsyncTask extends AsyncTask<Uri, String, String> {
 	}
 
 	@Override
+	public void transferred(long num) {
+		if (num % 32 == 0)
+			publishProgress("Progress", Long.toString(num));
+	}
+
+	@Override
 	protected void onProgressUpdate(String... progress) {
-		test_.onUploadStateProgress(progress[0]);
+		final String status = progress[0];
+		if (status.equalsIgnoreCase("Length")) {
+			final long l = Long.parseLong(progress[1]);
+			test_.setUploadBarLength(l);
+		} else if (status.equalsIgnoreCase("Progress")) {
+			final long l = Long.parseLong(progress[1]);
+			test_.onUploadProgress(l);
+		} else if (status.equalsIgnoreCase("Error")) {
+			test_.onUploadError(progress[1]);
+		} else
+			test_.onUploadStateProgress(progress[0]);
 	}
 
 	/**
@@ -97,11 +116,11 @@ public class UploadAsyncTask extends AsyncTask<Uri, String, String> {
 		// Open the InputStream
 		InputStream is = null;
 		publishProgress("Opening image stream . . . ");
+
 		try {
 			is = context_.getContentResolver().openInputStream(uri);
 		} catch (FileNotFoundException e) {
-			Toast.makeText(context_, "Unable to load image", Toast.LENGTH_LONG)
-					.show();
+			publishProgress("Error", "Unable to load image");
 			e.printStackTrace();
 			return null;
 		}
@@ -112,6 +131,8 @@ public class UploadAsyncTask extends AsyncTask<Uri, String, String> {
 		HttpPost post = new HttpPost(IMGUR_POST_URI);
 		MultipartEntity entity = new MultipartEntity(
 				HttpMultipartMode.BROWSER_COMPATIBLE);
+
+		// CountingMultiPartEntity entity = new CountingMultiPartEntity(this);
 
 		publishProgress("Adding image to post . . . ");
 		HttpResponse response;
@@ -133,16 +154,21 @@ public class UploadAsyncTask extends AsyncTask<Uri, String, String> {
 			entity.addPart("key", new StringBody(IMGUR_API_KEY));
 			post.setEntity(entity);
 
+			/*
+			 * long length = getImageLength(uri); if (length != -1) {
+			 * couldDetermineImageLength = true;
+			 * 
+			 * // TODO - add in length for the other parts of the HTTP Post
+			 * publishProgress("Length", Long.toString(length)); }
+			 */
+
 			publishProgress("Uploading . . . ");
 			response = client.execute(post);
 
 			// TODO Might be nice to show a better error message
 			final int code = response.getStatusLine().getStatusCode();
 			if (code != 200) {
-				// TODO - Fix this. Cannot access context_ in this manner in a
-				// different thread
-				// Toast.makeText(context_, "Unable to contact Imgur",
-				// Toast.LENGTH_LONG).show();
+				publishProgress("Error", "Unable to contact Imgur");
 				return null;
 			}
 
@@ -161,12 +187,12 @@ public class UploadAsyncTask extends AsyncTask<Uri, String, String> {
 			jsonResponse = responseBody.toString();
 		} catch (ClientProtocolException e) {
 			e.printStackTrace();
-			Toast.makeText(context_, "Could not save image", Toast.LENGTH_LONG)
-					.show();
+			publishProgress("Error", "Could not save image");
+			return null;
 		} catch (IOException e) {
-			Toast.makeText(context_, "Could not save image", Toast.LENGTH_LONG)
-					.show();
+			publishProgress("Error", "Could not save image");
 			e.printStackTrace();
+			return null;
 		}
 
 		// Convert to JSON object
@@ -178,6 +204,24 @@ public class UploadAsyncTask extends AsyncTask<Uri, String, String> {
 		}
 
 		return jo;
+	}
+
+	private long getImageLength(Uri uri) {
+		AssetFileDescriptor afd;
+		try {
+			afd = context_.getContentResolver().openAssetFileDescriptor(uri,
+					"r");
+		} catch (FileNotFoundException e) {
+			return -1;
+		}
+
+		long length = afd.getDeclaredLength();
+		if (length == AssetFileDescriptor.UNKNOWN_LENGTH)
+			length = afd.getLength();
+
+		if (length == AssetFileDescriptor.UNKNOWN_LENGTH)
+			return -1;
+		return length;
 	}
 
 	private String getImgurLink(JSONObject jsonResponse) {
@@ -195,11 +239,9 @@ public class UploadAsyncTask extends AsyncTask<Uri, String, String> {
 			error.append(code);
 			error.append(" - ");
 			error.append(msg);
-			Toast.makeText(context_, error.toString(), Toast.LENGTH_LONG)
-					.show();
+			publishProgress("Error", error.toString());
 		} catch (JSONException je) {
-			Toast.makeText(context_, "Unable to get Imgur link",
-					Toast.LENGTH_LONG).show();
+			publishProgress("Error", "Unable to get Imgur link");
 		}
 
 		return null;
