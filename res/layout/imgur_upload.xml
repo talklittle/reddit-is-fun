@@ -12,13 +12,19 @@
 
 	<TextView android:id="@+id/imgur_status"
 		android:layout_toRightOf="@id/imgur_preview" android:paddingLeft="10sp"
-		android:layout_alignTop="@id/imgur_preview" android:paddingTop="5sp"
+		android:layout_alignTop="@id/imgur_preview" android:paddingTop="2sp"
 		android:layout_width="wrap_content" android:layout_height="wrap_content" />
 
 	<ProgressBar android:id="@+id/imgur_upload_progress"
-		style="@android:style/Widget.ProgressBar.Horizontal" 
+		style="@android:style/Widget.ProgressBar.Horizontal"
 		android:layout_below="@id/imgur_status" android:layout_alignLeft="@id/imgur_status"
-		android:paddingLeft="10sp" android:layout_width="wrap_content"
-		android:layout_height="wrap_content" />
+		android:paddingLeft="10sp" android:layout_width="200sp"
+		android:paddingTop="3sp" android:layout_height="wrap_content" />
+
+	<TextView android:id="@+id/imgur_upload_progress_percent"
+		android:layout_below="@id/imgur_status" android:layout_toRightOf="@id/imgur_upload_progress"
+		android:layout_width="wrap_content" android:layout_height="wrap_content"
+		android:paddingLeft="5sp" android:paddingTop="2sp" />
+
 
 </RelativeLayout>

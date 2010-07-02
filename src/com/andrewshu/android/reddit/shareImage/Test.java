@@ -18,6 +18,7 @@ public class Test extends Activity {
 	private PreviewAsyncTask previewAsyncTask;
 	private UploadAsyncTask uploadAsyncTask;
 	private ProgressBar uploadProgress_;
+	private TextView uploadProgressPercent_;
 
 	@Override
 	protected void onCreate(Bundle saved) {
@@ -29,6 +30,7 @@ public class Test extends Activity {
 		uploadAsyncTask = new UploadAsyncTask(this);
 
 		uploadProgress_ = (ProgressBar) findViewById(R.id.imgur_upload_progress);
+		uploadProgressPercent_ = (TextView) findViewById(R.id.imgur_upload_progress_percent);
 		uploadProgress_.setMax(100);
 		uploadProgress_.setIndeterminate(false);
 
@@ -74,15 +76,27 @@ public class Test extends Activity {
 	int i = 0;
 
 	public void onUploadProgress(double progress) {
-		// TODO - fix this
 		uploadProgress_.setProgress((int) progress);
-		//Log.i("rf", "At percent " + progress);
+		final int i = (int) Math.ceil(progress);
+		uploadProgressPercent_.setText(Integer.toString(i) + "%");
+		uploadProgressPercent_.invalidate();
+
 	}
-	
+
+	@Override
+	protected void onPause() {
+		super.onPause();
+
+		uploadAsyncTask.cancel(true);
+		previewAsyncTask.cancel(true);
+
+		Toast.makeText(this, "Aborted image upload", Toast.LENGTH_SHORT).show();
+	}
+
 	@Override
 	protected void onDestroy() {
 		super.onDestroy();
-		
+
 		uploadAsyncTask.cancel(true);
 		previewAsyncTask.cancel(true);
 	}
