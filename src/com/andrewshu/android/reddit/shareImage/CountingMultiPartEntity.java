@@ -7,26 +7,31 @@ import java.io.OutputStream;
 import org.apache.http.entity.mime.HttpMultipartMode;
 import org.apache.http.entity.mime.MultipartEntity;
 
+import android.util.Log;
+
 public class CountingMultiPartEntity extends MultipartEntity {
 
 	private UploadProgressListener listener_;
 	private CountingOutputStream outputStream_;
 	private OutputStream lastOutputStream_;
-	
-	private static final long DEFAULT_BYTES_BETWEEN_NOTIFY = 10;
-	
-	// TODO - use this w/o slowing down the transfer!
-	private long notifyEveryXBytes_;
+
+	private long totalBytes_;
+	private int bytesPerPercent;
+	private int notificationCounter = 0;
 
 	public CountingMultiPartEntity(UploadProgressListener listener) {
-		super(HttpMultipartMode.BROWSER_COMPATIBLE);
-		listener_ = listener;
+		this(listener, -1);
 	}
-	
-	public CountingMultiPartEntity(UploadProgressListener listener, long notifyEveryXBytes) {
+
+	public CountingMultiPartEntity(UploadProgressListener listener,
+			long totalBytes) {
 		super(HttpMultipartMode.BROWSER_COMPATIBLE);
 		listener_ = listener;
-		notifyEveryXBytes_ = notifyEveryXBytes;
+		totalBytes_ = totalBytes;
+
+		double averageBytesPerPercent = totalBytes / 100.0;
+		bytesPerPercent = (int) Math.floor(averageBytesPerPercent);
+
 	}
 
 	@Override
@@ -53,13 +58,27 @@ public class CountingMultiPartEntity extends MultipartEntity {
 		public void write(byte[] b, int off, int len) throws IOException {
 			super.write(b, off, len);
 			transferred += len;
-			listener_.transferred(transferred);
+			notificationCounter += len;
+
+			if (notificationCounter >= bytesPerPercent) {
+				notificationCounter = 0;
+				final double percent = ((double) transferred / (double) totalBytes_) * 100.0;
+
+				listener_.transferred(percent);
+			}
 		}
 
 		public void write(int b) throws IOException {
 			super.write(b);
 			++transferred;
-			listener_.transferred(transferred);
+			++notificationCounter;
+
+			if (notificationCounter >= bytesPerPercent) {
+				notificationCounter = 0;
+				final double percent = ((double) transferred / (double) totalBytes_) * 100.0;
+
+				listener_.transferred(percent);
+			}
 		}
 	}
 }

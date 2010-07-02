@@ -29,6 +29,7 @@ public class Test extends Activity {
 		uploadAsyncTask = new UploadAsyncTask(this);
 
 		uploadProgress_ = (ProgressBar) findViewById(R.id.imgur_upload_progress);
+		uploadProgress_.setMax(100);
 		uploadProgress_.setIndeterminate(false);
 
 		Log.i("rf", "Started them both");
@@ -72,18 +73,18 @@ public class Test extends Activity {
 
 	int i = 0;
 
-	public void onUploadProgress(long l) {
+	public void onUploadProgress(double progress) {
 		// TODO - fix this
-		uploadProgress_.setProgress((int) l);
-		if (i++ % 32 == 0)
-			Log.i("rf", "Bar at size " + l);
+		uploadProgress_.setProgress((int) progress);
+		//Log.i("rf", "At percent " + progress);
 	}
-
-	public void setUploadBarLength(long l) {
-		Log.i("rf", "Progress bar length is " + l + " or " + (int) l);
-		// TODO - fix this
-		uploadProgress_.setMax((int) l);
-
+	
+	@Override
+	protected void onDestroy() {
+		super.onDestroy();
+		
+		uploadAsyncTask.cancel(true);
+		previewAsyncTask.cancel(true);
 	}
 
 	public void onUploadError(String string) {
