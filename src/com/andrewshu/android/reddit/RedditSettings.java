@@ -28,10 +28,10 @@ import org.apache.http.cookie.Cookie;
  */
 public class RedditSettings {
 	boolean loggedIn = false;
-	CharSequence username = null;
+	String username = null;
 	Cookie redditSessionCookie = null;
-	CharSequence modhash = null;
-	CharSequence homepage = Constants.FRONTPAGE_STRING;
+	String modhash = null;
+	String homepage = Constants.FRONTPAGE_STRING;
 	
 	int threadDownloadLimit = Constants.DEFAULT_THREAD_DOWNLOAD_LIMIT;
 	
@@ -45,9 +45,9 @@ public class RedditSettings {
 	String mailNotificationService = Constants.PREF_MAIL_NOTIFICATION_SERVICE_OFF;
 	
 	// --- States that change frequently. ---
-	CharSequence subreddit = Constants.FRONTPAGE_STRING;
+	String subreddit = Constants.FRONTPAGE_STRING;
 	boolean isFrontpage = false;
-	CharSequence threadId = null;  // For a given instance of CommentsListActivity, this will be some String
+	String threadId = null;  // For a given instance of CommentsListActivity, this will be some String
 	
 	
 	//
@@ -110,7 +110,7 @@ public class RedditSettings {
 	
 	// --- Setters ---
 	
-	void setHomepage(CharSequence homepage) {
+	void setHomepage(String homepage) {
 		this.homepage = homepage;
 	}
 	
@@ -135,7 +135,7 @@ public class RedditSettings {
 		this.mailNotificationStyle = mailNotificationStyle;
 	}
 	
-	void setModhash(CharSequence modhash) {
+	void setModhash(String modhash) {
 		this.modhash = modhash;
 	}
 	
@@ -147,7 +147,7 @@ public class RedditSettings {
 		this.rotation = rotation;
 	}
 	
-	void setSubreddit(CharSequence subreddit) {
+	void setSubreddit(String subreddit) {
 		this.subreddit = subreddit;
 		isFrontpage = Constants.FRONTPAGE_STRING.equals(subreddit);
 	}
@@ -160,11 +160,11 @@ public class RedditSettings {
 		this.threadDownloadLimit = threadDownloadLimit;
 	}
 
-	void setThreadId(CharSequence threadId) {
+	void setThreadId(String threadId) {
 		this.threadId = threadId;
 	}
 
-	void setUsername(CharSequence username) {
+	void setUsername(String username) {
 		this.username = username;
 	}
 	

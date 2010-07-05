@@ -117,15 +117,15 @@ public class CommentsListActivity extends ListActivity
     // Common settings are stored here
     private final RedditSettings mSettings = new RedditSettings();
     
-    private CharSequence mJumpToCommentId = null;
+    private String mJumpToCommentId = null;
     private int mJumpToCommentContext = 0;
     private int mJumpToCommentPosition = 0;
-//    private CharSequence mMoreChildrenId = "";
+//    private String mMoreChildrenId = "";
     private HashSet<Integer> mMorePositions = new HashSet<Integer>();
     private int mNumVisibleComments = Constants.DEFAULT_COMMENT_DOWNLOAD_LIMIT;
     private ThingInfo mOpThingInfo = null;
-    private CharSequence mSortByUrl = Constants.CommentsSort.SORT_BY_BEST_URL;
-    private CharSequence mThreadTitle = null;
+    private String mSortByUrl = Constants.CommentsSort.SORT_BY_BEST_URL;
+    private String mThreadTitle = null;
 	
     // Keep track of the row ids of comments that user has hidden
     private HashSet<Integer> mHiddenCommentHeads = new HashSet<Integer>();
@@ -134,9 +134,9 @@ public class CommentsListActivity extends ListActivity
     
     // UI State
     private ThingInfo mVoteTargetThing = null;
-    private CharSequence mReportTargetName = null;
-    private CharSequence mReplyTargetName = null;
-    private CharSequence mEditTargetBody = null;
+    private String mReportTargetName = null;
+    private String mReplyTargetName = null;
+    private String mEditTargetBody = null;
     private String mDeleteTargetKind = null;
     private AsyncTask<?, ?, ?> mCurrentDownloadCommentsTask = null;
     private final Object mCurrentDownloadCommentsTaskLock = new Object();
@@ -212,12 +212,12 @@ public class CommentsListActivity extends ListActivity
     	}
     	
     	if (savedInstanceState != null) {
-        	mSortByUrl = savedInstanceState.getCharSequence(Constants.CommentsSort.SORT_BY_KEY);
-       		mJumpToCommentId = savedInstanceState.getCharSequence(Constants.JUMP_TO_COMMENT_ID_KEY);
+        	mSortByUrl = savedInstanceState.getString(Constants.CommentsSort.SORT_BY_KEY);
+       		mJumpToCommentId = savedInstanceState.getString(Constants.JUMP_TO_COMMENT_ID_KEY);
        		mJumpToCommentContext = savedInstanceState.getInt(Constants.JUMP_TO_COMMENT_CONTEXT_KEY);
-        	mReplyTargetName = savedInstanceState.getCharSequence(Constants.REPLY_TARGET_NAME_KEY);
-        	mReportTargetName = savedInstanceState.getCharSequence(Constants.REPORT_TARGET_NAME_KEY);
-        	mEditTargetBody = savedInstanceState.getCharSequence(Constants.EDIT_TARGET_BODY_KEY);
+        	mReplyTargetName = savedInstanceState.getString(Constants.REPLY_TARGET_NAME_KEY);
+        	mReportTargetName = savedInstanceState.getString(Constants.REPORT_TARGET_NAME_KEY);
+        	mEditTargetBody = savedInstanceState.getString(Constants.EDIT_TARGET_BODY_KEY);
         	mDeleteTargetKind = savedInstanceState.getString(Constants.DELETE_TARGET_KIND_KEY);
         	mJumpToCommentPosition = savedInstanceState.getInt(Constants.JUMP_TO_COMMENT_POSITION_KEY);
         	// savedInstanceState means probably rotated screen or something.
@@ -1041,9 +1041,9 @@ public class CommentsListActivity extends ListActivity
     
     
     private class LoginTask extends AsyncTask<Void, Void, String> {
-    	private CharSequence mUsername, mPassword, mUserError;
+    	private String mUsername, mPassword, mUserError;
     	
-    	LoginTask(CharSequence username, CharSequence password) {
+    	LoginTask(String username, String password) {
     		mUsername = username;
     		mPassword = password;
     	}
@@ -1074,16 +1074,16 @@ public class CommentsListActivity extends ListActivity
     
     
     
-    private class CommentReplyTask extends AsyncTask<CharSequence, Void, CharSequence> {
-    	private CharSequence _mParentThingId;
+    private class CommentReplyTask extends AsyncTask<String, Void, String> {
+    	private String _mParentThingId;
     	String _mUserError = "Error submitting reply. Please try again.";
     	
-    	CommentReplyTask(CharSequence parentThingId) {
+    	CommentReplyTask(String parentThingId) {
     		_mParentThingId = parentThingId;
     	}
     	
     	@Override
-        public CharSequence doInBackground(CharSequence... text) {
+        public String doInBackground(String... text) {
         	HttpEntity entity = null;
         	
         	if (!mSettings.loggedIn) {
@@ -1093,7 +1093,7 @@ public class CommentsListActivity extends ListActivity
         	}
         	// Update the modhash if necessary
         	if (mSettings.modhash == null) {
-        		CharSequence modhash = Common.doUpdateModhash(mClient);
+        		String modhash = Common.doUpdateModhash(mClient);
         		if (modhash == null) {
         			// doUpdateModhash should have given an error about credentials
         			Common.doLogout(mSettings, mClient, getApplicationContext());
@@ -1106,10 +1106,10 @@ public class CommentsListActivity extends ListActivity
         	try {
         		// Construct data
     			List<NameValuePair> nvps = new ArrayList<NameValuePair>();
-    			nvps.add(new BasicNameValuePair("thing_id", _mParentThingId.toString()));
-    			nvps.add(new BasicNameValuePair("text", text[0].toString()));
-    			nvps.add(new BasicNameValuePair("r", mSettings.subreddit.toString()));
-    			nvps.add(new BasicNameValuePair("uh", mSettings.modhash.toString()));
+    			nvps.add(new BasicNameValuePair("thing_id", _mParentThingId));
+    			nvps.add(new BasicNameValuePair("text", text[0]));
+    			nvps.add(new BasicNameValuePair("r", mSettings.subreddit));
+    			nvps.add(new BasicNameValuePair("uh", mSettings.modhash));
     			// Votehash is currently unused by reddit 
 //    				nvps.add(new BasicNameValuePair("vh", "0d4ab0ffd56ad0f66841c15609e9a45aeec6b015"));
     			
@@ -1150,7 +1150,7 @@ public class CommentsListActivity extends ListActivity
     	}
     	
     	@Override
-    	public void onPostExecute(CharSequence newId) {
+    	public void onPostExecute(String newId) {
     		dismissDialog(Constants.DIALOG_REPLYING);
     		if (newId == null) {
     			Common.showErrorToast(_mUserError, Toast.LENGTH_LONG, CommentsListActivity.this);
@@ -1163,16 +1163,16 @@ public class CommentsListActivity extends ListActivity
     	}
     }
     
-    private class EditTask extends AsyncTask<CharSequence, Void, CharSequence> {
-    	private CharSequence _mThingId;
+    private class EditTask extends AsyncTask<String, Void, String> {
+    	private String _mThingId;
     	String _mUserError = "Error submitting edit. Please try again.";
     	
-    	EditTask(CharSequence thingId) {
+    	EditTask(String thingId) {
     		_mThingId = thingId;
     	}
     	
     	@Override
-        public CharSequence doInBackground(CharSequence... text) {
+        public String doInBackground(String... text) {
         	HttpEntity entity = null;
         	
         	if (!mSettings.loggedIn) {
@@ -1181,7 +1181,7 @@ public class CommentsListActivity extends ListActivity
         	}
         	// Update the modhash if necessary
         	if (mSettings.modhash == null) {
-        		CharSequence modhash = Common.doUpdateModhash(mClient);
+        		String modhash = Common.doUpdateModhash(mClient);
         		if (modhash == null) {
         			// doUpdateModhash should have given an error about credentials
         			Common.doLogout(mSettings, mClient, getApplicationContext());
@@ -1235,7 +1235,7 @@ public class CommentsListActivity extends ListActivity
     	}
     	
     	@Override
-    	public void onPostExecute(CharSequence newId) {
+    	public void onPostExecute(String newId) {
     		dismissDialog(Constants.DIALOG_EDITING);
     		if (newId == null) {
     			Common.showErrorToast(_mUserError, Toast.LENGTH_LONG, CommentsListActivity.this);
@@ -1248,7 +1248,7 @@ public class CommentsListActivity extends ListActivity
     	}
     }
     
-    private class DeleteTask extends AsyncTask<CharSequence, Void, Boolean> {
+    private class DeleteTask extends AsyncTask<String, Void, Boolean> {
     	private String _mUserError = "Error deleting. Please try again.";
     	private String _mKind;
     	
@@ -1257,7 +1257,7 @@ public class CommentsListActivity extends ListActivity
     	}
     	
     	@Override
-    	public Boolean doInBackground(CharSequence... thingFullname) {
+    	public Boolean doInBackground(String... thingFullname) {
 //    		POSTDATA=id=t1_c0cxa7l&executed=deleted&r=test&uh=f7jb1yjwfqd4ffed8356eb63fcfbeeadad142f57c56e9cbd9e
     		
     		HttpEntity entity = null;
@@ -1268,7 +1268,7 @@ public class CommentsListActivity extends ListActivity
         	}
         	// Update the modhash if necessary
         	if (mSettings.modhash == null) {
-        		CharSequence modhash = Common.doUpdateModhash(mClient);
+        		String modhash = Common.doUpdateModhash(mClient);
         		if (modhash == null) {
         			// doUpdateModhash should have given an error about credentials
         			Common.doLogout(mSettings, mClient, getApplicationContext());
@@ -1348,7 +1348,7 @@ public class CommentsListActivity extends ListActivity
     	
     	private static final String TAG = "VoteWorker";
     	
-    	private CharSequence _mThingFullname;
+    	private String _mThingFullname;
     	private int _mDirection;
     	private String _mUserError = "Error voting.";
     	private ThingInfo _mTargetThingInfo;
@@ -1357,7 +1357,7 @@ public class CommentsListActivity extends ListActivity
     	private int _mPreviousUps, _mPreviousDowns;
     	private Boolean _mPreviousLikes;
     	
-    	VoteTask(CharSequence thingFullname, int direction) {
+    	VoteTask(String thingFullname, int direction) {
     		_mThingFullname = thingFullname;
     		_mDirection = direction;
     		// Copy these because they can change while voting thread is running
@@ -1375,7 +1375,7 @@ public class CommentsListActivity extends ListActivity
         	
         	// Update the modhash if necessary
         	if (mSettings.modhash == null) {
-        		CharSequence modhash = Common.doUpdateModhash(mClient); 
+        		String modhash = Common.doUpdateModhash(mClient); 
         		if (modhash == null) {
         			// doUpdateModhash should have given an error about credentials
         			Common.doLogout(mSettings, mClient, getApplicationContext());
@@ -1538,7 +1538,7 @@ public class CommentsListActivity extends ListActivity
         	
         	// Update the modhash if necessary
         	if (mSettings.modhash == null) {
-        		CharSequence modhash = Common.doUpdateModhash(mClient); 
+        		String modhash = Common.doUpdateModhash(mClient); 
         		if (modhash == null) {
         			// doUpdateModhash should have given an error about credentials
         			Common.doLogout(mSettings, mClient, getApplicationContext());
@@ -1938,7 +1938,7 @@ public class CommentsListActivity extends ListActivity
     	case Constants.DIALOG_LOGIN:
     		dialog = new LoginDialog(this, mSettings, false) {
 				@Override
-				public void onLoginChosen(CharSequence user, CharSequence password) {
+				public void onLoginChosen(String user, String password) {
 					dismissDialog(Constants.DIALOG_LOGIN);
     				new LoginTask(user, password).execute();
 				}
@@ -1961,7 +1961,7 @@ public class CommentsListActivity extends ListActivity
 			replySaveButton.setOnClickListener(new OnClickListener() {
     			public void onClick(View v) {
     				if (mReplyTargetName != null) {
-	    				new CommentReplyTask(mReplyTargetName).execute(replyBody.getText());
+	    				new CommentReplyTask(mReplyTargetName).execute(replyBody.getText().toString());
 	    				dismissDialog(Constants.DIALOG_REPLY);
     				}
     				else {
@@ -1989,7 +1989,7 @@ public class CommentsListActivity extends ListActivity
 			replySaveButton.setOnClickListener(new OnClickListener() {
     			public void onClick(View v) {
     				if (mReplyTargetName != null) {
-	    				new EditTask(mReplyTargetName).execute(replyBody.getText());
+	    				new EditTask(mReplyTargetName).execute(replyBody.getText().toString());
 	    				dismissDialog(Constants.DIALOG_EDIT);
     				}
     				else {
@@ -2028,18 +2028,18 @@ public class CommentsListActivity extends ListActivity
     		builder.setSingleChoiceItems(Constants.CommentsSort.SORT_BY_CHOICES, 0, new DialogInterface.OnClickListener() {
     			public void onClick(DialogInterface dialog, int item) {
     				dismissDialog(Constants.DIALOG_SORT_BY);
-    				CharSequence itemCS = Constants.CommentsSort.SORT_BY_CHOICES[item];
-    				if (Constants.CommentsSort.SORT_BY_BEST.equals(itemCS)) {
+    				String itemString = Constants.CommentsSort.SORT_BY_CHOICES[item];
+    				if (Constants.CommentsSort.SORT_BY_BEST.equals(itemString)) {
     					mSortByUrl = Constants.CommentsSort.SORT_BY_BEST_URL;
-        			} else if (Constants.CommentsSort.SORT_BY_HOT.equals(itemCS)) {
+        			} else if (Constants.CommentsSort.SORT_BY_HOT.equals(itemString)) {
     					mSortByUrl = Constants.CommentsSort.SORT_BY_HOT_URL;
-        			} else if (Constants.CommentsSort.SORT_BY_NEW.equals(itemCS)) {
+        			} else if (Constants.CommentsSort.SORT_BY_NEW.equals(itemString)) {
         				mSortByUrl = Constants.CommentsSort.SORT_BY_NEW_URL;
-    				} else if (Constants.CommentsSort.SORT_BY_CONTROVERSIAL.equals(itemCS)) {
+    				} else if (Constants.CommentsSort.SORT_BY_CONTROVERSIAL.equals(itemString)) {
     					mSortByUrl = Constants.CommentsSort.SORT_BY_CONTROVERSIAL_URL;
-    				} else if (Constants.CommentsSort.SORT_BY_TOP.equals(itemCS)) {
+    				} else if (Constants.CommentsSort.SORT_BY_TOP.equals(itemString)) {
     					mSortByUrl = Constants.CommentsSort.SORT_BY_TOP_URL;
-    				} else if (Constants.CommentsSort.SORT_BY_OLD.equals(itemCS)) {
+    				} else if (Constants.CommentsSort.SORT_BY_OLD.equals(itemString)) {
     					mSortByUrl = Constants.CommentsSort.SORT_BY_OLD_URL;
     				}
     				new DownloadCommentsTask().execute(Constants.DEFAULT_COMMENT_DOWNLOAD_LIMIT);
@@ -2323,13 +2323,13 @@ public class CommentsListActivity extends ListActivity
     @Override
     protected void onSaveInstanceState(Bundle state) {
     	super.onSaveInstanceState(state);
-    	state.putCharSequence(Constants.CommentsSort.SORT_BY_KEY, mSortByUrl);
+    	state.putString(Constants.CommentsSort.SORT_BY_KEY, mSortByUrl);
     	state.putInt(Constants.JUMP_TO_COMMENT_POSITION_KEY, mJumpToCommentPosition);
-    	state.putCharSequence(Constants.JUMP_TO_COMMENT_ID_KEY, mJumpToCommentId);
+    	state.putString(Constants.JUMP_TO_COMMENT_ID_KEY, mJumpToCommentId);
     	state.putInt(Constants.JUMP_TO_COMMENT_CONTEXT_KEY, mJumpToCommentContext);
-    	state.putCharSequence(Constants.REPLY_TARGET_NAME_KEY, mReplyTargetName);
-    	state.putCharSequence(Constants.REPORT_TARGET_NAME_KEY, mReportTargetName);
-    	state.putCharSequence(Constants.EDIT_TARGET_BODY_KEY, mEditTargetBody);
+    	state.putString(Constants.REPLY_TARGET_NAME_KEY, mReplyTargetName);
+    	state.putString(Constants.REPORT_TARGET_NAME_KEY, mReportTargetName);
+    	state.putString(Constants.EDIT_TARGET_BODY_KEY, mEditTargetBody);
     	state.putString(Constants.DELETE_TARGET_KIND_KEY, mDeleteTargetKind);
     }
     

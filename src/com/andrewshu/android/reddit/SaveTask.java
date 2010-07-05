@@ -79,7 +79,7 @@ class SaveTask extends AsyncTask<Void, Void, Boolean> {
     	
     	// Update the modhash if necessary
     	if (mSettings.modhash == null) {
-    		CharSequence modhash = Common.doUpdateModhash(mClient);
+    		String modhash = Common.doUpdateModhash(mClient);
     		if (modhash == null) {
     			// doUpdateModhash should have given an error about credentials
     			Common.doLogout(mSettings, mClient, mContext);

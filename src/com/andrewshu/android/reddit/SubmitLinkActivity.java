@@ -181,8 +181,11 @@ public class SubmitLinkActivity extends TabActivity {
 	        		final EditText submitLinkUrl = (EditText) findViewById(R.id.submit_link_url);
 	        		final EditText submitLinkReddit = (EditText) findViewById(R.id.submit_link_reddit);
 	        		final EditText submitLinkCaptcha = (EditText) findViewById(R.id.submit_link_captcha);
-	        		new SubmitLinkTask(submitLinkTitle.getText(), submitLinkUrl.getText(), submitLinkReddit.getText(),
-	        				Constants.SUBMIT_KIND_LINK, submitLinkCaptcha.getText()).execute();
+	        		new SubmitLinkTask(submitLinkTitle.getText().toString(),
+	        				submitLinkUrl.getText().toString(),
+	        				submitLinkReddit.getText().toString(),
+	        				Constants.SUBMIT_KIND_LINK,
+	        				submitLinkCaptcha.getText().toString()).execute();
         		}
         	}
         });
@@ -194,8 +197,11 @@ public class SubmitLinkActivity extends TabActivity {
 	        		final EditText submitTextText = (EditText) findViewById(R.id.submit_text_text);
 	        		final EditText submitTextReddit = (EditText) findViewById(R.id.submit_text_reddit);
 	        		final EditText submitTextCaptcha = (EditText) findViewById(R.id.submit_text_captcha);
-	        		new SubmitLinkTask(submitTextTitle.getText(), submitTextText.getText(), submitTextReddit.getText(),
-	        				Constants.SUBMIT_KIND_SELF, submitTextCaptcha.getText()).execute();
+	        		new SubmitLinkTask(submitTextTitle.getText().toString(),
+	        				submitTextText.getText().toString(),
+	        				submitTextReddit.getText().toString(),
+	        				Constants.SUBMIT_KIND_SELF,
+	        				submitTextCaptcha.getText().toString()).execute();
         		}
         	}
         });
@@ -220,9 +226,9 @@ public class SubmitLinkActivity extends TabActivity {
     
 	
 	private class LoginTask extends AsyncTask<Void, Void, String> {
-    	private CharSequence mUsername, mPassword;
+    	private String mUsername, mPassword;
     	
-    	LoginTask(CharSequence username, CharSequence password) {
+    	LoginTask(String username, String password) {
     		mUsername = username;
     		mPassword = password;
     	}
@@ -256,10 +262,10 @@ public class SubmitLinkActivity extends TabActivity {
     
 
 	private class SubmitLinkTask extends AsyncTask<Void, Void, ThingInfo> {
-    	CharSequence _mTitle, _mUrlOrText, _mSubreddit, _mKind, _mCaptcha;
+    	String _mTitle, _mUrlOrText, _mSubreddit, _mKind, _mCaptcha;
 		String _mUserError = "Error creating submission. Please try again.";
     	
-    	SubmitLinkTask(CharSequence title, CharSequence urlOrText, CharSequence subreddit, CharSequence kind, CharSequence captcha) {
+    	SubmitLinkTask(String title, String urlOrText, String subreddit, String kind, String captcha) {
     		_mTitle = title;
     		_mUrlOrText = urlOrText;
     		_mSubreddit = subreddit;
@@ -280,7 +286,7 @@ public class SubmitLinkActivity extends TabActivity {
         	}
         	// Update the modhash if necessary
         	if (mSettings.modhash == null) {
-        		CharSequence modhash = Common.doUpdateModhash(mClient);
+        		String modhash = Common.doUpdateModhash(mClient);
         		if (modhash == null) {
         			// doUpdateModhash should have given an error about credentials
         			Common.doLogout(mSettings, mClient, getApplicationContext());
@@ -576,7 +582,7 @@ public class SubmitLinkActivity extends TabActivity {
 		case Constants.DIALOG_LOGIN:
 			dialog = new LoginDialog(this, mSettings, true) {
 				@Override
-				public void onLoginChosen(CharSequence user, CharSequence password) {
+				public void onLoginChosen(String user, String password) {
 					dismissDialog(Constants.DIALOG_LOGIN);
     				new LoginTask(user, password).execute();
 				}

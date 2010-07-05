@@ -517,9 +517,9 @@ public final class InboxActivity extends ListActivity
     
     
     private class LoginTask extends AsyncTask<Void, Void, String> {
-    	private CharSequence mUsername, mPassword, mUserError;
+    	private String mUsername, mPassword, mUserError;
     	
-    	LoginTask(CharSequence username, CharSequence password) {
+    	LoginTask(String username, String password) {
     		mUsername = username;
     		mPassword = password;
     	}
@@ -570,7 +570,7 @@ public final class InboxActivity extends ListActivity
         	
         	// Update the modhash if necessary
         	if (mSettings.modhash == null) {
-        		CharSequence modhash = Common.doUpdateModhash(mClient);
+        		String modhash = Common.doUpdateModhash(mClient);
         		if (modhash == null) {
         			// doUpdateModhash should have given an error about credentials
         			Common.doLogout(mSettings, mClient, getApplicationContext());
@@ -661,16 +661,16 @@ public final class InboxActivity extends ListActivity
     }
     
     
-    private class MessageReplyTask extends AsyncTask<CharSequence, Void, Boolean> {
-    	private CharSequence _mParentThingId;
+    private class MessageReplyTask extends AsyncTask<String, Void, Boolean> {
+    	private String _mParentThingId;
     	String _mUserError = "Error submitting reply. Please try again.";
     	
-    	MessageReplyTask(CharSequence parentThingId) {
+    	MessageReplyTask(String parentThingId) {
     		_mParentThingId = parentThingId;
     	}
     	
     	@Override
-        public Boolean doInBackground(CharSequence... text) {
+        public Boolean doInBackground(String... text) {
         	String userError = "Error replying. Please try again.";
         	HttpEntity entity = null;
         	
@@ -682,7 +682,7 @@ public final class InboxActivity extends ListActivity
         	}
         	// Update the modhash if necessary
         	if (mSettings.modhash == null) {
-        		CharSequence modhash = Common.doUpdateModhash(mClient);
+        		String modhash = Common.doUpdateModhash(mClient);
         		if (modhash == null) {
         			// doUpdateModhash should have given an error about credentials
         			Common.doLogout(mSettings, mClient, getApplicationContext());
@@ -695,9 +695,9 @@ public final class InboxActivity extends ListActivity
         	try {
         		// Construct data
     			List<NameValuePair> nvps = new ArrayList<NameValuePair>();
-    			nvps.add(new BasicNameValuePair("thing_id", _mParentThingId.toString()));
-    			nvps.add(new BasicNameValuePair("text", text[0].toString()));
-    			nvps.add(new BasicNameValuePair("uh", mSettings.modhash.toString()));
+    			nvps.add(new BasicNameValuePair("thing_id", _mParentThingId));
+    			nvps.add(new BasicNameValuePair("text", text[0]));
+    			nvps.add(new BasicNameValuePair("uh", mSettings.modhash));
     			// Votehash is currently unused by reddit 
 //    				nvps.add(new BasicNameValuePair("vh", "0d4ab0ffd56ad0f66841c15609e9a45aeec6b015"));
     			
@@ -747,20 +747,20 @@ public final class InboxActivity extends ListActivity
     	}
     }
     
-    private class MessageComposeTask extends AsyncTask<CharSequence, Void, Boolean> {
+    private class MessageComposeTask extends AsyncTask<String, Void, Boolean> {
     	Dialog _mDialog;  // needed to update CAPTCHA on failure
     	ThingInfo _mTargetThingInfo;
     	String _mUserError = "Error composing message. Please try again.";
-    	CharSequence _mCaptcha;
+    	String _mCaptcha;
     	
-    	MessageComposeTask(Dialog dialog, ThingInfo targetThingInfo, CharSequence captcha) {
+    	MessageComposeTask(Dialog dialog, ThingInfo targetThingInfo, String captcha) {
     		_mDialog = dialog;
     		_mTargetThingInfo = targetThingInfo;
     		_mCaptcha = captcha;
     	}
     	
     	@Override
-        public Boolean doInBackground(CharSequence... text) {
+        public Boolean doInBackground(String... text) {
         	HttpEntity entity = null;
         	
         	if (!mSettings.loggedIn) {
@@ -770,7 +770,7 @@ public final class InboxActivity extends ListActivity
         	}
         	// Update the modhash if necessary
         	if (mSettings.modhash == null) {
-        		CharSequence modhash = Common.doUpdateModhash(mClient);
+        		String modhash = Common.doUpdateModhash(mClient);
         		if (modhash == null) {
         			// doUpdateModhash should have given an error about credentials
         			Common.doLogout(mSettings, mClient, getApplicationContext());
@@ -1065,7 +1065,7 @@ public final class InboxActivity extends ListActivity
     	case Constants.DIALOG_LOGIN:
     		dialog = new LoginDialog(this, mSettings, true) {
 				@Override
-				public void onLoginChosen(CharSequence user, CharSequence password) {
+				public void onLoginChosen(String user, String password) {
 					dismissDialog(Constants.DIALOG_LOGIN);
 		        	new LoginTask(user, password).execute();
 				}
@@ -1081,7 +1081,7 @@ public final class InboxActivity extends ListActivity
     		replySaveButton.setOnClickListener(new OnClickListener() {
     			public void onClick(View v) {
     				if(mReplyTargetName != null){
-        				new MessageReplyTask(mReplyTargetName).execute(replyBody.getText());
+        				new MessageReplyTask(mReplyTargetName).execute(replyBody.getText().toString());
         				dismissDialog(Constants.DIALOG_REPLY);
     				}
     				else{
@@ -1204,7 +1204,7 @@ public final class InboxActivity extends ListActivity
     @Override
     protected void onSaveInstanceState(Bundle state) {
     	super.onSaveInstanceState(state);
-    	state.putCharSequence(Constants.REPLY_TARGET_NAME_KEY, mReplyTargetName);
+    	state.putString(Constants.REPLY_TARGET_NAME_KEY, mReplyTargetName);
     }
     
     /**

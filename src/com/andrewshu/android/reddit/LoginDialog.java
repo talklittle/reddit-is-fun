@@ -68,8 +68,8 @@ public abstract class LoginDialog extends Dialog {
 	}
 	
 	private void handleLoginChosen() {
-		CharSequence user = loginUsernameInput.getText().toString().trim();
-		CharSequence password = loginPasswordInput.getText().toString();
+		String user = loginUsernameInput.getText().toString().trim();
+		String password = loginPasswordInput.getText().toString();
 		onLoginChosen(user, password);
 	}
 	
@@ -77,6 +77,6 @@ public abstract class LoginDialog extends Dialog {
 	 * Called when the login button is clicked
 	 * or when enter is pressed on the password field. 
 	 */
-	public abstract void onLoginChosen(CharSequence user, CharSequence password);
+	public abstract void onLoginChosen(String user, String password);
 
 }

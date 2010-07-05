@@ -94,7 +94,7 @@ public class Common {
           "(?:/([^/.]+))?" +
       ")?/?");
 
-	static void showErrorToast(CharSequence error, int duration, Context context) {
+	static void showErrorToast(String error, int duration, Context context) {
 		LayoutInflater inflater = (LayoutInflater) context.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
 		Toast t = new Toast(context);
 		t.setDuration(duration);
@@ -214,7 +214,7 @@ public class Common {
      * Should be called from a background thread.
      * @return Error message, or null on success
      */
-    static String doLogin(CharSequence username, CharSequence password, RedditSettings settings, DefaultHttpClient client, Context context) {
+    static String doLogin(String username, String password, RedditSettings settings, DefaultHttpClient client, Context context) {
 		String status = "";
     	String userError = "Error logging in. Please try again.";
     	HttpEntity entity = null;
@@ -614,7 +614,7 @@ public class Common {
 		notificationManager.cancel(Constants.NOTIFICATION_HAVE_MAIL);
     }
     
-    static void launchBrowser(CharSequence url, Activity act) {
+    static void launchBrowser(String url, Activity act) {
     	Matcher matcher = REDDIT_LINK.matcher(url);
     	if (matcher.matches()) {
     		if (matcher.group(3) != null) {
