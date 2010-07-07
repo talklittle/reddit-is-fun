@@ -82,9 +82,9 @@ import android.widget.Toast;
  * @author TalkLittle
  *
  */
-public final class RedditIsFun extends ListActivity {
+public final class ThreadsListActivity extends ListActivity {
 
-	private static final String TAG = "RedditIsFun";
+	private static final String TAG = "ThreadsListActivity";
 	private final Pattern REDDIT_CONTEXT_PATTERN = Pattern.compile("(http://www.reddit.com)?/r/(.+?)/$");
 	
 	private final ObjectMapper om = new ObjectMapper();
@@ -426,20 +426,20 @@ public final class RedditIsFun extends ListActivity {
 		            	thumbnailView.setOnClickListener(new OnClickListener() {
 		            		public void onClick(View v) {
 		            			mJumpToThreadId = jumpToId;
-		            			Common.launchBrowser(url, RedditIsFun.this);
+		            			Common.launchBrowser(url, ThreadsListActivity.this);
 		            		}
 		            	});
 		            	indeterminateProgressBar.setOnClickListener(new OnClickListener() {
 		            		public void onClick(View v) {
 		            			mJumpToThreadId = jumpToId;
-		            			Common.launchBrowser(url, RedditIsFun.this);
+		            			Common.launchBrowser(url, ThreadsListActivity.this);
 		            		}
 		            	});
 		            	
 		            	// Fill in the thumbnail using a Thread. Note that thumbnail URL can be absolute path.
 		            	if (item.getThumbnail() != null && !Constants.EMPTY_STRING.equals(item.getThumbnail())) {
 		            		drawableManager.fetchDrawableOnThread(Util.absolutePathToURL(item.getThumbnail()),
-		            				thumbnailView, indeterminateProgressBar, RedditIsFun.this);
+		            				thumbnailView, indeterminateProgressBar, ThreadsListActivity.this);
 		            	} else {
 		            		indeterminateProgressBar.setVisibility(View.GONE);
 		            		thumbnailView.setVisibility(View.VISIBLE);
@@ -594,12 +594,12 @@ public final class RedditIsFun extends ListActivity {
     	protected void saveState() {
 			mSettings.setModhash(mModhash);
 			mSettings.setSubreddit(mSubreddit);
-			RedditIsFun.this.mLastAfter = mLastAfter;
-			RedditIsFun.this.mLastBefore = mLastBefore;
-			RedditIsFun.this.mLastCount = mLastCount;
-			RedditIsFun.this.mAfter = mAfter;
-			RedditIsFun.this.mBefore = mBefore;
-			RedditIsFun.this.mCount = mCount;
+			ThreadsListActivity.this.mLastAfter = mLastAfter;
+			ThreadsListActivity.this.mLastBefore = mLastBefore;
+			ThreadsListActivity.this.mLastCount = mLastCount;
+			ThreadsListActivity.this.mAfter = mAfter;
+			ThreadsListActivity.this.mBefore = mBefore;
+			ThreadsListActivity.this.mCount = mCount;
     	}
     	
     	@Override
@@ -643,7 +643,7 @@ public final class RedditIsFun extends ListActivity {
 	    		jumpToThread();
     		} else {
     			if (!isCancelled())
-    				Common.showErrorToast(mUserError, Toast.LENGTH_LONG, RedditIsFun.this);
+    				Common.showErrorToast(mUserError, Toast.LENGTH_LONG, ThreadsListActivity.this);
     		}
     	}
     	
@@ -681,14 +681,14 @@ public final class RedditIsFun extends ListActivity {
     	protected void onPostExecute(String errorMessage) {
     		dismissDialog(Constants.DIALOG_LOGGING_IN);
     		if (errorMessage == null) {
-    			Toast.makeText(RedditIsFun.this, "Logged in as "+mUsername, Toast.LENGTH_SHORT).show();
+    			Toast.makeText(ThreadsListActivity.this, "Logged in as "+mUsername, Toast.LENGTH_SHORT).show();
     			// Check mail
     			new Common.PeekEnvelopeTask(getApplicationContext(), mClient, mSettings.mailNotificationStyle).execute();
     			// Refresh the threads list
     			new MyDownloadThreadsTask(getApplicationContext(), mClient, om, mSortByUrl, mSortByUrlExtra,
             			mSettings.subreddit).execute();
         	} else {
-            	Common.showErrorToast(errorMessage, Toast.LENGTH_LONG, RedditIsFun.this);
+            	Common.showErrorToast(errorMessage, Toast.LENGTH_LONG, ThreadsListActivity.this);
     		}
     	}
     }
@@ -778,7 +778,7 @@ public final class RedditIsFun extends ListActivity {
     	@Override
     	public void onPreExecute() {
     		if (!mSettings.loggedIn) {
-        		Common.showErrorToast("You must be logged in to vote.", Toast.LENGTH_LONG, RedditIsFun.this);
+        		Common.showErrorToast("You must be logged in to vote.", Toast.LENGTH_LONG, ThreadsListActivity.this);
         		cancel(true);
         		return;
         	}
@@ -839,7 +839,7 @@ public final class RedditIsFun extends ListActivity {
         		_mTargetThingInfo.setScore(_mPreviousScore);
         		mThreadsAdapter.notifyDataSetChanged();
         		
-    			Common.showErrorToast(_mUserError, Toast.LENGTH_LONG, RedditIsFun.this);
+    			Common.showErrorToast(_mUserError, Toast.LENGTH_LONG, ThreadsListActivity.this);
     		}
     	}
     }
@@ -1268,7 +1268,7 @@ public final class RedditIsFun extends ListActivity {
     				public void onClick(View v) {
     					dismissDialog(Constants.DIALOG_THING_CLICK);
     					// Launch Intent to goto the URL
-    					Common.launchBrowser(url, RedditIsFun.this);
+    					Common.launchBrowser(url, ThreadsListActivity.this);
     				}
     			});
             	linkButton.setEnabled(true);

@@ -633,7 +633,7 @@ public class Common {
     			return;
     		} else if (matcher.group(1) != null) {
     			CacheInfo.invalidateCachedSubreddit(act);
-    			Intent intent = new Intent(act.getApplicationContext(), RedditIsFun.class);
+    			Intent intent = new Intent(act.getApplicationContext(), ThreadsListActivity.class);
     			intent.putExtra(Constants.EXTRA_SUBREDDIT, matcher.group(1));
     			act.startActivity(intent);
     			return;
