@@ -106,6 +106,7 @@ public final class InboxActivity extends ListActivity
     
     /** Custom list adapter that fits our threads data into the list. */
     private MessagesListAdapter mMessagesAdapter;
+    private ArrayList<ThingInfo> mMessagesList;
     // Lock used when modifying the mMessagesAdapter
     private static final Object MESSAGE_ADAPTER_LOCK = new Object();
     
@@ -159,13 +160,20 @@ public final class InboxActivity extends ListActivity
         // access it with getListView().
         
 		if (mSettings.loggedIn) {
-			new DownloadMessagesTask().execute(Constants.DEFAULT_COMMENT_DOWNLOAD_LIMIT);
+			if (savedInstanceState != null) {
+	        	mReplyTargetName = savedInstanceState.getString(Constants.REPLY_TARGET_NAME_KEY);
+	        	mMessagesList = (ArrayList<ThingInfo>) getLastNonConfigurationInstance();
+	        	if (mMessagesList == null) {
+	        		new DownloadMessagesTask().execute(Constants.DEFAULT_COMMENT_DOWNLOAD_LIMIT);
+	        	} else {
+			    	// Orientation change. Use prior instance.
+	        		resetUI(new MessagesListAdapter(this, mMessagesList));
+	        	}
+			} else {
+				new DownloadMessagesTask().execute(Constants.DEFAULT_COMMENT_DOWNLOAD_LIMIT);
+			}
 		} else {
 			showDialog(Constants.DIALOG_LOGIN);
-		}
-		
-		if (savedInstanceState != null) {
-        	mReplyTargetName = savedInstanceState.getString(Constants.REPLY_TARGET_NAME_KEY);
 		}
     }
     
@@ -209,6 +217,14 @@ public final class InboxActivity extends ListActivity
     	super.onPause();
     	Common.saveRedditPreferences(this, mSettings);
     }
+    
+    @Override
+    public Object onRetainNonConfigurationInstance() {
+        // Avoid having to re-download and re-parse the messages list
+    	// when rotating or opening keyboard.
+    	return mMessagesList;
+    }
+    
     
     
     /**
@@ -364,7 +380,8 @@ public final class InboxActivity extends ListActivity
     	synchronized (MESSAGE_ADAPTER_LOCK) {
 	    	if (messagesAdapter == null) {
 	            // Reset the list to be empty.
-	    		mMessagesAdapter = new MessagesListAdapter(this, new ArrayList<ThingInfo>());
+	    		mMessagesList = new ArrayList<ThingInfo>();
+	    		mMessagesAdapter = new MessagesListAdapter(this, mMessagesList);
 	    	} else {
 	    		mMessagesAdapter = messagesAdapter;
 	    	}

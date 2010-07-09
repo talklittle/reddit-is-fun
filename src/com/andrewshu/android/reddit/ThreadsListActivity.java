@@ -140,7 +140,6 @@ public final class ThreadsListActivity extends ListActivity {
         requestWindowFeature(Window.FEATURE_PROGRESS);
         requestWindowFeature(Window.FEATURE_INDETERMINATE_PROGRESS);
     	
-        enableLoadingScreen();
 	Uri data = getIntent().getData();
 	if (data != null) {
     		Matcher redditContextMatcher = REDDIT_CONTEXT_PATTERN.matcher(data.toString());
@@ -160,10 +159,7 @@ public final class ThreadsListActivity extends ListActivity {
 	else if (savedInstanceState != null) {
         	if (Constants.LOGGING) Log.d(TAG, "using savedInstanceState");
 			String subreddit = savedInstanceState.getString(Constants.SUBREDDIT_KEY);
-	        
-			
-			
-			if (subreddit != null)
+	        if (subreddit != null)
 	        	mSettings.setSubreddit(subreddit);
 	        else
 	        	mSettings.setSubreddit(mSettings.homepage);
@@ -173,9 +169,33 @@ public final class ThreadsListActivity extends ListActivity {
 	        mSortByUrl = savedInstanceState.getString(Constants.ThreadsSort.SORT_BY_KEY);
 		    mJumpToThreadId = savedInstanceState.getString(Constants.JUMP_TO_THREAD_ID_KEY);
 		    mVoteTargetThingInfo = savedInstanceState.getParcelable(Constants.VOTE_TARGET_THING_INFO_KEY);
+		    
+		    mThreadsList = (ArrayList<ThingInfo>) getLastNonConfigurationInstance();
+		    if (mThreadsList == null) {
+	        	// Load previous view of threads
+		        if (mAfter != null) {
+		        	new MyDownloadThreadsTask(getApplicationContext(), mClient, om, mSortByUrl, mSortByUrlExtra,
+		        			mSettings.subreddit, mAfter, null, mCount).execute();
+		        } else if (mBefore != null) {
+		        	new MyDownloadThreadsTask(getApplicationContext(), mClient, om, mSortByUrl, mSortByUrlExtra,
+		        			mSettings.subreddit, null, mBefore, mCount).execute();
+		        } else {
+		        	new MyDownloadThreadsTask(getApplicationContext(), mClient, om, mSortByUrl, mSortByUrlExtra,
+		        			mSettings.subreddit).execute();
+		        }
+		    } else {
+		    	// Orientation change. Use prior instance.
+		    	resetUI(new ThreadsListAdapter(this, mThreadsList));
+		    	if (Constants.FRONTPAGE_STRING.equals(mSettings.subreddit))
+		    		setTitle("reddit.com: what's new online!");
+		    	else
+		    		setTitle("/r/" + mSettings.subreddit.trim());
+		    }
         }
         else {
         	mSettings.setSubreddit(mSettings.homepage);
+           	new MyDownloadThreadsTask(getApplicationContext(), mClient, om, mSortByUrl, mSortByUrlExtra,
+           			mSettings.subreddit).execute();
         }
     }
     
@@ -191,19 +211,7 @@ public final class ThreadsListActivity extends ListActivity {
     		setListAdapter(mThreadsAdapter);
     		Common.updateListDrawables(this, mSettings.theme);
     	}
-    	if (mThreadsAdapter == null) {
-            // Restore the last-viewed page of threads
-            if (mAfter != null) {
-            	new MyDownloadThreadsTask(getApplicationContext(), mClient, om, mSortByUrl, mSortByUrlExtra,
-            			mSettings.subreddit, mAfter, null, mCount).execute();
-            } else if (mBefore != null) {
-            	new MyDownloadThreadsTask(getApplicationContext(), mClient, om, mSortByUrl, mSortByUrlExtra,
-            			mSettings.subreddit, null, mBefore, mCount).execute();
-            } else {
-            	new MyDownloadThreadsTask(getApplicationContext(), mClient, om, mSortByUrl, mSortByUrlExtra,
-            			mSettings.subreddit).execute();
-            }
-    	} else {
+    	if (mThreadsAdapter != null) {
     		jumpToThread();
     	}
     	new Common.PeekEnvelopeTask(this, mClient, mSettings.mailNotificationStyle).execute();
@@ -228,6 +236,13 @@ public final class ThreadsListActivity extends ListActivity {
     protected void onPause() {
     	super.onPause();
     	Common.saveRedditPreferences(getApplicationContext(), mSettings);
+    }
+    
+    @Override
+    public Object onRetainNonConfigurationInstance() {
+        // Avoid having to re-download and re-parse the threads list
+    	// when rotating or opening keyboard.
+    	return mThreadsList;
     }
     
 
@@ -619,7 +634,7 @@ public final class ThreadsListActivity extends ListActivity {
 	    	if (Constants.FRONTPAGE_STRING.equals(mSubreddit))
 	    		setTitle("reddit.com: what's new online!");
 	    	else
-	    		setTitle("/r/" + mSubreddit.toString().trim());
+	    		setTitle("/r/" + mSubreddit.trim());
     	}
     	
     	@Override
@@ -738,10 +753,10 @@ public final class ThreadsListActivity extends ListActivity {
         	try {
         		// Construct data
     			List<NameValuePair> nvps = new ArrayList<NameValuePair>();
-    			nvps.add(new BasicNameValuePair("id", _mThingFullname.toString()));
+    			nvps.add(new BasicNameValuePair("id", _mThingFullname));
     			nvps.add(new BasicNameValuePair("dir", String.valueOf(_mDirection)));
-    			nvps.add(new BasicNameValuePair("r", _mSubreddit.toString()));
-    			nvps.add(new BasicNameValuePair("uh", mSettings.modhash.toString()));
+    			nvps.add(new BasicNameValuePair("r", _mSubreddit));
+    			nvps.add(new BasicNameValuePair("uh", mSettings.modhash));
     			// Votehash is currently unused by reddit 
 //    				nvps.add(new BasicNameValuePair("vh", "0d4ab0ffd56ad0f66841c15609e9a45aeec6b015"));
     			
@@ -1061,7 +1076,6 @@ public final class ThreadsListActivity extends ListActivity {
     	switch (id) {
     	case Constants.DIALOG_LOGIN:
     		dialog = new LoginDialog(this, mSettings, false) {
-				@Override
 				public void onLoginChosen(String user, String password) {
 					dismissDialog(Constants.DIALOG_LOGIN);
 		        	new LoginTask(user, password).execute(); 

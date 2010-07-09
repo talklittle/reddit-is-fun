@@ -118,7 +118,13 @@ public final class PickSubredditActivity extends ListActivity {
     	
         setContentView(R.layout.pick_subreddit_view);
         
-        new DownloadRedditsTask().execute();
+        mSubredditsList = (ArrayList<String>) getLastNonConfigurationInstance();
+        if (mSubredditsList == null) {
+        	new DownloadRedditsTask().execute();
+        } else {
+	    	// Orientation change. Use prior instance.
+        	resetUI(new PickSubredditAdapter(this, mSubredditsList));
+        }
     }
     
     /**
@@ -153,6 +159,14 @@ public final class PickSubredditActivity extends ListActivity {
 	        });
         }
     }
+    
+    @Override
+    public Object onRetainNonConfigurationInstance() {
+        // Avoid having to re-download and re-parse the subreddits list
+    	// when rotating or opening keyboard.
+    	return mSubredditsList;
+    }
+    
     
     void resetUI(PickSubredditAdapter adapter) {
     	setContentView(R.layout.pick_subreddit_view);

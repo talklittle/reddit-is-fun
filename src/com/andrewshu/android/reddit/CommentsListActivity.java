@@ -171,7 +171,7 @@ public class CommentsListActivity extends ListActivity
 	// Just use it as out "commentContext" and skip the Extra Bundle stuff.
         Uri data = getIntent().getData();
         if (data != null) {
-		commentContext = data.toString();
+        	commentContext = data.toString();
         } else {
         	extras = getIntent().getExtras();
         	if (extras == null) {
@@ -195,20 +195,22 @@ public class CommentsListActivity extends ListActivity
     			finish();
     		}
     	} else {
-        	mSettings.setThreadId(extras.getString(Constants.EXTRA_ID));
         	mSettings.setSubreddit(extras.getString(Constants.EXTRA_SUBREDDIT));
-        	mThreadTitle = extras.getString(Constants.EXTRA_TITLE);
-        	if (mThreadTitle != null) {
-        	  setTitle(mThreadTitle + " : " + mSettings.subreddit);
-        	} else {
-        	  setTitle("reddit is fun");
-        	}
+        	mSettings.setThreadId(extras.getString(Constants.EXTRA_ID));
         	int numComments = extras.getInt(Constants.EXTRA_NUM_COMMENTS);
         	// TODO: Take into account very negative karma comments
         	if (numComments < Constants.DEFAULT_COMMENT_DOWNLOAD_LIMIT)
         		mNumVisibleComments = numComments;
         	else
         		mNumVisibleComments = Constants.DEFAULT_COMMENT_DOWNLOAD_LIMIT;
+    	}
+    	
+    	mThreadTitle = extras.getString(Constants.EXTRA_TITLE);
+    	if (mThreadTitle != null) {
+    	    setTitle(mThreadTitle + " : " + mSettings.subreddit);
+    	} else {
+    		// Title can be updated during comment parsing. For now, use placeholder.
+    	    setTitle(getString(R.string.app_name));
     	}
     	
     	if (savedInstanceState != null) {
@@ -220,10 +222,21 @@ public class CommentsListActivity extends ListActivity
         	mEditTargetBody = savedInstanceState.getString(Constants.EDIT_TARGET_BODY_KEY);
         	mDeleteTargetKind = savedInstanceState.getString(Constants.DELETE_TARGET_KIND_KEY);
         	mJumpToCommentPosition = savedInstanceState.getInt(Constants.JUMP_TO_COMMENT_POSITION_KEY);
-        	// savedInstanceState means probably rotated screen or something.
+
+		    CommentsRetainer retainer = (CommentsRetainer) getLastNonConfigurationInstance();
+        	if (retainer == null) {
+		    	new DownloadCommentsTask().execute(Constants.DEFAULT_COMMENT_DOWNLOAD_LIMIT);
+		    } else {
+		    	// Orientation change. Use prior instance.
+		    	mOpThingInfo = retainer.opThingInfo;
+			    mCommentsList = retainer.commentsList;
+			    mMorePositions = retainer.morePositions;
+			    mHiddenCommentHeads = retainer.hiddenCommentHeads;
+			    resetUI(new CommentsListAdapter(this, mCommentsList));
+		    }
+    	} else {
+    		new DownloadCommentsTask().execute(Constants.DEFAULT_COMMENT_DOWNLOAD_LIMIT);
     	}
-    	
-    	new DownloadCommentsTask().execute(Constants.DEFAULT_COMMENT_DOWNLOAD_LIMIT);
     }
     
     /**
@@ -251,7 +264,11 @@ public class CommentsListActivity extends ListActivity
     		getListView().setDivider(null);
     		Common.updateListDrawables(this, mSettings.theme);
     	}
-	    new Common.PeekEnvelopeTask(this, mClient, mSettings.mailNotificationStyle).execute();
+    	if (mCommentsAdapter != null) {
+    		jumpToComment();
+    	}
+
+    	new Common.PeekEnvelopeTask(this, mClient, mSettings.mailNotificationStyle).execute();
     }
     
     @Override
@@ -260,7 +277,31 @@ public class CommentsListActivity extends ListActivity
     	Common.saveRedditPreferences(this, mSettings);
     }
     
-
+    @Override
+    public Object onRetainNonConfigurationInstance() {
+        // Avoid having to re-download and re-parse the comments list
+    	// when rotating or opening keyboard.
+    	return new CommentsRetainer(mOpThingInfo, mCommentsList, mMorePositions, mHiddenCommentHeads);
+    }
+    
+    class CommentsRetainer {
+    	public ArrayList<ThingInfo> commentsList;
+    	public ThingInfo opThingInfo;
+    	public HashSet<Integer> morePositions;
+    	public HashSet<Integer> hiddenCommentHeads;
+    	
+    	public CommentsRetainer(ThingInfo op, ArrayList<ThingInfo> comments,
+    			HashSet<Integer> morePositions, HashSet<Integer> hiddenCommentHeads) {
+    		opThingInfo = op;
+    		commentsList = comments;
+    		this.morePositions = morePositions;
+    		this.hiddenCommentHeads = hiddenCommentHeads;
+    	}
+    }
+    
+    
+    
+    
     private final class CommentsListAdapter extends ArrayAdapter<ThingInfo> {
     	static final int OP_ITEM_VIEW_TYPE = 0;
     	static final int COMMENT_ITEM_VIEW_TYPE = 1;
