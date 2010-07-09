@@ -163,9 +163,12 @@ public final class ThreadsListActivity extends ListActivity {
 	        	mSettings.setSubreddit(subreddit);
 	        else
 	        	mSettings.setSubreddit(mSettings.homepage);
+	        mAfter = savedInstanceState.getString(Constants.AFTER_KEY);
+	        mBefore = savedInstanceState.getString(Constants.BEFORE_KEY);
 	        mCount = savedInstanceState.getInt(Constants.THREAD_COUNT_KEY);
-	        mAfter = savedInstanceState.getString(Constants.LAST_AFTER_KEY);
-	        mBefore = savedInstanceState.getString(Constants.LAST_BEFORE_KEY);
+	        mLastAfter = savedInstanceState.getString(Constants.LAST_AFTER_KEY);
+	        mLastBefore = savedInstanceState.getString(Constants.LAST_BEFORE_KEY);
+	        mLastCount = savedInstanceState.getInt(Constants.THREAD_LAST_COUNT_KEY);
 	        mSortByUrl = savedInstanceState.getString(Constants.ThreadsSort.SORT_BY_KEY);
 		    mJumpToThreadId = savedInstanceState.getString(Constants.JUMP_TO_THREAD_ID_KEY);
 		    mVoteTargetThingInfo = savedInstanceState.getParcelable(Constants.VOTE_TARGET_THING_INFO_KEY);
@@ -173,12 +176,12 @@ public final class ThreadsListActivity extends ListActivity {
 		    mThreadsList = (ArrayList<ThingInfo>) getLastNonConfigurationInstance();
 		    if (mThreadsList == null) {
 	        	// Load previous view of threads
-		        if (mAfter != null) {
+		        if (mLastAfter != null) {
 		        	new MyDownloadThreadsTask(getApplicationContext(), mClient, om, mSortByUrl, mSortByUrlExtra,
-		        			mSettings.subreddit, mAfter, null, mCount).execute();
-		        } else if (mBefore != null) {
+		        			mSettings.subreddit, mLastAfter, null, mLastCount).execute();
+		        } else if (mLastBefore != null) {
 		        	new MyDownloadThreadsTask(getApplicationContext(), mClient, om, mSortByUrl, mSortByUrlExtra,
-		        			mSettings.subreddit, null, mBefore, mCount).execute();
+		        			mSettings.subreddit, null, mLastBefore, mLastCount).execute();
 		        } else {
 		        	new MyDownloadThreadsTask(getApplicationContext(), mClient, om, mSortByUrl, mSortByUrlExtra,
 		        			mSettings.subreddit).execute();
@@ -1351,9 +1354,12 @@ public final class ThreadsListActivity extends ListActivity {
     	state.putString(Constants.SUBREDDIT_KEY, mSettings.subreddit);
     	state.putString(Constants.ThreadsSort.SORT_BY_KEY, mSortByUrl);
     	state.putString(Constants.JUMP_TO_THREAD_ID_KEY, mJumpToThreadId);
-    	state.putInt(Constants.THREAD_COUNT_KEY, mLastCount);
+    	state.putString(Constants.AFTER_KEY, mAfter);
+    	state.putString(Constants.BEFORE_KEY, mBefore);
+    	state.putInt(Constants.THREAD_COUNT_KEY, mCount);
     	state.putString(Constants.LAST_AFTER_KEY, mLastAfter);
     	state.putString(Constants.LAST_BEFORE_KEY, mLastBefore);
+    	state.putInt(Constants.THREAD_LAST_COUNT_KEY, mLastCount);
     	state.putParcelable(Constants.VOTE_TARGET_THING_INFO_KEY, mVoteTargetThingInfo);
     }
     

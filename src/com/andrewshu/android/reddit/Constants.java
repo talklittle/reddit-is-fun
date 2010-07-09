@@ -134,6 +134,8 @@ public class Constants {
     static final String HAVE_MAIL_TEXT = "You have reddit mail.";
     
     // save instance state Bundle keys
+    static final String AFTER_KEY = "after";
+    static final String BEFORE_KEY = "before";
     static final String DELETE_TARGET_KIND_KEY = "delete_target_kind";
     static final String EDIT_TARGET_BODY_KEY = "edit_target_body";
     static final String ID_KEY = "id";
@@ -147,6 +149,7 @@ public class Constants {
     static final String REPLY_TARGET_NAME_KEY = "reply_target_name";
     static final String SUBREDDIT_KEY = "subreddit";
     static final String THREAD_COUNT_KEY = "thread_count";
+    static final String THREAD_LAST_COUNT_KEY = "last_thread_count";
     static final String VOTE_TARGET_THING_INFO_KEY = "vote_target_thing_info";
     
     static final String SUBMIT_KIND_LINK = "link";
