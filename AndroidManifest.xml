@@ -52,6 +52,7 @@
 	    </activity>
 	    <activity android:name=".InboxActivity"></activity>
 	    <activity android:name=".RedditPreferencesPage"></activity>
+	    <activity android:name=".BrowserActivity"></activity>
 	    <service android:name=".EnvelopeService" android:label="@string/pref_mail_notification_service"></service>
 	</application>
     <uses-sdk android:minSdkVersion="4" android:targetSdkVersion="4" />

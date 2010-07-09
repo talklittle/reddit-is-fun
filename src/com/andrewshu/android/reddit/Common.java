@@ -73,7 +73,6 @@ import android.content.SharedPreferences;
 import android.net.Uri;
 import android.os.AsyncTask;
 import android.preference.PreferenceManager;
-import android.provider.Browser;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -640,8 +639,8 @@ public class Common {
     		}
     	}
     	Uri uri = Util.optimizeMobileUri(Uri.parse(url.toString()));
-    	Intent browser = new Intent(Intent.ACTION_VIEW, uri);
-    	browser.putExtra(Browser.EXTRA_APPLICATION_ID, act.getPackageName());
+    	Intent browser = new Intent(act.getApplicationContext(), BrowserActivity.class);
+    	browser.setData(uri);
     	act.startActivity(browser);
 	}
     
