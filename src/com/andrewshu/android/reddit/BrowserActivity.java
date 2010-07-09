@@ -6,6 +6,11 @@ import android.net.Uri;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.KeyEvent;
+import android.view.Menu;
+import android.view.MenuInflater;
+import android.view.MenuItem;
+import android.view.Window;
+import android.webkit.WebChromeClient;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
 
@@ -14,25 +19,43 @@ public class BrowserActivity extends Activity {
 	private static final String TAG = "BrowserActivity";
 
 	private WebView webview;
+	private Uri mUri = null;
 	
 	@Override
 	public void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 		
-		setContentView(R.layout.browser);
-		
+		requestWindowFeature(Window.FEATURE_PROGRESS);
+        requestWindowFeature(Window.FEATURE_INDETERMINATE_PROGRESS);
+        setContentView(R.layout.browser);
+				
 		webview = (WebView) findViewById(R.id.webview);
+		webview.getSettings().setBuiltInZoomControls(true);
 		webview.getSettings().setJavaScriptEnabled(true);
-		webview.setWebViewClient(new MyWebViewClient());
+		webview.setWebViewClient(new WebViewClient() {
+		    @Override
+		    public boolean shouldOverrideUrlLoading(WebView view, String url) {
+		        view.loadUrl(url);
+		        return true;
+		    }
+		});
+		final Activity activity = this;
+		webview.setWebChromeClient(new WebChromeClient() {
+			public void onProgressChanged(WebView view, int progress) {
+		    	// Activities and WebViews measure progress with different scales.
+		    	// The progress meter will automatically disappear when we reach 100%
+		    	activity.setProgress(progress * 100);
+			}
+		});
 		
 		Intent intent = getIntent();
 		if (intent == null) {
 			Log.e(TAG, "onCreate: intent is null");
 			finish();
 		}
-		Uri uri = intent.getData();
+		mUri = intent.getData();
 		
-		webview.loadUrl(uri.toString());
+		webview.loadUrl(mUri.toString());
 	}
 	
 	@Override
@@ -44,11 +67,34 @@ public class BrowserActivity extends Activity {
 	    return super.onKeyDown(keyCode, event);
 	}
 	
-	private class MyWebViewClient extends WebViewClient {
-	    @Override
-	    public boolean shouldOverrideUrlLoading(WebView view, String url) {
-	        view.loadUrl(url);
-	        return true;
-	    }
-	}
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        super.onCreateOptionsMenu(menu);
+        
+        MenuInflater inflater = getMenuInflater();
+        inflater.inflate(R.menu.browser, menu);
+        return true;
+    }
+    
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+//        if (!mCanChord) {
+//            // The user has already fired a shortcut with this hold down of the
+//            // menu key.
+//            return false;
+//        }
+        
+        switch (item.getItemId()) {
+        case R.id.open_browser_menu_id:
+    		String url;
+    		if (mUri == null)
+    			break;
+    		Common.launchBrowser(mUri.toString(), this, true, true);
+    		break;
+        default:
+    		throw new IllegalArgumentException("Unexpected action value "+item.getItemId());
+    	}
+    	
+        return true;
+    }
 }

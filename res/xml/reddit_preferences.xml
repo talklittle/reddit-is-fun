@@ -30,6 +30,10 @@
         		android:hint="@string/pref_homepage_hint"
                 android:inputType="text"
                 android:singleLine="true" />
+                
+        <CheckBoxPreference
+			android:key="use_external_browser"
+			android:title="@string/pref_use_external_browser" />
         
         <ListPreference
         		android:key="theme"
@@ -77,8 +81,11 @@
                 android:dialogTitle="@string/pref_text_size_dialogtitle" />
         -->
 
-    
-
-</PreferenceCategory><PreferenceCategory android:title="@string/pref_thumbnail_category"><CheckBoxPreference android:key="load_thumbnails" android:defaultValue="true" android:title="@string/pref_load_thumbnails" /><CheckBoxPreference android:key="load_thumbnails_only_wifi" android:title="@string/pref_load_thumbnails_only_wifi" android:defaultValue="false" android:dependency="load_thumbnails" /></PreferenceCategory>
+    </PreferenceCategory>
+	
+	<PreferenceCategory android:title="@string/pref_thumbnail_category">
+		<CheckBoxPreference android:key="load_thumbnails" android:defaultValue="true" android:title="@string/pref_load_thumbnails" />
+		<CheckBoxPreference android:key="load_thumbnails_only_wifi" android:title="@string/pref_load_thumbnails_only_wifi" android:defaultValue="false" android:dependency="load_thumbnails" />
+	</PreferenceCategory>
 
 </PreferenceScreen>

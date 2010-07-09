@@ -32,6 +32,7 @@ public class RedditSettings {
 	Cookie redditSessionCookie = null;
 	String modhash = null;
 	String homepage = Constants.FRONTPAGE_STRING;
+	boolean useExternalBrowser = false;
 	
 	int threadDownloadLimit = Constants.DEFAULT_THREAD_DOWNLOAD_LIMIT;
 	
@@ -162,6 +163,10 @@ public class RedditSettings {
 
 	void setThreadId(String threadId) {
 		this.threadId = threadId;
+	}
+	
+	void setUseExternalBrowser(boolean useExternalBrowser) {
+		this.useExternalBrowser = useExternalBrowser;
 	}
 
 	void setUsername(String username) {

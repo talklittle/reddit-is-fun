@@ -73,6 +73,7 @@ import android.content.SharedPreferences;
 import android.net.Uri;
 import android.os.AsyncTask;
 import android.preference.PreferenceManager;
+import android.provider.Browser;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -139,6 +140,9 @@ public class Common {
     	// Default subreddit
     	editor.putString(Constants.PREF_HOMEPAGE, rSettings.homepage.toString());
     	
+    	// Use external browser instead of BrowserActivity
+    	editor.putBoolean(Constants.PREF_USE_EXTERNAL_BROWSER, rSettings.useExternalBrowser);
+    	
     	// Theme
     	editor.putString(Constants.PREF_THEME, RedditSettings.Theme.toString(rSettings.theme));
     	
@@ -147,7 +151,6 @@ public class Common {
     	
     	// Thumbnails
     	editor.putBoolean(Constants.PREF_LOAD_THUMBNAILS, rSettings.loadThumbnails);
-    	// Thumbnails over wifi
     	editor.putBoolean(Constants.PREF_LOAD_THUMBNAILS_ONLY_WIFI, rSettings.loadThumbnailsOnlyWifi);
     	
     	// Notifications
@@ -188,6 +191,9 @@ public class Common {
         	rSettings.setHomepage(Constants.FRONTPAGE_STRING);
         else
         	rSettings.setHomepage(homepage);
+        
+    	// Use external browser instead of BrowserActivity
+        rSettings.setUseExternalBrowser(sessionPrefs.getBoolean(Constants.PREF_USE_EXTERNAL_BROWSER, false));
         
         // Theme
         rSettings.setTheme(RedditSettings.Theme.valueOf(
@@ -613,35 +619,44 @@ public class Common {
 		notificationManager.cancel(Constants.NOTIFICATION_HAVE_MAIL);
     }
     
-    static void launchBrowser(String url, Activity act) {
-    	Matcher matcher = REDDIT_LINK.matcher(url);
-    	if (matcher.matches()) {
-    		if (matcher.group(3) != null) {
-    			CacheInfo.invalidateCachedThread(act);
-    			Intent intent = new Intent(act.getApplicationContext(), CommentsListActivity.class);
-    			intent.putExtra(Constants.EXTRA_COMMENT_CONTEXT, url);
-    			act.startActivity(intent);
-    			return;
-    		} else if (matcher.group(2) != null) {
-    			CacheInfo.invalidateCachedThread(act);
-    			Intent intent = new Intent(act.getApplicationContext(), CommentsListActivity.class);
-    			intent.putExtra(Constants.EXTRA_SUBREDDIT, matcher.group(1));
-    			intent.putExtra(Constants.EXTRA_ID, matcher.group(2));
-    			intent.putExtra(Constants.EXTRA_NUM_COMMENTS, Constants.DEFAULT_COMMENT_DOWNLOAD_LIMIT);
-    			act.startActivity(intent);
-    			return;
-    		} else if (matcher.group(1) != null) {
-    			CacheInfo.invalidateCachedSubreddit(act);
-    			Intent intent = new Intent(act.getApplicationContext(), ThreadsListActivity.class);
-    			intent.putExtra(Constants.EXTRA_SUBREDDIT, matcher.group(1));
-    			act.startActivity(intent);
-    			return;
-    		}
+    static void launchBrowser(String url, Activity act, boolean bypassParser, boolean useExternalBrowser) {
+    	if (!bypassParser) {
+	    	Matcher matcher = REDDIT_LINK.matcher(url);
+	    	if (matcher.matches()) {
+	    		if (matcher.group(3) != null) {
+	    			CacheInfo.invalidateCachedThread(act);
+	    			Intent intent = new Intent(act.getApplicationContext(), CommentsListActivity.class);
+	    			intent.putExtra(Constants.EXTRA_COMMENT_CONTEXT, url);
+	    			act.startActivity(intent);
+	    			return;
+	    		} else if (matcher.group(2) != null) {
+	    			CacheInfo.invalidateCachedThread(act);
+	    			Intent intent = new Intent(act.getApplicationContext(), CommentsListActivity.class);
+	    			intent.putExtra(Constants.EXTRA_SUBREDDIT, matcher.group(1));
+	    			intent.putExtra(Constants.EXTRA_ID, matcher.group(2));
+	    			intent.putExtra(Constants.EXTRA_NUM_COMMENTS, Constants.DEFAULT_COMMENT_DOWNLOAD_LIMIT);
+	    			act.startActivity(intent);
+	    			return;
+	    		} else if (matcher.group(1) != null) {
+	    			CacheInfo.invalidateCachedSubreddit(act);
+	    			Intent intent = new Intent(act.getApplicationContext(), ThreadsListActivity.class);
+	    			intent.putExtra(Constants.EXTRA_SUBREDDIT, matcher.group(1));
+	    			act.startActivity(intent);
+	    			return;
+	    		}
+	    	}
     	}
     	Uri uri = Util.optimizeMobileUri(Uri.parse(url.toString()));
-    	Intent browser = new Intent(act.getApplicationContext(), BrowserActivity.class);
-    	browser.setData(uri);
-    	act.startActivity(browser);
+    	
+    	if (useExternalBrowser) {
+    		Intent browser = new Intent(Intent.ACTION_VIEW, uri);
+    		browser.putExtra(Browser.EXTRA_APPLICATION_ID, act.getPackageName());
+    		act.startActivity(browser);
+    	} else {
+	    	Intent browser = new Intent(act.getApplicationContext(), BrowserActivity.class);
+	    	browser.setData(uri);
+	    	act.startActivity(browser);
+    	}
 	}
     
 	/**
