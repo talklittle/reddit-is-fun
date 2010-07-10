@@ -20,6 +20,7 @@ Contributors:
 * fberger
 * faux
 * ddrboxman
+* jk3us
 
 Android Market QR Codes
 ----------------
