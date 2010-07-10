@@ -358,7 +358,9 @@ public final class InboxActivity extends ListActivity
     	switch (item.getItemId()) {
     	case Constants.DIALOG_COMMENT_CLICK:
 			Intent i = new Intent(getApplicationContext(), CommentsListActivity.class);
-			i.putExtra(Constants.EXTRA_COMMENT_CONTEXT, mVoteTargetThingInfo.getContext());
+			i.setData(Util.createCommentUri(mVoteTargetThingInfo));
+			i.putExtra(Constants.EXTRA_SUBREDDIT, mVoteTargetThingInfo.getSubreddit());
+			i.putExtra(Constants.EXTRA_TITLE, mVoteTargetThingInfo.getTitle());
 			startActivity(i);
 			return true;
     	case Constants.DIALOG_MESSAGE_CLICK:

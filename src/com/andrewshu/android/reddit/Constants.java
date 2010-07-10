@@ -37,6 +37,10 @@ public class Constants {
 		FILENAME_SUBREDDIT_CACHE, FILENAME_THREAD_CACHE, FILENAME_CACHE_INFO
 	};
 	
+	// 1:subreddit 2:threadId 3:commentId
+	static final String COMMENT_PATH_PATTERN_STRING = "(?:/r/(.+?))?/comments/(.+?)(?:/?$|/.+?/(?:([a-zA-Z0-9]+))?)?";
+	static final String REDDIT_PATH_PATTERN_STRING = "/r/(.+?)/?$";
+	
 	static final String COMMENT_KIND = "t1";
 	static final String THREAD_KIND = "t3";
 	static final String MESSAGE_KIND = "t4";
@@ -150,6 +154,7 @@ public class Constants {
     static final String SUBREDDIT_KEY = "subreddit";
     static final String THREAD_COUNT_KEY = "thread_count";
     static final String THREAD_LAST_COUNT_KEY = "last_thread_count";
+    static final String THREAD_TITLE_KEY = "thread_title";
     static final String VOTE_TARGET_THING_INFO_KEY = "vote_target_thing_info";
     
     static final String SUBMIT_KIND_LINK = "link";

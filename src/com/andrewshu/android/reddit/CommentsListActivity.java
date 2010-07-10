@@ -99,7 +99,8 @@ public class CommentsListActivity extends ListActivity
 	private static final String TAG = "CommentsListActivity";
 	
     // Group 2: subreddit name. Group 3: thread id36. Group 4: Comment id36.
-    private final Pattern COMMENT_CONTEXT_PATTERN = Pattern.compile("(http://www.reddit.com)?/r/(.+?)/comments/(.+?)/.+?/(?:([a-zA-Z0-9]+)(?:\\?context=(\\d+))?)?");
+    private final Pattern COMMENT_PATH_PATTERN = Pattern.compile(Constants.COMMENT_PATH_PATTERN_STRING);
+    private final Pattern COMMENT_CONTEXT_PATTERN = Pattern.compile("context=(\\d+)");
 
     private final ObjectMapper om = new ObjectMapper();
     private final DrawableManager drawableManager = new DrawableManager();
@@ -122,7 +123,6 @@ public class CommentsListActivity extends ListActivity
     private int mJumpToCommentPosition = 0;
 //    private String mMoreChildrenId = "";
     private HashSet<Integer> mMorePositions = new HashSet<Integer>();
-    private int mNumVisibleComments = Constants.DEFAULT_COMMENT_DOWNLOAD_LIMIT;
     private ThingInfo mOpThingInfo = null;
     private String mSortByUrl = Constants.CommentsSort.SORT_BY_BEST_URL;
     private String mThreadTitle = null;
@@ -160,60 +160,8 @@ public class CommentsListActivity extends ListActivity
         requestWindowFeature(Window.FEATURE_INDETERMINATE_PROGRESS);
     	
         setContentView(R.layout.comments_list_content);
-        // The above layout contains a list id "android:list"
-        // which ListActivity adopts as its list -- we can
-        // access it with getListView().
         
-        Bundle extras = new Bundle();
-        String commentContext = null;
-
-	// If we got here via the data tag, we just have the url
-	// Just use it as out "commentContext" and skip the Extra Bundle stuff.
-        Uri data = getIntent().getData();
-        if (data != null) {
-        	commentContext = data.toString();
-        } else {
-        	extras = getIntent().getExtras();
-        	if (extras == null) {
-        		if (Constants.LOGGING) Log.e(TAG, "Quitting because no subreddit and thread id data was passed into the Intent.");
-        			finish();
-        	}
-        	commentContext = extras.getString(Constants.EXTRA_COMMENT_CONTEXT);
-        }
-    	// Comment context: a URL pointing directly at a comment, versus a thread
-    	if (commentContext != null) {
-    		if (Constants.LOGGING) Log.d(TAG, "comment context: "+commentContext);
-    		
-    		Matcher commentContextMatcher = COMMENT_CONTEXT_PATTERN.matcher(commentContext);
-    		if (commentContextMatcher.find()) {
-        		mSettings.setSubreddit(commentContextMatcher.group(2));
-    			mSettings.setThreadId(commentContextMatcher.group(3));
-    			mJumpToCommentId = commentContextMatcher.group(4);
-    			mJumpToCommentContext = commentContextMatcher.group(5) != null ? Integer.valueOf(commentContextMatcher.group(5)) : 0;
-    		} else {
-    			if (Constants.LOGGING) Log.e(TAG, "Quitting because of bad comment context.");
-    			finish();
-    		}
-    	} else {
-        	mSettings.setSubreddit(extras.getString(Constants.EXTRA_SUBREDDIT));
-        	mSettings.setThreadId(extras.getString(Constants.EXTRA_ID));
-        	int numComments = extras.getInt(Constants.EXTRA_NUM_COMMENTS);
-        	// TODO: Take into account very negative karma comments
-        	if (numComments < Constants.DEFAULT_COMMENT_DOWNLOAD_LIMIT)
-        		mNumVisibleComments = numComments;
-        	else
-        		mNumVisibleComments = Constants.DEFAULT_COMMENT_DOWNLOAD_LIMIT;
-    	}
-    	
-    	mThreadTitle = extras.getString(Constants.EXTRA_TITLE);
-    	if (mThreadTitle != null) {
-    	    setTitle(mThreadTitle + " : " + mSettings.subreddit);
-    	} else {
-    		// Title can be updated during comment parsing. For now, use placeholder.
-    	    setTitle(getString(R.string.app_name));
-    	}
-    	
-    	if (savedInstanceState != null) {
+        if (savedInstanceState != null) {
         	mSortByUrl = savedInstanceState.getString(Constants.CommentsSort.SORT_BY_KEY);
        		mJumpToCommentId = savedInstanceState.getString(Constants.JUMP_TO_COMMENT_ID_KEY);
        		mJumpToCommentContext = savedInstanceState.getInt(Constants.JUMP_TO_COMMENT_CONTEXT_KEY);
@@ -222,8 +170,13 @@ public class CommentsListActivity extends ListActivity
         	mEditTargetBody = savedInstanceState.getString(Constants.EDIT_TARGET_BODY_KEY);
         	mDeleteTargetKind = savedInstanceState.getString(Constants.DELETE_TARGET_KIND_KEY);
         	mJumpToCommentPosition = savedInstanceState.getInt(Constants.JUMP_TO_COMMENT_POSITION_KEY);
+        	mThreadTitle = savedInstanceState.getString(Constants.THREAD_TITLE_KEY);
         	mSettings.setSubreddit(savedInstanceState.getString(Constants.SUBREDDIT_KEY));
-
+        	
+        	if (mThreadTitle != null) {
+        	    setTitle(mThreadTitle + " : " + mSettings.subreddit);
+        	}
+        	
 		    CommentsRetainer retainer = (CommentsRetainer) getLastNonConfigurationInstance();
         	if (retainer == null) {
 		    	new DownloadCommentsTask().execute(Constants.DEFAULT_COMMENT_DOWNLOAD_LIMIT);
@@ -235,9 +188,65 @@ public class CommentsListActivity extends ListActivity
 			    mHiddenCommentHeads = retainer.hiddenCommentHeads;
 			    resetUI(new CommentsListAdapter(this, mCommentsList));
 		    }
-    	} else {
-    		new DownloadCommentsTask().execute(Constants.DEFAULT_COMMENT_DOWNLOAD_LIMIT);
     	}
+        
+        // No saved state; use info from Intent.getData()
+        else {
+        	String commentPath;
+        	String commentQuery;
+    		// We get the URL through getIntent().getData()
+            Uri data = getIntent().getData();
+            if (data != null) {
+            	// Comment path: a URL pointing to a thread or a comment in a thread.
+            	commentPath = data.getPath();
+            	commentQuery = data.getQuery();
+            } else {
+        		if (Constants.LOGGING) Log.e(TAG, "Quitting because no subreddit and thread id data was passed into the Intent.");
+        		finish();
+        		return;
+            }
+            
+        	if (commentPath != null) {
+        		if (Constants.LOGGING) Log.d(TAG, "comment path: "+commentPath);
+        		
+        		Matcher m = COMMENT_PATH_PATTERN.matcher(commentPath);
+        		if (m.matches()) {
+            		mSettings.setSubreddit(m.group(1));
+        			mSettings.setThreadId(m.group(2));
+        			mJumpToCommentId = m.group(3);
+        		}
+        	} else {
+    			if (Constants.LOGGING) Log.e(TAG, "Quitting because of bad comment path.");
+    			finish();
+    			return;
+    		}
+        	
+        	if (commentQuery != null) {
+        		Matcher m = COMMENT_CONTEXT_PATTERN.matcher(commentQuery);
+        		if (m.find()) {
+        			mJumpToCommentContext = m.group(1) != null ? Integer.valueOf(m.group(1)) : 0;
+        		}
+        	}
+        	
+        	// Extras: subreddit, threadTitle, numComments
+        	// subreddit is not always redundant to Intent.getData(),
+        	// since URL does not always contain the subreddit. (e.g., self posts)
+        	Bundle extras = getIntent().getExtras();
+        	if (extras != null) {
+        		// subreddit could have already been set from the Intent.getData. don't overwrite with null here!
+        		String subreddit = extras.getString(Constants.EXTRA_SUBREDDIT);
+        		if (subreddit != null)
+        			mSettings.setSubreddit(subreddit);
+        		// mThreadTitle has not been set yet, so no need for null check before setting it
+        		mThreadTitle = extras.getString(Constants.EXTRA_TITLE);
+        		if (mThreadTitle != null) {
+            	    setTitle(mThreadTitle + " : " + mSettings.subreddit);
+            	}
+        		// TODO: use extras.getInt(Constants.EXTRA_NUM_COMMENTS) somehow
+        	}
+        	
+        	new DownloadCommentsTask().execute(Constants.DEFAULT_COMMENT_DOWNLOAD_LIMIT);
+        }
     }
     
     /**
@@ -255,7 +264,6 @@ public class CommentsListActivity extends ListActivity
     protected void onResume() {
     	super.onResume();
     	int previousTheme = mSettings.theme;
-    	boolean previousLoggedIn = mSettings.loggedIn;
     	Common.loadRedditPreferences(this, mSettings, mClient);
     	setRequestedOrientation(mSettings.rotation);
     	if (mSettings.theme != previousTheme) {
@@ -960,6 +968,7 @@ public class CommentsListActivity extends ListActivity
 				// We might not have a title if we've intercepted a plain link to a thread.
     			mThreadTitle = mOpThingInfo.getTitle();
 				mSettings.setSubreddit(mOpThingInfo.getSubreddit());
+				mSettings.setThreadId(mOpThingInfo.getId());
 				
 				// listings[1] is a comment Listing for the comments
 				// Go through the children and get the ThingInfos
@@ -1376,6 +1385,7 @@ public class CommentsListActivity extends ListActivity
     			if (Constants.THREAD_KIND.equals(_mKind)) {
     				Toast.makeText(CommentsListActivity.this, "Deleted thread.", Toast.LENGTH_LONG).show();
     				finish();
+    				return;
     			} else {
     				Toast.makeText(CommentsListActivity.this, "Deleted comment.", Toast.LENGTH_SHORT).show();
     				new DownloadCommentsTask().execute(Constants.DEFAULT_COMMENT_DOWNLOAD_LIMIT);
@@ -1534,18 +1544,7 @@ public class CommentsListActivity extends ListActivity
     			CacheInfo.invalidateCachedThread(getApplicationContext());
     		} else {
     			// Vote failed. Undo the arrow and score.
-            	int oldImageResourceUp, oldImageResourceDown;
-        		if (_mPreviousLikes == null) {
-            		oldImageResourceUp = R.drawable.vote_up_gray;
-            		oldImageResourceDown = R.drawable.vote_down_gray;
-        		} else if (_mPreviousLikes == true) {
-        			oldImageResourceUp = R.drawable.vote_up_red;
-            		oldImageResourceDown = R.drawable.vote_down_gray;
-            	} else {
-            		oldImageResourceUp = R.drawable.vote_up_gray;
-            		oldImageResourceDown = R.drawable.vote_down_blue;
-            	}
-       			_mTargetThingInfo.setLikes(_mPreviousLikes);
+            	_mTargetThingInfo.setLikes(_mPreviousLikes);
        			_mTargetThingInfo.setUps(_mPreviousUps);
        			_mTargetThingInfo.setDowns(_mPreviousDowns);
        			_mTargetThingInfo.setScore(_mPreviousUps - _mPreviousDowns);
@@ -2374,6 +2373,7 @@ public class CommentsListActivity extends ListActivity
     	state.putString(Constants.EDIT_TARGET_BODY_KEY, mEditTargetBody);
     	state.putString(Constants.DELETE_TARGET_KIND_KEY, mDeleteTargetKind);
     	state.putString(Constants.SUBREDDIT_KEY, mSettings.subreddit);
+    	state.putString(Constants.THREAD_TITLE_KEY, mThreadTitle);
     }
     
     /**

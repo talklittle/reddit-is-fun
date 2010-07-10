@@ -118,7 +118,8 @@ public final class PickSubredditActivity extends ListActivity {
     	
         setContentView(R.layout.pick_subreddit_view);
         
-        mSubredditsList = (ArrayList<String>) getLastNonConfigurationInstance();
+        // Try to restore mSubredditsList using getLastNonConfigurationInstance()
+        restoreLastNonConfigurationInstance();
         if (mSubredditsList == null) {
         	new DownloadRedditsTask().execute();
         } else {
@@ -144,7 +145,7 @@ public final class PickSubredditActivity extends ListActivity {
 			mEt.setOnKeyListener(new OnKeyListener() {
 				public boolean onKey(View v, int keyCode, KeyEvent event) {
 			        if ((event.getAction() == KeyEvent.ACTION_DOWN) && (keyCode == KeyEvent.KEYCODE_ENTER)) {
-			        	returnSubreddit(mEt.getText().toString());
+			        	returnSubreddit(mEt.getText().toString().trim());
 			        	return true;
 			        }
 			        return false;
@@ -155,7 +156,7 @@ public final class PickSubredditActivity extends ListActivity {
         if (goButton != null) {
 	        goButton.setOnClickListener(new OnClickListener() {
 	        	public void onClick(View v) {
-	        		returnSubreddit(mEt.getText().toString());
+	        		returnSubreddit(mEt.getText().toString().trim());
 	        	}
 	        });
         }
@@ -167,6 +168,12 @@ public final class PickSubredditActivity extends ListActivity {
     	// when rotating or opening keyboard.
     	return mSubredditsList;
     }
+    
+    @SuppressWarnings("unchecked")
+	private void restoreLastNonConfigurationInstance() {
+    	mSubredditsList = (ArrayList<String>) getLastNonConfigurationInstance();
+    }
+    
     
     
     void resetUI(PickSubredditAdapter adapter) {
@@ -194,11 +201,9 @@ public final class PickSubredditActivity extends ListActivity {
     }
     
     private void returnSubreddit(String subreddit) {
-       	Bundle extras = new Bundle();
-       	extras.putString(Constants.EXTRA_SUBREDDIT, subreddit.trim());
-       	Intent mIntent = new Intent();
-       	mIntent.putExtras(extras);
-       	setResult(RESULT_OK, mIntent);
+       	Intent intent = new Intent();
+       	intent.setData(Util.createSubredditUri(subreddit));
+       	setResult(RESULT_OK, intent);
        	finish();	
     }
     
@@ -346,10 +351,6 @@ public final class PickSubredditActivity extends ListActivity {
             super(context, 0, objects);
             
             mInflater = (LayoutInflater)context.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
-        }
-
-        public void setLoading(boolean loading) {
-            mLoading = loading;
         }
 
         @Override

@@ -87,8 +87,8 @@ public class Common {
 	private static final String TAG = "Common";
 	
 	private static final DefaultHttpClient mGzipHttpClient = createGzipHttpClient();
+	// 1:subreddit 2:threadId 3:commentId
 	private static final Pattern REDDIT_LINK = Pattern.compile(
-      "https?://(?:[\\w-]+\\.)?reddit.com" +
       "(?:/r/([^/.]+|reddit\\.com))?" +
       "(?:/comments/([^/.]+)/[^/.]+" +
           "(?:/([^/.]+))?" +
@@ -620,33 +620,29 @@ public class Common {
     }
     
     static void launchBrowser(String url, Activity act, boolean bypassParser, boolean useExternalBrowser) {
-    	if (!bypassParser) {
-	    	Matcher matcher = REDDIT_LINK.matcher(url);
+    	
+    	Uri uri = Uri.parse(url);
+    	
+    	if (!bypassParser && Util.isRedditUri(uri)) {
+	    	Matcher matcher = REDDIT_LINK.matcher(uri.getPath());
 	    	if (matcher.matches()) {
-	    		if (matcher.group(3) != null) {
+	    		if (matcher.group(3) != null || matcher.group(2) != null) {
 	    			CacheInfo.invalidateCachedThread(act);
 	    			Intent intent = new Intent(act.getApplicationContext(), CommentsListActivity.class);
-	    			intent.putExtra(Constants.EXTRA_COMMENT_CONTEXT, url);
-	    			act.startActivity(intent);
-	    			return;
-	    		} else if (matcher.group(2) != null) {
-	    			CacheInfo.invalidateCachedThread(act);
-	    			Intent intent = new Intent(act.getApplicationContext(), CommentsListActivity.class);
-	    			intent.putExtra(Constants.EXTRA_SUBREDDIT, matcher.group(1));
-	    			intent.putExtra(Constants.EXTRA_ID, matcher.group(2));
+	    			intent.setData(uri);
 	    			intent.putExtra(Constants.EXTRA_NUM_COMMENTS, Constants.DEFAULT_COMMENT_DOWNLOAD_LIMIT);
 	    			act.startActivity(intent);
 	    			return;
 	    		} else if (matcher.group(1) != null) {
 	    			CacheInfo.invalidateCachedSubreddit(act);
 	    			Intent intent = new Intent(act.getApplicationContext(), ThreadsListActivity.class);
-	    			intent.putExtra(Constants.EXTRA_SUBREDDIT, matcher.group(1));
+	    			intent.setData(uri);
 	    			act.startActivity(intent);
 	    			return;
 	    		}
 	    	}
     	}
-    	Uri uri = Util.optimizeMobileUri(Uri.parse(url.toString()));
+    	uri = Util.optimizeMobileUri(uri);
     	
     	if (useExternalBrowser) {
     		Intent browser = new Intent(Intent.ACTION_VIEW, uri);

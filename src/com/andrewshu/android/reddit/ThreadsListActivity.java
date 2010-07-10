@@ -46,7 +46,6 @@ import android.content.Intent;
 import android.content.res.Resources;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
-import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.text.SpannableString;
@@ -85,7 +84,7 @@ import android.widget.Toast;
 public final class ThreadsListActivity extends ListActivity {
 
 	private static final String TAG = "ThreadsListActivity";
-	private final Pattern REDDIT_CONTEXT_PATTERN = Pattern.compile("(http://www.reddit.com)?/r/(.+?)/$");
+	private final Pattern REDDIT_PATH_PATTERN = Pattern.compile(Constants.REDDIT_PATH_PATTERN_STRING);
 	
 	private final ObjectMapper om = new ObjectMapper();
 	// DrawableManager helps with filling in thumbnails
@@ -140,29 +139,11 @@ public final class ThreadsListActivity extends ListActivity {
         requestWindowFeature(Window.FEATURE_PROGRESS);
         requestWindowFeature(Window.FEATURE_INDETERMINATE_PROGRESS);
     	
-	Uri data = getIntent().getData();
-	if (data != null) {
-    		Matcher redditContextMatcher = REDDIT_CONTEXT_PATTERN.matcher(data.toString());
-		if (redditContextMatcher.find()) {
-			mSettings.setSubreddit(redditContextMatcher.group(2));
-		}
-	}
-        
-	else if (getIntent().getExtras() != null) {
-		String newSubreddit = getIntent().getExtras().getString(Constants.EXTRA_SUBREDDIT);
-		if (newSubreddit != null && !"".equals(newSubreddit)) {
-			if (Constants.LOGGING) Log.d(TAG, "valid EXTRA_SUBREDDIT: " + newSubreddit);
-			mSettings.setSubreddit(newSubreddit);
-		}
-	}
-
-	else if (savedInstanceState != null) {
+		if (savedInstanceState != null) {
         	if (Constants.LOGGING) Log.d(TAG, "using savedInstanceState");
 			String subreddit = savedInstanceState.getString(Constants.SUBREDDIT_KEY);
-	        if (subreddit != null)
-	        	mSettings.setSubreddit(subreddit);
-	        else
-	        	mSettings.setSubreddit(mSettings.homepage);
+	        if (subreddit == null)
+	        	subreddit = mSettings.homepage;
 	        mAfter = savedInstanceState.getString(Constants.AFTER_KEY);
 	        mBefore = savedInstanceState.getString(Constants.BEFORE_KEY);
 	        mCount = savedInstanceState.getInt(Constants.THREAD_COUNT_KEY);
@@ -173,32 +154,45 @@ public final class ThreadsListActivity extends ListActivity {
 		    mJumpToThreadId = savedInstanceState.getString(Constants.JUMP_TO_THREAD_ID_KEY);
 		    mVoteTargetThingInfo = savedInstanceState.getParcelable(Constants.VOTE_TARGET_THING_INFO_KEY);
 		    
-		    mThreadsList = (ArrayList<ThingInfo>) getLastNonConfigurationInstance();
+		    // try to restore mThreadsList using getLastNonConfigurationInstance()
+		    // (separate function to avoid a compiler warning casting ArrayList<ThingInfo>
+		    restoreLastNonConfigurationInstance();
 		    if (mThreadsList == null) {
 	        	// Load previous view of threads
 		        if (mLastAfter != null) {
 		        	new MyDownloadThreadsTask(getApplicationContext(), mClient, om, mSortByUrl, mSortByUrlExtra,
-		        			mSettings.subreddit, mLastAfter, null, mLastCount).execute();
+		        			subreddit, mLastAfter, null, mLastCount).execute();
 		        } else if (mLastBefore != null) {
 		        	new MyDownloadThreadsTask(getApplicationContext(), mClient, om, mSortByUrl, mSortByUrlExtra,
-		        			mSettings.subreddit, null, mLastBefore, mLastCount).execute();
+		        			subreddit, null, mLastBefore, mLastCount).execute();
 		        } else {
 		        	new MyDownloadThreadsTask(getApplicationContext(), mClient, om, mSortByUrl, mSortByUrlExtra,
-		        			mSettings.subreddit).execute();
+		        			subreddit).execute();
 		        }
 		    } else {
 		    	// Orientation change. Use prior instance.
 		    	resetUI(new ThreadsListAdapter(this, mThreadsList));
-		    	if (Constants.FRONTPAGE_STRING.equals(mSettings.subreddit))
+		    	if (Constants.FRONTPAGE_STRING.equals(subreddit))
 		    		setTitle("reddit.com: what's new online!");
 		    	else
-		    		setTitle("/r/" + mSettings.subreddit.trim());
+		    		setTitle("/r/" + subreddit.trim());
 		    }
         }
-        else {
-        	mSettings.setSubreddit(mSettings.homepage);
-           	new MyDownloadThreadsTask(getApplicationContext(), mClient, om, mSortByUrl, mSortByUrlExtra,
-           			mSettings.subreddit).execute();
+		// Handle subreddit Uri passed via Intent
+        else if (getIntent().getData() != null) {
+	    	Matcher redditContextMatcher = REDDIT_PATH_PATTERN.matcher(getIntent().getData().getPath());
+			if (redditContextMatcher.matches()) {
+				new MyDownloadThreadsTask(getApplicationContext(), mClient, om, mSortByUrl, mSortByUrlExtra,
+						redditContextMatcher.group(1)).execute();
+			} else {
+				new MyDownloadThreadsTask(getApplicationContext(), mClient, om, mSortByUrl, mSortByUrlExtra,
+	           			mSettings.homepage).execute();
+			}
+		}
+		// No subreddit specified by Intent, so load the user's home reddit
+		else {
+        	new MyDownloadThreadsTask(getApplicationContext(), mClient, om, mSortByUrl, mSortByUrlExtra,
+           			mSettings.homepage).execute();
         }
     }
     
@@ -248,6 +242,11 @@ public final class ThreadsListActivity extends ListActivity {
     	return mThreadsList;
     }
     
+    @SuppressWarnings("unchecked")
+	private void restoreLastNonConfigurationInstance() {
+    	mThreadsList = (ArrayList<ThingInfo>) getLastNonConfigurationInstance();
+    }
+    
 
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent intent) {
@@ -256,30 +255,29 @@ public final class ThreadsListActivity extends ListActivity {
     	switch(requestCode) {
     	case Constants.ACTIVITY_PICK_SUBREDDIT:
     		if (resultCode == Activity.RESULT_OK) {
-    			Bundle extras = intent.getExtras();
-	    		String newSubreddit = extras.getString(Constants.EXTRA_SUBREDDIT);
-	    		if (newSubreddit != null && !Constants.EMPTY_STRING.equals(newSubreddit)) {
-	    			mAfter = null;
-	    			mBefore = null;
-	    			resetCount();
-	    			new MyDownloadThreadsTask(getApplicationContext(), mClient, om, mSortByUrl, mSortByUrlExtra,
-	            			newSubreddit).execute();
-	    		}
+    	    	Matcher redditContextMatcher = REDDIT_PATH_PATTERN.matcher(intent.getData().getPath());
+    			if (redditContextMatcher.matches()) {
+    				new MyDownloadThreadsTask(getApplicationContext(), mClient, om, mSortByUrl, mSortByUrlExtra,
+    						redditContextMatcher.group(1)).execute();
+    			}
     		}
     		break;
     	case Constants.ACTIVITY_SUBMIT_LINK:
     		if (resultCode == Activity.RESULT_OK) {
+    	    	// Returns the new thread's Uri as the Intent.getData()
+    			// Extras: subreddit, thread title
+    			
+    			// Set the new subreddit
     			Bundle extras = intent.getExtras();
-	    		String newSubreddit = extras.getString(Constants.EXTRA_SUBREDDIT);
-	    		String newId = extras.getString(Constants.EXTRA_ID);
-	    		String newTitle = extras.getString(Constants.EXTRA_TITLE);
-	    		mSettings.setSubreddit(newSubreddit);
-	    		// Start up comments list with the new thread
+    			if (extras == null) {
+    				if (Constants.LOGGING) Log.e(TAG, "onActivityResult: ACTIVITY_SUBMIT_LINK: extras unexpectedly null");
+    			} else {
+    				mSettings.setSubreddit(extras.getString(Constants.EXTRA_SUBREDDIT));
+    			}
+				// Start up comments list with the new thread
 	    		CacheInfo.invalidateCachedThread(getApplicationContext());
 	    		Intent i = new Intent(getApplicationContext(), CommentsListActivity.class);
-				i.putExtra(Constants.EXTRA_SUBREDDIT, newSubreddit);
-				i.putExtra(Constants.EXTRA_ID, newId);
-				i.putExtra(Constants.EXTRA_TITLE, newTitle);
+				i.putExtras(intent.getExtras());
 				i.putExtra(Constants.EXTRA_NUM_COMMENTS, 0);
 				startActivity(i);
     		} else if (resultCode == Constants.RESULT_LOGIN_REQUIRED) {
@@ -580,13 +578,7 @@ public final class ThreadsListActivity extends ListActivity {
     	getWindow().setFeatureInt(Window.FEATURE_PROGRESS, 10000);
     }
     
-    /**
-     * Reset mCount, which is actually an index used by reddit.com for the next25/prev25
-     */
-    void resetCount() {
-    	mCount = Constants.DEFAULT_THREAD_DOWNLOAD_LIMIT;
-    }
-
+    
     /**
      * Given a subreddit name string, starts the threadlist-download-thread going.
      * 
@@ -618,6 +610,8 @@ public final class ThreadsListActivity extends ListActivity {
 			ThreadsListActivity.this.mAfter = mAfter;
 			ThreadsListActivity.this.mBefore = mBefore;
 			ThreadsListActivity.this.mCount = mCount;
+			ThreadsListActivity.this.mSortByUrl = mSortByUrl;
+			ThreadsListActivity.this.mSortByUrlExtra = mSortByUrlExtra;
     	}
     	
     	@Override
@@ -925,8 +919,8 @@ public final class ThreadsListActivity extends ListActivity {
 			
 		case Constants.OPEN_COMMENTS_CONTEXT_ITEM:
 			Intent i = new Intent(getApplicationContext(), CommentsListActivity.class);
+			i.setData(Util.createThreadUri(_item));
 			i.putExtra(Constants.EXTRA_SUBREDDIT, _item.getSubreddit());
-			i.putExtra(Constants.EXTRA_ID, _item.getId());
 			i.putExtra(Constants.EXTRA_TITLE, _item.getTitle());
 			i.putExtra(Constants.EXTRA_NUM_COMMENTS, _item.getNum_comments());
 			startActivity(i);
@@ -1012,19 +1006,13 @@ public final class ThreadsListActivity extends ListActivity {
         	}
     		break;
     	case R.id.refresh_menu_id:
-    		// Reset some navigation
-    		mAfter = null;
-    		mBefore = null;
-    		mLastAfter = null;
-    		mLastBefore = null;
-    		resetCount();
     		CacheInfo.invalidateCachedSubreddit(getApplicationContext());
     		new MyDownloadThreadsTask(getApplicationContext(), mClient, om, mSortByUrl, mSortByUrlExtra,
         			mSettings.subreddit).execute();
     		break;
     	case R.id.submit_link_menu_id:
     		Intent submitLinkIntent = new Intent(getApplicationContext(), SubmitLinkActivity.class);
-    		submitLinkIntent.putExtra(Constants.EXTRA_SUBREDDIT, mSettings.subreddit);
+    		submitLinkIntent.setData(Util.createSubmitUri(mSettings.subreddit));
     		startActivityForResult(submitLinkIntent, Constants.ACTIVITY_SUBMIT_LINK);
     		break;
     	case R.id.sort_by_menu_id:
@@ -1102,7 +1090,6 @@ public final class ThreadsListActivity extends ListActivity {
     				if (Constants.ThreadsSort.SORT_BY_HOT.equals(itemString)) {
     					mSortByUrl = Constants.ThreadsSort.SORT_BY_HOT_URL;
     					mSortByUrlExtra = Constants.EMPTY_STRING;
-    					resetCount();
     					new MyDownloadThreadsTask(getApplicationContext(), mClient, om, mSortByUrl, mSortByUrlExtra,
     	            			mSettings.subreddit).execute();
         			} else if (Constants.ThreadsSort.SORT_BY_NEW.equals(itemString)) {
@@ -1128,7 +1115,6 @@ public final class ThreadsListActivity extends ListActivity {
     					mSortByUrlExtra = Constants.ThreadsSort.SORT_BY_NEW_NEW_URL;
     				else if (Constants.ThreadsSort.SORT_BY_NEW_RISING.equals(itemString))
     					mSortByUrlExtra = Constants.ThreadsSort.SORT_BY_NEW_RISING_URL;
-    				resetCount();
     				new MyDownloadThreadsTask(getApplicationContext(), mClient, om, mSortByUrl, mSortByUrlExtra,
                 			mSettings.subreddit).execute();
     			}
@@ -1155,7 +1141,6 @@ public final class ThreadsListActivity extends ListActivity {
     					mSortByUrlExtra = Constants.ThreadsSort.SORT_BY_CONTROVERSIAL_YEAR_URL;
     				else if (Constants.ThreadsSort.SORT_BY_CONTROVERSIAL_ALL.equals(itemString))
     					mSortByUrlExtra = Constants.ThreadsSort.SORT_BY_CONTROVERSIAL_ALL_URL;
-    				resetCount();
     				new MyDownloadThreadsTask(getApplicationContext(), mClient, om, mSortByUrl, mSortByUrlExtra,
                 			mSettings.subreddit).execute();
     			}
@@ -1182,7 +1167,6 @@ public final class ThreadsListActivity extends ListActivity {
     					mSortByUrlExtra = Constants.ThreadsSort.SORT_BY_TOP_YEAR_URL;
     				else if (Constants.ThreadsSort.SORT_BY_TOP_ALL.equals(itemString))
     					mSortByUrlExtra = Constants.ThreadsSort.SORT_BY_TOP_ALL_URL;
-    				resetCount();
     				new MyDownloadThreadsTask(getApplicationContext(), mClient, om, mSortByUrl, mSortByUrlExtra,
                 			mSettings.subreddit).execute();
     			}
@@ -1298,8 +1282,8 @@ public final class ThreadsListActivity extends ListActivity {
     				// Launch an Intent for CommentsListActivity
     				CacheInfo.invalidateCachedThread(getApplicationContext());
     				Intent i = new Intent(getApplicationContext(), CommentsListActivity.class);
+    				i.setData(Util.createThreadUri(mVoteTargetThingInfo));
     				i.putExtra(Constants.EXTRA_SUBREDDIT, mVoteTargetThingInfo.getSubreddit());
-    				i.putExtra(Constants.EXTRA_ID, mVoteTargetThingInfo.getId());
     				i.putExtra(Constants.EXTRA_TITLE, mVoteTargetThingInfo.getTitle());
     				i.putExtra(Constants.EXTRA_NUM_COMMENTS, Integer.valueOf(mVoteTargetThingInfo.getNum_comments()));
     				startActivity(i);

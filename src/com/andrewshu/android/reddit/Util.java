@@ -116,6 +116,72 @@ public class Util {
 		return path;
 	}
 	
+	
+	// ===============
+	//       Uri
+	// ===============
+	
+	static Uri createCommentUri(String subreddit, String threadId, String commentId, int commentContext) {
+		return Uri.parse(new StringBuilder("http://www.reddit.com/r/")
+			.append(subreddit)
+			.append("/comments/")
+			.append(threadId)
+			.append("/z/")
+			.append(commentId)
+			.append("?context=")
+			.append(commentContext)
+			.toString());
+	}
+	
+	static Uri createCommentUri(ThingInfo commentThingInfo) {
+		return Uri.parse(new StringBuilder("http://www.reddit.com/r/")
+			.append(commentThingInfo.getContext())
+			.toString());
+	}
+	
+	static Uri createSubmitUri(String subreddit) {
+		if (Constants.FRONTPAGE_STRING.equals(subreddit))
+			return Uri.parse("http://www.reddit.com/submit");
+		
+		return Uri.parse(new StringBuilder("http://www.reddit.com/r/")
+			.append(subreddit)
+			.append("/submit")
+			.toString());
+	}
+	
+	static Uri createSubmitUri(ThingInfo thingInfo) {
+		return createSubmitUri(thingInfo.getSubreddit());
+	}
+	
+	static Uri createSubredditUri(String subreddit) {
+		if (Constants.FRONTPAGE_STRING.equals(subreddit))
+			return Uri.parse("http://www.reddit.com/");
+		
+		return Uri.parse(new StringBuilder("http://www.reddit.com/r/")
+			.append(subreddit)
+			.toString());
+	}
+	
+	static Uri createSubredditUri(ThingInfo thingInfo) {
+		return createSubredditUri(thingInfo.getSubreddit());
+	}
+	
+	static Uri createThreadUri(String subreddit, String threadId) {
+		return Uri.parse(new StringBuilder("http://www.reddit.com/r/")
+			.append(subreddit)
+			.append("/comments/")
+			.append(threadId)
+			.toString());
+	}
+	
+	static Uri createThreadUri(ThingInfo threadThingInfo) {
+		return createThreadUri(threadThingInfo.getSubreddit(), threadThingInfo.getId());
+	}
+	
+	static boolean isRedditUri(Uri uri) {
+		return uri.getHost().endsWith(".reddit.com");
+	}
+	
     /**
      * Creates mobile version of <code>uri</code> if applicable.
      * 

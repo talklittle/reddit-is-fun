@@ -50,6 +50,7 @@ import android.graphics.BitmapFactory;
 import android.graphics.Matrix;
 import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.Drawable;
+import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.util.Log;
@@ -75,10 +76,12 @@ public class SubmitLinkActivity extends TabActivity {
     // Group 2: Captcha image absolute path
     private final Pattern CAPTCHA_IMAGE_PATTERN = Pattern.compile("<img class=\"capimage\"( alt=\".*?\")? src=\"(/captcha/[^\"]+?)\"");
     // Group 1: Subreddit. Group 2: thread id (no t3_ prefix)
-    static final Pattern NEW_THREAD_PATTERN = Pattern.compile("\"http://www.reddit.com/r/(.+?)/comments/(.+?)/.*?/\"");
+    private final Pattern NEW_THREAD_PATTERN = Pattern.compile(Constants.COMMENT_PATH_PATTERN_STRING);
     // Group 1: whole error. Group 2: the time part
-    static final Pattern RATELIMIT_RETRY_PATTERN = Pattern.compile("(you are trying to submit too fast. try again in (.+?)\\.)");
-
+    private final Pattern RATELIMIT_RETRY_PATTERN = Pattern.compile("(you are trying to submit too fast. try again in (.+?)\\.)");
+	// Group 1: Subreddit
+    private final Pattern SUBMIT_PATH_PATTERN = Pattern.compile("/(?:r/(.+?)/)?submit/?");
+    
 	TabHost mTabHost;
 	
 	private RedditSettings mSettings = new RedditSettings();
@@ -153,24 +156,30 @@ public class SubmitLinkActivity extends TabActivity {
         		mSubmitUrl = "http://www.reddit.com/submit";
 	        }
         } else {
-	        Bundle extras = getIntent().getExtras();
-	        if (extras != null) {
-	            // Pull current subreddit and thread info from Intent
-	        	String subreddit = extras.getString(Constants.EXTRA_SUBREDDIT);
-	    		final EditText submitLinkReddit = (EditText) findViewById(R.id.submit_link_reddit);
-	        	final EditText submitTextReddit = (EditText) findViewById(R.id.submit_text_reddit);
-	        	if (Constants.FRONTPAGE_STRING.equals(subreddit)) {
-	        		submitLinkReddit.setText("reddit.com");
-	        		submitTextReddit.setText("reddit.com");
-	        		mSubmitUrl = "http://www.reddit.com/submit";
-	        	} else {
+        	String submitPath = null;
+        	Uri data = getIntent().getData();
+        	if (data != null && Util.isRedditUri(data))
+        		submitPath = data.getPath();
+        	if (submitPath == null)
+    			submitPath = "/submit";
+        	
+        	// the URL to do HTTP POST to
+        	mSubmitUrl = Util.absolutePathToURL(submitPath);
+        	
+        	// Put the subreddit in the text field
+        	final EditText submitLinkReddit = (EditText) findViewById(R.id.submit_link_reddit);
+        	final EditText submitTextReddit = (EditText) findViewById(R.id.submit_text_reddit);
+        	Matcher m = SUBMIT_PATH_PATTERN.matcher(submitPath);
+        	if (m.matches()) {
+        		String subreddit = m.group(1);
+        		if (subreddit == null || Constants.EMPTY_STRING.equals(subreddit)) {
+            		submitLinkReddit.setText("reddit.com");
+            		submitTextReddit.setText("reddit.com");
+        		} else {
 		        	submitLinkReddit.setText(subreddit);
 		        	submitTextReddit.setText(subreddit);
-		        	mSubmitUrl = "http://www.reddit.com/r/"+subreddit+"/submit";
-	        	}
-	        } else {
-	        	mSubmitUrl = "http://www.reddit.com/submit";
-	        }
+		    	}
+        	}
         }
         
         final Button submitLinkButton = (Button) findViewById(R.id.submit_link_button);
@@ -418,8 +427,8 @@ public class SubmitLinkActivity extends TabActivity {
     		} else {
         		// Success. Return the subreddit and thread id
     			Intent i = new Intent();
+    			i.setData(Util.createThreadUri(newlyCreatedThread));
     			i.putExtra(Constants.EXTRA_SUBREDDIT, newlyCreatedThread.getSubreddit());
-    			i.putExtra(Constants.EXTRA_ID, newlyCreatedThread.getId());
     			i.putExtra(Constants.EXTRA_TITLE, newlyCreatedThread.getTitle());
     			setResult(Activity.RESULT_OK, i);
     			finish();
@@ -720,10 +729,12 @@ public class SubmitLinkActivity extends TabActivity {
     	switch(requestCode) {
     	case Constants.ACTIVITY_PICK_SUBREDDIT:
     		if (resultCode == Activity.RESULT_OK) {
-    			Bundle extras = intent.getExtras();
-	    		String newSubreddit = extras.getString(Constants.EXTRA_SUBREDDIT);
-	    		if (newSubreddit != null && !"".equals(newSubreddit)) {
-	    			final EditText linkSubreddit = (EditText) findViewById(R.id.submit_link_reddit);
+    		    // Group 1: Subreddit.
+    		    final Pattern REDDIT_PATH_PATTERN = Pattern.compile(Constants.REDDIT_PATH_PATTERN_STRING);
+    			Matcher redditContextMatcher = REDDIT_PATH_PATTERN.matcher(intent.getData().getPath());
+    			if (redditContextMatcher.find()) {
+    				String newSubreddit = redditContextMatcher.group(1);
+    				final EditText linkSubreddit = (EditText) findViewById(R.id.submit_link_reddit);
 	    			final EditText textSubreddit = (EditText) findViewById(R.id.submit_text_reddit);
 	    			linkSubreddit.setText(newSubreddit);
 	    			textSubreddit.setText(newSubreddit);
