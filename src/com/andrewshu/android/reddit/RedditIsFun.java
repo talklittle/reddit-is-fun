@@ -25,6 +25,8 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import org.apache.commons.lang.StringEscapeUtils;
 import org.apache.http.Header;
@@ -51,6 +53,7 @@ import android.content.Intent;
 import android.content.res.Resources;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
+import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.text.SpannableString;
@@ -89,6 +92,7 @@ import android.widget.Toast;
 public final class RedditIsFun extends ListActivity {
 
 	private static final String TAG = "RedditIsFun";
+	private final Pattern REDDIT_CONTEXT_PATTERN = Pattern.compile("(http://www.reddit.com)?/r/(.+?)/$");
 	
 	private final ObjectMapper om = new ObjectMapper();
 	// DrawableManager helps with filling in thumbnails
@@ -144,17 +148,23 @@ public final class RedditIsFun extends ListActivity {
         requestWindowFeature(Window.FEATURE_INDETERMINATE_PROGRESS);
     	
         enableLoadingScreen();
-        
-		Bundle extras = getIntent().getExtras();
-		if (extras != null) {
-			String newSubreddit = extras.getString(Constants.EXTRA_SUBREDDIT);
-			if (newSubreddit != null && !"".equals(newSubreddit)) {
-				if (Constants.LOGGING) Log.d(TAG, "valid EXTRA_SUBREDDIT: " + newSubreddit);
-				mSettings.setSubreddit(newSubreddit);
-			}
+	Uri data = getIntent().getData();
+	if (data != null) {
+    		Matcher redditContextMatcher = REDDIT_CONTEXT_PATTERN.matcher(data.toString());
+		if (redditContextMatcher.find()) {
+			mSettings.setSubreddit(redditContextMatcher.group(2));
 		}
+	}
+        
+	else if (getIntent().getExtras() != null) {
+		String newSubreddit = getIntent().getExtras().getString(Constants.EXTRA_SUBREDDIT);
+		if (newSubreddit != null && !"".equals(newSubreddit)) {
+			if (Constants.LOGGING) Log.d(TAG, "valid EXTRA_SUBREDDIT: " + newSubreddit);
+			mSettings.setSubreddit(newSubreddit);
+		}
+	}
 
-        if (savedInstanceState != null) {
+	else if (savedInstanceState != null) {
         	if (Constants.LOGGING) Log.d(TAG, "using savedInstanceState");
 			CharSequence subreddit = savedInstanceState.getCharSequence(Constants.SUBREDDIT_KEY);
 	        
