@@ -75,7 +75,10 @@ public class BrowserActivity extends Activity {
 		}
 		mUri = intent.getData();
 		
-		webview.loadUrl(mUri.toString());
+		if (savedInstanceState != null)
+			webview.restoreState(savedInstanceState);
+		else
+			webview.loadUrl(mUri.toString());
 	}
 	
 	@Override
@@ -115,5 +118,10 @@ public class BrowserActivity extends Activity {
     	}
     	
         return true;
+    }
+    
+    @Override
+    public void onSaveInstanceState(Bundle outState) {
+    	webview.saveState(outState);
     }
 }
