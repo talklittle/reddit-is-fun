@@ -164,13 +164,23 @@ public class CommentsListActivity extends ListActivity
         // which ListActivity adopts as its list -- we can
         // access it with getListView().
         
-        Bundle extras = getIntent().getExtras();
-        if (extras == null) {
-        	if (Constants.LOGGING) Log.e(TAG, "Quitting because no subreddit and thread id data was passed into the Intent.");
-			finish();
+        Bundle extras = new Bundle();
+        String commentContext = null;
+
+	// If we got here via the data tag, we just have the url
+	// Just use it as out "commentContext" and skip the Extra Bundle stuff.
+        Uri data = getIntent().getData();
+        if (data != null) {
+		commentContext = data.toString();
+        } else {
+        	extras = getIntent().getExtras();
+        	if (extras == null) {
+        		if (Constants.LOGGING) Log.e(TAG, "Quitting because no subreddit and thread id data was passed into the Intent.");
+        			finish();
+        	}
+        	commentContext = extras.getString(Constants.EXTRA_COMMENT_CONTEXT);
         }
     	// Comment context: a URL pointing directly at a comment, versus a thread
-    	String commentContext = extras.getString(Constants.EXTRA_COMMENT_CONTEXT);
     	if (commentContext != null) {
     		if (Constants.LOGGING) Log.d(TAG, "comment context: "+commentContext);
     		

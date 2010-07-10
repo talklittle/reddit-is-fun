@@ -31,7 +31,14 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
-	    <activity android:name=".CommentsListActivity"></activity>
+	    <activity android:name=".CommentsListActivity">
+	        <intent-filter>
+	            <action android:name="android.intent.action.VIEW" />
+	            <category android:name="android.intent.category.DEFAULT" />
+	            <category android:name="android.intent.category.BROWSABLE" />
+	            <data android:scheme="http" android:host="www.reddit.com" android:pathPattern="/r/.*/comments.*" />
+	        </intent-filter>
+	    </activity>
 	    <activity android:name=".PickSubredditActivity"></activity>
 	    <activity android:name=".SubmitLinkActivity">
 	        <intent-filter>
