@@ -124,6 +124,7 @@ public final class PickSubredditActivity extends ListActivity {
         } else {
 	    	// Orientation change. Use prior instance.
         	resetUI(new PickSubredditAdapter(this, mSubredditsList));
+        	fixInputField();
         }
     }
     
@@ -217,6 +218,13 @@ public final class PickSubredditActivity extends ListActivity {
     private void disableLoadingScreen() {
     	resetUI(mSubredditsAdapter);
     	getWindow().setFeatureInt(Window.FEATURE_PROGRESS, 10000);
+    }
+    
+    private void fixInputField() {
+        // Enable EditText focus, but set focus to ListView, so soft keyboard doesn't pop up.
+        final EditText pickSubredditInput = (EditText) findViewById(R.id.pick_subreddit_input);
+        pickSubredditInput.setFocusableInTouchMode(true);
+        getListView().requestFocus();
     }
     
     class DownloadRedditsTask extends AsyncTask<Void, Void, ArrayList<String>> {
@@ -324,12 +332,7 @@ public final class PickSubredditActivity extends ListActivity {
 	        	mSubredditsList.add(0, Constants.FRONTPAGE_STRING);
 	        }
 	        resetUI(new PickSubredditAdapter(PickSubredditActivity.this, mSubredditsList));
-	        Common.updateListDrawables(PickSubredditActivity.this, mSettings.theme);
-	        
-	        // Enable EditText focus, but set focus to ListView, so soft keyboard doesn't pop up.
-	        final EditText pickSubredditInput = (EditText) findViewById(R.id.pick_subreddit_input);
-	        pickSubredditInput.setFocusableInTouchMode(true);
-	        getListView().requestFocus();
+	        fixInputField();
     	}
     }
 

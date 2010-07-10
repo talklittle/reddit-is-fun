@@ -263,7 +263,7 @@ public final class ThreadsListActivity extends ListActivity {
 	    			mBefore = null;
 	    			resetCount();
 	    			new MyDownloadThreadsTask(getApplicationContext(), mClient, om, mSortByUrl, mSortByUrlExtra,
-	            			mSettings.subreddit).execute();
+	            			newSubreddit).execute();
 	    		}
     		}
     		break;
