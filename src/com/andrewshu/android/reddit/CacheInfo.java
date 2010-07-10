@@ -59,7 +59,7 @@ public class CacheInfo implements Serializable {
 	 * @throws IOException
 	 */
 	static FileInputStream writeThenRead(Context context, InputStream in, String filename) throws IOException {
-    	synchronized (CACHE_LOCK) {
+		synchronized (CACHE_LOCK) {
 			FileOutputStream fos = context.openFileOutput(filename, Context.MODE_PRIVATE);
 	    	byte[] buf = new byte[1024];
 	    	int len = 0;
@@ -96,6 +96,9 @@ public class CacheInfo implements Serializable {
     }
     
     static CacheInfo getCacheInfo(Context context) throws IOException, ClassNotFoundException {
+    	if (!Constants.USE_CACHE)
+    		return null;
+    	
     	CacheInfo ci;
     	synchronized (CACHE_LOCK) {
 	    	FileInputStream fis = context.openFileInput(Constants.FILENAME_CACHE_INFO);
@@ -162,6 +165,9 @@ public class CacheInfo implements Serializable {
     }
     
     static void invalidateAllCaches(Context context) {
+    	if (!Constants.USE_CACHE)
+    		return;
+    	
     	try {
     		synchronized (CACHE_LOCK) {
 		    	FileOutputStream fos = context.openFileOutput(Constants.FILENAME_CACHE_INFO, Context.MODE_PRIVATE);
@@ -176,6 +182,9 @@ public class CacheInfo implements Serializable {
     }
     
     static void invalidateCachedSubreddit(Context context) {
+    	if (!Constants.USE_CACHE)
+    		return;
+    	
     	CacheInfo ci = null;
     	try {
     		ci = getCacheInfo(context);
@@ -201,6 +210,9 @@ public class CacheInfo implements Serializable {
     }
     
     static void invalidateCachedThread(Context context) {
+    	if (!Constants.USE_CACHE)
+    		return;
+    	
     	CacheInfo ci = null;
     	try {
     		ci = getCacheInfo(context);
@@ -226,6 +238,9 @@ public class CacheInfo implements Serializable {
     }
     
     static void setCachedSubredditUrl(Context context, String subredditUrl) throws IOException {
+    	if (!Constants.USE_CACHE)
+    		return;
+    	
     	CacheInfo ci = null;
     	try {
     		ci = getCacheInfo(context);
@@ -247,6 +262,9 @@ public class CacheInfo implements Serializable {
     }
 
     static void setCachedThreadUrl(Context context, String threadUrl) throws IOException {
+    	if (!Constants.USE_CACHE)
+    		return;
+    	
     	CacheInfo ci = null;
     	try {
     		ci = getCacheInfo(context);
@@ -268,6 +286,9 @@ public class CacheInfo implements Serializable {
     }
     
     static void setCachedSubredditList(Context context, ArrayList<String> subredditList) throws IOException {
+    	if (!Constants.USE_CACHE)
+    		return;
+    	
     	CacheInfo ci = null;
     	try {
     		ci = getCacheInfo(context);
