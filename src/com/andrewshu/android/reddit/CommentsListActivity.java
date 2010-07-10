@@ -222,6 +222,7 @@ public class CommentsListActivity extends ListActivity
         	mEditTargetBody = savedInstanceState.getString(Constants.EDIT_TARGET_BODY_KEY);
         	mDeleteTargetKind = savedInstanceState.getString(Constants.DELETE_TARGET_KIND_KEY);
         	mJumpToCommentPosition = savedInstanceState.getInt(Constants.JUMP_TO_COMMENT_POSITION_KEY);
+        	mSettings.setSubreddit(savedInstanceState.getString(Constants.SUBREDDIT_KEY));
 
 		    CommentsRetainer retainer = (CommentsRetainer) getLastNonConfigurationInstance();
         	if (retainer == null) {
@@ -2372,6 +2373,7 @@ public class CommentsListActivity extends ListActivity
     	state.putString(Constants.REPORT_TARGET_NAME_KEY, mReportTargetName);
     	state.putString(Constants.EDIT_TARGET_BODY_KEY, mEditTargetBody);
     	state.putString(Constants.DELETE_TARGET_KIND_KEY, mDeleteTargetKind);
+    	state.putString(Constants.SUBREDDIT_KEY, mSettings.subreddit);
     }
     
     /**
