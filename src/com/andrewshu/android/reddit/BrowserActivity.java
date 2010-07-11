@@ -1,7 +1,6 @@
 package com.andrewshu.android.reddit;
 
 import android.app.Activity;
-import android.content.Intent;
 import android.net.Uri;
 import android.os.Bundle;
 import android.util.Log;
@@ -68,17 +67,15 @@ public class BrowserActivity extends Activity {
 		    }
 		});
 		
-		Intent intent = getIntent();
-		if (intent == null) {
-			Log.e(TAG, "onCreate: intent is null");
-			finish();
-		}
-		mUri = intent.getData();
+		mUri = getIntent().getData();
 		
-		if (savedInstanceState != null)
+		if (savedInstanceState != null) {
+			if (Constants.LOGGING) Log.d(TAG, "Restoring previous WebView state");
 			webview.restoreState(savedInstanceState);
-		else
+		} else {
+			if (Constants.LOGGING) Log.d(TAG, "Loading url " + mUri.toString());
 			webview.loadUrl(mUri.toString());
+		}
 	}
 	
 	@Override
