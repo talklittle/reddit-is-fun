@@ -28,6 +28,7 @@ class HideTask extends AsyncTask<Void, Void, Boolean> {
 	private String mUrl;
 	private RedditSettings mSettings;
 	private Context mContext;
+	private boolean mHide;
 	
 	private final DefaultHttpClient mClient = Common.getGzipHttpClient();
 	
@@ -35,6 +36,7 @@ class HideTask extends AsyncTask<Void, Void, Boolean> {
 		this.mTargetThreadInfo = mVoteTargetThreadInfo;
 		this.mSettings = mSettings;
 		this.mContext = mContext;
+		this.mHide = hide;
 		if (hide) {
 			mUrl = "http://www.reddit.com/api/hide";
 		} else {
@@ -49,8 +51,13 @@ class HideTask extends AsyncTask<Void, Void, Boolean> {
     		cancel(true);
     		return;
     	}
-		mTargetThreadInfo.setHidden(true);
-		Toast.makeText(mContext, "Hidden.", Toast.LENGTH_SHORT).show();
+		if (mHide) {
+			Toast.makeText(mContext, "Hidden.", Toast.LENGTH_SHORT).show();
+			mTargetThreadInfo.setHidden(true);
+		} else {
+			Toast.makeText(mContext, "Unhidden.", Toast.LENGTH_SHORT).show();
+			mTargetThreadInfo.setHidden(false);
+		}
 	}
 	
 	@Override

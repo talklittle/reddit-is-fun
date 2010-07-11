@@ -1815,13 +1815,18 @@ public class CommentsListActivity extends ListActivity
     	int rowId = (int) info.id;
     	
     	if (rowId == 0) {
+    		menu.add(0, Constants.SHARE_CONTEXT_ITEM, Menu.NONE, "Share");
+
     		if(mOpThingInfo.isSaved()){
     			menu.add(0, Constants.UNSAVE_CONTEXT_ITEM, Menu.NONE, "Unsave");
     		} else {
     			menu.add(0, Constants.SAVE_CONTEXT_ITEM, Menu.NONE, "Save");
     		}
-    		
-    		menu.add(0, Constants.SHARE_CONTEXT_ITEM, Menu.NONE, "Share");
+    		if(mOpThingInfo.isHidden()){
+    			menu.add(0, Constants.UNHIDE_CONTEXT_ITEM, Menu.NONE, "Unhide");
+    		} else {
+    			menu.add(0, Constants.HIDE_CONTEXT_ITEM, Menu.NONE, "Hide");
+    		}
     	} else if (mMorePositions.contains(rowId)) {
     		menu.add(0, Constants.DIALOG_GOTO_PARENT, Menu.NONE, "Go to parent");
     	} else if (mHiddenCommentHeads.contains(rowId)) {
@@ -1853,6 +1858,14 @@ public class CommentsListActivity extends ListActivity
     		
     	case Constants.UNSAVE_CONTEXT_ITEM:
     		new SaveTask(false, mOpThingInfo, mSettings, this).execute();
+    		return true;
+    		
+    	case Constants.HIDE_CONTEXT_ITEM:
+    		new HideTask(true, mOpThingInfo, mSettings, this).execute();
+    		return true;
+    		
+    	case Constants.UNHIDE_CONTEXT_ITEM:
+    		new HideTask(false, mOpThingInfo, mSettings, this).execute();
     		return true;
     		
     	case Constants.SHARE_CONTEXT_ITEM:

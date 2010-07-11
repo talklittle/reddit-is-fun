@@ -870,6 +870,8 @@ public final class ThreadsListActivity extends ListActivity {
 			
 			if (success) {
 				synchronized (THREAD_ADAPTER_LOCK) {
+					// Remove from list even if unhiding--because the only place you can
+					// unhide from is the list of Hidden threads.
 					mThreadsAdapter.remove(mVoteTargetThingInfo);
 					mThreadsAdapter.notifyDataSetChanged();
 				}
@@ -960,6 +962,9 @@ public final class ThreadsListActivity extends ListActivity {
 		case Constants.HIDE_CONTEXT_ITEM:
 			new MyHideTask(true, _item, mSettings, getApplicationContext()).execute();
 			return true;
+			
+		case Constants.UNHIDE_CONTEXT_ITEM:
+			new MyHideTask(false, _item, mSettings, getApplicationContext()).execute();
 			
 		default:
 			return super.onContextItemSelected(item);
