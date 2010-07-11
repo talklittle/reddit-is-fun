@@ -39,15 +39,19 @@ import android.os.RemoteException;
  * @see AlarmService_Alarm
  */
 public class EnvelopeService extends Service {
-    NotificationManager mNM;
+    
+	private Context mContext;
+	
+	NotificationManager mNM;
     private RedditSettings mSettings = new RedditSettings();
     private DefaultHttpClient mClient = Common.getGzipHttpClient();
 
     @Override
     public void onCreate() {
+    	mContext = getApplicationContext();
         mNM = (NotificationManager)getSystemService(NOTIFICATION_SERVICE);
-        Common.loadRedditPreferences(this, mSettings, mClient);
-        new PeekEnvelopeServiceTask(this, mClient, mSettings.mailNotificationStyle).execute();
+        Common.loadRedditPreferences(mContext, mSettings, mClient);
+        new PeekEnvelopeServiceTask(mContext, mClient, mSettings.mailNotificationStyle).execute();
     }
     
     private class PeekEnvelopeServiceTask extends Common.PeekEnvelopeTask {

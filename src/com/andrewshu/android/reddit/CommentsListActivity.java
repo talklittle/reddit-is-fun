@@ -98,6 +98,8 @@ public class CommentsListActivity extends ListActivity
 
 	private static final String TAG = "CommentsListActivity";
 	
+	private Context mContext;
+	
     // Group 2: subreddit name. Group 3: thread id36. Group 4: Comment id36.
     private final Pattern COMMENT_PATH_PATTERN = Pattern.compile(Constants.COMMENT_PATH_PATTERN_STRING);
     private final Pattern COMMENT_CONTEXT_PATTERN = Pattern.compile("context=(\\d+)");
@@ -153,7 +155,9 @@ public class CommentsListActivity extends ListActivity
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         
-        Common.loadRedditPreferences(this, mSettings, mClient);
+        mContext = getApplicationContext();
+        
+        Common.loadRedditPreferences(mContext, mSettings, mClient);
         setRequestedOrientation(mSettings.rotation);
         setTheme(mSettings.theme);
         requestWindowFeature(Window.FEATURE_PROGRESS);
@@ -186,7 +190,7 @@ public class CommentsListActivity extends ListActivity
 			    mCommentsList = retainer.commentsList;
 			    mMorePositions = retainer.morePositions;
 			    mHiddenCommentHeads = retainer.hiddenCommentHeads;
-			    resetUI(new CommentsListAdapter(this, mCommentsList));
+			    resetUI(new CommentsListAdapter(mContext, mCommentsList));
 		    }
     	}
         
@@ -264,7 +268,7 @@ public class CommentsListActivity extends ListActivity
     protected void onResume() {
     	super.onResume();
     	int previousTheme = mSettings.theme;
-    	Common.loadRedditPreferences(this, mSettings, mClient);
+    	Common.loadRedditPreferences(mContext, mSettings, mClient);
     	setRequestedOrientation(mSettings.rotation);
     	if (mSettings.theme != previousTheme) {
     		setTheme(mSettings.theme);
@@ -277,13 +281,13 @@ public class CommentsListActivity extends ListActivity
     		jumpToComment();
     	}
 
-    	new Common.PeekEnvelopeTask(this, mClient, mSettings.mailNotificationStyle).execute();
+    	new Common.PeekEnvelopeTask(mContext, mClient, mSettings.mailNotificationStyle).execute();
     }
     
     @Override
     protected void onPause() {
     	super.onPause();
-    	Common.saveRedditPreferences(this, mSettings);
+    	Common.saveRedditPreferences(mContext, mSettings);
     }
     
     @Override
@@ -398,7 +402,7 @@ public class CommentsListActivity extends ListActivity
 	                String title = mOpThingInfo.getTitle();
 	                SpannableString titleSS = new SpannableString(title);
 	                int titleLen = title.length();
-	                TextAppearanceSpan titleTAS = new TextAppearanceSpan(getApplicationContext(), R.style.TextAppearance_14sp);
+	                TextAppearanceSpan titleTAS = new TextAppearanceSpan(CommentsListActivity.this, R.style.TextAppearance_14sp);
 	                titleSS.setSpan(titleTAS, 0, titleLen, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
 	                if (mSettings.theme == R.style.Reddit_Light) {
 	                	// FIXME: This doesn't work persistently, since "clicked" is not delivered to reddit.com
@@ -414,7 +418,7 @@ public class CommentsListActivity extends ListActivity
 	                builder.append(titleSS);
 	                builder.append(" ");
 	                SpannableString domainSS = new SpannableString("("+mOpThingInfo.getDomain()+")");
-	                TextAppearanceSpan domainTAS = new TextAppearanceSpan(getApplicationContext(), R.style.TextAppearance_10sp);
+	                TextAppearanceSpan domainTAS = new TextAppearanceSpan(CommentsListActivity.this, R.style.TextAppearance_10sp);
 	                domainSS.setSpan(domainTAS, 0, mOpThingInfo.getDomain().length()+2, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
 	                builder.append(domainSS);
 	                titleView.setText(builder);
@@ -713,7 +717,7 @@ public class CommentsListActivity extends ListActivity
 	    	if (commentsAdapter == null) {
 	    		// Reset the list to be empty.
 	    		mCommentsList = new ArrayList<ThingInfo>();
-	            mCommentsAdapter = new CommentsListAdapter(this, mCommentsList);
+	            mCommentsAdapter = new CommentsListAdapter(mContext, mCommentsList);
 	    	} else {
 	    		mCommentsAdapter = commentsAdapter;
 	    	}
@@ -836,8 +840,8 @@ public class CommentsListActivity extends ListActivity
 	    		
 	        	if (Constants.USE_CACHE) {
 	    			try {
-		    			if (CacheInfo.checkFreshThreadCache(getApplicationContext())
-		    					&& url.equals(CacheInfo.getCachedThreadUrl(getApplicationContext()))) {
+		    			if (CacheInfo.checkFreshThreadCache(mContext)
+		    					&& url.equals(CacheInfo.getCachedThreadUrl(mContext))) {
 		    				in = openFileInput(Constants.FILENAME_THREAD_CACHE);
 		    				_mContentLength = getFileStreamPath(Constants.FILENAME_THREAD_CACHE).length();
 		    				currentlyUsingCache = true;
@@ -862,9 +866,9 @@ public class CommentsListActivity extends ListActivity
 	            	in = entity.getContent();
 	            	
 	            	if (Constants.USE_CACHE) {
-	                	in = CacheInfo.writeThenRead(getApplicationContext(), in, Constants.FILENAME_THREAD_CACHE);
+	                	in = CacheInfo.writeThenRead(mContext, in, Constants.FILENAME_THREAD_CACHE);
 	                	try {
-	                		CacheInfo.setCachedThreadUrl(getApplicationContext(), url);
+	                		CacheInfo.setCachedThreadUrl(mContext, url);
 	                	} catch (IOException e) {
 	                		if (Constants.LOGGING) Log.e(TAG, "error on setCachedThreadId: " + e.getMessage());
 	                	}
@@ -1075,7 +1079,7 @@ public class CommentsListActivity extends ListActivity
 	    		jumpToComment();
     		} else {
     			if (!isCancelled())
-    				Common.showErrorToast("Error downloading comments. Please try again.", Toast.LENGTH_LONG, CommentsListActivity.this);
+    				Common.showErrorToast("Error downloading comments. Please try again.", Toast.LENGTH_LONG, mContext);
     		}
     	}
     	
@@ -1101,7 +1105,7 @@ public class CommentsListActivity extends ListActivity
     	
     	@Override
     	public String doInBackground(Void... v) {
-    		return Common.doLogin(mUsername, mPassword, mSettings, mClient, getApplicationContext());
+    		return Common.doLogin(mUsername, mPassword, mSettings, mClient, mContext);
         }
     	
     	protected void onPreExecute() {
@@ -1111,13 +1115,13 @@ public class CommentsListActivity extends ListActivity
     	protected void onPostExecute(String errorMessage) {
     		dismissDialog(Constants.DIALOG_LOGGING_IN);
     		if (errorMessage == null) {
-    			Toast.makeText(CommentsListActivity.this, "Logged in as "+mUsername, Toast.LENGTH_SHORT).show();
+    			Toast.makeText(mContext, "Logged in as "+mUsername, Toast.LENGTH_SHORT).show();
     			// Check mail
-    			new Common.PeekEnvelopeTask(CommentsListActivity.this, mClient, mSettings.mailNotificationStyle).execute();
+    			new Common.PeekEnvelopeTask(mContext, mClient, mSettings.mailNotificationStyle).execute();
 	    		// Refresh the comments list
     			new DownloadCommentsTask().execute(Constants.DEFAULT_COMMENT_DOWNLOAD_LIMIT);
     		} else {
-            	Common.showErrorToast(mUserError, Toast.LENGTH_LONG, CommentsListActivity.this);
+            	Common.showErrorToast(mUserError, Toast.LENGTH_LONG, mContext);
     		}
     	}
     }
@@ -1138,7 +1142,7 @@ public class CommentsListActivity extends ListActivity
         	HttpEntity entity = null;
         	
         	if (!mSettings.loggedIn) {
-        		Common.showErrorToast("You must be logged in to reply.", Toast.LENGTH_LONG, CommentsListActivity.this);
+        		Common.showErrorToast("You must be logged in to reply.", Toast.LENGTH_LONG, mContext);
         		_mUserError = "Not logged in";
         		return null;
         	}
@@ -1147,7 +1151,7 @@ public class CommentsListActivity extends ListActivity
         		String modhash = Common.doUpdateModhash(mClient);
         		if (modhash == null) {
         			// doUpdateModhash should have given an error about credentials
-        			Common.doLogout(mSettings, mClient, getApplicationContext());
+        			Common.doLogout(mSettings, mClient, mContext);
         			if (Constants.LOGGING) Log.e(TAG, "Reply failed because doUpdateModhash() failed");
         			return null;
         		}
@@ -1204,11 +1208,11 @@ public class CommentsListActivity extends ListActivity
     	public void onPostExecute(String newId) {
     		dismissDialog(Constants.DIALOG_REPLYING);
     		if (newId == null) {
-    			Common.showErrorToast(_mUserError, Toast.LENGTH_LONG, CommentsListActivity.this);
+    			Common.showErrorToast(_mUserError, Toast.LENGTH_LONG, mContext);
     		} else {
     			// Refresh
     			mJumpToCommentId = newId;
-    			CacheInfo.invalidateCachedThread(getApplicationContext());
+    			CacheInfo.invalidateCachedThread(mContext);
     			new DownloadCommentsTask().execute(Constants.DEFAULT_COMMENT_DOWNLOAD_LIMIT);
     		}
     	}
@@ -1235,7 +1239,7 @@ public class CommentsListActivity extends ListActivity
         		String modhash = Common.doUpdateModhash(mClient);
         		if (modhash == null) {
         			// doUpdateModhash should have given an error about credentials
-        			Common.doLogout(mSettings, mClient, getApplicationContext());
+        			Common.doLogout(mSettings, mClient, mContext);
         			if (Constants.LOGGING) Log.e(TAG, "Reply failed because doUpdateModhash() failed");
         			return null;
         		}
@@ -1289,11 +1293,11 @@ public class CommentsListActivity extends ListActivity
     	public void onPostExecute(String newId) {
     		dismissDialog(Constants.DIALOG_EDITING);
     		if (newId == null) {
-    			Common.showErrorToast(_mUserError, Toast.LENGTH_LONG, CommentsListActivity.this);
+    			Common.showErrorToast(_mUserError, Toast.LENGTH_LONG, mContext);
     		} else {
     			// Refresh
     			mJumpToCommentId = newId;
-    			CacheInfo.invalidateCachedThread(getApplicationContext());
+    			CacheInfo.invalidateCachedThread(mContext);
     			new DownloadCommentsTask().execute(Constants.DEFAULT_COMMENT_DOWNLOAD_LIMIT);
     		}
     	}
@@ -1322,7 +1326,7 @@ public class CommentsListActivity extends ListActivity
         		String modhash = Common.doUpdateModhash(mClient);
         		if (modhash == null) {
         			// doUpdateModhash should have given an error about credentials
-        			Common.doLogout(mSettings, mClient, getApplicationContext());
+        			Common.doLogout(mSettings, mClient, mContext);
         			if (Constants.LOGGING) Log.e(TAG, "Reply failed because doUpdateModhash() failed");
         			return false;
         		}
@@ -1381,17 +1385,17 @@ public class CommentsListActivity extends ListActivity
     	public void onPostExecute(Boolean success) {
     		dismissDialog(Constants.DIALOG_DELETING);
     		if (success) {
-    			CacheInfo.invalidateCachedThread(getApplicationContext());
+    			CacheInfo.invalidateCachedThread(mContext);
     			if (Constants.THREAD_KIND.equals(_mKind)) {
-    				Toast.makeText(CommentsListActivity.this, "Deleted thread.", Toast.LENGTH_LONG).show();
+    				Toast.makeText(mContext, "Deleted thread.", Toast.LENGTH_LONG).show();
     				finish();
     				return;
     			} else {
-    				Toast.makeText(CommentsListActivity.this, "Deleted comment.", Toast.LENGTH_SHORT).show();
+    				Toast.makeText(mContext, "Deleted comment.", Toast.LENGTH_SHORT).show();
     				new DownloadCommentsTask().execute(Constants.DEFAULT_COMMENT_DOWNLOAD_LIMIT);
     			}
     		} else {
-    			Common.showErrorToast(_mUserError, Toast.LENGTH_LONG, CommentsListActivity.this);
+    			Common.showErrorToast(_mUserError, Toast.LENGTH_LONG, mContext);
     		}
     	}
     }
@@ -1430,7 +1434,7 @@ public class CommentsListActivity extends ListActivity
         		String modhash = Common.doUpdateModhash(mClient); 
         		if (modhash == null) {
         			// doUpdateModhash should have given an error about credentials
-        			Common.doLogout(mSettings, mClient, getApplicationContext());
+        			Common.doLogout(mSettings, mClient, mContext);
         			if (Constants.LOGGING) Log.e(TAG, "Vote failed because doUpdateModhash() failed");
         			return false;
         		}
@@ -1478,7 +1482,7 @@ public class CommentsListActivity extends ListActivity
     	
     	public void onPreExecute() {
         	if (!mSettings.loggedIn) {
-        		Common.showErrorToast("You must be logged in to vote.", Toast.LENGTH_LONG, CommentsListActivity.this);
+        		Common.showErrorToast("You must be logged in to vote.", Toast.LENGTH_LONG, mContext);
         		cancel(true);
         		return;
         	}
@@ -1541,7 +1545,7 @@ public class CommentsListActivity extends ListActivity
     	
     	public void onPostExecute(Boolean success) {
     		if (success) {
-    			CacheInfo.invalidateCachedThread(getApplicationContext());
+    			CacheInfo.invalidateCachedThread(mContext);
     		} else {
     			// Vote failed. Undo the arrow and score.
             	_mTargetThingInfo.setLikes(_mPreviousLikes);
@@ -1550,7 +1554,7 @@ public class CommentsListActivity extends ListActivity
        			_mTargetThingInfo.setScore(_mPreviousUps - _mPreviousDowns);
         		mCommentsAdapter.notifyDataSetChanged();
         		
-    			Common.showErrorToast(_mUserError, Toast.LENGTH_LONG, CommentsListActivity.this);
+    			Common.showErrorToast(_mUserError, Toast.LENGTH_LONG, mContext);
     		}
     	}
     }
@@ -1582,7 +1586,7 @@ public class CommentsListActivity extends ListActivity
         		String modhash = Common.doUpdateModhash(mClient); 
         		if (modhash == null) {
         			// doUpdateModhash should have given an error about credentials
-        			Common.doLogout(mSettings, mClient, getApplicationContext());
+        			Common.doLogout(mSettings, mClient, mContext);
         			if (Constants.LOGGING) Log.e(TAG, "Report failed because doUpdateModhash() failed");
         			return false;
         		}
@@ -1631,7 +1635,7 @@ public class CommentsListActivity extends ListActivity
     	
     	public void onPreExecute() {
 	        if (!mSettings.loggedIn) {
-	        	Common.showErrorToast("You must be logged in to report this.", Toast.LENGTH_LONG, CommentsListActivity.this);
+	        	Common.showErrorToast("You must be logged in to report this.", Toast.LENGTH_LONG, mContext);
 	        	cancel(true);
 	        	return;
 	        }
@@ -1639,9 +1643,9 @@ public class CommentsListActivity extends ListActivity
     	
     	public void onPostExecute(Boolean success) {
     		if (success) {
-    			Toast.makeText(CommentsListActivity.this, "Reported.", Toast.LENGTH_SHORT);
+    			Toast.makeText(mContext, "Reported.", Toast.LENGTH_SHORT);
     		} else {
-    			Common.showErrorToast(_mUserError, Toast.LENGTH_LONG, CommentsListActivity.this);
+    			Common.showErrorToast(_mUserError, Toast.LENGTH_LONG, mContext);
     		}
     	}
     }
@@ -1736,15 +1740,15 @@ public class CommentsListActivity extends ListActivity
     		break;
     	case R.id.login_logout_menu_id:
         	if (mSettings.loggedIn) {
-        		Common.doLogout(mSettings, mClient, getApplicationContext());
-        		Toast.makeText(this, "You have been logged out.", Toast.LENGTH_SHORT).show();
+        		Common.doLogout(mSettings, mClient, mContext);
+        		Toast.makeText(mContext, "You have been logged out.", Toast.LENGTH_SHORT).show();
         		new DownloadCommentsTask().execute(Constants.DEFAULT_COMMENT_DOWNLOAD_LIMIT);
         	} else {
         		showDialog(Constants.DIALOG_LOGIN);
         	}
     		break;
     	case R.id.refresh_menu_id:
-    		CacheInfo.invalidateCachedThread(getApplicationContext());
+    		CacheInfo.invalidateCachedThread(mContext);
     		new DownloadCommentsTask().execute(Constants.DEFAULT_COMMENT_DOWNLOAD_LIMIT);
     		break;
     	case R.id.reply_thread_menu_id:
@@ -1756,7 +1760,7 @@ public class CommentsListActivity extends ListActivity
 	    		mReplyTargetName = mVoteTargetThing.getName();
 	            showDialog(Constants.DIALOG_REPLY);
         	} else {
-        		Common.showErrorToast("You must be logged in to reply.", Toast.LENGTH_LONG, this);
+        		Common.showErrorToast("You must be logged in to reply.", Toast.LENGTH_LONG, mContext);
         	}
             break;
     	case R.id.sort_by_menu_id:
@@ -1794,15 +1798,15 @@ public class CommentsListActivity extends ListActivity
     		}
     		break;
         case R.id.inbox_menu_id:
-        	Intent inboxIntent = new Intent(getApplicationContext(), InboxActivity.class);
+        	Intent inboxIntent = new Intent(mContext, InboxActivity.class);
         	startActivity(inboxIntent);
         	break;
 //        case R.id.user_profile_menu_id:
-//        	Intent profileIntent = new Intent(getApplicationContext(), UserActivity.class);
+//        	Intent profileIntent = new Intent(mContext, UserActivity.class);
 //        	startActivity(profileIntent);
 //        	break;
     	case R.id.preferences_menu_id:
-            Intent prefsIntent = new Intent(getApplicationContext(), RedditPreferencesPage.class);
+            Intent prefsIntent = new Intent(mContext, RedditPreferencesPage.class);
             startActivity(prefsIntent);
             break;
 
@@ -1855,11 +1859,11 @@ public class CommentsListActivity extends ListActivity
     	
     	switch (item.getItemId()) {
     	case Constants.SAVE_CONTEXT_ITEM:
-    		new SaveTask(true, mOpThingInfo, mSettings, this, mCommentsAdapter).execute();
+    		new SaveTask(true, mOpThingInfo, mSettings, mContext, mCommentsAdapter).execute();
     		return true;
     		
     	case Constants.UNSAVE_CONTEXT_ITEM:
-    		new SaveTask(false, mOpThingInfo, mSettings, this, mCommentsAdapter).execute();
+    		new SaveTask(false, mOpThingInfo, mSettings, mContext, mCommentsAdapter).execute();
     		return true;
     		
     	case Constants.SHARE_CONTEXT_ITEM:
@@ -1987,14 +1991,14 @@ public class CommentsListActivity extends ListActivity
     		break;
     		
     	case Constants.DIALOG_THING_CLICK:
-    		inflater = (LayoutInflater)this.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
-    		builder = new AlertDialog.Builder(this);
+    		inflater = (LayoutInflater) getSystemService(Context.LAYOUT_INFLATER_SERVICE);
+    		builder = new AlertDialog.Builder(mContext);
     		dialog = builder.setView(inflater.inflate(R.layout.comment_click_dialog, null)).create();
     		break;
 
     	case Constants.DIALOG_REPLY:
     	{
-    		dialog = new Dialog(this);
+    		dialog = new Dialog(mContext);
     		dialog.setContentView(R.layout.compose_reply_dialog);
     		final EditText replyBody = (EditText) dialog.findViewById(R.id.body);
     		final Button replySaveButton = (Button) dialog.findViewById(R.id.reply_save_button);
@@ -2006,7 +2010,7 @@ public class CommentsListActivity extends ListActivity
 	    				dismissDialog(Constants.DIALOG_REPLY);
     				}
     				else {
-    					Common.showErrorToast("Error replying. Please try again.", Toast.LENGTH_SHORT, CommentsListActivity.this);
+    					Common.showErrorToast("Error replying. Please try again.", Toast.LENGTH_SHORT, mContext);
     				}
     			}
     		});
@@ -2020,7 +2024,7 @@ public class CommentsListActivity extends ListActivity
     		
     	case Constants.DIALOG_EDIT:
     	{
-    		dialog = new Dialog(this);
+    		dialog = new Dialog(mContext);
     		dialog.setContentView(R.layout.compose_reply_dialog);
     		final EditText replyBody = (EditText) dialog.findViewById(R.id.body);
     		final Button replySaveButton = (Button) dialog.findViewById(R.id.reply_save_button);
@@ -2034,7 +2038,7 @@ public class CommentsListActivity extends ListActivity
 	    				dismissDialog(Constants.DIALOG_EDIT);
     				}
     				else {
-    					Common.showErrorToast("Error editing. Please try again.", Toast.LENGTH_SHORT, CommentsListActivity.this);
+    					Common.showErrorToast("Error editing. Please try again.", Toast.LENGTH_SHORT, mContext);
     				}
     			}
     		});
@@ -2047,7 +2051,7 @@ public class CommentsListActivity extends ListActivity
     		break;
     		
     	case Constants.DIALOG_DELETE:
-    		builder = new AlertDialog.Builder(this);
+    		builder = new AlertDialog.Builder(mContext);
     		builder.setTitle("Really delete this?");
     		builder.setPositiveButton("Yes", new DialogInterface.OnClickListener() {
     			public void onClick(DialogInterface dialog, int item) {
@@ -2064,7 +2068,7 @@ public class CommentsListActivity extends ListActivity
     		break;
     		
     	case Constants.DIALOG_SORT_BY:
-    		builder = new AlertDialog.Builder(this);
+    		builder = new AlertDialog.Builder(mContext);
     		builder.setTitle("Sort by:");
     		builder.setSingleChoiceItems(Constants.CommentsSort.SORT_BY_CHOICES, 0, new DialogInterface.OnClickListener() {
     			public void onClick(DialogInterface dialog, int item) {
@@ -2090,7 +2094,7 @@ public class CommentsListActivity extends ListActivity
     		break;
     		
     	case Constants.DIALOG_REPORT:
-    		builder = new AlertDialog.Builder(this);
+    		builder = new AlertDialog.Builder(mContext);
     		builder.setTitle("Really report this?");
     		builder.setPositiveButton("Yes", new DialogInterface.OnClickListener() {
     			public void onClick(DialogInterface dialog, int item) {
@@ -2108,28 +2112,28 @@ public class CommentsListActivity extends ListActivity
     		
    		// "Please wait"
     	case Constants.DIALOG_DELETING:
-    		pdialog = new ProgressDialog(this);
+    		pdialog = new ProgressDialog(mContext);
     		pdialog.setMessage("Deleting...");
     		pdialog.setIndeterminate(true);
     		pdialog.setCancelable(false);
     		dialog = pdialog;
     		break;
     	case Constants.DIALOG_EDITING:
-    		pdialog = new ProgressDialog(this);
+    		pdialog = new ProgressDialog(mContext);
     		pdialog.setMessage("Submitting edit...");
     		pdialog.setIndeterminate(true);
     		pdialog.setCancelable(false);
     		dialog = pdialog;
     		break;
     	case Constants.DIALOG_LOGGING_IN:
-    		pdialog = new ProgressDialog(this);
+    		pdialog = new ProgressDialog(mContext);
     		pdialog.setMessage("Logging in...");
     		pdialog.setIndeterminate(true);
     		pdialog.setCancelable(false);
     		dialog = pdialog;
     		break;
     	case Constants.DIALOG_REPLYING:
-    		pdialog = new ProgressDialog(this);
+    		pdialog = new ProgressDialog(mContext);
     		pdialog.setMessage("Sending reply...");
     		pdialog.setIndeterminate(true);
     		pdialog.setCancelable(false);
@@ -2289,7 +2293,7 @@ public class CommentsListActivity extends ListActivity
         			dismissDialog(Constants.DIALOG_THING_CLICK);
         			
     	            ArrayAdapter<String> adapter = 
-    	                new ArrayAdapter<String>(CommentsListActivity.this, android.R.layout.select_dialog_item, urls) {
+    	                new ArrayAdapter<String>(mContext, android.R.layout.select_dialog_item, urls) {
     	                public View getView(int position, View convertView, ViewGroup parent) {
     	                    View v = super.getView(position, convertView, parent);
     	                    try {
@@ -2313,7 +2317,7 @@ public class CommentsListActivity extends ListActivity
     	                }
     	            };
 
-    	            AlertDialog.Builder b = new AlertDialog.Builder(CommentsListActivity.this);
+    	            AlertDialog.Builder b = new AlertDialog.Builder(mContext);
 
     	            DialogInterface.OnClickListener click = new DialogInterface.OnClickListener() {
     	                public final void onClick(DialogInterface dialog, int which) {

@@ -60,6 +60,8 @@ public final class PickSubredditActivity extends ListActivity {
 	
 	private static final String TAG = "PickSubredditActivity";
 	
+	private Context mContext;
+	
 	// Group 1: inner
     private final Pattern MY_SUBREDDITS_OUTER = Pattern.compile("your front page reddits.*?<ul>(.*?)</ul>", Pattern.CASE_INSENSITIVE);
     // Group 3: subreddit name. Repeat the matcher.find() until it fails.
@@ -109,8 +111,10 @@ public final class PickSubredditActivity extends ListActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
     	super.onCreate(savedInstanceState);
+    	
+    	mContext = getApplicationContext();
         
-    	Common.loadRedditPreferences(this, mSettings, mClient);
+    	Common.loadRedditPreferences(mContext, mSettings, mClient);
     	setRequestedOrientation(mSettings.rotation);
     	setTheme(mSettings.theme);
     	requestWindowFeature(Window.FEATURE_PROGRESS);
@@ -124,7 +128,7 @@ public final class PickSubredditActivity extends ListActivity {
         	new DownloadRedditsTask().execute();
         } else {
 	    	// Orientation change. Use prior instance.
-        	resetUI(new PickSubredditAdapter(this, mSubredditsList));
+        	resetUI(new PickSubredditAdapter(mContext, mSubredditsList));
         	fixInputField();
         }
     }
@@ -182,7 +186,7 @@ public final class PickSubredditActivity extends ListActivity {
 	    	if (adapter == null) {
 	            // Reset the list to be empty.
 		    	mSubredditsList = new ArrayList<String>();
-		    	mSubredditsAdapter = new PickSubredditAdapter(this, mSubredditsList);
+		    	mSubredditsAdapter = new PickSubredditAdapter(mContext, mSubredditsList);
 	    	} else {
 	    		mSubredditsAdapter = adapter;
 	    	}
@@ -240,8 +244,8 @@ public final class PickSubredditActivity extends ListActivity {
             try {
             	
             	if (Constants.USE_CACHE) {
-            		if (CacheInfo.checkFreshSubredditListCache(getApplicationContext())) {
-            			reddits = CacheInfo.getCachedSubredditList(getApplicationContext());
+            		if (CacheInfo.checkFreshSubredditListCache(mContext)) {
+            			reddits = CacheInfo.getCachedSubredditList(mContext);
             			if (Constants.LOGGING) Log.d(TAG, "cached subreddit list:" + reddits);
             		}
             	}
@@ -277,7 +281,7 @@ public final class PickSubredditActivity extends ListActivity {
 	                
 	                if (Constants.USE_CACHE) {
 	                	try {
-	                		CacheInfo.setCachedSubredditList(getApplicationContext(), reddits);
+	                		CacheInfo.setCachedSubredditList(mContext, reddits);
 	                		if (Constants.LOGGING) Log.d(TAG, "wrote subreddit list to cache:" + reddits);
 	                	} catch (IOException e) {
 	                		if (Constants.LOGGING) Log.e(TAG, "error on setCachedSubredditList: " + e.getMessage());
@@ -336,7 +340,7 @@ public final class PickSubredditActivity extends ListActivity {
 	        } else {
 	        	mSubredditsList.add(0, Constants.FRONTPAGE_STRING);
 	        }
-	        resetUI(new PickSubredditAdapter(PickSubredditActivity.this, mSubredditsList));
+	        resetUI(new PickSubredditAdapter(mContext, mSubredditsList));
 	        fixInputField();
     	}
     }
@@ -398,7 +402,7 @@ public final class PickSubredditActivity extends ListActivity {
     	switch (id) {
 	    	// "Please wait"
 		case Constants.DIALOG_LOADING_REDDITS_LIST:
-			pdialog = new ProgressDialog(this);
+			pdialog = new ProgressDialog(mContext);
 			pdialog.setMessage("Loading your reddits...");
 			pdialog.setIndeterminate(true);
 			pdialog.setCancelable(false);

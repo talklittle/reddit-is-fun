@@ -96,6 +96,8 @@ public final class InboxActivity extends ListActivity
 
 	private static final String TAG = "InboxActivity";
 	
+	private Context mContext;
+	
 	// Captcha "iden"
     private final Pattern CAPTCHA_IDEN_PATTERN = Pattern.compile("name=\"iden\" value=\"([^\"]+?)\"");
     // Group 2: Captcha image absolute path
@@ -148,16 +150,15 @@ public final class InboxActivity extends ListActivity
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         
-        Common.loadRedditPreferences(this, mSettings, mClient);
+        mContext = getApplicationContext();
+        
+        Common.loadRedditPreferences(mContext, mSettings, mClient);
         setRequestedOrientation(mSettings.rotation);
         setTheme(mSettings.theme);
         requestWindowFeature(Window.FEATURE_PROGRESS);
         requestWindowFeature(Window.FEATURE_INDETERMINATE_PROGRESS);
         
         setContentView(R.layout.inbox_list_content);
-        // The above layout contains a list id "android:list"
-        // which ListActivity adopts as its list -- we can
-        // access it with getListView().
         
 		if (mSettings.loggedIn) {
 			if (savedInstanceState != null) {
@@ -167,7 +168,7 @@ public final class InboxActivity extends ListActivity
 	        		new DownloadMessagesTask().execute(Constants.DEFAULT_COMMENT_DOWNLOAD_LIMIT);
 	        	} else {
 			    	// Orientation change. Use prior instance.
-	        		resetUI(new MessagesListAdapter(this, mMessagesList));
+	        		resetUI(new MessagesListAdapter(mContext, mMessagesList));
 	        	}
 			} else {
 				new DownloadMessagesTask().execute(Constants.DEFAULT_COMMENT_DOWNLOAD_LIMIT);
@@ -199,7 +200,7 @@ public final class InboxActivity extends ListActivity
     	super.onResume();
     	int previousTheme = mSettings.theme;
     	boolean previousLoggedIn = mSettings.loggedIn;
-    	Common.loadRedditPreferences(this, mSettings, mClient);
+    	Common.loadRedditPreferences(mContext, mSettings, mClient);
     	setRequestedOrientation(mSettings.rotation);
     	if (mSettings.theme != previousTheme) {
     		setTheme(mSettings.theme);
@@ -215,7 +216,7 @@ public final class InboxActivity extends ListActivity
     @Override
     protected void onPause() {
     	super.onPause();
-    	Common.saveRedditPreferences(this, mSettings);
+    	Common.saveRedditPreferences(mContext, mSettings);
     }
     
     @Override
@@ -357,7 +358,7 @@ public final class InboxActivity extends ListActivity
     public boolean onContextItemSelected(MenuItem item) {
     	switch (item.getItemId()) {
     	case Constants.DIALOG_COMMENT_CLICK:
-			Intent i = new Intent(getApplicationContext(), CommentsListActivity.class);
+			Intent i = new Intent(mContext, CommentsListActivity.class);
 			i.setData(Util.createCommentUri(mVoteTargetThingInfo));
 			i.putExtra(Constants.EXTRA_SUBREDDIT, mVoteTargetThingInfo.getSubreddit());
 			i.putExtra(Constants.EXTRA_TITLE, mVoteTargetThingInfo.getTitle());
@@ -383,7 +384,7 @@ public final class InboxActivity extends ListActivity
 	    	if (messagesAdapter == null) {
 	            // Reset the list to be empty.
 	    		mMessagesList = new ArrayList<ThingInfo>();
-	    		mMessagesAdapter = new MessagesListAdapter(this, mMessagesList);
+	    		mMessagesAdapter = new MessagesListAdapter(mContext, mMessagesList);
 	    	} else {
 	    		mMessagesAdapter = messagesAdapter;
 	    	}
@@ -520,7 +521,7 @@ public final class InboxActivity extends ListActivity
     				mMessagesAdapter.add(mi);
     		}
 			disableLoadingScreen();
-			Common.cancelMailNotification(InboxActivity.this.getApplicationContext());
+			Common.cancelMailNotification(mContext);
     	}
 		
     	@Override
@@ -545,7 +546,7 @@ public final class InboxActivity extends ListActivity
     	
     	@Override
     	public String doInBackground(Void... v) {
-    		return Common.doLogin(mUsername, mPassword, mSettings, mClient, getApplicationContext());
+    		return Common.doLogin(mUsername, mPassword, mSettings, mClient, mContext);
         }
     	
     	protected void onPreExecute() {
@@ -555,11 +556,11 @@ public final class InboxActivity extends ListActivity
     	protected void onPostExecute(String errorMessage) {
     		dismissDialog(Constants.DIALOG_LOGGING_IN);
     		if (errorMessage == null) {
-    			Toast.makeText(InboxActivity.this, "Logged in as "+mUsername, Toast.LENGTH_SHORT).show();
+    			Toast.makeText(mContext, "Logged in as "+mUsername, Toast.LENGTH_SHORT).show();
 	    		// Refresh the threads list
     			new DownloadMessagesTask().execute(Constants.DEFAULT_COMMENT_DOWNLOAD_LIMIT);
     		} else {
-            	Common.showErrorToast(mUserError, Toast.LENGTH_LONG, InboxActivity.this);
+            	Common.showErrorToast(mUserError, Toast.LENGTH_LONG, mContext);
     			returnStatus(Constants.RESULT_LOGIN_REQUIRED);
     		}
     	}
@@ -592,7 +593,7 @@ public final class InboxActivity extends ListActivity
         		String modhash = Common.doUpdateModhash(mClient);
         		if (modhash == null) {
         			// doUpdateModhash should have given an error about credentials
-        			Common.doLogout(mSettings, mClient, getApplicationContext());
+        			Common.doLogout(mSettings, mClient, mContext);
         			if (Constants.LOGGING) Log.e(TAG, "Read message failed because doUpdateModhash() failed");
         			return false;
         		}
@@ -659,7 +660,7 @@ public final class InboxActivity extends ListActivity
     	@Override
     	public void onPreExecute() {
     		if (!mSettings.loggedIn) {
-        		Common.showErrorToast("You must be logged in to read message.", Toast.LENGTH_LONG, InboxActivity.this);
+        		Common.showErrorToast("You must be logged in to read message.", Toast.LENGTH_LONG, mContext);
         		cancel(true);
         		return;
         	}
@@ -674,7 +675,7 @@ public final class InboxActivity extends ListActivity
             	_mTargetThingInfo.setLikes(true);
         		mMessagesAdapter.notifyDataSetChanged();
         		
-    			Common.showErrorToast(_mUserError, Toast.LENGTH_LONG, InboxActivity.this);
+    			Common.showErrorToast(_mUserError, Toast.LENGTH_LONG, mContext);
     		}
     	}
     }
@@ -695,7 +696,7 @@ public final class InboxActivity extends ListActivity
         	
         	String status = "";
         	if (!mSettings.loggedIn) {
-        		Common.showErrorToast("You must be logged in to reply.", Toast.LENGTH_LONG, InboxActivity.this);
+        		Common.showErrorToast("You must be logged in to reply.", Toast.LENGTH_LONG, mContext);
         		_mUserError = "Not logged in";
         		return false;
         	}
@@ -704,7 +705,7 @@ public final class InboxActivity extends ListActivity
         		String modhash = Common.doUpdateModhash(mClient);
         		if (modhash == null) {
         			// doUpdateModhash should have given an error about credentials
-        			Common.doLogout(mSettings, mClient, getApplicationContext());
+        			Common.doLogout(mSettings, mClient, mContext);
         			if (Constants.LOGGING) Log.e(TAG, "Reply failed because doUpdateModhash() failed");
         			return false;
         		}
@@ -758,10 +759,10 @@ public final class InboxActivity extends ListActivity
     	public void onPostExecute(Boolean success) {
     		dismissDialog(Constants.DIALOG_REPLYING);
     		if (success) {
-    			Toast.makeText(InboxActivity.this, "Reply sent.", Toast.LENGTH_SHORT).show();
+    			Toast.makeText(mContext, "Reply sent.", Toast.LENGTH_SHORT).show();
     			// TODO: add the reply beneath the original, OR redirect to sent messages page
     		} else {
-    			Common.showErrorToast(_mUserError, Toast.LENGTH_LONG, InboxActivity.this);
+    			Common.showErrorToast(_mUserError, Toast.LENGTH_LONG, mContext);
     		}
     	}
     }
@@ -783,7 +784,7 @@ public final class InboxActivity extends ListActivity
         	HttpEntity entity = null;
         	
         	if (!mSettings.loggedIn) {
-        		Common.showErrorToast("You must be logged in to compose a message.", Toast.LENGTH_LONG, InboxActivity.this);
+        		Common.showErrorToast("You must be logged in to compose a message.", Toast.LENGTH_LONG, mContext);
         		_mUserError = "Not logged in";
         		return false;
         	}
@@ -792,7 +793,7 @@ public final class InboxActivity extends ListActivity
         		String modhash = Common.doUpdateModhash(mClient);
         		if (modhash == null) {
         			// doUpdateModhash should have given an error about credentials
-        			Common.doLogout(mSettings, mClient, getApplicationContext());
+        			Common.doLogout(mSettings, mClient, mContext);
         			if (Constants.LOGGING) Log.e(TAG, "Message compose failed because doUpdateModhash() failed");
         			return false;
         		}
@@ -854,10 +855,10 @@ public final class InboxActivity extends ListActivity
     	public void onPostExecute(Boolean success) {
     		dismissDialog(Constants.DIALOG_COMPOSING);
     		if (success) {
-    			Toast.makeText(InboxActivity.this, "Message sent.", Toast.LENGTH_SHORT).show();
+    			Toast.makeText(mContext, "Message sent.", Toast.LENGTH_SHORT).show();
     			// TODO: add the reply beneath the original, OR redirect to sent messages page
     		} else {
-    			Common.showErrorToast(_mUserError, Toast.LENGTH_LONG, InboxActivity.this);
+    			Common.showErrorToast(_mUserError, Toast.LENGTH_LONG, mContext);
     		}
     	}
     }
@@ -922,7 +923,7 @@ public final class InboxActivity extends ListActivity
 			final TextView loadingCaptcha = (TextView) _mDialog.findViewById(R.id.compose_captcha_loading);
 			final Button sendButton = (Button) _mDialog.findViewById(R.id.compose_send_button);
 			if (required == null) {
-				Common.showErrorToast("Error retrieving captcha. Use the menu to try again.", Toast.LENGTH_LONG, InboxActivity.this);
+				Common.showErrorToast("Error retrieving captcha. Use the menu to try again.", Toast.LENGTH_LONG, mContext);
 				return;
 			}
 			if (required) {
@@ -971,7 +972,7 @@ public final class InboxActivity extends ListActivity
 				return bmd;
 			
 			} catch (Exception e) {
-				Common.showErrorToast("Error downloading captcha.", Toast.LENGTH_LONG, InboxActivity.this);
+				Common.showErrorToast("Error downloading captcha.", Toast.LENGTH_LONG, mContext);
 			}
 			
 			return null;
@@ -980,7 +981,7 @@ public final class InboxActivity extends ListActivity
 		@Override
 		public void onPostExecute(Drawable captcha) {
 			if (captcha == null) {
-				Common.showErrorToast("Error retrieving captcha. Use the menu to try again.", Toast.LENGTH_LONG, InboxActivity.this);
+				Common.showErrorToast("Error retrieving captcha. Use the menu to try again.", Toast.LENGTH_LONG, mContext);
 				return;
 			}
 			final ImageView composeCaptchaView = (ImageView) _mDialog.findViewById(R.id.compose_captcha_image);
@@ -1042,7 +1043,7 @@ public final class InboxActivity extends ListActivity
 //        		break;
 //        	case Constants.DIALOG_LOGOUT:
 //        		Common.doLogout(mSettings, mClient);
-//        		Toast.makeText(InboxActivity.this, "You have been logged out.", Toast.LENGTH_SHORT).show();
+//        		Toast.makeText(mContext, "You have been logged out.", Toast.LENGTH_SHORT).show();
 //        		new DownloadMessagesTask().execute(Constants.DEFAULT_COMMENT_DOWNLOAD_LIMIT);
 //        		break;
 //        	case Constants.DIALOG_REFRESH:
@@ -1050,7 +1051,7 @@ public final class InboxActivity extends ListActivity
 //        		break;
 //        	case Constants.DIALOG_OPEN_BROWSER:
 //        		String url = "http://www.reddit.com/message/inbox";
-//        		Common.launchBrowser(url, InboxActivity.this);
+//        		Common.launchBrowser(url, mContext);
 //        		break;
 //        	case Constants.DIALOG_THEME:
 //        		if (mSettings.theme == R.style.Reddit_Light) {
@@ -1092,7 +1093,7 @@ public final class InboxActivity extends ListActivity
     		break;
     		
     	case Constants.DIALOG_REPLY:
-    		dialog = new Dialog(this);
+    		dialog = new Dialog(mContext);
     		dialog.setContentView(R.layout.compose_reply_dialog);
     		final EditText replyBody = (EditText) dialog.findViewById(R.id.body);
     		final Button replySaveButton = (Button) dialog.findViewById(R.id.reply_save_button);
@@ -1104,7 +1105,7 @@ public final class InboxActivity extends ListActivity
         				dismissDialog(Constants.DIALOG_REPLY);
     				}
     				else{
-    					Common.showErrorToast("Error replying. Please try again.", Toast.LENGTH_SHORT, InboxActivity.this);
+    					Common.showErrorToast("Error replying. Please try again.", Toast.LENGTH_SHORT, mContext);
     				}
     			}
     		});
@@ -1116,7 +1117,7 @@ public final class InboxActivity extends ListActivity
     		break;
     	case Constants.DIALOG_COMPOSE:
     		inflater = (LayoutInflater) getSystemService(Context.LAYOUT_INFLATER_SERVICE);
-    		builder = new AlertDialog.Builder(this);
+    		builder = new AlertDialog.Builder(mContext);
     		layout = inflater.inflate(R.layout.compose_dialog, null);
     		dialog = builder.setView(layout).create();
     		final Dialog composeDialog = dialog;
@@ -1131,19 +1132,19 @@ public final class InboxActivity extends ListActivity
 		    		ThingInfo hi = new ThingInfo();
 		    		// reddit.com performs these sanity checks too.
 		    		if ("".equals(composeDestination.getText().toString().trim())) {
-		    			Toast.makeText(InboxActivity.this, "please enter a username", Toast.LENGTH_LONG).show();
+		    			Toast.makeText(mContext, "please enter a username", Toast.LENGTH_LONG).show();
 		    			return;
 		    		}
 		    		if ("".equals(composeSubject.getText().toString().trim())) {
-		    			Toast.makeText(InboxActivity.this, "please enter a subject", Toast.LENGTH_LONG).show();
+		    			Toast.makeText(mContext, "please enter a subject", Toast.LENGTH_LONG).show();
 		    			return;
 		    		}
 		    		if ("".equals(composeText.getText().toString().trim())) {
-		    			Toast.makeText(InboxActivity.this, "you need to enter a message", Toast.LENGTH_LONG).show();
+		    			Toast.makeText(mContext, "you need to enter a message", Toast.LENGTH_LONG).show();
 		    			return;
 		    		}
 		    		if (composeCaptcha.getVisibility() == View.VISIBLE && "".equals(composeCaptcha.getText().toString().trim())) {
-		    			Toast.makeText(InboxActivity.this, "", Toast.LENGTH_LONG).show();
+		    			Toast.makeText(mContext, "", Toast.LENGTH_LONG).show();
 		    			return;
 		    		}
 		    		hi.setDest(composeDestination.getText().toString().trim());
@@ -1162,21 +1163,21 @@ public final class InboxActivity extends ListActivity
     		
    		// "Please wait"
     	case Constants.DIALOG_LOGGING_IN:
-    		pdialog = new ProgressDialog(this);
+    		pdialog = new ProgressDialog(mContext);
     		pdialog.setMessage("Logging in...");
     		pdialog.setIndeterminate(true);
     		pdialog.setCancelable(false);
     		dialog = pdialog;
     		break;
     	case Constants.DIALOG_REPLYING:
-    		pdialog = new ProgressDialog(this);
+    		pdialog = new ProgressDialog(mContext);
     		pdialog.setMessage("Sending reply...");
     		pdialog.setIndeterminate(true);
     		pdialog.setCancelable(false);
     		dialog = pdialog;
     		break;   		
     	case Constants.DIALOG_COMPOSING:
-    		pdialog = new ProgressDialog(this);
+    		pdialog = new ProgressDialog(mContext);
     		pdialog.setMessage("Composing message...");
     		pdialog.setIndeterminate(true);
     		pdialog.setCancelable(false);
