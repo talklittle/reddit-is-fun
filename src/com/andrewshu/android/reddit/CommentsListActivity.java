@@ -1728,20 +1728,17 @@ public class CommentsListActivity extends ListActivity
         
         switch (item.getItemId()) {
         case R.id.op_menu_id:
-    		synchronized (COMMENT_ADAPTER_LOCK) {
-    			mVoteTargetThing = mCommentsAdapter.getItem(0);
-    		}
-    		mReplyTargetName = mVoteTargetThing.getName();
+        	if (mOpThingInfo == null)
+        		break;
+    		mVoteTargetThing = mOpThingInfo;
+        	mReplyTargetName = mOpThingInfo.getName();
     		showDialog(Constants.DIALOG_THING_CLICK);
     		break;
     	case R.id.op_subreddit_menu_id:
-		Common.loadRedditPreferences(this, mSettings, mClient);
-		Bundle extras = new Bundle();
-		extras.putString(Constants.EXTRA_SUBREDDIT, mSettings.subreddit.toString());
-		Intent mIntent = new Intent(getApplicationContext(), RedditIsFun.class);
-		mIntent.putExtras(extras);
-		startActivity(mIntent);
-		break;
+			Intent intent = new Intent(getApplicationContext(), ThreadsListActivity.class);
+			intent.setData(Util.createSubredditUri(mSettings.subreddit));
+			startActivity(intent);
+			break;
     	case R.id.login_logout_menu_id:
         	if (mSettings.loggedIn) {
         		Common.doLogout(mSettings, mClient, getApplicationContext());
@@ -1755,18 +1752,6 @@ public class CommentsListActivity extends ListActivity
     		CacheInfo.invalidateCachedThread(getApplicationContext());
     		new DownloadCommentsTask().execute(Constants.DEFAULT_COMMENT_DOWNLOAD_LIMIT);
     		break;
-    	case R.id.reply_thread_menu_id:
-    		// From the menu, only used for the OP, which is a thread.
-        	if (mSettings.loggedIn) {
-	    		synchronized (COMMENT_ADAPTER_LOCK) {
-	    			mVoteTargetThing = mCommentsAdapter.getItem(0);
-	    		}
-	    		mReplyTargetName = mVoteTargetThing.getName();
-	            showDialog(Constants.DIALOG_REPLY);
-        	} else {
-        		Common.showErrorToast("You must be logged in to reply.", Toast.LENGTH_LONG, this);
-        	}
-            break;
     	case R.id.sort_by_menu_id:
     		showDialog(Constants.DIALOG_SORT_BY);
     		break;
