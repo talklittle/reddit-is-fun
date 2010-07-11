@@ -12,6 +12,7 @@ import android.view.Window;
 import android.webkit.WebChromeClient;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
+import android.webkit.WebSettings.LayoutAlgorithm;
 
 public class BrowserActivity extends Activity {
 	
@@ -32,6 +33,7 @@ public class BrowserActivity extends Activity {
 		webview = (WebView) findViewById(R.id.webview);
 		webview.getSettings().setBuiltInZoomControls(true);
 		webview.getSettings().setJavaScriptEnabled(true);
+		webview.getSettings().setUseWideViewPort(true);
 		webview.setWebViewClient(new WebViewClient() {
 		    @Override
 		    public boolean shouldOverrideUrlLoading(WebView view, String url) {
