@@ -45,7 +45,7 @@ public class Util {
 		long systime = System.currentTimeMillis() / 1000;
 		long diff = systime - utcTimeSeconds;
 		if (diff <= 0)
-			return "very recently";
+			return "very recentl";
 		else if (diff < 60) {
 			if (diff == 1)
 				return "1 second ago";
@@ -208,6 +208,11 @@ public class Util {
     static Uri createMobileWikpediaUri(Uri uri) {
     	String uriString = uri.toString();
     	return Uri.parse(uriString.replace(".wikipedia.org/", ".m.wikipedia.org/"));
+    }
+    
+    static boolean isYoutubeUri(Uri uri) {
+    	String host = uri.getHost();
+    	return host.endsWith(".youtube.com");
     }
     
 }

@@ -644,6 +644,10 @@ public class Common {
     	}
     	uri = Util.optimizeMobileUri(uri);
     	
+    	// Some URLs should always be opened externally, if BrowserActivity doesn't support their content.
+    	if (Util.isYoutubeUri(uri))
+    		useExternalBrowser = true;
+    	
     	if (useExternalBrowser) {
     		Intent browser = new Intent(Intent.ACTION_VIEW, uri);
     		browser.putExtra(Browser.EXTRA_APPLICATION_ID, act.getPackageName());
