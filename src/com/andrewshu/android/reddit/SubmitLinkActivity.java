@@ -736,8 +736,13 @@ public class SubmitLinkActivity extends TabActivity {
     				String newSubreddit = redditContextMatcher.group(1);
     				final EditText linkSubreddit = (EditText) findViewById(R.id.submit_link_reddit);
 	    			final EditText textSubreddit = (EditText) findViewById(R.id.submit_text_reddit);
-	    			linkSubreddit.setText(newSubreddit);
-	    			textSubreddit.setText(newSubreddit);
+	    			if (newSubreddit != null) {
+	    				linkSubreddit.setText(newSubreddit);
+		    			textSubreddit.setText(newSubreddit);
+    				} else {
+	    				linkSubreddit.setText("reddit.com");
+		    			textSubreddit.setText("reddit.com");
+    				}
 	    		}
     		}
     		break;

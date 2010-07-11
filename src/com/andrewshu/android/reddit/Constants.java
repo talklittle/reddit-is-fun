@@ -39,7 +39,7 @@ public class Constants {
 	
 	// 1:subreddit 2:threadId 3:commentId
 	static final String COMMENT_PATH_PATTERN_STRING = "(?:/r/(.+?))?/comments/(.+?)(?:/?$|/.+?/(?:([a-zA-Z0-9]+))?)?";
-	static final String REDDIT_PATH_PATTERN_STRING = "/r/(.+?)/?$";
+	static final String REDDIT_PATH_PATTERN_STRING = "(?:/r/(.+?))?/?$";
 	
 	static final String COMMENT_KIND = "t1";
 	static final String THREAD_KIND = "t3";

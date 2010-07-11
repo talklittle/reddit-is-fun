@@ -53,15 +53,7 @@ public abstract class DownloadThreadsTask extends AsyncTask<Void, Long, Boolean>
 	public DownloadThreadsTask(Context context, DefaultHttpClient client, ObjectMapper om,
 			String sortByUrl, String sortByUrlExtra,
 			String subreddit) {
-		mContext = context;
-		mClient = client;
-		mOm = om;
-		mSortByUrl = sortByUrl;
-		mSortByUrlExtra = sortByUrlExtra;
-		mSubreddit = subreddit;
-		mAfter = null;
-		mBefore = null;
-		mCount = Constants.DEFAULT_THREAD_DOWNLOAD_LIMIT;
+		this(context, client, om, sortByUrl, sortByUrlExtra, subreddit, null, null, Constants.DEFAULT_THREAD_DOWNLOAD_LIMIT);
 	}
 	
 	public DownloadThreadsTask(Context context, DefaultHttpClient client, ObjectMapper om,
@@ -72,7 +64,11 @@ public abstract class DownloadThreadsTask extends AsyncTask<Void, Long, Boolean>
 		mOm = om;
 		mSortByUrl = sortByUrl;
 		mSortByUrlExtra = sortByUrlExtra;
-		mSubreddit = subreddit;
+		if (subreddit != null)
+			mSubreddit = subreddit;
+		else
+			mSubreddit = Constants.FRONTPAGE_STRING;
+
 		mAfter = after;
 		mBefore = before;
 		mCount = count;
