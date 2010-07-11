@@ -20,46 +20,37 @@ import android.os.AsyncTask;
 import android.util.Log;
 import android.widget.Toast;
 
-class SaveTask extends AsyncTask<Void, Void, Boolean> {
-	private static final String TAG = "SaveWorker";
+class HideTask extends AsyncTask<Void, Void, Boolean> {
+	private static final String TAG = "HideTask";
 	
 	private ThingInfo mTargetThreadInfo;
-	private String mUserError = "Error voting.";
+	private String mUserError = "Error hiding thread.";
 	private String mUrl;
-	private boolean mSave;
 	private RedditSettings mSettings;
 	private Context mContext;
 	
 	private final DefaultHttpClient mClient = Common.getGzipHttpClient();
 	
-	public SaveTask(boolean mSave, ThingInfo mVoteTargetThreadInfo, 
-								RedditSettings mSettings, Context mContext){
-		if(mSave){
-			this.mUrl = "http://www.reddit.com/api/save";
-		} else {
-			this.mUrl = "http://www.reddit.com/api/unsave";
-		}
-		
-		this.mSave = mSave;
+	public HideTask(boolean hide, ThingInfo mVoteTargetThreadInfo, RedditSettings mSettings, Context mContext){
 		this.mTargetThreadInfo = mVoteTargetThreadInfo;
 		this.mSettings = mSettings;
 		this.mContext = mContext;
+		if (hide) {
+			mUrl = "http://www.reddit.com/api/hide";
+		} else {
+			mUrl = "http://www.reddit.com/api/unhide";
+		}
 	}
 	
 	@Override
 	public void onPreExecute() {
 		if (!mSettings.loggedIn) {
-    		Common.showErrorToast("You must be logged in to save.", Toast.LENGTH_LONG, mContext);
+    		Common.showErrorToast("You must be logged in to hide/unhide a thread.", Toast.LENGTH_LONG, mContext);
     		cancel(true);
     		return;
     	}
-		if (mSave) {
-			mTargetThreadInfo.setSaved(true);
-			Toast.makeText(mContext, "Saved!", Toast.LENGTH_SHORT).show();
-		} else {
-			mTargetThreadInfo.setSaved(false);
-			Toast.makeText(mContext, "Unsaved!", Toast.LENGTH_SHORT).show();
-		}
+		mTargetThreadInfo.setHidden(true);
+		Toast.makeText(mContext, "Hidden.", Toast.LENGTH_SHORT).show();
 	}
 	
 	@Override
@@ -69,7 +60,7 @@ class SaveTask extends AsyncTask<Void, Void, Boolean> {
     	HttpEntity entity = null;
     	
     	if (!mSettings.loggedIn) {
-    		mUserError = "You must be logged in to save.";
+    		mUserError = "You must be logged in to hide/unhide a thread.";
     		return false;
     	}
     	
@@ -79,7 +70,7 @@ class SaveTask extends AsyncTask<Void, Void, Boolean> {
     		if (modhash == null) {
     			// doUpdateModhash should have given an error about credentials
     			Common.doLogout(mSettings, mClient, mContext);
-    			if (Constants.LOGGING) Log.e(TAG, "updating save status failed because doUpdateModhash() failed");
+    			if (Constants.LOGGING) Log.e(TAG, "updating hide status failed because doUpdateModhash() failed");
     			return false;
     		}
     		mSettings.setModhash(modhash);
@@ -109,8 +100,8 @@ class SaveTask extends AsyncTask<Void, Void, Boolean> {
         	String line = in.readLine();
         	in.close();
         	if (line == null || Constants.EMPTY_STRING.equals(line)) {
-        		mUserError = "Connection error when voting. Try again.";
-        		throw new HttpException("No content returned from save POST");
+        		mUserError = "Connection error when hiding thread. Try again.";
+        		throw new HttpException("No content returned from hide POST");
         	}
         	if (line.contains("WRONG_PASSWORD")) {
         		mUserError = "Wrong password.";

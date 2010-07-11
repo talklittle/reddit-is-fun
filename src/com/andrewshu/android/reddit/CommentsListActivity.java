@@ -1848,11 +1848,11 @@ public class CommentsListActivity extends ListActivity
     	
     	switch (item.getItemId()) {
     	case Constants.SAVE_CONTEXT_ITEM:
-    		new SaveTask(true, mOpThingInfo, mSettings, this, mCommentsAdapter).execute();
+    		new SaveTask(true, mOpThingInfo, mSettings, this).execute();
     		return true;
     		
     	case Constants.UNSAVE_CONTEXT_ITEM:
-    		new SaveTask(false, mOpThingInfo, mSettings, this, mCommentsAdapter).execute();
+    		new SaveTask(false, mOpThingInfo, mSettings, this).execute();
     		return true;
     		
     	case Constants.SHARE_CONTEXT_ITEM:

@@ -856,6 +856,28 @@ public final class ThreadsListActivity extends ListActivity {
     	}
     }
     
+    private final class MyHideTask extends HideTask {
+
+		public MyHideTask(boolean hide, ThingInfo mVoteTargetThreadInfo,
+				RedditSettings mSettings, Context mContext) {
+			super(hide, mVoteTargetThreadInfo, mSettings, mContext);
+		}
+		
+		@Override
+		public void onPostExecute(Boolean success) {
+			// super shows error on success==false
+			super.onPostExecute(success);
+			
+			if (success) {
+				synchronized (THREAD_ADAPTER_LOCK) {
+					mThreadsAdapter.remove(mVoteTargetThingInfo);
+					mThreadsAdapter.notifyDataSetChanged();
+				}
+			}
+		}
+    	
+    }
+    
     
     /**
      * Populates the menu.
@@ -889,6 +911,7 @@ public final class ThreadsListActivity extends ListActivity {
     		} else {
     			menu.add(0, Constants.UNSAVE_CONTEXT_ITEM, 0, "Unsave");
     		}
+    		menu.add(0, Constants.HIDE_CONTEXT_ITEM, 0, "Hide");
     	}
     }
     
@@ -927,11 +950,15 @@ public final class ThreadsListActivity extends ListActivity {
 			return true;
 		
 		case Constants.SAVE_CONTEXT_ITEM:
-			new SaveTask(true, _item, mSettings, this, mThreadsAdapter).execute();
+			new SaveTask(true, _item, mSettings, getApplicationContext()).execute();
 			return true;
 			
 		case Constants.UNSAVE_CONTEXT_ITEM:
-			new SaveTask(false, _item, mSettings, this, mThreadsAdapter).execute();
+			new SaveTask(false, _item, mSettings, getApplicationContext()).execute();
+			return true;
+			
+		case Constants.HIDE_CONTEXT_ITEM:
+			new MyHideTask(true, _item, mSettings, getApplicationContext()).execute();
 			return true;
 			
 		default:

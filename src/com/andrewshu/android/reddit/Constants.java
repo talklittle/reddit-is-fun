@@ -116,6 +116,7 @@ public class Constants {
 	static final int OPEN_COMMENTS_CONTEXT_ITEM = 1015;
 	static final int SAVE_CONTEXT_ITEM = 1016;
 	static final int UNSAVE_CONTEXT_ITEM = 1017;
+	static final int HIDE_CONTEXT_ITEM = 1018;
 
     
     // Special CSS for webviews to match themes
