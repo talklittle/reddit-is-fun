@@ -44,7 +44,6 @@ import android.app.Activity;
 import android.app.Dialog;
 import android.app.ProgressDialog;
 import android.app.TabActivity;
-import android.content.Context;
 import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
@@ -72,8 +71,6 @@ public class SubmitLinkActivity extends TabActivity {
 	
 	private static final String TAG = "SubmitLinkActivity";
 	
-	private Context mContext;
-	
 	// Captcha "iden"
     private final Pattern CAPTCHA_IDEN_PATTERN = Pattern.compile("name=\"iden\" value=\"([^\"]+?)\"");
     // Group 2: Captcha image absolute path
@@ -98,9 +95,7 @@ public class SubmitLinkActivity extends TabActivity {
 	public void onCreate(Bundle icicle) {
 		super.onCreate(icicle);
 		
-		mContext = getApplicationContext();
-		
-		Common.loadRedditPreferences(mContext, mSettings, mClient);
+		Common.loadRedditPreferences(this, mSettings, mClient);
 		setRequestedOrientation(mSettings.rotation);
 		setTheme(mSettings.theme);
 		
@@ -234,7 +229,7 @@ public class SubmitLinkActivity extends TabActivity {
 	@Override
     protected void onPause() {
     	super.onPause();
-    	Common.saveRedditPreferences(mContext, mSettings);
+    	Common.saveRedditPreferences(this, mSettings);
     }
     
     
@@ -249,7 +244,7 @@ public class SubmitLinkActivity extends TabActivity {
     	
     	@Override
     	public String doInBackground(Void... v) {
-    		return Common.doLogin(mUsername, mPassword, mSettings, mClient, mContext);
+    		return Common.doLogin(mUsername, mPassword, mSettings, mClient, getApplicationContext());
         }
     	
     	@Override
@@ -261,13 +256,13 @@ public class SubmitLinkActivity extends TabActivity {
     	protected void onPostExecute(String errorMessage) {
     		dismissDialog(Constants.DIALOG_LOGGING_IN);
 			if (errorMessage == null) {
-    			Toast.makeText(mContext, "Logged in as "+mUsername, Toast.LENGTH_SHORT).show();
+    			Toast.makeText(SubmitLinkActivity.this, "Logged in as "+mUsername, Toast.LENGTH_SHORT).show();
     			// Check mail
-    			new Common.PeekEnvelopeTask(mContext, mClient, mSettings.mailNotificationStyle).execute();
+    			new Common.PeekEnvelopeTask(SubmitLinkActivity.this, mClient, mSettings.mailNotificationStyle).execute();
     			// Show the UI and allow user to proceed
     			start();
         	} else {
-            	Common.showErrorToast(errorMessage, Toast.LENGTH_LONG, mContext);
+            	Common.showErrorToast(errorMessage, Toast.LENGTH_LONG, SubmitLinkActivity.this);
     			returnStatus(Constants.RESULT_LOGIN_REQUIRED);
         	}
     	}
@@ -294,7 +289,7 @@ public class SubmitLinkActivity extends TabActivity {
         	
         	String status = "";
         	if (!mSettings.loggedIn) {
-        		Common.showErrorToast("You must be logged in to reply.", Toast.LENGTH_LONG, mContext);
+        		Common.showErrorToast("You must be logged in to reply.", Toast.LENGTH_LONG, SubmitLinkActivity.this);
         		_mUserError = "Not logged in";
         		return null;
         	}
@@ -303,7 +298,7 @@ public class SubmitLinkActivity extends TabActivity {
         		String modhash = Common.doUpdateModhash(mClient);
         		if (modhash == null) {
         			// doUpdateModhash should have given an error about credentials
-        			Common.doLogout(mSettings, mClient, mContext);
+        			Common.doLogout(mSettings, mClient, getApplicationContext());
         			if (Constants.LOGGING) Log.e(TAG, "Reply failed because doUpdateModhash() failed");
         			return null;
         		}
@@ -428,7 +423,7 @@ public class SubmitLinkActivity extends TabActivity {
     	public void onPostExecute(ThingInfo newlyCreatedThread) {
     		dismissDialog(Constants.DIALOG_SUBMITTING);
     		if (newlyCreatedThread == null) {
-    			Common.showErrorToast(_mUserError, Toast.LENGTH_LONG, mContext);
+    			Common.showErrorToast(_mUserError, Toast.LENGTH_LONG, SubmitLinkActivity.this);
     		} else {
         		// Success. Return the subreddit and thread id
     			Intent i = new Intent();
@@ -514,7 +509,7 @@ public class SubmitLinkActivity extends TabActivity {
 			final Button submitLinkButton = (Button) findViewById(R.id.submit_link_button);
 			final Button submitTextButton = (Button) findViewById(R.id.submit_text_button);
 			if (required == null) {
-				Common.showErrorToast("Error retrieving captcha. Use the menu to try again.", Toast.LENGTH_LONG, mContext);
+				Common.showErrorToast("Error retrieving captcha. Use the menu to try again.", Toast.LENGTH_LONG, SubmitLinkActivity.this);
 				return;
 			}
 			if (required) {
@@ -567,7 +562,7 @@ public class SubmitLinkActivity extends TabActivity {
 				return bmd;
 			
 			} catch (Exception e) {
-				Common.showErrorToast("Error downloading captcha.", Toast.LENGTH_LONG, mContext);
+				Common.showErrorToast("Error downloading captcha.", Toast.LENGTH_LONG, SubmitLinkActivity.this);
 			}
 			
 			return null;
@@ -576,7 +571,7 @@ public class SubmitLinkActivity extends TabActivity {
 		@Override
 		public void onPostExecute(Drawable captcha) {
 			if (captcha == null) {
-				Common.showErrorToast("Error retrieving captcha. Use the menu to try again.", Toast.LENGTH_LONG, mContext);
+				Common.showErrorToast("Error retrieving captcha. Use the menu to try again.", Toast.LENGTH_LONG, SubmitLinkActivity.this);
 				return;
 			}
 			final ImageView linkCaptchaView = (ImageView) findViewById(R.id.submit_link_captcha_image);
@@ -605,14 +600,14 @@ public class SubmitLinkActivity extends TabActivity {
 
        	// "Please wait"
     	case Constants.DIALOG_LOGGING_IN:
-    		pdialog = new ProgressDialog(mContext);
+    		pdialog = new ProgressDialog(this);
     		pdialog.setMessage("Logging in...");
     		pdialog.setIndeterminate(true);
     		pdialog.setCancelable(false);
     		dialog = pdialog;
     		break;
 		case Constants.DIALOG_SUBMITTING:
-			pdialog = new ProgressDialog(mContext);
+			pdialog = new ProgressDialog(this);
     		pdialog.setMessage("Submitting...");
     		pdialog.setIndeterminate(true);
     		pdialog.setCancelable(false);
@@ -648,15 +643,15 @@ public class SubmitLinkActivity extends TabActivity {
 		final EditText urlText = (EditText) findViewById(R.id.submit_link_url);
 		final EditText redditText = (EditText) findViewById(R.id.submit_link_reddit);
 		if (Constants.EMPTY_STRING.equals(titleText.getText())) {
-			Common.showErrorToast("Please provide a title.", Toast.LENGTH_LONG, mContext);
+			Common.showErrorToast("Please provide a title.", Toast.LENGTH_LONG, this);
 			return false;
 		}
 		if (Constants.EMPTY_STRING.equals(urlText.getText())) {
-			Common.showErrorToast("Please provide a URL.", Toast.LENGTH_LONG, mContext);
+			Common.showErrorToast("Please provide a URL.", Toast.LENGTH_LONG, this);
 			return false;
 		}
 		if (Constants.EMPTY_STRING.equals(redditText.getText())) {
-			Common.showErrorToast("Please provide a subreddit.", Toast.LENGTH_LONG, mContext);
+			Common.showErrorToast("Please provide a subreddit.", Toast.LENGTH_LONG, this);
 			return false;
 		}
 		return true;
@@ -665,11 +660,11 @@ public class SubmitLinkActivity extends TabActivity {
 		final EditText titleText = (EditText) findViewById(R.id.submit_text_title);
 		final EditText redditText = (EditText) findViewById(R.id.submit_text_reddit);
 		if (Constants.EMPTY_STRING.equals(titleText.getText())) {
-			Common.showErrorToast("Please provide a title.", Toast.LENGTH_LONG, mContext);
+			Common.showErrorToast("Please provide a title.", Toast.LENGTH_LONG, this);
 			return false;
 		}
 		if (Constants.EMPTY_STRING.equals(redditText.getText())) {
-			Common.showErrorToast("Please provide a subreddit.", Toast.LENGTH_LONG, mContext);
+			Common.showErrorToast("Please provide a subreddit.", Toast.LENGTH_LONG, this);
 			return false;
 		}
 		return true;
@@ -712,7 +707,7 @@ public class SubmitLinkActivity extends TabActivity {
         public boolean onMenuItemClick(MenuItem item) {
         	switch (mAction) {
         	case R.id.pick_subreddit_menu_id:
-        		Intent pickSubredditIntent = new Intent(mContext, PickSubredditActivity.class);
+        		Intent pickSubredditIntent = new Intent(getApplicationContext(), PickSubredditActivity.class);
         		pickSubredditIntent.putExtra(Constants.EXTRA_HIDE_FRONTPAGE_STRING, true);
         		startActivityForResult(pickSubredditIntent, Constants.ACTIVITY_PICK_SUBREDDIT);
         		break;

@@ -36,18 +36,15 @@ public class RedditPreferencesPage extends PreferenceActivity
         implements Preference.OnPreferenceChangeListener, 
         Preference.OnPreferenceClickListener {
 	
-	private Context mContext;
 	private PendingIntent mAlarmSender;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         
-        mContext = getApplicationContext();
-        
         // Create an IntentSender that will launch our service, to be scheduled
         // with the alarm manager.
-        mAlarmSender = PendingIntent.getService(mContext, 0, new Intent(mContext, EnvelopeService.class), 0);
+        mAlarmSender = PendingIntent.getService(this, 0, new Intent(getApplicationContext(), EnvelopeService.class), 0);
 
         
         // Load the XML preferences file
@@ -94,7 +91,7 @@ public class RedditPreferencesPage extends PreferenceActivity
     @Override
     protected void onResume() {
     	super.onResume();
-    	SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(mContext);
+    	SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(this);
     	setRequestedOrientation(RedditSettings.Rotation.valueOf(
         		prefs.getString(Constants.PREF_ROTATION, Constants.PREF_ROTATION_UNSPECIFIED)));
     }
@@ -127,7 +124,7 @@ public class RedditPreferencesPage extends PreferenceActivity
                 AlarmManager am = (AlarmManager)getSystemService(ALARM_SERVICE);
                 am.cancel(mAlarmSender);
                 // Tell the user about what we did.
-                Toast.makeText(mContext, R.string.mail_notification_unscheduled,
+                Toast.makeText(this, R.string.mail_notification_unscheduled,
                         Toast.LENGTH_LONG).show();
             } else {
             	// Enable the service preference
@@ -148,7 +145,7 @@ public class RedditPreferencesPage extends PreferenceActivity
                 AlarmManager am = (AlarmManager)getSystemService(ALARM_SERVICE);
                 am.cancel(mAlarmSender);
                 // Tell the user about what we did.
-                Toast.makeText(mContext, R.string.mail_notification_unscheduled,
+                Toast.makeText(this, R.string.mail_notification_unscheduled,
                         Toast.LENGTH_LONG).show();
         	} else {
         		long durationMillis;
@@ -169,7 +166,7 @@ public class RedditPreferencesPage extends PreferenceActivity
                 am.setRepeating(AlarmManager.ELAPSED_REALTIME_WAKEUP,
                                 firstTime, durationMillis, mAlarmSender);
                 // Tell the user about what we did.
-                Toast.makeText(mContext, "Reddit mail will be checked: " +
+                Toast.makeText(this, "Reddit mail will be checked: " +
                 		getVisualMailNotificationServiceName((String) objValue),
                         Toast.LENGTH_LONG).show();
         	}

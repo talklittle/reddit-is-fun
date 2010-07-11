@@ -84,9 +84,6 @@ import android.widget.Toast;
 public final class ThreadsListActivity extends ListActivity {
 
 	private static final String TAG = "ThreadsListActivity";
-	
-	private Context mContext;
-	
 	private final Pattern REDDIT_PATH_PATTERN = Pattern.compile(Constants.REDDIT_PATH_PATTERN_STRING);
 	
 	private final ObjectMapper om = new ObjectMapper();
@@ -136,9 +133,7 @@ public final class ThreadsListActivity extends ListActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         
-        mContext = getApplicationContext();
-        
-        Common.loadRedditPreferences(mContext, mSettings, mClient);
+        Common.loadRedditPreferences(getApplicationContext(), mSettings, mClient);
         setRequestedOrientation(mSettings.rotation);
         setTheme(mSettings.theme);
         requestWindowFeature(Window.FEATURE_PROGRESS);
@@ -165,18 +160,18 @@ public final class ThreadsListActivity extends ListActivity {
 		    if (mThreadsList == null) {
 	        	// Load previous view of threads
 		        if (mLastAfter != null) {
-		        	new MyDownloadThreadsTask(mContext, mClient, om, mSortByUrl, mSortByUrlExtra,
+		        	new MyDownloadThreadsTask(getApplicationContext(), mClient, om, mSortByUrl, mSortByUrlExtra,
 		        			subreddit, mLastAfter, null, mLastCount).execute();
 		        } else if (mLastBefore != null) {
-		        	new MyDownloadThreadsTask(mContext, mClient, om, mSortByUrl, mSortByUrlExtra,
+		        	new MyDownloadThreadsTask(getApplicationContext(), mClient, om, mSortByUrl, mSortByUrlExtra,
 		        			subreddit, null, mLastBefore, mLastCount).execute();
 		        } else {
-		        	new MyDownloadThreadsTask(mContext, mClient, om, mSortByUrl, mSortByUrlExtra,
+		        	new MyDownloadThreadsTask(getApplicationContext(), mClient, om, mSortByUrl, mSortByUrlExtra,
 		        			subreddit).execute();
 		        }
 		    } else {
 		    	// Orientation change. Use prior instance.
-		    	resetUI(new ThreadsListAdapter(mContext, mThreadsList));
+		    	resetUI(new ThreadsListAdapter(this, mThreadsList));
 		    	if (Constants.FRONTPAGE_STRING.equals(subreddit))
 		    		setTitle("reddit.com: what's new online!");
 		    	else
@@ -187,16 +182,16 @@ public final class ThreadsListActivity extends ListActivity {
         else if (getIntent().getData() != null) {
 	    	Matcher redditContextMatcher = REDDIT_PATH_PATTERN.matcher(getIntent().getData().getPath());
 			if (redditContextMatcher.matches()) {
-				new MyDownloadThreadsTask(mContext, mClient, om, mSortByUrl, mSortByUrlExtra,
+				new MyDownloadThreadsTask(getApplicationContext(), mClient, om, mSortByUrl, mSortByUrlExtra,
 						redditContextMatcher.group(1)).execute();
 			} else {
-				new MyDownloadThreadsTask(mContext, mClient, om, mSortByUrl, mSortByUrlExtra,
+				new MyDownloadThreadsTask(getApplicationContext(), mClient, om, mSortByUrl, mSortByUrlExtra,
 	           			mSettings.homepage).execute();
 			}
 		}
 		// No subreddit specified by Intent, so load the user's home reddit
 		else {
-        	new MyDownloadThreadsTask(mContext, mClient, om, mSortByUrl, mSortByUrlExtra,
+        	new MyDownloadThreadsTask(getApplicationContext(), mClient, om, mSortByUrl, mSortByUrlExtra,
            			mSettings.homepage).execute();
         }
     }
@@ -205,7 +200,7 @@ public final class ThreadsListActivity extends ListActivity {
     protected void onResume() {
     	super.onResume();
     	int previousTheme = mSettings.theme;
-    	Common.loadRedditPreferences(mContext, mSettings, mClient);
+    	Common.loadRedditPreferences(getApplicationContext(), mSettings, mClient);
     	setRequestedOrientation(mSettings.rotation);
     	if (mSettings.theme != previousTheme) {
     		setTheme(mSettings.theme);
@@ -216,7 +211,7 @@ public final class ThreadsListActivity extends ListActivity {
     	if (mThreadsAdapter != null) {
     		jumpToThread();
     	}
-    	new Common.PeekEnvelopeTask(mContext, mClient, mSettings.mailNotificationStyle).execute();
+    	new Common.PeekEnvelopeTask(this, mClient, mSettings.mailNotificationStyle).execute();
     }
     
     /**
@@ -237,7 +232,7 @@ public final class ThreadsListActivity extends ListActivity {
     @Override
     protected void onPause() {
     	super.onPause();
-    	Common.saveRedditPreferences(mContext, mSettings);
+    	Common.saveRedditPreferences(getApplicationContext(), mSettings);
     }
     
     @Override
@@ -262,7 +257,7 @@ public final class ThreadsListActivity extends ListActivity {
     		if (resultCode == Activity.RESULT_OK) {
     	    	Matcher redditContextMatcher = REDDIT_PATH_PATTERN.matcher(intent.getData().getPath());
     			if (redditContextMatcher.matches()) {
-    				new MyDownloadThreadsTask(mContext, mClient, om, mSortByUrl, mSortByUrlExtra,
+    				new MyDownloadThreadsTask(getApplicationContext(), mClient, om, mSortByUrl, mSortByUrlExtra,
     						redditContextMatcher.group(1)).execute();
     			}
     		}
@@ -280,13 +275,13 @@ public final class ThreadsListActivity extends ListActivity {
     				mSettings.setSubreddit(extras.getString(Constants.EXTRA_SUBREDDIT));
     			}
 				// Start up comments list with the new thread
-	    		CacheInfo.invalidateCachedThread(mContext);
-	    		Intent i = new Intent(mContext, CommentsListActivity.class);
+	    		CacheInfo.invalidateCachedThread(getApplicationContext());
+	    		Intent i = new Intent(getApplicationContext(), CommentsListActivity.class);
 				i.putExtras(intent.getExtras());
 				i.putExtra(Constants.EXTRA_NUM_COMMENTS, 0);
 				startActivity(i);
     		} else if (resultCode == Constants.RESULT_LOGIN_REQUIRED) {
-    			Common.showErrorToast("You must be logged in to make a submission.", Toast.LENGTH_LONG, mContext);
+    			Common.showErrorToast("You must be logged in to make a submission.", Toast.LENGTH_LONG, this);
     		}
     		break;
     	default:
@@ -367,7 +362,7 @@ public final class ThreadsListActivity extends ListActivity {
 	            String title = item.getTitle();
 	            SpannableString titleSS = new SpannableString(title);
 	            int titleLen = title.length();
-	            TextAppearanceSpan titleTAS = new TextAppearanceSpan(ThreadsListActivity.this, R.style.TextAppearance_14sp);
+	            TextAppearanceSpan titleTAS = new TextAppearanceSpan(getApplicationContext(), R.style.TextAppearance_14sp);
 	            titleSS.setSpan(titleTAS, 0, titleLen, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
 	            if (mSettings.theme == R.style.Reddit_Light) {
 	            	// FIXME: This doesn't work persistently, since "clicked" is not delivered to reddit.com
@@ -382,7 +377,7 @@ public final class ThreadsListActivity extends ListActivity {
 	            builder.append(titleSS);
 	            builder.append(" ");
 	            SpannableString domainSS = new SpannableString("("+item.getDomain()+")");
-	            TextAppearanceSpan domainTAS = new TextAppearanceSpan(ThreadsListActivity.this, R.style.TextAppearance_10sp);
+	            TextAppearanceSpan domainTAS = new TextAppearanceSpan(getApplicationContext(), R.style.TextAppearance_10sp);
 	            domainSS.setSpan(domainTAS, 0, item.getDomain().length()+2, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
 	            builder.append(domainSS);
 	            titleView.setText(builder);
@@ -554,7 +549,7 @@ public final class ThreadsListActivity extends ListActivity {
 	    	if (threadsAdapter == null) {
 	            // Reset the list to be empty.
 		    	mThreadsList = new ArrayList<ThingInfo>();
-				mThreadsAdapter = new ThreadsListAdapter(mContext, mThreadsList);
+				mThreadsAdapter = new ThreadsListAdapter(this, mThreadsList);
 	    	} else {
 	    		mThreadsAdapter = threadsAdapter;
 	    	}
@@ -660,7 +655,7 @@ public final class ThreadsListActivity extends ListActivity {
 	    		jumpToThread();
     		} else {
     			if (!isCancelled())
-    				Common.showErrorToast(mUserError, Toast.LENGTH_LONG, mContext);
+    				Common.showErrorToast(mUserError, Toast.LENGTH_LONG, ThreadsListActivity.this);
     		}
     	}
     	
@@ -686,7 +681,7 @@ public final class ThreadsListActivity extends ListActivity {
     	
     	@Override
     	public String doInBackground(Void... v) {
-    		return Common.doLogin(mUsername, mPassword, mSettings, mClient, mContext);
+    		return Common.doLogin(mUsername, mPassword, mSettings, mClient, getApplicationContext());
         }
     	
     	@Override
@@ -698,14 +693,14 @@ public final class ThreadsListActivity extends ListActivity {
     	protected void onPostExecute(String errorMessage) {
     		dismissDialog(Constants.DIALOG_LOGGING_IN);
     		if (errorMessage == null) {
-    			Toast.makeText(mContext, "Logged in as "+mUsername, Toast.LENGTH_SHORT).show();
+    			Toast.makeText(ThreadsListActivity.this, "Logged in as "+mUsername, Toast.LENGTH_SHORT).show();
     			// Check mail
-    			new Common.PeekEnvelopeTask(mContext, mClient, mSettings.mailNotificationStyle).execute();
+    			new Common.PeekEnvelopeTask(getApplicationContext(), mClient, mSettings.mailNotificationStyle).execute();
     			// Refresh the threads list
-    			new MyDownloadThreadsTask(mContext, mClient, om, mSortByUrl, mSortByUrlExtra,
+    			new MyDownloadThreadsTask(getApplicationContext(), mClient, om, mSortByUrl, mSortByUrlExtra,
             			mSettings.subreddit).execute();
         	} else {
-            	Common.showErrorToast(errorMessage, Toast.LENGTH_LONG, mContext);
+            	Common.showErrorToast(errorMessage, Toast.LENGTH_LONG, ThreadsListActivity.this);
     		}
     	}
     }
@@ -745,7 +740,7 @@ public final class ThreadsListActivity extends ListActivity {
         		String modhash = Common.doUpdateModhash(mClient);
         		if (modhash == null) {
         			// doUpdateModhash should have given an error about credentials
-        			Common.doLogout(mSettings, mClient, mContext);
+        			Common.doLogout(mSettings, mClient, getApplicationContext());
         			if (Constants.LOGGING) Log.e(TAG, "Vote failed because doUpdateModhash() failed");
         			return false;
         		}
@@ -795,7 +790,7 @@ public final class ThreadsListActivity extends ListActivity {
     	@Override
     	public void onPreExecute() {
     		if (!mSettings.loggedIn) {
-        		Common.showErrorToast("You must be logged in to vote.", Toast.LENGTH_LONG, mContext);
+        		Common.showErrorToast("You must be logged in to vote.", Toast.LENGTH_LONG, ThreadsListActivity.this);
         		cancel(true);
         		return;
         	}
@@ -849,14 +844,14 @@ public final class ThreadsListActivity extends ListActivity {
     	@Override
     	public void onPostExecute(Boolean success) {
     		if (success) {
-    			CacheInfo.invalidateCachedSubreddit(mContext);
+    			CacheInfo.invalidateCachedSubreddit(getApplicationContext());
     		} else {
     			// Vote failed. Undo the score.
             	_mTargetThingInfo.setLikes(_mPreviousLikes);
         		_mTargetThingInfo.setScore(_mPreviousScore);
         		mThreadsAdapter.notifyDataSetChanged();
         		
-    			Common.showErrorToast(_mUserError, Toast.LENGTH_LONG, mContext);
+    			Common.showErrorToast(_mUserError, Toast.LENGTH_LONG, ThreadsListActivity.this);
     		}
     	}
     }
@@ -923,7 +918,7 @@ public final class ThreadsListActivity extends ListActivity {
 			return true;
 			
 		case Constants.OPEN_COMMENTS_CONTEXT_ITEM:
-			Intent i = new Intent(mContext, CommentsListActivity.class);
+			Intent i = new Intent(getApplicationContext(), CommentsListActivity.class);
 			i.setData(Util.createThreadUri(_item));
 			i.putExtra(Constants.EXTRA_SUBREDDIT, _item.getSubreddit());
 			i.putExtra(Constants.EXTRA_TITLE, _item.getTitle());
@@ -932,11 +927,11 @@ public final class ThreadsListActivity extends ListActivity {
 			return true;
 		
 		case Constants.SAVE_CONTEXT_ITEM:
-			new SaveTask(true, _item, mSettings, mContext, mThreadsAdapter).execute();
+			new SaveTask(true, _item, mSettings, this, mThreadsAdapter).execute();
 			return true;
 			
 		case Constants.UNSAVE_CONTEXT_ITEM:
-			new SaveTask(false, _item, mSettings, mContext, mThreadsAdapter).execute();
+			new SaveTask(false, _item, mSettings, this, mThreadsAdapter).execute();
 			return true;
 			
 		default:
@@ -997,26 +992,26 @@ public final class ThreadsListActivity extends ListActivity {
         
         switch (item.getItemId()) {
         case R.id.pick_subreddit_menu_id:
-    		Intent pickSubredditIntent = new Intent(mContext, PickSubredditActivity.class);
+    		Intent pickSubredditIntent = new Intent(getApplicationContext(), PickSubredditActivity.class);
     		startActivityForResult(pickSubredditIntent, Constants.ACTIVITY_PICK_SUBREDDIT);
     		break;
     	case R.id.login_logout_menu_id:
         	if (mSettings.loggedIn) {
-        		Common.doLogout(mSettings, mClient, mContext);
-        		Toast.makeText(mContext, "You have been logged out.", Toast.LENGTH_SHORT).show();
-        		new MyDownloadThreadsTask(mContext, mClient, om, mSortByUrl, mSortByUrlExtra,
+        		Common.doLogout(mSettings, mClient, getApplicationContext());
+        		Toast.makeText(this, "You have been logged out.", Toast.LENGTH_SHORT).show();
+        		new MyDownloadThreadsTask(getApplicationContext(), mClient, om, mSortByUrl, mSortByUrlExtra,
             			mSettings.subreddit).execute();
         	} else {
         		showDialog(Constants.DIALOG_LOGIN);
         	}
     		break;
     	case R.id.refresh_menu_id:
-    		CacheInfo.invalidateCachedSubreddit(mContext);
-    		new MyDownloadThreadsTask(mContext, mClient, om, mSortByUrl, mSortByUrlExtra,
+    		CacheInfo.invalidateCachedSubreddit(getApplicationContext());
+    		new MyDownloadThreadsTask(getApplicationContext(), mClient, om, mSortByUrl, mSortByUrlExtra,
         			mSettings.subreddit).execute();
     		break;
     	case R.id.submit_link_menu_id:
-    		Intent submitLinkIntent = new Intent(mContext, SubmitLinkActivity.class);
+    		Intent submitLinkIntent = new Intent(getApplicationContext(), SubmitLinkActivity.class);
     		submitLinkIntent.setData(Util.createSubmitUri(mSettings.subreddit));
     		startActivityForResult(submitLinkIntent, Constants.ACTIVITY_SUBMIT_LINK);
     		break;
@@ -1043,15 +1038,15 @@ public final class ThreadsListActivity extends ListActivity {
     		Common.updateListDrawables(this, mSettings.theme);
     		break;
         case R.id.inbox_menu_id:
-        	Intent inboxIntent = new Intent(mContext, InboxActivity.class);
+        	Intent inboxIntent = new Intent(getApplicationContext(), InboxActivity.class);
         	startActivity(inboxIntent);
         	break;
 //        case R.id.user_profile_menu_id:
-//        	Intent profileIntent = new Intent(mContext, UserActivity.class);
+//        	Intent profileIntent = new Intent(getApplicationContext(), UserActivity.class);
 //        	startActivity(profileIntent);
 //        	break;
     	case R.id.preferences_menu_id:
-            Intent prefsIntent = new Intent(mContext, RedditPreferencesPage.class);
+            Intent prefsIntent = new Intent(getApplicationContext(), RedditPreferencesPage.class);
             startActivity(prefsIntent);
             break;
 
@@ -1080,13 +1075,13 @@ public final class ThreadsListActivity extends ListActivity {
     		break;
     		
     	case Constants.DIALOG_THING_CLICK:
-    		inflater = (LayoutInflater) getSystemService(Context.LAYOUT_INFLATER_SERVICE);
-    		builder = new AlertDialog.Builder(mContext);
+    		inflater = (LayoutInflater)this.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
+    		builder = new AlertDialog.Builder(this);
     		dialog = builder.setView(inflater.inflate(R.layout.thread_click_dialog, null)).create();
     		break;
     		
     	case Constants.DIALOG_SORT_BY:
-    		builder = new AlertDialog.Builder(mContext);
+    		builder = new AlertDialog.Builder(this);
     		builder.setTitle("Sort by:");
     		builder.setSingleChoiceItems(Constants.ThreadsSort.SORT_BY_CHOICES, 0, new DialogInterface.OnClickListener() {
     			public void onClick(DialogInterface dialog, int item) {
@@ -1095,7 +1090,7 @@ public final class ThreadsListActivity extends ListActivity {
     				if (Constants.ThreadsSort.SORT_BY_HOT.equals(itemString)) {
     					mSortByUrl = Constants.ThreadsSort.SORT_BY_HOT_URL;
     					mSortByUrlExtra = Constants.EMPTY_STRING;
-    					new MyDownloadThreadsTask(mContext, mClient, om, mSortByUrl, mSortByUrlExtra,
+    					new MyDownloadThreadsTask(getApplicationContext(), mClient, om, mSortByUrl, mSortByUrlExtra,
     	            			mSettings.subreddit).execute();
         			} else if (Constants.ThreadsSort.SORT_BY_NEW.equals(itemString)) {
     					showDialog(Constants.DIALOG_SORT_BY_NEW);
@@ -1109,7 +1104,7 @@ public final class ThreadsListActivity extends ListActivity {
     		dialog = builder.create();
     		break;
     	case Constants.DIALOG_SORT_BY_NEW:
-    		builder = new AlertDialog.Builder(mContext);
+    		builder = new AlertDialog.Builder(this);
     		builder.setTitle("what's new");
     		builder.setSingleChoiceItems(Constants.ThreadsSort.SORT_BY_NEW_CHOICES, 0, new DialogInterface.OnClickListener() {
     			public void onClick(DialogInterface dialog, int item) {
@@ -1120,14 +1115,14 @@ public final class ThreadsListActivity extends ListActivity {
     					mSortByUrlExtra = Constants.ThreadsSort.SORT_BY_NEW_NEW_URL;
     				else if (Constants.ThreadsSort.SORT_BY_NEW_RISING.equals(itemString))
     					mSortByUrlExtra = Constants.ThreadsSort.SORT_BY_NEW_RISING_URL;
-    				new MyDownloadThreadsTask(mContext, mClient, om, mSortByUrl, mSortByUrlExtra,
+    				new MyDownloadThreadsTask(getApplicationContext(), mClient, om, mSortByUrl, mSortByUrlExtra,
                 			mSettings.subreddit).execute();
     			}
     		});
     		dialog = builder.create();
     		break;
     	case Constants.DIALOG_SORT_BY_CONTROVERSIAL:
-    		builder = new AlertDialog.Builder(mContext);
+    		builder = new AlertDialog.Builder(this);
     		builder.setTitle("most controversial");
     		builder.setSingleChoiceItems(Constants.ThreadsSort.SORT_BY_CONTROVERSIAL_CHOICES, 0, new DialogInterface.OnClickListener() {
     			public void onClick(DialogInterface dialog, int item) {
@@ -1146,14 +1141,14 @@ public final class ThreadsListActivity extends ListActivity {
     					mSortByUrlExtra = Constants.ThreadsSort.SORT_BY_CONTROVERSIAL_YEAR_URL;
     				else if (Constants.ThreadsSort.SORT_BY_CONTROVERSIAL_ALL.equals(itemString))
     					mSortByUrlExtra = Constants.ThreadsSort.SORT_BY_CONTROVERSIAL_ALL_URL;
-    				new MyDownloadThreadsTask(mContext, mClient, om, mSortByUrl, mSortByUrlExtra,
+    				new MyDownloadThreadsTask(getApplicationContext(), mClient, om, mSortByUrl, mSortByUrlExtra,
                 			mSettings.subreddit).execute();
     			}
     		});
     		dialog = builder.create();
     		break;
     	case Constants.DIALOG_SORT_BY_TOP:
-    		builder = new AlertDialog.Builder(mContext);
+    		builder = new AlertDialog.Builder(this);
     		builder.setTitle("top scoring");
     		builder.setSingleChoiceItems(Constants.ThreadsSort.SORT_BY_TOP_CHOICES, 0, new DialogInterface.OnClickListener() {
     			public void onClick(DialogInterface dialog, int item) {
@@ -1172,7 +1167,7 @@ public final class ThreadsListActivity extends ListActivity {
     					mSortByUrlExtra = Constants.ThreadsSort.SORT_BY_TOP_YEAR_URL;
     				else if (Constants.ThreadsSort.SORT_BY_TOP_ALL.equals(itemString))
     					mSortByUrlExtra = Constants.ThreadsSort.SORT_BY_TOP_ALL_URL;
-    				new MyDownloadThreadsTask(mContext, mClient, om, mSortByUrl, mSortByUrlExtra,
+    				new MyDownloadThreadsTask(getApplicationContext(), mClient, om, mSortByUrl, mSortByUrlExtra,
                 			mSettings.subreddit).execute();
     			}
     		});
@@ -1181,7 +1176,7 @@ public final class ThreadsListActivity extends ListActivity {
 
     	// "Please wait"
     	case Constants.DIALOG_LOGGING_IN:
-    		pdialog = new ProgressDialog(mContext);
+    		pdialog = new ProgressDialog(this);
     		pdialog.setMessage("Logging in...");
     		pdialog.setIndeterminate(true);
     		pdialog.setCancelable(false);
@@ -1285,8 +1280,8 @@ public final class ThreadsListActivity extends ListActivity {
     			public void onClick(View v) {
     				dismissDialog(Constants.DIALOG_THING_CLICK);
     				// Launch an Intent for CommentsListActivity
-    				CacheInfo.invalidateCachedThread(mContext);
-    				Intent i = new Intent(mContext, CommentsListActivity.class);
+    				CacheInfo.invalidateCachedThread(getApplicationContext());
+    				Intent i = new Intent(getApplicationContext(), CommentsListActivity.class);
     				i.setData(Util.createThreadUri(mVoteTargetThingInfo));
     				i.putExtra(Constants.EXTRA_SUBREDDIT, mVoteTargetThingInfo.getSubreddit());
     				i.putExtra(Constants.EXTRA_TITLE, mVoteTargetThingInfo.getTitle());
@@ -1305,13 +1300,13 @@ public final class ThreadsListActivity extends ListActivity {
     
     private final OnClickListener downloadAfterOnClickListener = new OnClickListener() {
 		public void onClick(View v) {
-			new MyDownloadThreadsTask(mContext, mClient, om, mSortByUrl, mSortByUrlExtra,
+			new MyDownloadThreadsTask(getApplicationContext(), mClient, om, mSortByUrl, mSortByUrlExtra,
         			mSettings.subreddit, mAfter, null, mCount).execute();
 		}
 	};
 	private final OnClickListener downloadBeforeOnClickListener = new OnClickListener() {
 		public void onClick(View v) {
-			new MyDownloadThreadsTask(mContext, mClient, om, mSortByUrl, mSortByUrlExtra,
+			new MyDownloadThreadsTask(getApplicationContext(), mClient, om, mSortByUrl, mSortByUrlExtra,
         			mSettings.subreddit, null, mBefore, mCount).execute();
 		}
 	};
