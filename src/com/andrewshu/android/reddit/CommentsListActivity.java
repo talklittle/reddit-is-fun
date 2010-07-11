@@ -1734,6 +1734,14 @@ public class CommentsListActivity extends ListActivity
     		mReplyTargetName = mVoteTargetThing.getName();
     		showDialog(Constants.DIALOG_THING_CLICK);
     		break;
+    	case R.id.op_subreddit_menu_id:
+		Common.loadRedditPreferences(this, mSettings, mClient);
+		Bundle extras = new Bundle();
+		extras.putString(Constants.EXTRA_SUBREDDIT, mSettings.subreddit.toString());
+		Intent mIntent = new Intent(getApplicationContext(), RedditIsFun.class);
+		mIntent.putExtras(extras);
+		startActivity(mIntent);
+		break;
     	case R.id.login_logout_menu_id:
         	if (mSettings.loggedIn) {
         		Common.doLogout(mSettings, mClient, getApplicationContext());

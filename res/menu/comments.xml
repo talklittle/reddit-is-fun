@@ -22,6 +22,8 @@
     <group android:id="@+id/MAIN_MENU">
         <item android:id="@+id/op_menu_id"
             android:title="@string/op" />
+        <item android:id="@+id/op_subreddit_menu_id"
+	    android:title="@string/subreddit" />
         <item android:id="@+id/login_logout_menu_id" />
         <item android:id="@+id/refresh_menu_id"
             android:title="@string/refresh" 
