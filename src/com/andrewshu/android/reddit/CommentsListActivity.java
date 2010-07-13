@@ -834,7 +834,7 @@ public class CommentsListActivity extends ListActivity
 	        	InputStream in = null;
 	    		boolean currentlyUsingCache = false;
 	    		
-	        	if (Constants.USE_CACHE) {
+	        	if (Constants.USE_COMMENTS_CACHE) {
 	    			try {
 		    			if (CacheInfo.checkFreshThreadCache(getApplicationContext())
 		    					&& url.equals(CacheInfo.getCachedThreadUrl(getApplicationContext()))) {
@@ -861,7 +861,7 @@ public class CommentsListActivity extends ListActivity
 	            	entity = response.getEntity();
 	            	in = entity.getContent();
 	            	
-	            	if (Constants.USE_CACHE) {
+	            	if (Constants.USE_COMMENTS_CACHE) {
 	                	in = CacheInfo.writeThenRead(getApplicationContext(), in, Constants.FILENAME_THREAD_CACHE);
 	                	try {
 	                		CacheInfo.setCachedThreadUrl(getApplicationContext(), url);

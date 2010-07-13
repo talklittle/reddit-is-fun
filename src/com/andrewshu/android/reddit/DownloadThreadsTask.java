@@ -112,7 +112,7 @@ public abstract class DownloadThreadsTask extends AsyncTask<Void, Long, Boolean>
     		InputStream in = null;
     		boolean currentlyUsingCache = false;
     		
-    		if (Constants.USE_CACHE) {
+    		if (Constants.USE_THREADS_CACHE) {
     			try {
 	    			if (CacheInfo.checkFreshSubredditCache(mContext)
 	    					&& url.equals(CacheInfo.getCachedSubredditUrl(mContext))) {
@@ -146,7 +146,7 @@ public abstract class DownloadThreadsTask extends AsyncTask<Void, Long, Boolean>
             	entity = response.getEntity();
             	in = entity.getContent();
             	
-            	if (Constants.USE_CACHE) {
+            	if (Constants.USE_THREADS_CACHE) {
                 	in = CacheInfo.writeThenRead(mContext, in, Constants.FILENAME_SUBREDDIT_CACHE);
                 	try {
                 		CacheInfo.setCachedSubredditUrl(mContext, url);

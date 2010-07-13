@@ -25,7 +25,9 @@ public class Constants {
 	
 	static final boolean LOGGING = true;
 	
-	static final boolean USE_CACHE = false;
+	static final boolean USE_COMMENTS_CACHE = false;
+	static final boolean USE_THREADS_CACHE = false;
+	static final boolean USE_SUBREDDITS_CACHE = true;
 	
 	// File containing the serialized variables of last subreddit viewed
 	static final String FILENAME_SUBREDDIT_CACHE = "subreddit.dat";

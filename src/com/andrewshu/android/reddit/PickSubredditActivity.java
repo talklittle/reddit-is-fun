@@ -239,7 +239,7 @@ public final class PickSubredditActivity extends ListActivity {
     		HttpEntity entity = null;
             try {
             	
-            	if (Constants.USE_CACHE) {
+            	if (Constants.USE_SUBREDDITS_CACHE) {
             		if (CacheInfo.checkFreshSubredditListCache(getApplicationContext())) {
             			reddits = CacheInfo.getCachedSubredditList(getApplicationContext());
             			if (Constants.LOGGING) Log.d(TAG, "cached subreddit list:" + reddits);
@@ -275,7 +275,7 @@ public final class PickSubredditActivity extends ListActivity {
 	                
 	                if (Constants.LOGGING) Log.d(TAG, "new subreddit list size: " + reddits.size());
 	                
-	                if (Constants.USE_CACHE) {
+	                if (Constants.USE_SUBREDDITS_CACHE) {
 	                	try {
 	                		CacheInfo.setCachedSubredditList(getApplicationContext(), reddits);
 	                		if (Constants.LOGGING) Log.d(TAG, "wrote subreddit list to cache:" + reddits);
