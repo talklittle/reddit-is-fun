@@ -280,7 +280,7 @@ public final class PickSubredditActivity extends ListActivity {
 	                		CacheInfo.setCachedSubredditList(getApplicationContext(), reddits);
 	                		if (Constants.LOGGING) Log.d(TAG, "wrote subreddit list to cache:" + reddits);
 	                	} catch (IOException e) {
-	                		if (Constants.LOGGING) Log.e(TAG, "error on setCachedSubredditList: " + e.getMessage());
+	                		if (Constants.LOGGING) Log.e(TAG, "error on setCachedSubredditList", e);
 	                	}
 	                }
             	}
@@ -288,7 +288,7 @@ public final class PickSubredditActivity extends ListActivity {
                 return reddits;
                 
             } catch (Exception e) {
-            	if (Constants.LOGGING) Log.e(TAG, "failed:" + e.getMessage());
+            	if (Constants.LOGGING) Log.e(TAG, "failed", e);
                 if (entity != null) {
 	                try {
 	                	entity.consumeContent();

@@ -308,10 +308,10 @@ public class Common {
     			try {
     				entity.consumeContent();
     			} catch (Exception e2) {
-    				if (Constants.LOGGING) Log.e(TAG, "entity.consumeContent():" + e.getMessage());
+    				if (Constants.LOGGING) Log.e(TAG, "entity.consumeContent()", e);
     			}
     		}
-    		if (Constants.LOGGING) Log.e(TAG, "doLogin():" + e.getMessage());
+    		if (Constants.LOGGING) Log.e(TAG, "doLogin()", e);
         }
     	settings.setLoggedIn(false);
         return userError;
@@ -384,10 +384,10 @@ public class Common {
     			try {
     				entity.consumeContent();
     			} catch (Exception e2) {
-    				if (Constants.LOGGING) Log.e(TAG, "entity.consumeContent():" + e.getMessage());
+    				if (Constants.LOGGING) Log.e(TAG, "entity.consumeContent()", e);
     			}
     		}
-    		if (Constants.LOGGING) Log.e(TAG, "doUpdateModhash():" + e.getMessage());
+    		if (Constants.LOGGING) Log.e(TAG, "doUpdateModhash()", e);
     		return null;
     	}
     }
@@ -406,7 +406,7 @@ public class Common {
     		if (Constants.LOGGING) Common.logDLong(TAG, line);
         	in.close();
     	} catch (IOException e) {
-    		if (Constants.LOGGING) Log.e(TAG, "IOException:" + e.getMessage());
+    		if (Constants.LOGGING) Log.e(TAG, "IOException", e);
     		return "Error reading retrieved data.";
     	}
     	
@@ -450,7 +450,7 @@ public class Common {
     		if (Constants.LOGGING) Common.logDLong(TAG, line);
         	in.close();
     	} catch (IOException e) {
-    		if (Constants.LOGGING) Log.e(TAG, "IOException:" + e.getMessage());
+    		if (Constants.LOGGING) Log.e(TAG, "IOException", e);
     		throw new Exception("Error reading retrieved data.");
     	}
     	
@@ -530,7 +530,7 @@ public class Common {
 	            return count;
 	            
 	        } catch (Exception e) {
-	        	if (Constants.LOGGING) Log.e(TAG, "failed:" + e.getMessage());
+	        	if (Constants.LOGGING) Log.e(TAG, "failed", e);
 	            if (entity != null) {
 	            	try {
 	            		entity.consumeContent();

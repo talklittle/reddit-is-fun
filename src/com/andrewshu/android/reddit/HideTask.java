@@ -129,10 +129,10 @@ class HideTask extends AsyncTask<Void, Void, Boolean> {
     			try {
     				entity.consumeContent();
     			} catch (Exception e2) {
-    				if (Constants.LOGGING) Log.e(TAG, e2.getMessage());
+    				if (Constants.LOGGING) Log.e(TAG, "entity.consumeContent()", e2);
     			}
     		}
-    		if (Constants.LOGGING) Log.e(TAG, e.getMessage());
+    		if (Constants.LOGGING) Log.e(TAG, "HideTask", e);
     	}
 		
     	return false;

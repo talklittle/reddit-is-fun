@@ -122,7 +122,7 @@ public abstract class DownloadThreadsTask extends AsyncTask<Void, Long, Boolean>
 	    				if (Constants.LOGGING) Log.d(TAG, "Using cached subreddit JSON, length=" + mContentLength);
 	    			}
     			} catch (Exception cacheEx) {
-    				if (Constants.LOGGING) Log.w(TAG, "skip cache because of: "+cacheEx.getMessage());
+    				if (Constants.LOGGING) Log.w(TAG, "skip cache", cacheEx);
     			}
     		}
     		
@@ -133,7 +133,7 @@ public abstract class DownloadThreadsTask extends AsyncTask<Void, Long, Boolean>
     				request = new HttpGet(url);
     			} catch (IllegalArgumentException e) {
     				mUserError = "Invalid subreddit.";
-                	if (Constants.LOGGING) Log.e(TAG, "IllegalArgumentException:" + e.getMessage());
+                	if (Constants.LOGGING) Log.e(TAG, "IllegalArgumentException", e);
                 	return false;
     			}
             	HttpResponse response = mClient.execute(request);
@@ -151,7 +151,7 @@ public abstract class DownloadThreadsTask extends AsyncTask<Void, Long, Boolean>
                 	try {
                 		CacheInfo.setCachedSubredditUrl(mContext, url);
                 	} catch (IOException e) {
-                		if (Constants.LOGGING) Log.e(TAG, "error on setCachedSubreddit: " + e.getMessage());
+                		if (Constants.LOGGING) Log.e(TAG, "error on setCachedSubreddit", e);
                 	}
             	}
     		}
@@ -174,21 +174,21 @@ public abstract class DownloadThreadsTask extends AsyncTask<Void, Long, Boolean>
             	
             } catch (IllegalStateException e) {
             	mUserError = "Invalid subreddit.";
-            	if (Constants.LOGGING) Log.e(TAG, "IllegalStateException:" + e.getMessage());
+            	if (Constants.LOGGING) Log.e(TAG, "IllegalStateException", e);
             } catch (Exception e) {
-            	if (Constants.LOGGING) Log.e(TAG, "Exception:" + e.getMessage());
+            	if (Constants.LOGGING) Log.e(TAG, "Exception", e);
             } finally {
             	pin.close();
             	in.close();
             }
         } catch (Exception e) {
-        	if (Constants.LOGGING) Log.e(TAG, "DownloadThreadsTask:" + e.getMessage());
+        	if (Constants.LOGGING) Log.e(TAG, "DownloadThreadsTask", e);
         } finally {
     		if (entity != null) {
     			try {
     				entity.consumeContent();
     			} catch (Exception e2) {
-    				if (Constants.LOGGING) Log.e(TAG, "entity.consumeContent():" + e2.getMessage());
+    				if (Constants.LOGGING) Log.e(TAG, "entity.consumeContent()", e2);
     			}
     		}
         }
@@ -230,7 +230,7 @@ public abstract class DownloadThreadsTask extends AsyncTask<Void, Long, Boolean>
 				}
 			}
 		} catch (Exception ex) {
-			if (Constants.LOGGING) Log.e(TAG, "parseSubredditJSON:" + ex.getMessage());
+			if (Constants.LOGGING) Log.e(TAG, "parseSubredditJSON", ex);
 		}
 	}
 	

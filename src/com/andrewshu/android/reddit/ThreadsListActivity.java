@@ -773,14 +773,14 @@ public final class ThreadsListActivity extends ListActivity {
             	return true;
             	
         	} catch (Exception e) {
-        		if (Constants.LOGGING) Log.e(TAG, "VoteTask:" + e.getMessage());
+        		if (Constants.LOGGING) Log.e(TAG, "VoteTask", e);
         		_mUserError = e.getMessage();
         	} finally {
         		if (entity != null) {
         			try {
         				entity.consumeContent();
         			} catch (Exception e2) {
-        				if (Constants.LOGGING) Log.e(TAG, "entity.consumeContent:" + e2.getMessage());
+        				if (Constants.LOGGING) Log.e(TAG, "entity.consumeContent", e2);
         			}
         		}
         	}

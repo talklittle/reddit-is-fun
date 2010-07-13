@@ -111,7 +111,7 @@ public class CacheInfo implements Serializable {
     	try {
     		return getCacheInfo(context).subredditUrl;
     	} catch (Exception e) {
-    		if (Constants.LOGGING) Log.e(TAG, "error w/ getCacheInfo:" + e.getMessage());
+    		if (Constants.LOGGING) Log.e(TAG, "error w/ getCacheInfo", e);
     		return null;
     	}
     }
@@ -120,7 +120,7 @@ public class CacheInfo implements Serializable {
     	try {
     		return getCacheInfo(context).subredditTime;
     	} catch (Exception e) {
-    		if (Constants.LOGGING) Log.e(TAG, "error w/ getCacheInfo:" + e.getMessage());
+    		if (Constants.LOGGING) Log.e(TAG, "error w/ getCacheInfo", e);
     		return 0;
     	}
     }
@@ -129,7 +129,7 @@ public class CacheInfo implements Serializable {
     	try {
     		return getCacheInfo(context).threadUrl;
     	} catch (Exception e) {
-    		if (Constants.LOGGING) Log.e(TAG, "error w/ getCacheInfo:" + e.getMessage());
+    		if (Constants.LOGGING) Log.e(TAG, "error w/ getCacheInfo", e);
     		return null;
     	}
     }
@@ -138,7 +138,7 @@ public class CacheInfo implements Serializable {
     	try {
     		return getCacheInfo(context).threadTime;
     	} catch (Exception e) {
-    		if (Constants.LOGGING) Log.e(TAG, "error w/ getCacheInfo:" + e.getMessage());
+    		if (Constants.LOGGING) Log.e(TAG, "error w/ getCacheInfo", e);
     		return 0;
     	}
     }
@@ -147,7 +147,7 @@ public class CacheInfo implements Serializable {
     	try {
     		return getCacheInfo(context).subredditList;
     	} catch (Exception e) {
-    		if (Constants.LOGGING) Log.e(TAG, "error w/ getCacheInfo:" + e.getMessage());
+    		if (Constants.LOGGING) Log.e(TAG, "error w/ getCacheInfo", e);
     		return null;
     	}
     }
@@ -156,7 +156,7 @@ public class CacheInfo implements Serializable {
     	try {
     		return getCacheInfo(context).subredditListTime;
     	} catch (Exception e) {
-    		if (Constants.LOGGING) Log.e(TAG, "error w/ getCacheInfo:" + e.getMessage());
+    		if (Constants.LOGGING) Log.e(TAG, "error w/ getCacheInfo", e);
     		return 0;
     	}
     }
@@ -174,7 +174,7 @@ public class CacheInfo implements Serializable {
 		    	fos.close();
     		}
     	} catch (IOException e) {
-    		if (Constants.LOGGING) Log.e(TAG, "invalidateAllCaches: Error writing CacheInfo:" + e.getMessage());
+    		if (Constants.LOGGING) Log.e(TAG, "invalidateAllCaches: Error writing CacheInfo", e);
     	}
     }
     
@@ -186,7 +186,7 @@ public class CacheInfo implements Serializable {
     	try {
     		ci = getCacheInfo(context);
     	} catch (Exception e) {
-    		if (Constants.LOGGING) Log.e(TAG, "error w/ getCacheInfo:" + e.getMessage());
+    		if (Constants.LOGGING) Log.e(TAG, "error w/ getCacheInfo", e);
     	}
 		if (ci == null)
 			ci = new CacheInfo();
@@ -202,7 +202,7 @@ public class CacheInfo implements Serializable {
 		    	fos.close();
     		}
     	} catch (IOException e) {
-    		if (Constants.LOGGING) Log.e(TAG, "invalidateCachedSubreddit: Error writing CacheInfo:" + e.getMessage());
+    		if (Constants.LOGGING) Log.e(TAG, "invalidateCachedSubreddit: Error writing CacheInfo", e);
     	}
     }
     
@@ -214,7 +214,7 @@ public class CacheInfo implements Serializable {
     	try {
     		ci = getCacheInfo(context);
     	} catch (Exception e) {
-    		if (Constants.LOGGING) Log.e(TAG, "error w/ getCacheInfo:" + e.getMessage());
+    		if (Constants.LOGGING) Log.e(TAG, "error w/ getCacheInfo", e);
     	}
 		if (ci == null)
 			ci = new CacheInfo();
@@ -230,7 +230,7 @@ public class CacheInfo implements Serializable {
 		    	fos.close();
     		}
     	} catch (IOException e) {
-    		if (Constants.LOGGING) Log.e(TAG, "invalidateCachedThreadId: Error writing CacheInfo:" + e.getMessage());
+    		if (Constants.LOGGING) Log.e(TAG, "invalidateCachedThreadId: Error writing CacheInfo", e);
     	}
     }
     
@@ -242,7 +242,7 @@ public class CacheInfo implements Serializable {
     	try {
     		ci = getCacheInfo(context);
     	} catch (Exception e) {
-    		if (Constants.LOGGING) Log.e(TAG, "error w/ getCacheInfo:" + e.getMessage());
+    		if (Constants.LOGGING) Log.e(TAG, "error w/ getCacheInfo", e);
     	}
 		if (ci == null)
 			ci = new CacheInfo();
@@ -266,7 +266,7 @@ public class CacheInfo implements Serializable {
     	try {
     		ci = getCacheInfo(context);
     	} catch (Exception e) {
-    		if (Constants.LOGGING) Log.e(TAG, "error w/ getCacheInfo:" + e.getMessage());
+    		if (Constants.LOGGING) Log.e(TAG, "error w/ getCacheInfo", e);
     	}
 		if (ci == null)
 			ci = new CacheInfo();
@@ -290,7 +290,7 @@ public class CacheInfo implements Serializable {
     	try {
     		ci = getCacheInfo(context);
     	} catch (Exception e) {
-    		if (Constants.LOGGING) Log.e(TAG, "error w/ getCacheInfo:" + e.getMessage());
+    		if (Constants.LOGGING) Log.e(TAG, "error w/ getCacheInfo", e);
     	}
 		if (ci == null)
 			ci = new CacheInfo();
