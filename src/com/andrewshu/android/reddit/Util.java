@@ -45,7 +45,7 @@ public class Util {
 		long systime = System.currentTimeMillis() / 1000;
 		long diff = systime - utcTimeSeconds;
 		if (diff <= 0)
-			return "very recentl";
+			return "very recently";
 		else if (diff < 60) {
 			if (diff == 1)
 				return "1 second ago";
