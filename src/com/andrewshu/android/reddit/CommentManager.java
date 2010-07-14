@@ -36,11 +36,16 @@ import android.widget.TextView;
 
 public class CommentManager {
     
+	/**
+	 * @param bodyHtml escaped HTML (like in reddit Thing's body_html)
+	 * @return
+	 */
     public CharSequence createSpanned(String bodyHtml) {
     	try {
     		bodyHtml = StringEscapeUtils.unescapeHtml(bodyHtml);
-    		// fromHtml doesn't support all HTML tags
-    		bodyHtml = bodyHtml.replaceAll("<code>", "<tt>").replaceAll("</code>", "</tt>");
+    		// fromHtml doesn't support all HTML tags. convert <code> and <pre>
+    		bodyHtml = Util.convertHtmlTags(bodyHtml);
+    		
     		Spanned body = Html.fromHtml(bodyHtml);
     		// remove last 2 newline characters
     		return body.subSequence(0, body.length()-2);

@@ -37,6 +37,33 @@ public class Util {
     }
 	
 	/**
+	 * Convert HTML tags so they will be properly recognized by
+	 * android.text.Html.fromHtml()
+	 * @param html unescaped HTML
+	 * @return converted HTML
+	 */
+	public static String convertHtmlTags(String html) {
+		// Handle <code>
+		html = html.replaceAll("<code>", "<tt>").replaceAll("</code>", "</tt>");
+		
+		// Handle <pre>
+		int preIndex = html.indexOf("<pre>");
+		int preEndIndex = -6;  // -"</pre>".length()
+		StringBuilder bodyConverted = new StringBuilder();
+		while (preIndex != -1) {
+			// get the text between previous </pre> and next <pre>.
+			bodyConverted = bodyConverted.append(html.substring(preEndIndex + 6, preIndex));
+			preEndIndex = html.indexOf("</pre>");
+			// Replace newlines with <br> inside the <pre></pre>
+			// Retain <pre> tags since android.text.Html.fromHtml() will ignore them anyway.
+			bodyConverted = bodyConverted.append(html.substring(preIndex, preEndIndex).replaceAll("\n", "<br>"))
+				.append("</pre>");
+			preIndex = html.indexOf("<pre>", preEndIndex);
+		}
+		return bodyConverted.append(html.substring(preEndIndex + 6)).toString();
+	}
+	
+	/**
 	 * To the second, not millisecond like reddit
 	 * @param timeSeconds
 	 * @return

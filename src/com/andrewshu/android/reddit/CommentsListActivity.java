@@ -976,8 +976,7 @@ public class CommentsListActivity extends ListActivity
 				if (mOpThingInfo.isIs_self()) {
 					// HTML to Spanned
 					Spanned selftext = Html.fromHtml(
-							StringEscapeUtils.unescapeHtml(mOpThingInfo.getSelftext_html())
-							.replaceAll("<code>", "<tt>").replaceAll("</code>", "</tt>"));
+							Util.convertHtmlTags(StringEscapeUtils.unescapeHtml(mOpThingInfo.getSelftext_html())));
 		    		// remove last 2 newline characters
 					mOpThingInfo.setSpannedSelftext(selftext.subSequence(0, selftext.length()-2));
 
