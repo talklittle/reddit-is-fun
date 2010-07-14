@@ -157,6 +157,7 @@ public class Constants {
     static final String REPLY_TARGET_NAME_KEY = "reply_target_name";
     static final String SUBREDDIT_KEY = "subreddit";
     static final String THREAD_COUNT_KEY = "thread_count";
+    static final String THREAD_ID_KEY = "thread_id";
     static final String THREAD_LAST_COUNT_KEY = "last_thread_count";
     static final String THREAD_TITLE_KEY = "thread_title";
     static final String VOTE_TARGET_THING_INFO_KEY = "vote_target_thing_info";

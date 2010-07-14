@@ -123,7 +123,6 @@ public class CommentsListActivity extends ListActivity
     private String mJumpToCommentId = null;
     private int mJumpToCommentContext = 0;
     private int mJumpToCommentPosition = 0;
-//    private String mMoreChildrenId = "";
     private HashSet<Integer> mMorePositions = new HashSet<Integer>();
     private ThingInfo mOpThingInfo = null;
     private String mSortByUrl = Constants.CommentsSort.SORT_BY_BEST_URL;
@@ -174,6 +173,7 @@ public class CommentsListActivity extends ListActivity
         	mJumpToCommentPosition = savedInstanceState.getInt(Constants.JUMP_TO_COMMENT_POSITION_KEY);
         	mThreadTitle = savedInstanceState.getString(Constants.THREAD_TITLE_KEY);
         	mSettings.setSubreddit(savedInstanceState.getString(Constants.SUBREDDIT_KEY));
+        	mSettings.setThreadId(savedInstanceState.getString(Constants.THREAD_ID_KEY));
         	
         	if (mThreadTitle != null) {
         	    setTitle(mThreadTitle + " : " + mSettings.subreddit);
@@ -794,6 +794,8 @@ public class CommentsListActivity extends ListActivity
     class DownloadCommentsTask extends AsyncTask<Integer, Long, Boolean>
     		implements PropertyChangeListener {
     	
+    	private static final String TAG = "CommentsListActivity.DownloadCommentsTask";
+    	
     	// _mPositionOffset != 0 means that you're doing "load more comments"
     	private int _mPositionOffset;
     	private int _mIndentation;
@@ -1047,8 +1049,11 @@ public class CommentsListActivity extends ListActivity
     	}
     	
     	public void onPreExecute() {
-    		if (mSettings.threadId == null)
+    		if (mSettings.threadId == null) {
+    			if (Constants.LOGGING) Log.e(TAG, "mSettings.threadId == null");
 	    		this.cancel(true);
+	    		return;
+    		}
     		synchronized (mCurrentDownloadCommentsTaskLock) {
 	    		if (mCurrentDownloadCommentsTask != null) {
 	    			this.cancel(true);
@@ -2396,6 +2401,7 @@ public class CommentsListActivity extends ListActivity
     	state.putString(Constants.EDIT_TARGET_BODY_KEY, mEditTargetBody);
     	state.putString(Constants.DELETE_TARGET_KIND_KEY, mDeleteTargetKind);
     	state.putString(Constants.SUBREDDIT_KEY, mSettings.subreddit);
+    	state.putString(Constants.THREAD_ID_KEY, mSettings.threadId);
     	state.putString(Constants.THREAD_TITLE_KEY, mThreadTitle);
     }
     
