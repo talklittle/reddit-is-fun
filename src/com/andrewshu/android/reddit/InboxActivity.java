@@ -305,7 +305,7 @@ public final class InboxActivity extends ListActivity
             fromInfoView.setText(builder);
             
             subjectView.setText(item.getSubject());
-            bodyView.setText(item.getSSBBody());
+            bodyView.setText(item.getSpannedBody());
     
 	        return view;
         }
@@ -491,7 +491,7 @@ public final class InboxActivity extends ListActivity
    					ThingInfo ti = tiContainer.getData();
    					// do markdown
    					ti.setBody(StringEscapeUtils.unescapeHtml(ti.getBody().trim().replaceAll("\r", "")));
-   					ti.setSSBBody(markdown.markdown(ti.getBody(), new SpannableStringBuilder(), ti.getUrls()));
+   					ti.setSpannedBody(markdown.markdown(ti.getBody(), new SpannableStringBuilder(), ti.getUrls()));
    					_mThingInfos.add(ti);
     			}
     		} catch (Exception ex) {

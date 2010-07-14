@@ -59,6 +59,7 @@ import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.telephony.PhoneNumberUtils;
+import android.text.Html;
 import android.text.SpannableString;
 import android.text.SpannableStringBuilder;
 import android.text.Spanned;
@@ -104,6 +105,7 @@ public class CommentsListActivity extends ListActivity
 
     private final ObjectMapper om = new ObjectMapper();
     private final DrawableManager drawableManager = new DrawableManager();
+    private final CommentManager commentManager = new CommentManager();
     private final Markdown markdown = new Markdown();
     
     /** Custom list adapter that fits our threads data into the list. */
@@ -457,7 +459,7 @@ public class CommentsListActivity extends ListActivity
 	            	if (mOpThingInfo.getSelftext() != null
 	            			&& !Constants.EMPTY_STRING.equals(mOpThingInfo.getSelftext())) {
 	            		selftextView.setVisibility(View.VISIBLE);
-		                selftextView.setText(mOpThingInfo.getSSBSelftext());
+		                selftextView.setText(mOpThingInfo.getSpannedSelftext());
 	            	} else {
 	            		selftextView.setVisibility(View.GONE);
 	            	}
@@ -572,6 +574,7 @@ public class CommentsListActivity extends ListActivity
 		            TextView submitterView = (TextView) view.findViewById(R.id.submitter);
 		            TextView bodyView = (TextView) view.findViewById(R.id.body);
 		            TextView leftIndent = (TextView) view.findViewById(R.id.left_indent);
+		            ProgressBar indeterminateProgress = (ProgressBar) view.findViewById(R.id.indeterminate_progress);
 		            
 	                TextView submissionTimeView = (TextView) view.findViewById(R.id.submissionTime);
 		            ImageView voteUpView = (ImageView) view.findViewById(R.id.vote_up_image);
@@ -589,7 +592,15 @@ public class CommentsListActivity extends ListActivity
 		            else
 		            	submitterView.setText(item.getAuthor());
 		            submissionTimeView.setText(Util.getTimeAgo(item.getCreated_utc()));
-		            bodyView.setText(item.getSSBBody());
+		            
+		            if (item.getSpannedBody() != null) {
+		            	bodyView.setText(item.getSpannedBody());
+		            } else {
+			            // Fill in the comment body using a Thread.
+		            	commentManager.createSpannedOnThread(item.getBody_html(), bodyView, item,
+		            			indeterminateProgress, CommentsListActivity.this);
+		            }
+		            
 		            switch (item.getIndent()) {
 		            case 0:  leftIndent.setText(""); break;
 		            case 1:  leftIndent.setText("W"); break;
@@ -962,9 +973,17 @@ public class CommentsListActivity extends ListActivity
 				// Pull other data from the OP
 				mOpThingInfo.setTitle(StringEscapeUtils.unescapeHtml(mOpThingInfo.getTitle().trim()
 						.replaceAll("\r", "").replaceAll("\n ", " ").replaceAll(" \n", " ").replaceAll("\n", " ")));
-				// do markdown
-				mOpThingInfo.setSelftext(StringEscapeUtils.unescapeHtml(mOpThingInfo.getSelftext().trim().replaceAll("\r", "")));
-    			mOpThingInfo.setSSBSelftext(markdown.markdown(mOpThingInfo.getSelftext(), new SpannableStringBuilder(), mOpThingInfo.getUrls()));
+				if (mOpThingInfo.isIs_self()) {
+					// HTML to Spanned
+					Spanned selftext = Html.fromHtml(
+							StringEscapeUtils.unescapeHtml(mOpThingInfo.getSelftext_html())
+							.replaceAll("<code>", "<tt>").replaceAll("</code>", "</tt>"));
+		    		// remove last 2 newline characters
+					mOpThingInfo.setSpannedSelftext(selftext.subSequence(0, selftext.length()-2));
+
+					// Get URLs from markdown
+					markdown.getURLs(mOpThingInfo.getSelftext(), mOpThingInfo.getUrls());
+				}
 				// We might not have a title if we've intercepted a plain link to a thread.
     			mThreadTitle = mOpThingInfo.getTitle();
 				mSettings.setSubreddit(mOpThingInfo.getSubreddit());
@@ -1010,9 +1029,8 @@ public class CommentsListActivity extends ListActivity
 				return;
 			}
 			
-	        // do markdown
-    		ci.setBody(StringEscapeUtils.unescapeHtml(ci.getBody().trim().replaceAll("\r", "")));
-			ci.setSSBBody(markdown.markdown(ci.getBody(), new SpannableStringBuilder(), ci.getUrls()));
+			// Get URLs from markdown
+			markdown.getURLs(ci.getBody(), ci.getUrls());
 			
 			// handle the replies
 			Listing repliesListing = ci.getReplies();

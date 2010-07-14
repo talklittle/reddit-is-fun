@@ -24,11 +24,11 @@ import java.util.ArrayList;
 
 import org.codehaus.jackson.annotate.JsonAnySetter;
 
-import android.text.SpannableString;
-import android.text.SpannableStringBuilder;
-
+import android.graphics.drawable.Drawable;
 import android.os.Parcel;
 import android.os.Parcelable;
+import android.text.SpannableString;
+import android.text.Spanned;
 
 /**
  * Class representing a thread posting in reddit API.
@@ -82,9 +82,10 @@ public class ThingInfo implements Serializable, Parcelable {
 	private boolean was_comment;			//     m
 	
 	private final ArrayList<MarkdownURL> mUrls = new ArrayList<MarkdownURL>();
-	transient private SpannableStringBuilder mSSBSelftext = null;
-	transient private SpannableStringBuilder mSSBBody = null;
+	transient private CharSequence mSpannedSelftext = null;
+	transient private CharSequence mSpannedBody = null;
 	transient private SpannableString mSSAuthor = null;
+	transient private Drawable mThumbnailDrawable = null;
 	
 	private int mIndent = 0;
 	private String mReplyDraft = null;
@@ -185,18 +186,18 @@ public class ThingInfo implements Serializable, Parcelable {
 		return selftext_html;
 	}
 
+	public CharSequence getSpannedBody() {
+		return mSpannedBody;
+	}
+
+	public CharSequence getSpannedSelftext() {
+		return mSpannedSelftext;
+	}
+
 	public SpannableString getSSAuthor() {
 		return mSSAuthor;
 	}
 	
-	public SpannableStringBuilder getSSBBody() {
-		return mSSBBody;
-	}
-
-	public SpannableStringBuilder getSSBSelftext() {
-		return mSSBSelftext;
-	}
-
 	public String getSubject() {
 		return subject;
 	}
@@ -211,6 +212,10 @@ public class ThingInfo implements Serializable, Parcelable {
 
 	public String getThumbnail() {
 		return thumbnail;
+	}
+
+	public Drawable getThumbnailDrawable() {
+		return mThumbnailDrawable;
 	}
 
 	public String getTitle() {
@@ -378,18 +383,18 @@ public class ThingInfo implements Serializable, Parcelable {
 		this.selftext_html = selftext_html;
 	}
 	
+	public void setSpannedBody(CharSequence ssbBody) {
+		mSpannedBody = ssbBody;
+	}
+
+	public void setSpannedSelftext(CharSequence selftext) {
+		mSpannedSelftext = selftext;
+	}
+
 	public void setSSAuthor(SpannableString ssAuthor) {
 		mSSAuthor = ssAuthor;
 	}
 	
-	public void setSSBBody(SpannableStringBuilder ssbBody) {
-		mSSBBody = ssbBody;
-	}
-
-	public void setSSBSelftext(SpannableStringBuilder selftext) {
-		mSSBSelftext = selftext;
-	}
-
 	public void setSubject(String subject) {
 		this.subject = subject;
 	}
@@ -404,6 +409,10 @@ public class ThingInfo implements Serializable, Parcelable {
 
 	public void setThumbnail(String thumbnail) {
 		this.thumbnail = thumbnail;
+	}
+
+	public void setThumbnailDrawable(Drawable mThumbnailDrawable) {
+		this.mThumbnailDrawable = mThumbnailDrawable;
 	}
 
 	public void setTitle(String title) {
