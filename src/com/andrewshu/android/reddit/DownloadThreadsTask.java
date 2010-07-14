@@ -108,6 +108,7 @@ public abstract class DownloadThreadsTask extends AsyncTask<Void, Long, Boolean>
     		}
     		
     		url = sb.toString();
+    		if (Constants.LOGGING) Log.d(TAG, "url=" + url);
 
     		InputStream in = null;
     		boolean currentlyUsingCache = false;
