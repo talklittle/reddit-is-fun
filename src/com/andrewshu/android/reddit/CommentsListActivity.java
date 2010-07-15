@@ -292,7 +292,10 @@ public class CommentsListActivity extends ListActivity
     public Object onRetainNonConfigurationInstance() {
         // Avoid having to re-download and re-parse the comments list
     	// when rotating or opening keyboard.
-    	return new CommentsRetainer(mOpThingInfo, mCommentsList, mMorePositions, mHiddenCommentHeads);
+    	if (mOpThingInfo != null && mCommentsList != null)
+    		return new CommentsRetainer(mOpThingInfo, mCommentsList, mMorePositions, mHiddenCommentHeads);
+    	else
+    		return null;
     }
     
     class CommentsRetainer {
