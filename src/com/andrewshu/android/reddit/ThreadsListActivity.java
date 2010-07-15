@@ -87,8 +87,8 @@ public final class ThreadsListActivity extends ListActivity {
 	private final Pattern REDDIT_PATH_PATTERN = Pattern.compile(Constants.REDDIT_PATH_PATTERN_STRING);
 	
 	private final ObjectMapper om = new ObjectMapper();
-	// DrawableManager helps with filling in thumbnails
-	private DrawableManager drawableManager = new DrawableManager();
+	// BitmapManager helps with filling in thumbnails
+	private BitmapManager drawableManager = new BitmapManager();
 
     /** Custom list adapter that fits our threads data into the list. */
     private ThreadsListAdapter mThreadsAdapter = null;
@@ -454,7 +454,7 @@ public final class ThreadsListActivity extends ListActivity {
 		            	
 		            	// Fill in the thumbnail using a Thread. Note that thumbnail URL can be absolute path.
 		            	if (item.getThumbnail() != null && !Constants.EMPTY_STRING.equals(item.getThumbnail())) {
-		            		drawableManager.fetchDrawableOnThread(Util.absolutePathToURL(item.getThumbnail()),
+		            		drawableManager.fetchBitmapOnThread(Util.absolutePathToURL(item.getThumbnail()),
 		            				thumbnailView, indeterminateProgressBar, ThreadsListActivity.this);
 		            	} else {
 		            		indeterminateProgressBar.setVisibility(View.GONE);
@@ -648,7 +648,7 @@ public final class ThreadsListActivity extends ListActivity {
 		    		// "25 more" button.
 		    		if (mThreadsList.size() >= Constants.DEFAULT_THREAD_DOWNLOAD_LIMIT)
 		    			mThreadsList.add(new ThingInfo());
-		    		drawableManager = new DrawableManager();  // clear thumbnails
+		    		drawableManager = new BitmapManager();  // clear thumbnails
 		    		mThreadsAdapter.notifyDataSetChanged();
     			}
 	    		// Point the list to last thread user was looking at, if any

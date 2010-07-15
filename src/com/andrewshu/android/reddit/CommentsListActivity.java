@@ -104,7 +104,7 @@ public class CommentsListActivity extends ListActivity
     private final Pattern COMMENT_CONTEXT_PATTERN = Pattern.compile("context=(\\d+)");
 
     private final ObjectMapper om = new ObjectMapper();
-    private final DrawableManager drawableManager = new DrawableManager();
+    private final BitmapManager drawableManager = new BitmapManager();
     private final CommentManager commentManager = new CommentManager();
     private final Markdown markdown = new Markdown();
     
@@ -476,7 +476,7 @@ public class CommentsListActivity extends ListActivity
 		            		
 		            		// Fill in the thumbnail using a Thread. Note that thumbnail URL can be absolute path.
 			            	if (item.getThumbnail() != null && !Constants.EMPTY_STRING.equals(item.getThumbnail())) {
-			            		drawableManager.fetchDrawableOnThread(Util.absolutePathToURL(item.getThumbnail()),
+			            		drawableManager.fetchBitmapOnThread(Util.absolutePathToURL(item.getThumbnail()),
 			            				thumbnailView, indeterminateProgressBar, CommentsListActivity.this);
 			            	} else {
 			            		// if no thumbnail image, hide thumbnail icon
