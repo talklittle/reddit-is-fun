@@ -279,7 +279,7 @@ public class CommentsListActivity extends ListActivity
     		jumpToComment();
     	}
 
-    	new Common.PeekEnvelopeTask(this, mClient, mSettings.mailNotificationStyle).execute();
+    	new PeekEnvelopeTask(this, mClient, mSettings.mailNotificationStyle).execute();
     }
     
     @Override
@@ -1138,7 +1138,7 @@ public class CommentsListActivity extends ListActivity
     		if (errorMessage == null) {
     			Toast.makeText(CommentsListActivity.this, "Logged in as "+mUsername, Toast.LENGTH_SHORT).show();
     			// Check mail
-    			new Common.PeekEnvelopeTask(CommentsListActivity.this, mClient, mSettings.mailNotificationStyle).execute();
+    			new PeekEnvelopeTask(CommentsListActivity.this, mClient, mSettings.mailNotificationStyle).execute();
 	    		// Refresh the comments list
     			new DownloadCommentsTask().execute(Constants.DEFAULT_COMMENT_DOWNLOAD_LIMIT);
     		} else {

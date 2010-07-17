@@ -50,7 +50,7 @@ public class EnvelopeService extends Service {
         new PeekEnvelopeServiceTask(this, mClient, mSettings.mailNotificationStyle).execute();
     }
     
-    private class PeekEnvelopeServiceTask extends Common.PeekEnvelopeTask {
+    private class PeekEnvelopeServiceTask extends PeekEnvelopeTask {
     	public PeekEnvelopeServiceTask(Context context, DefaultHttpClient client, String mailNotificationStyle) {
     		super(context, client, mailNotificationStyle);
     	}

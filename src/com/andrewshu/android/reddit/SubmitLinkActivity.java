@@ -258,7 +258,7 @@ public class SubmitLinkActivity extends TabActivity {
 			if (errorMessage == null) {
     			Toast.makeText(SubmitLinkActivity.this, "Logged in as "+mUsername, Toast.LENGTH_SHORT).show();
     			// Check mail
-    			new Common.PeekEnvelopeTask(SubmitLinkActivity.this, mClient, mSettings.mailNotificationStyle).execute();
+    			new PeekEnvelopeTask(SubmitLinkActivity.this, mClient, mSettings.mailNotificationStyle).execute();
     			// Show the UI and allow user to proceed
     			start();
         	} else {

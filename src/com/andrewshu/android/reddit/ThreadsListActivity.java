@@ -211,7 +211,7 @@ public final class ThreadsListActivity extends ListActivity {
     	if (mThreadsAdapter != null) {
     		jumpToThread();
     	}
-    	new Common.PeekEnvelopeTask(this, mClient, mSettings.mailNotificationStyle).execute();
+    	new PeekEnvelopeTask(this, mClient, mSettings.mailNotificationStyle).execute();
     }
     
     /**
@@ -695,7 +695,7 @@ public final class ThreadsListActivity extends ListActivity {
     		if (errorMessage == null) {
     			Toast.makeText(ThreadsListActivity.this, "Logged in as "+mUsername, Toast.LENGTH_SHORT).show();
     			// Check mail
-    			new Common.PeekEnvelopeTask(getApplicationContext(), mClient, mSettings.mailNotificationStyle).execute();
+    			new PeekEnvelopeTask(getApplicationContext(), mClient, mSettings.mailNotificationStyle).execute();
     			// Refresh the threads list
     			new MyDownloadThreadsTask(getApplicationContext(), mClient, om, mSortByUrl, mSortByUrlExtra,
             			mSettings.subreddit).execute();
