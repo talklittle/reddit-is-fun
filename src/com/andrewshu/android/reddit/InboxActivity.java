@@ -60,6 +60,7 @@ import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.Drawable;
 import android.os.AsyncTask;
 import android.os.Bundle;
+import android.text.Html;
 import android.text.SpannableString;
 import android.text.SpannableStringBuilder;
 import android.text.Spanned;
@@ -489,9 +490,14 @@ public final class InboxActivity extends ListActivity
     			// Go through the children and get the ThingInfos
     			for (ThingListing tiContainer : data.getChildren()) {
    					ThingInfo ti = tiContainer.getData();
-   					// do markdown
-   					ti.setBody(StringEscapeUtils.unescapeHtml(ti.getBody().trim().replaceAll("\r", "")));
-   					ti.setSpannedBody(markdown.markdown(ti.getBody(), new SpannableStringBuilder(), ti.getUrls()));
+   					// HTML to Spanned
+   					Spanned body = Html.fromHtml(
+							Util.convertHtmlTags(StringEscapeUtils.unescapeHtml(ti.getBody_html())));
+   					// remove last 2 newline characters
+   					if (body.length() > 2)
+   						ti.setSpannedBody(body.subSequence(0, body.length()-2));
+   					else
+   						ti.setSpannedBody(Constants.EMPTY_STRING);
    					_mThingInfos.add(ti);
     			}
     		} catch (Exception ex) {
