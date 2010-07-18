@@ -983,7 +983,10 @@ public class CommentsListActivity extends ListActivity
 					Spanned selftext = Html.fromHtml(
 							Util.convertHtmlTags(StringEscapeUtils.unescapeHtml(mOpThingInfo.getSelftext_html())));
 		    		// remove last 2 newline characters
-					mOpThingInfo.setSpannedSelftext(selftext.subSequence(0, selftext.length()-2));
+					if (selftext.length() > 2)
+						mOpThingInfo.setSpannedSelftext(selftext.subSequence(0, selftext.length()-2));
+					else
+						mOpThingInfo.setSpannedSelftext(Constants.EMPTY_STRING);
 
 					// Get URLs from markdown
 					markdown.getURLs(mOpThingInfo.getSelftext(), mOpThingInfo.getUrls());

@@ -48,7 +48,10 @@ public class CommentManager {
     		
     		Spanned body = Html.fromHtml(bodyHtml);
     		// remove last 2 newline characters
-    		return body.subSequence(0, body.length()-2);
+    		if (body.length() > 2)
+    			return body.subSequence(0, body.length()-2);
+    		else
+    			return Constants.EMPTY_STRING;
     	} catch (Exception e) {
     		if (Constants.LOGGING) Log.e(this.getClass().getSimpleName(), "createSpanned failed", e);
     		return null;
