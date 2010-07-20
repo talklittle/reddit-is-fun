@@ -30,7 +30,6 @@ import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import org.apache.commons.lang.StringEscapeUtils;
 import org.apache.http.Header;
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpException;
@@ -491,8 +490,8 @@ public final class InboxActivity extends ListActivity
     			for (ThingListing tiContainer : data.getChildren()) {
    					ThingInfo ti = tiContainer.getData();
    					// HTML to Spanned
-   					Spanned body = Html.fromHtml(
-							Util.convertHtmlTags(StringEscapeUtils.unescapeHtml(ti.getBody_html())));
+   					String unescapedHtmlBody = Html.fromHtml(ti.getBody_html()).toString();
+   					Spanned body = Html.fromHtml(Util.convertHtmlTags(unescapedHtmlBody));
    					// remove last 2 newline characters
    					if (body.length() > 2)
    						ti.setSpannedBody(body.subSequence(0, body.length()-2));

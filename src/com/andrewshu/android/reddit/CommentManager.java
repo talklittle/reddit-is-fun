@@ -22,8 +22,6 @@ KIND, either express or implied.  See the License for the
 specific language governing permissions and limitations
 under the License.    
 */
-import org.apache.commons.lang.StringEscapeUtils;
-
 import android.app.Activity;
 import android.os.Handler;
 import android.os.Message;
@@ -42,7 +40,8 @@ public class CommentManager {
 	 */
     public CharSequence createSpanned(String bodyHtml) {
     	try {
-    		bodyHtml = StringEscapeUtils.unescapeHtml(bodyHtml);
+    		// get unescaped HTML
+    		bodyHtml = Html.fromHtml(bodyHtml).toString();
     		// fromHtml doesn't support all HTML tags. convert <code> and <pre>
     		bodyHtml = Util.convertHtmlTags(bodyHtml);
     		

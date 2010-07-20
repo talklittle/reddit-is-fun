@@ -5,7 +5,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
 
-import org.apache.commons.lang.StringEscapeUtils;
 import org.apache.http.Header;
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpResponse;
@@ -16,6 +15,7 @@ import org.codehaus.jackson.map.ObjectMapper;
 
 import android.content.Context;
 import android.os.AsyncTask;
+import android.text.Html;
 import android.util.Log;
 
 /**
@@ -224,8 +224,11 @@ public abstract class DownloadThreadsTask extends AsyncTask<Void, Long, Boolean>
 					ThingInfo ti = tiContainer.getData();
 					
 					// Additional formatting on the threads
-					ti.setTitle(StringEscapeUtils.unescapeHtml(ti.getTitle().trim()
-							.replaceAll("\r", "").replaceAll("\n ", " ").replaceAll(" \n", " ").replaceAll("\n", " ")));
+//					String unescapedHtmlTitle = Html.fromHtml(ti.getTitle()
+//							.trim().replaceAll("\r", "").replaceAll("\n ", " ").replaceAll(" \n", " ").replaceAll("\n", " "))
+//							.toString();
+					String unescapedHtmlTitle = Html.fromHtml(ti.getTitle()).toString();
+					ti.setTitle(unescapedHtmlTitle);
 					
 					mThingInfos.add(tiContainer.getData());
 				}

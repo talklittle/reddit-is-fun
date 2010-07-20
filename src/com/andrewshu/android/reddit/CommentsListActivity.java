@@ -29,7 +29,6 @@ import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import org.apache.commons.lang.StringEscapeUtils;
 import org.apache.http.Header;
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpResponse;
@@ -976,12 +975,13 @@ public class CommentsListActivity extends ListActivity
 					}
 				}
 				// Pull other data from the OP
-				mOpThingInfo.setTitle(StringEscapeUtils.unescapeHtml(mOpThingInfo.getTitle().trim()
-						.replaceAll("\r", "").replaceAll("\n ", " ").replaceAll(" \n", " ").replaceAll("\n", " ")));
+				String unescapedHtmlTitle = Html.fromHtml(mOpThingInfo.getTitle()).toString();
+				mOpThingInfo.setTitle(unescapedHtmlTitle);
 				if (mOpThingInfo.isIs_self()) {
 					// HTML to Spanned
-					Spanned selftext = Html.fromHtml(
-							Util.convertHtmlTags(StringEscapeUtils.unescapeHtml(mOpThingInfo.getSelftext_html())));
+					String unescapedHtmlSelftext = Html.fromHtml(mOpThingInfo.getSelftext_html()).toString();
+					Spanned selftext = Html.fromHtml(Util.convertHtmlTags(unescapedHtmlSelftext));
+					
 		    		// remove last 2 newline characters
 					if (selftext.length() > 2)
 						mOpThingInfo.setSpannedSelftext(selftext.subSequence(0, selftext.length()-2));
