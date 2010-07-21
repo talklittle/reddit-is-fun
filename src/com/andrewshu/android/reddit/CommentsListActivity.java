@@ -2044,11 +2044,7 @@ public class CommentsListActivity extends ListActivity
     				}
     			}
     		});
-    		replyCancelButton.setOnClickListener(new OnClickListener() {
-    			public void onClick(View v) {
-    				dismissDialog(Constants.DIALOG_REPLY);
-    			}
-    		});
+    		replyCancelButton.setOnClickListener(replyCancelOnClickListener);
     	}
     		break;
     		
@@ -2246,7 +2242,7 @@ public class CommentsListActivity extends ListActivity
     			loginButton.setVisibility(View.GONE);
     			voteUpButton.setVisibility(View.VISIBLE);
     			voteDownButton.setVisibility(View.VISIBLE);
-    			replyButton.setVisibility(View.VISIBLE);
+    			replyButton.setEnabled(true);
     			
     			// Make sure the setChecked() actions don't actually vote just yet.
     			voteUpButton.setOnCheckedChangeListener(null);
@@ -2271,23 +2267,14 @@ public class CommentsListActivity extends ListActivity
 	    		voteDownButton.setOnCheckedChangeListener(voteDownOnCheckedChangeListener);
 
 	    		// The "reply" button
-    			replyButton.setOnClickListener(new OnClickListener() {
-	    			public void onClick(View v) {
-	    				dismissDialog(Constants.DIALOG_THING_CLICK);
-	    				showDialog(Constants.DIALOG_REPLY);
-	        		}
-	    		});	
+    			replyButton.setOnClickListener(replyOnClickListener);	
 	    	} else {
-    			voteUpButton.setVisibility(View.GONE);
+	    		replyButton.setEnabled(false);
+    			
+	    		voteUpButton.setVisibility(View.GONE);
     			voteDownButton.setVisibility(View.GONE);
-    			replyButton.setVisibility(View.INVISIBLE);
     			loginButton.setVisibility(View.VISIBLE);
-    			loginButton.setOnClickListener(new OnClickListener() {
-    				public void onClick(View v) {
-    					dismissDialog(Constants.DIALOG_THING_CLICK);
-    					showDialog(Constants.DIALOG_LOGIN);
-    				}
-    			});
+    			loginButton.setOnClickListener(loginOnClickListener);
     		}
     		break;
     		
@@ -2393,6 +2380,26 @@ public class CommentsListActivity extends ListActivity
 				new VoteTask(thingFullname, 0).execute();
 		}
     };
+    
+    private final OnClickListener replyOnClickListener = new OnClickListener() {
+		public void onClick(View v) {
+			dismissDialog(Constants.DIALOG_THING_CLICK);
+			showDialog(Constants.DIALOG_REPLY);
+		}
+	};
+    
+    private final OnClickListener replyCancelOnClickListener = new OnClickListener() {
+		public void onClick(View v) {
+			dismissDialog(Constants.DIALOG_REPLY);
+		}
+	};
+	
+	private final OnClickListener loginOnClickListener = new OnClickListener() {
+		public void onClick(View v) {
+			dismissDialog(Constants.DIALOG_THING_CLICK);
+			showDialog(Constants.DIALOG_LOGIN);
+		}
+	};
     
     
     @Override
