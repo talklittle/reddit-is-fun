@@ -977,7 +977,7 @@ public class CommentsListActivity extends ListActivity
 				// Pull other data from the OP
 				String unescapedHtmlTitle = Html.fromHtml(mOpThingInfo.getTitle()).toString();
 				mOpThingInfo.setTitle(unescapedHtmlTitle);
-				if (mOpThingInfo.isIs_self()) {
+				if (mOpThingInfo.isIs_self() && mOpThingInfo.getSelftext_html() != null) {
 					// HTML to Spanned
 					String unescapedHtmlSelftext = Html.fromHtml(mOpThingInfo.getSelftext_html()).toString();
 					Spanned selftext = Html.fromHtml(Util.convertHtmlTags(unescapedHtmlSelftext));
