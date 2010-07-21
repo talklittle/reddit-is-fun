@@ -1283,12 +1283,7 @@ public final class ThreadsListActivity extends ListActivity {
     			voteUpButton.setVisibility(View.GONE);
     			voteDownButton.setVisibility(View.GONE);
     			loginButton.setVisibility(View.VISIBLE);
-    			loginButton.setOnClickListener(new OnClickListener() {
-    				public void onClick(View v) {
-    					dismissDialog(Constants.DIALOG_THING_CLICK);
-    					showDialog(Constants.DIALOG_LOGIN);
-    				}
-    			});
+    			loginButton.setOnClickListener(loginOnClickListener);
     		}
 
     		// "link" button behaves differently for regular links vs. self posts and links to comments pages (e.g., bestof)
@@ -1308,19 +1303,7 @@ public final class ThreadsListActivity extends ListActivity {
             }
             
             // "comments" button is easy: always does the same thing
-            commentsButton.setOnClickListener(new OnClickListener() {
-    			public void onClick(View v) {
-    				dismissDialog(Constants.DIALOG_THING_CLICK);
-    				// Launch an Intent for CommentsListActivity
-    				CacheInfo.invalidateCachedThread(getApplicationContext());
-    				Intent i = new Intent(getApplicationContext(), CommentsListActivity.class);
-    				i.setData(Util.createThreadUri(mVoteTargetThingInfo));
-    				i.putExtra(Constants.EXTRA_SUBREDDIT, mVoteTargetThingInfo.getSubreddit());
-    				i.putExtra(Constants.EXTRA_TITLE, mVoteTargetThingInfo.getTitle());
-    				i.putExtra(Constants.EXTRA_NUM_COMMENTS, Integer.valueOf(mVoteTargetThingInfo.getNum_comments()));
-    				startActivity(i);
-    			}
-    		});
+            commentsButton.setOnClickListener(commentsOnClickListener);
     		
     		break;
     	
@@ -1342,6 +1325,29 @@ public final class ThreadsListActivity extends ListActivity {
         			mSettings.subreddit, null, mBefore, mCount).execute();
 		}
 	};
+    
+	private final OnClickListener loginOnClickListener = new OnClickListener() {
+		public void onClick(View v) {
+			dismissDialog(Constants.DIALOG_THING_CLICK);
+			showDialog(Constants.DIALOG_LOGIN);
+		}
+	};
+	
+	// Be sure to set mVoteTargetThingInfo before enabling this OnClickListener
+	private final OnClickListener commentsOnClickListener = new OnClickListener() {
+		public void onClick(View v) {
+			dismissDialog(Constants.DIALOG_THING_CLICK);
+			// Launch an Intent for CommentsListActivity
+			CacheInfo.invalidateCachedThread(getApplicationContext());
+			Intent i = new Intent(getApplicationContext(), CommentsListActivity.class);
+			i.setData(Util.createThreadUri(mVoteTargetThingInfo));
+			i.putExtra(Constants.EXTRA_SUBREDDIT, mVoteTargetThingInfo.getSubreddit());
+			i.putExtra(Constants.EXTRA_TITLE, mVoteTargetThingInfo.getTitle());
+			i.putExtra(Constants.EXTRA_NUM_COMMENTS, Integer.valueOf(mVoteTargetThingInfo.getNum_comments()));
+			startActivity(i);
+		}
+	};
+	
 	private final CompoundButton.OnCheckedChangeListener voteUpOnCheckedChangeListener = new CompoundButton.OnCheckedChangeListener() {
     	public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
 	    	dismissDialog(Constants.DIALOG_THING_CLICK);
