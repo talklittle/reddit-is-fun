@@ -1786,7 +1786,7 @@ public class CommentsListActivity extends ListActivity
     	case R.id.open_browser_menu_id:
     		String url = new StringBuilder("http://www.reddit.com/r/")
 				.append(mSettings.subreddit).append("/comments/").append(mSettings.threadId).toString();
-    		Common.launchBrowser(url, this, true, true);
+    		Common.launchBrowser(url, this, false, true, true);
     		break;
     	case R.id.op_delete_menu_id:
     		mReplyTargetName = mOpThingInfo.getName();
@@ -2217,7 +2217,7 @@ public class CommentsListActivity extends ListActivity
 	    				public void onClick(View v) {
 	    					dismissDialog(Constants.DIALOG_THING_CLICK);
 	    					// Launch Intent to goto the URL
-	    					Common.launchBrowser(url, CommentsListActivity.this, false, mSettings.useExternalBrowser);
+	    					Common.launchBrowser(url, CommentsListActivity.this, false, false, mSettings.useExternalBrowser);
 	    				}
 	    			});
 	    			linkButton.setEnabled(true);
@@ -2339,7 +2339,7 @@ public class CommentsListActivity extends ListActivity
     	            DialogInterface.OnClickListener click = new DialogInterface.OnClickListener() {
     	                public final void onClick(DialogInterface dialog, int which) {
     	                    if (which >= 0) {
-    	                        Common.launchBrowser(urls.get(which), CommentsListActivity.this, false, mSettings.useExternalBrowser);
+    	                        Common.launchBrowser(urls.get(which), CommentsListActivity.this, false, false, mSettings.useExternalBrowser);
     	                    }
     	                }
     	            };

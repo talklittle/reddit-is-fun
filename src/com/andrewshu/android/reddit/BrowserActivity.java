@@ -117,7 +117,7 @@ public class BrowserActivity extends Activity {
         case R.id.open_browser_menu_id:
     		if (mUri == null)
     			break;
-    		Common.launchBrowser(mUri.toString(), this, true, true);
+    		Common.launchBrowser(mUri.toString(), this, false, true, true);
     		break;
         default:
     		throw new IllegalArgumentException("Unexpected action value "+item.getItemId());

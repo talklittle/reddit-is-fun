@@ -58,11 +58,9 @@ import org.apache.http.params.HttpParams;
 import org.apache.http.protocol.HTTP;
 import org.apache.http.protocol.HttpContext;
 import org.codehaus.jackson.JsonFactory;
-import org.codehaus.jackson.JsonParseException;
 import org.codehaus.jackson.JsonParser;
 import org.codehaus.jackson.JsonToken;
 
-import android.app.Activity;
 import android.app.ListActivity;
 import android.app.Notification;
 import android.app.NotificationManager;
@@ -71,7 +69,6 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.net.Uri;
-import android.os.AsyncTask;
 import android.preference.PreferenceManager;
 import android.provider.Browser;
 import android.util.Log;
@@ -521,7 +518,16 @@ public class Common {
 		notificationManager.cancel(Constants.NOTIFICATION_HAVE_MAIL);
     }
     
-    static void launchBrowser(String url, Activity act, boolean bypassParser, boolean useExternalBrowser) {
+    /**
+     * 
+     * @param url
+     * @param context
+     * @param requireNewTask set this to true if context is not an Activity
+     * @param bypassParser
+     * @param useExternalBrowser
+     */
+    static void launchBrowser(String url, Context context, boolean requireNewTask,
+    		boolean bypassParser, boolean useExternalBrowser) {
     	
     	Uri uri = Uri.parse(url);
     	
@@ -529,17 +535,21 @@ public class Common {
 	    	Matcher matcher = REDDIT_LINK.matcher(uri.getPath());
 	    	if (matcher.matches()) {
 	    		if (matcher.group(3) != null || matcher.group(2) != null) {
-	    			CacheInfo.invalidateCachedThread(act);
-	    			Intent intent = new Intent(act.getApplicationContext(), CommentsListActivity.class);
+	    			CacheInfo.invalidateCachedThread(context);
+	    			Intent intent = new Intent(context, CommentsListActivity.class);
 	    			intent.setData(uri);
 	    			intent.putExtra(Constants.EXTRA_NUM_COMMENTS, Constants.DEFAULT_COMMENT_DOWNLOAD_LIMIT);
-	    			act.startActivity(intent);
+	    			if (requireNewTask)
+	    				intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+	    			context.startActivity(intent);
 	    			return;
 	    		} else if (matcher.group(1) != null) {
-	    			CacheInfo.invalidateCachedSubreddit(act);
-	    			Intent intent = new Intent(act.getApplicationContext(), ThreadsListActivity.class);
+	    			CacheInfo.invalidateCachedSubreddit(context);
+	    			Intent intent = new Intent(context, ThreadsListActivity.class);
 	    			intent.setData(uri);
-	    			act.startActivity(intent);
+	    			if (requireNewTask)
+	    				intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+	    			context.startActivity(intent);
 	    			return;
 	    		}
 	    	}
@@ -552,12 +562,16 @@ public class Common {
     	
     	if (useExternalBrowser) {
     		Intent browser = new Intent(Intent.ACTION_VIEW, uri);
-    		browser.putExtra(Browser.EXTRA_APPLICATION_ID, act.getPackageName());
-    		act.startActivity(browser);
+    		browser.putExtra(Browser.EXTRA_APPLICATION_ID, context.getPackageName());
+			if (requireNewTask)
+				browser.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+			context.startActivity(browser);
     	} else {
-	    	Intent browser = new Intent(act.getApplicationContext(), BrowserActivity.class);
+	    	Intent browser = new Intent(context, BrowserActivity.class);
 	    	browser.setData(uri);
-	    	act.startActivity(browser);
+			if (requireNewTask)
+				browser.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+			context.startActivity(browser);
     	}
 	}
     

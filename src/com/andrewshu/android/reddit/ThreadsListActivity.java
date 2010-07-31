@@ -444,13 +444,13 @@ public final class ThreadsListActivity extends ListActivity {
 		            	thumbnailView.setOnClickListener(new OnClickListener() {
 		            		public void onClick(View v) {
 		            			mJumpToThreadId = jumpToId;
-		            			Common.launchBrowser(url, ThreadsListActivity.this, false, mSettings.useExternalBrowser);
+		            			Common.launchBrowser(url, ThreadsListActivity.this, false, false, mSettings.useExternalBrowser);
 		            		}
 		            	});
 		            	indeterminateProgressBar.setOnClickListener(new OnClickListener() {
 		            		public void onClick(View v) {
 		            			mJumpToThreadId = jumpToId;
-		            			Common.launchBrowser(url, ThreadsListActivity.this, false, mSettings.useExternalBrowser);
+		            			Common.launchBrowser(url, ThreadsListActivity.this, false, false, mSettings.useExternalBrowser);
 		            		}
 		            	});
 		            	
@@ -941,7 +941,7 @@ public final class ThreadsListActivity extends ListActivity {
 			
 			return true;
 		case Constants.OPEN_IN_BROWSER_CONTEXT_ITEM:
-			Common.launchBrowser(_item.getUrl(), this, true, true);
+			Common.launchBrowser(_item.getUrl(), this, false, true, true);
 			return true;
 			
 		case Constants.OPEN_COMMENTS_CONTEXT_ITEM:
@@ -1058,7 +1058,7 @@ public final class ThreadsListActivity extends ListActivity {
     			url = "http://www.reddit.com";
     		else
         		url = new StringBuilder("http://www.reddit.com/r/").append(mSettings.subreddit).toString();
-    		Common.launchBrowser(url, this, true, true);
+    		Common.launchBrowser(url, this, false, true, true);
     		break;
         case R.id.light_dark_menu_id:
     		if (mSettings.theme == R.style.Reddit_Light) {
@@ -1298,7 +1298,7 @@ public final class ThreadsListActivity extends ListActivity {
     				public void onClick(View v) {
     					dismissDialog(Constants.DIALOG_THING_CLICK);
     					// Launch Intent to goto the URL
-    					Common.launchBrowser(url, ThreadsListActivity.this, false, mSettings.useExternalBrowser);
+    					Common.launchBrowser(url, ThreadsListActivity.this, false, false, mSettings.useExternalBrowser);
     				}
     			});
             	linkButton.setEnabled(true);
