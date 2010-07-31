@@ -53,7 +53,7 @@ public class Util {
 		while (preIndex != -1) {
 			// get the text between previous </pre> and next <pre>.
 			bodyConverted = bodyConverted.append(html.substring(preEndIndex + 6, preIndex));
-			preEndIndex = html.indexOf("</pre>");
+			preEndIndex = html.indexOf("</pre>", preIndex);
 			// Replace newlines with <br> inside the <pre></pre>
 			// Retain <pre> tags since android.text.Html.fromHtml() will ignore them anyway.
 			bodyConverted = bodyConverted.append(html.substring(preIndex, preEndIndex).replaceAll("\n", "<br>"))
