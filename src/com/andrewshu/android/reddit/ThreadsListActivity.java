@@ -360,6 +360,8 @@ public final class ThreadsListActivity extends ListActivity {
 	            // Set the title and domain using a SpannableStringBuilder
 	            SpannableStringBuilder builder = new SpannableStringBuilder();
 	            String title = item.getTitle();
+	            if (title == null)
+	            	title = "";
 	            SpannableString titleSS = new SpannableString(title);
 	            int titleLen = title.length();
 	            TextAppearanceSpan titleTAS = new TextAppearanceSpan(getApplicationContext(), R.style.TextAppearance_14sp);
