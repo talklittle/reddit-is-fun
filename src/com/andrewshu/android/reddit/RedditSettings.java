@@ -47,7 +47,6 @@ public class RedditSettings {
 	
 	// --- States that change frequently. ---
 	String subreddit = Constants.FRONTPAGE_STRING;
-	boolean isFrontpage = false;
 	String threadId = null;  // For a given instance of CommentsListActivity, this will be some String
 	
 	
@@ -150,7 +149,6 @@ public class RedditSettings {
 	
 	void setSubreddit(String subreddit) {
 		this.subreddit = subreddit;
-		isFrontpage = Constants.FRONTPAGE_STRING.equals(subreddit);
 	}
 	
 	void setTheme(int theme) {

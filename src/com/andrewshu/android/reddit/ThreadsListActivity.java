@@ -390,13 +390,8 @@ public final class ThreadsListActivity extends ListActivity {
 	            
 	            votesView.setText("" + item.getScore());
 	            numCommentsView.setText(Util.showNumComments(item.getNum_comments()));
-	            if (mSettings.isFrontpage) {
-	            	subredditView.setVisibility(View.VISIBLE);
-	            	subredditView.setText(item.getSubreddit());
-	            } else {
-	            	subredditView.setVisibility(View.GONE);
-	            }
-
+	            subredditView.setText(item.getSubreddit());
+	            
                 if(item.isOver_18()){
                     nsfwView.setVisibility(View.VISIBLE);
                 } else {
@@ -1260,11 +1255,9 @@ public final class ThreadsListActivity extends ListActivity {
     		urlView.setText(mVoteTargetThingInfo.getUrl());
     		sb = new StringBuilder(Util.getTimeAgo(mVoteTargetThingInfo.getCreated_utc()))
     			.append(" by ").append(mVoteTargetThingInfo.getAuthor());
-            // Show subreddit if user is currently looking at front page
-    		if (mSettings.isFrontpage) {
-    			sb.append(" to ").append(mVoteTargetThingInfo.getSubreddit());
-    		}
-            submissionStuffView.setText(sb);
+            // Show subreddit
+    		sb.append(" to ").append(mVoteTargetThingInfo.getSubreddit());
+    		submissionStuffView.setText(sb);
             
     		// Only show upvote/downvote if user is logged in
     		if (mSettings.loggedIn) {
