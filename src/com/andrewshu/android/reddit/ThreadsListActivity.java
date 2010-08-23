@@ -378,9 +378,13 @@ public final class ThreadsListActivity extends ListActivity {
 	            }
 	            builder.append(titleSS);
 	            builder.append(" ");
+	            String domain = item.getDomain();
+	            if (domain == null)
+	            	domain = "";
+	            int domainLen = domain.length();
 	            SpannableString domainSS = new SpannableString("("+item.getDomain()+")");
 	            TextAppearanceSpan domainTAS = new TextAppearanceSpan(getApplicationContext(), R.style.TextAppearance_10sp);
-	            domainSS.setSpan(domainTAS, 0, item.getDomain().length()+2, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
+	            domainSS.setSpan(domainTAS, 0, domainLen+2, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
 	            builder.append(domainSS);
 	            titleView.setText(builder);
 	            
@@ -430,7 +434,7 @@ public final class ThreadsListActivity extends ListActivity {
 	            		thumbOkay = false;
 	            		ConnectivityManager connMan = (ConnectivityManager) getSystemService(Context.CONNECTIVITY_SERVICE);
 	            		NetworkInfo netInfo = connMan.getActiveNetworkInfo();
-	            		if (netInfo.getType() == ConnectivityManager.TYPE_WIFI && netInfo.isConnected()) {
+	            		if (netInfo != null && netInfo.getType() == ConnectivityManager.TYPE_WIFI && netInfo.isConnected()) {
 	            			thumbOkay = true;
 	            		}
 	            	}
@@ -441,18 +445,20 @@ public final class ThreadsListActivity extends ListActivity {
 	            		
 		            	final String url = item.getUrl();
 		            	final String jumpToId = item.getId();
-		            	thumbnailView.setOnClickListener(new OnClickListener() {
-		            		public void onClick(View v) {
-		            			mJumpToThreadId = jumpToId;
-		            			Common.launchBrowser(url, ThreadsListActivity.this, false, false, mSettings.useExternalBrowser);
-		            		}
-		            	});
-		            	indeterminateProgressBar.setOnClickListener(new OnClickListener() {
-		            		public void onClick(View v) {
-		            			mJumpToThreadId = jumpToId;
-		            			Common.launchBrowser(url, ThreadsListActivity.this, false, false, mSettings.useExternalBrowser);
-		            		}
-		            	});
+		            	if (url != null) {
+			            	thumbnailView.setOnClickListener(new OnClickListener() {
+			            		public void onClick(View v) {
+			            			mJumpToThreadId = jumpToId;
+			            			Common.launchBrowser(url, ThreadsListActivity.this, false, false, mSettings.useExternalBrowser);
+			            		}
+			            	});
+			            	indeterminateProgressBar.setOnClickListener(new OnClickListener() {
+			            		public void onClick(View v) {
+			            			mJumpToThreadId = jumpToId;
+			            			Common.launchBrowser(url, ThreadsListActivity.this, false, false, mSettings.useExternalBrowser);
+			            		}
+			            	});
+		            	}
 		            	
 		            	// Fill in the thumbnail using a Thread. Note that thumbnail URL can be absolute path.
 		            	if (item.getThumbnail() != null && !Constants.EMPTY_STRING.equals(item.getThumbnail())) {
