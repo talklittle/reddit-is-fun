@@ -364,8 +364,19 @@ public final class ThreadsListActivity extends ListActivity {
 	            	title = "";
 	            SpannableString titleSS = new SpannableString(title);
 	            int titleLen = title.length();
-	            TextAppearanceSpan titleTAS = new TextAppearanceSpan(getApplicationContext(), R.style.TextAppearance_14sp);
-	            titleSS.setSpan(titleTAS, 0, titleLen, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
+	            titleSS.setSpan(new TextAppearanceSpan(getApplicationContext(),
+	            		Util.getTextAppearanceResource(mSettings.theme, android.R.style.TextAppearance_Large)),
+	            		0, titleLen, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
+	            
+	            String domain = item.getDomain();
+	            if (domain == null)
+	            	domain = "";
+	            int domainLen = domain.length();
+	            SpannableString domainSS = new SpannableString("("+item.getDomain()+")");
+	            domainSS.setSpan(new TextAppearanceSpan(getApplicationContext(),
+	            		Util.getTextAppearanceResource(mSettings.theme, android.R.style.TextAppearance_Small)),
+	            		0, domainLen+2, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
+
 	            if (Util.isLightTheme(mSettings.theme)) {
 	            	// FIXME: This doesn't work persistently, since "clicked" is not delivered to reddit.com
 		            if (item.isClicked()) {
@@ -375,17 +386,14 @@ public final class ThreadsListActivity extends ListActivity {
 		            	ForegroundColorSpan fcs = new ForegroundColorSpan(res.getColor(R.color.blue));
 		            	titleSS.setSpan(fcs, 0, titleLen, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
 		            }
+		            domainSS.setSpan(new ForegroundColorSpan(res.getColor(R.color.dark_gray)),
+		            		0, domainLen+2, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
+	            } else {
+	            	domainSS.setSpan(new ForegroundColorSpan(res.getColor(R.color.light_gray)),
+		            		0, domainLen+2, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
 	            }
-	            builder.append(titleSS);
-	            builder.append(" ");
-	            String domain = item.getDomain();
-	            if (domain == null)
-	            	domain = "";
-	            int domainLen = domain.length();
-	            SpannableString domainSS = new SpannableString("("+item.getDomain()+")");
-	            TextAppearanceSpan domainTAS = new TextAppearanceSpan(getApplicationContext(), R.style.TextAppearance_10sp);
-	            domainSS.setSpan(domainTAS, 0, domainLen+2, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
-	            builder.append(domainSS);
+	            
+	            builder.append(titleSS).append(" ").append(domainSS);
 	            titleView.setText(builder);
 	            
 	            votesView.setText("" + item.getScore());

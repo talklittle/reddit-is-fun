@@ -215,6 +215,49 @@ public class Util {
 		}
 	}
 	
+	static int getTextAppearanceResource(int themeResource, int androidTextAppearanceStyle) {
+		switch (themeResource) {
+		case R.style.Reddit_Light_Medium:
+		case R.style.Reddit_Dark_Medium:
+			switch (androidTextAppearanceStyle) {
+			case android.R.style.TextAppearance_Small:
+				return R.style.TextAppearance_Medium_Small;
+			case android.R.style.TextAppearance_Medium:
+				return R.style.TextAppearance_Medium_Medium;
+			case android.R.style.TextAppearance_Large:
+				return R.style.TextAppearance_Medium_Large;
+			default:
+				return R.style.TextAppearance_Medium_Medium;
+			}
+		case R.style.Reddit_Light_Large:
+		case R.style.Reddit_Dark_Large:
+			switch (androidTextAppearanceStyle) {
+			case android.R.style.TextAppearance_Small:
+				return R.style.TextAppearance_Large_Small;
+			case android.R.style.TextAppearance_Medium:
+				return R.style.TextAppearance_Large_Medium;
+			case android.R.style.TextAppearance_Large:
+				return R.style.TextAppearance_Large_Large;
+			default:
+				return R.style.TextAppearance_Large_Medium;
+			}
+		case R.style.Reddit_Light_Larger:
+		case R.style.Reddit_Dark_Larger:
+			switch (androidTextAppearanceStyle) {
+			case android.R.style.TextAppearance_Small:
+				return R.style.TextAppearance_Larger_Small;
+			case android.R.style.TextAppearance_Medium:
+				return R.style.TextAppearance_Larger_Medium;
+			case android.R.style.TextAppearance_Large:
+				return R.style.TextAppearance_Larger_Large;
+			default:
+				return R.style.TextAppearance_Larger_Medium;
+			}
+		default:
+			return R.style.TextAppearance_Medium_Medium;	
+		}
+	}
+	
 	
 	// ===============
 	//       Uri

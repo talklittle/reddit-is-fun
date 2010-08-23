@@ -106,14 +106,5 @@
 		<item name="android:textSize">16sp</item>
 	</style>
 	
-	<!-- Workarounds for older API that doesn't have 2-param constructor AbsoluteSizeSpan(size, dip) -->
-	<style name="TextAppearance_10sp">
-		<item name="android:textSize">10sp</item>
-	</style>
-	<style name="TextAppearance_14sp">
-		<item name="android:textSize">14sp</item>
-	</style>
-	
-	
 </resources>
 
