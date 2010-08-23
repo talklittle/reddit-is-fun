@@ -117,7 +117,6 @@ public class Common {
     static void saveRedditPreferences(Context context, RedditSettings rSettings) {
     	SharedPreferences settings = PreferenceManager.getDefaultSharedPreferences(context);
     	SharedPreferences.Editor editor = settings.edit();
-    	editor.clear();
     	
     	// Session
     	if (rSettings.loggedIn) {

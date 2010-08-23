@@ -86,12 +86,6 @@ public class RedditPreferencesPage extends PreferenceActivity
         		getPreferenceScreen().getSharedPreferences()
         		.getString(Constants.PREF_MAIL_NOTIFICATION_SERVICE, null)));
         
-//        e = findPreference(BrowserSettings.PREF_TEXT_SIZE);
-//        e.setOnPreferenceChangeListener(this);
-//        e.setSummary(getVisualTextSizeName(
-//                getPreferenceScreen().getSharedPreferences()
-//                .getString(BrowserSettings.PREF_TEXT_SIZE, null)) );
-        
     }
     
     @Override
