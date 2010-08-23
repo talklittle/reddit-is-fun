@@ -45,9 +45,6 @@ public class RedditSettings {
 	String mailNotificationStyle = Constants.PREF_MAIL_NOTIFICATION_STYLE_DEFAULT;
 	String mailNotificationService = Constants.PREF_MAIL_NOTIFICATION_SERVICE_OFF;
 	
-	// --- States that change frequently. ---
-	String subreddit = Constants.FRONTPAGE_STRING;
-	String threadId = null;  // For a given instance of CommentsListActivity, this will be some String
 	
 	
 	//
@@ -147,10 +144,6 @@ public class RedditSettings {
 		this.rotation = rotation;
 	}
 	
-	void setSubreddit(String subreddit) {
-		this.subreddit = subreddit;
-	}
-	
 	void setTheme(int theme) {
 		this.theme = theme;
 	}
@@ -159,10 +152,6 @@ public class RedditSettings {
 		this.threadDownloadLimit = threadDownloadLimit;
 	}
 
-	void setThreadId(String threadId) {
-		this.threadId = threadId;
-	}
-	
 	void setUseExternalBrowser(boolean useExternalBrowser) {
 		this.useExternalBrowser = useExternalBrowser;
 	}

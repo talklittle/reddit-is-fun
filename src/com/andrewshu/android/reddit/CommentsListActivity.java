@@ -119,6 +119,8 @@ public class CommentsListActivity extends ListActivity
     // Common settings are stored here
     private final RedditSettings mSettings = new RedditSettings();
     
+    private String mSubreddit = null;
+    private String mThreadId = null;
     private String mJumpToCommentId = null;
     private int mJumpToCommentContext = 0;
     private int mJumpToCommentPosition = 0;
@@ -171,11 +173,11 @@ public class CommentsListActivity extends ListActivity
         	mDeleteTargetKind = savedInstanceState.getString(Constants.DELETE_TARGET_KIND_KEY);
         	mJumpToCommentPosition = savedInstanceState.getInt(Constants.JUMP_TO_COMMENT_POSITION_KEY);
         	mThreadTitle = savedInstanceState.getString(Constants.THREAD_TITLE_KEY);
-        	mSettings.setSubreddit(savedInstanceState.getString(Constants.SUBREDDIT_KEY));
-        	mSettings.setThreadId(savedInstanceState.getString(Constants.THREAD_ID_KEY));
+        	mSubreddit = savedInstanceState.getString(Constants.SUBREDDIT_KEY);
+        	mThreadId = savedInstanceState.getString(Constants.THREAD_ID_KEY);
         	
         	if (mThreadTitle != null) {
-        	    setTitle(mThreadTitle + " : " + mSettings.subreddit);
+        	    setTitle(mThreadTitle + " : " + mSubreddit);
         	}
         	
 		    CommentsRetainer retainer = (CommentsRetainer) getLastNonConfigurationInstance();
@@ -212,8 +214,8 @@ public class CommentsListActivity extends ListActivity
         		
         		Matcher m = COMMENT_PATH_PATTERN.matcher(commentPath);
         		if (m.matches()) {
-            		mSettings.setSubreddit(m.group(1));
-        			mSettings.setThreadId(m.group(2));
+            		mSubreddit = m.group(1);
+        			mThreadId = m.group(2);
         			mJumpToCommentId = m.group(3);
         		}
         	} else {
@@ -237,11 +239,11 @@ public class CommentsListActivity extends ListActivity
         		// subreddit could have already been set from the Intent.getData. don't overwrite with null here!
         		String subreddit = extras.getString(Constants.EXTRA_SUBREDDIT);
         		if (subreddit != null)
-        			mSettings.setSubreddit(subreddit);
+        			mSubreddit = subreddit;
         		// mThreadTitle has not been set yet, so no need for null check before setting it
         		mThreadTitle = extras.getString(Constants.EXTRA_TITLE);
         		if (mThreadTitle != null) {
-            	    setTitle(mThreadTitle + " : " + mSettings.subreddit);
+            	    setTitle(mThreadTitle + " : " + mSubreddit);
             	}
         		// TODO: use extras.getInt(Constants.EXTRA_NUM_COMMENTS) somehow
         	}
@@ -835,11 +837,11 @@ public class CommentsListActivity extends ListActivity
     		HttpEntity entity = null;
             try {
             	StringBuilder sb = new StringBuilder("http://www.reddit.com/");
-	        		if (mSettings.subreddit != null) {
-	        		  sb.append("/r/").append(mSettings.subreddit.toString().trim());
+	        		if (mSubreddit != null) {
+	        		  sb.append("/r/").append(mSubreddit.trim());
 	        		}
 	        		sb.append("/comments/")
-	        		.append(mSettings.threadId)
+	        		.append(mThreadId)
 	        		.append("/z/").append(_mMoreChildrenId).append(".json?").append(mSortByUrl).append("&");
 	        	if (mJumpToCommentContext != 0)
 	        		sb.append("context="+mJumpToCommentContext+"&");
@@ -993,8 +995,8 @@ public class CommentsListActivity extends ListActivity
 				}
 				// We might not have a title if we've intercepted a plain link to a thread.
     			mThreadTitle = mOpThingInfo.getTitle();
-				mSettings.setSubreddit(mOpThingInfo.getSubreddit());
-				mSettings.setThreadId(mOpThingInfo.getId());
+				mSubreddit = mOpThingInfo.getSubreddit();
+				mThreadId = mOpThingInfo.getId();
 				
 				// listings[1] is a comment Listing for the comments
 				// Go through the children and get the ThingInfos
@@ -1055,7 +1057,7 @@ public class CommentsListActivity extends ListActivity
     	}
     	
     	public void onPreExecute() {
-    		if (mSettings.threadId == null) {
+    		if (mThreadId == null) {
     			if (Constants.LOGGING) Log.e(TAG, "mSettings.threadId == null");
 	    		this.cancel(true);
 	    		return;
@@ -1079,7 +1081,7 @@ public class CommentsListActivity extends ListActivity
     			enableLoadingScreen();
     		
 	    	if (mThreadTitle != null)
-	    		setTitle(mThreadTitle + " : " + mSettings.subreddit);
+	    		setTitle(mThreadTitle + " : " + mSubreddit);
     	}
     	
     	public void onPostExecute(Boolean success) {
@@ -1098,7 +1100,7 @@ public class CommentsListActivity extends ListActivity
     			mCommentsAdapter.notifyDataSetChanged();
     			// Set title in android titlebar
     			if (mThreadTitle != null)
-    				setTitle(mThreadTitle + " : " + mSettings.subreddit);
+    				setTitle(mThreadTitle + " : " + mSubreddit);
 	    		// Point the list to last comment user was looking at, if any
 	    		jumpToComment();
     		} else {
@@ -1187,7 +1189,7 @@ public class CommentsListActivity extends ListActivity
     			List<NameValuePair> nvps = new ArrayList<NameValuePair>();
     			nvps.add(new BasicNameValuePair("thing_id", _mParentThingId));
     			nvps.add(new BasicNameValuePair("text", text[0]));
-    			nvps.add(new BasicNameValuePair("r", mSettings.subreddit));
+    			nvps.add(new BasicNameValuePair("r", mSubreddit));
     			nvps.add(new BasicNameValuePair("uh", mSettings.modhash));
     			// Votehash is currently unused by reddit 
 //    				nvps.add(new BasicNameValuePair("vh", "0d4ab0ffd56ad0f66841c15609e9a45aeec6b015"));
@@ -1275,7 +1277,7 @@ public class CommentsListActivity extends ListActivity
     			List<NameValuePair> nvps = new ArrayList<NameValuePair>();
     			nvps.add(new BasicNameValuePair("thing_id", _mThingId.toString()));
     			nvps.add(new BasicNameValuePair("text", text[0].toString()));
-    			nvps.add(new BasicNameValuePair("r", mSettings.subreddit.toString()));
+    			nvps.add(new BasicNameValuePair("r", mSubreddit.toString()));
     			nvps.add(new BasicNameValuePair("uh", mSettings.modhash.toString()));
     			
     			HttpPost httppost = new HttpPost("http://www.reddit.com/api/editusertext");
@@ -1362,7 +1364,7 @@ public class CommentsListActivity extends ListActivity
     			List<NameValuePair> nvps = new ArrayList<NameValuePair>();
     			nvps.add(new BasicNameValuePair("id", thingFullname[0].toString()));
     			nvps.add(new BasicNameValuePair("executed", "deleted"));
-    			nvps.add(new BasicNameValuePair("r", mSettings.subreddit.toString()));
+    			nvps.add(new BasicNameValuePair("r", mSubreddit.toString()));
     			nvps.add(new BasicNameValuePair("uh", mSettings.modhash.toString()));
     			
     			HttpPost httppost = new HttpPost("http://www.reddit.com/api/del");
@@ -1470,7 +1472,7 @@ public class CommentsListActivity extends ListActivity
     			List<NameValuePair> nvps = new ArrayList<NameValuePair>();
     			nvps.add(new BasicNameValuePair("id", _mThingFullname.toString()));
     			nvps.add(new BasicNameValuePair("dir", String.valueOf(_mDirection)));
-    			nvps.add(new BasicNameValuePair("r", mSettings.subreddit.toString()));
+    			nvps.add(new BasicNameValuePair("r", mSubreddit.toString()));
     			nvps.add(new BasicNameValuePair("uh", mSettings.modhash.toString()));
     			// Votehash is currently unused by reddit 
 //    				nvps.add(new BasicNameValuePair("vh", "0d4ab0ffd56ad0f66841c15609e9a45aeec6b015"));
@@ -1622,7 +1624,7 @@ public class CommentsListActivity extends ListActivity
     			List<NameValuePair> nvps = new ArrayList<NameValuePair>();
     			nvps.add(new BasicNameValuePair("id", _mFullId));
     			nvps.add(new BasicNameValuePair("executed", "reported"));
-    			nvps.add(new BasicNameValuePair("r", mSettings.subreddit.toString()));
+    			nvps.add(new BasicNameValuePair("r", mSubreddit.toString()));
     			nvps.add(new BasicNameValuePair("uh", mSettings.modhash.toString()));
     			// Votehash is currently unused by reddit 
 //    				nvps.add(new BasicNameValuePair("vh", "0d4ab0ffd56ad0f66841c15609e9a45aeec6b015"));
@@ -1764,7 +1766,7 @@ public class CommentsListActivity extends ListActivity
     		break;
     	case R.id.op_subreddit_menu_id:
 			Intent intent = new Intent(getApplicationContext(), ThreadsListActivity.class);
-			intent.setData(Util.createSubredditUri(mSettings.subreddit));
+			intent.setData(Util.createSubredditUri(mSubreddit));
 			startActivity(intent);
 			break;
     	case R.id.login_logout_menu_id:
@@ -1785,7 +1787,7 @@ public class CommentsListActivity extends ListActivity
     		break;
     	case R.id.open_browser_menu_id:
     		String url = new StringBuilder("http://www.reddit.com/r/")
-				.append(mSettings.subreddit).append("/comments/").append(mSettings.threadId).toString();
+				.append(mSubreddit).append("/comments/").append(mThreadId).toString();
     		Common.launchBrowser(url, this, false, true, true);
     		break;
     	case R.id.op_delete_menu_id:
@@ -2413,8 +2415,8 @@ public class CommentsListActivity extends ListActivity
     	state.putString(Constants.REPORT_TARGET_NAME_KEY, mReportTargetName);
     	state.putString(Constants.EDIT_TARGET_BODY_KEY, mEditTargetBody);
     	state.putString(Constants.DELETE_TARGET_KIND_KEY, mDeleteTargetKind);
-    	state.putString(Constants.SUBREDDIT_KEY, mSettings.subreddit);
-    	state.putString(Constants.THREAD_ID_KEY, mSettings.threadId);
+    	state.putString(Constants.SUBREDDIT_KEY, mSubreddit);
+    	state.putString(Constants.THREAD_ID_KEY, mThreadId);
     	state.putString(Constants.THREAD_TITLE_KEY, mThreadTitle);
     }
     
