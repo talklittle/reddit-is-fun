@@ -178,11 +178,13 @@ public class Constants {
 	    static final String SORT_BY_CONTROVERSIAL_URL = "controversial/";
 	    static final String SORT_BY_TOP_URL = "top/";
 	    static final String[] SORT_BY_CHOICES = {SORT_BY_HOT, SORT_BY_NEW, SORT_BY_CONTROVERSIAL, SORT_BY_TOP};
+	    static final String[] SORT_BY_URL_CHOICES = {SORT_BY_HOT_URL, SORT_BY_NEW_URL, SORT_BY_CONTROVERSIAL_URL, SORT_BY_TOP_URL};
 	    static final String SORT_BY_NEW_NEW = "new";
 	    static final String SORT_BY_NEW_RISING = "rising";
 	    static final String SORT_BY_NEW_NEW_URL = "sort=new";
 	    static final String SORT_BY_NEW_RISING_URL = "sort=rising";
 	    static final String[] SORT_BY_NEW_CHOICES = {SORT_BY_NEW_NEW, SORT_BY_NEW_RISING};
+	    static final String[] SORT_BY_NEW_URL_CHOICES = {SORT_BY_NEW_NEW_URL, SORT_BY_NEW_RISING_URL};
 	    static final String SORT_BY_CONTROVERSIAL_HOUR = "this hour";
 	    static final String SORT_BY_CONTROVERSIAL_DAY = "today";
 	    static final String SORT_BY_CONTROVERSIAL_WEEK = "this week";
@@ -197,6 +199,8 @@ public class Constants {
 	    static final String SORT_BY_CONTROVERSIAL_ALL_URL = "t=all";
 	    static final String[] SORT_BY_CONTROVERSIAL_CHOICES = {SORT_BY_CONTROVERSIAL_HOUR, SORT_BY_CONTROVERSIAL_DAY,
 	    	SORT_BY_CONTROVERSIAL_WEEK, SORT_BY_CONTROVERSIAL_MONTH, SORT_BY_CONTROVERSIAL_YEAR, SORT_BY_CONTROVERSIAL_ALL};
+	    static final String[] SORT_BY_CONTROVERSIAL_URL_CHOICES = {SORT_BY_CONTROVERSIAL_HOUR_URL, SORT_BY_CONTROVERSIAL_DAY_URL,
+	    	SORT_BY_CONTROVERSIAL_WEEK_URL, SORT_BY_CONTROVERSIAL_MONTH_URL, SORT_BY_CONTROVERSIAL_YEAR_URL, SORT_BY_CONTROVERSIAL_ALL_URL};
 	    static final String SORT_BY_TOP_HOUR = "this hour";
 	    static final String SORT_BY_TOP_DAY = "today";
 	    static final String SORT_BY_TOP_WEEK = "this week";
@@ -211,6 +215,8 @@ public class Constants {
 	    static final String SORT_BY_TOP_ALL_URL = "t=all";
 	    static final String[] SORT_BY_TOP_CHOICES = {SORT_BY_TOP_HOUR, SORT_BY_TOP_DAY,
 	    	SORT_BY_TOP_WEEK, SORT_BY_TOP_MONTH, SORT_BY_TOP_YEAR, SORT_BY_TOP_ALL};
+	    static final String[] SORT_BY_TOP_URL_CHOICES = {SORT_BY_TOP_HOUR_URL, SORT_BY_TOP_DAY_URL,
+	    	SORT_BY_TOP_WEEK_URL, SORT_BY_TOP_MONTH_URL, SORT_BY_TOP_YEAR_URL, SORT_BY_TOP_ALL_URL};
     }
     static final class CommentsSort {
 	    static final String SORT_BY_KEY = "comments_sort_by";
@@ -229,6 +235,9 @@ public class Constants {
 	    static final String[] SORT_BY_CHOICES =
 	    	{SORT_BY_BEST, SORT_BY_HOT, SORT_BY_NEW,
 	    	SORT_BY_CONTROVERSIAL, SORT_BY_TOP, SORT_BY_OLD};
+	    static final String[] SORT_BY_URL_CHOICES =
+	    	{SORT_BY_BEST_URL, SORT_BY_HOT_URL, SORT_BY_NEW_URL,
+	    	SORT_BY_CONTROVERSIAL_URL, SORT_BY_TOP_URL, SORT_BY_OLD_URL};
     }
     
     

@@ -1116,7 +1116,14 @@ public final class ThreadsListActivity extends ListActivity {
     	case Constants.DIALOG_SORT_BY:
     		builder = new AlertDialog.Builder(this);
     		builder.setTitle("Sort by:");
-    		builder.setSingleChoiceItems(Constants.ThreadsSort.SORT_BY_CHOICES, 0, new DialogInterface.OnClickListener() {
+    		int selectedSortBy = 0;
+    		for (int i = 0; i < Constants.ThreadsSort.SORT_BY_URL_CHOICES.length; i++) {
+    			if (Constants.ThreadsSort.SORT_BY_URL_CHOICES[i].equals(mSortByUrl)) {
+    				selectedSortBy = i;
+    				break;
+    			}
+    		}
+    		builder.setSingleChoiceItems(Constants.ThreadsSort.SORT_BY_CHOICES, selectedSortBy, new DialogInterface.OnClickListener() {
     			public void onClick(DialogInterface dialog, int item) {
     				dismissDialog(Constants.DIALOG_SORT_BY);
     				String itemString = Constants.ThreadsSort.SORT_BY_CHOICES[item];
@@ -1138,15 +1145,19 @@ public final class ThreadsListActivity extends ListActivity {
     	case Constants.DIALOG_SORT_BY_NEW:
     		builder = new AlertDialog.Builder(this);
     		builder.setTitle("what's new");
-    		builder.setSingleChoiceItems(Constants.ThreadsSort.SORT_BY_NEW_CHOICES, 0, new DialogInterface.OnClickListener() {
+    		int selectedSortByNew = 0;
+    		for (int i = 0; i < Constants.ThreadsSort.SORT_BY_NEW_URL_CHOICES.length; i++) {
+    			if (Constants.ThreadsSort.SORT_BY_NEW_URL_CHOICES[i].equals(mSortByUrlExtra)) {
+    				selectedSortByNew = i;
+    				break;
+    			}
+    		}
+    		builder.setSingleChoiceItems(Constants.ThreadsSort.SORT_BY_NEW_CHOICES, selectedSortByNew,
+    				new DialogInterface.OnClickListener() {
     			public void onClick(DialogInterface dialog, int item) {
     				dismissDialog(Constants.DIALOG_SORT_BY_NEW);
     				mSortByUrl = Constants.ThreadsSort.SORT_BY_NEW_URL;
-    				String itemString = Constants.ThreadsSort.SORT_BY_NEW_CHOICES[item];
-    				if (Constants.ThreadsSort.SORT_BY_NEW_NEW.equals(itemString))
-    					mSortByUrlExtra = Constants.ThreadsSort.SORT_BY_NEW_NEW_URL;
-    				else if (Constants.ThreadsSort.SORT_BY_NEW_RISING.equals(itemString))
-    					mSortByUrlExtra = Constants.ThreadsSort.SORT_BY_NEW_RISING_URL;
+    				mSortByUrlExtra = Constants.ThreadsSort.SORT_BY_NEW_URL_CHOICES[item];
     				new MyDownloadThreadsTask(getApplicationContext(), mClient, om, mSortByUrl, mSortByUrlExtra, mSubreddit).execute();
     			}
     		});
@@ -1155,23 +1166,19 @@ public final class ThreadsListActivity extends ListActivity {
     	case Constants.DIALOG_SORT_BY_CONTROVERSIAL:
     		builder = new AlertDialog.Builder(this);
     		builder.setTitle("most controversial");
-    		builder.setSingleChoiceItems(Constants.ThreadsSort.SORT_BY_CONTROVERSIAL_CHOICES, 0, new DialogInterface.OnClickListener() {
+    		int selectedSortByControversial = 0;
+    		for (int i = 0; i < Constants.ThreadsSort.SORT_BY_CONTROVERSIAL_URL_CHOICES.length; i++) {
+    			if (Constants.ThreadsSort.SORT_BY_CONTROVERSIAL_URL_CHOICES[i].equals(mSortByUrlExtra)) {
+    				selectedSortByControversial = i;
+    				break;
+    			}
+    		}
+    		builder.setSingleChoiceItems(Constants.ThreadsSort.SORT_BY_CONTROVERSIAL_CHOICES, selectedSortByControversial,
+    				new DialogInterface.OnClickListener() {
     			public void onClick(DialogInterface dialog, int item) {
     				dismissDialog(Constants.DIALOG_SORT_BY_CONTROVERSIAL);
     				mSortByUrl = Constants.ThreadsSort.SORT_BY_CONTROVERSIAL_URL;
-    				String itemString = Constants.ThreadsSort.SORT_BY_CONTROVERSIAL_CHOICES[item];
-    				if (Constants.ThreadsSort.SORT_BY_CONTROVERSIAL_HOUR.equals(itemString))
-    					mSortByUrlExtra = Constants.ThreadsSort.SORT_BY_CONTROVERSIAL_HOUR_URL;
-    				else if (Constants.ThreadsSort.SORT_BY_CONTROVERSIAL_DAY.equals(itemString))
-    					mSortByUrlExtra = Constants.ThreadsSort.SORT_BY_CONTROVERSIAL_DAY_URL;
-    				else if (Constants.ThreadsSort.SORT_BY_CONTROVERSIAL_WEEK.equals(itemString))
-    					mSortByUrlExtra = Constants.ThreadsSort.SORT_BY_CONTROVERSIAL_WEEK_URL;
-    				else if (Constants.ThreadsSort.SORT_BY_CONTROVERSIAL_MONTH.equals(itemString))
-    					mSortByUrlExtra = Constants.ThreadsSort.SORT_BY_CONTROVERSIAL_MONTH_URL;
-    				else if (Constants.ThreadsSort.SORT_BY_CONTROVERSIAL_YEAR.equals(itemString))
-    					mSortByUrlExtra = Constants.ThreadsSort.SORT_BY_CONTROVERSIAL_YEAR_URL;
-    				else if (Constants.ThreadsSort.SORT_BY_CONTROVERSIAL_ALL.equals(itemString))
-    					mSortByUrlExtra = Constants.ThreadsSort.SORT_BY_CONTROVERSIAL_ALL_URL;
+    				mSortByUrlExtra = Constants.ThreadsSort.SORT_BY_CONTROVERSIAL_URL_CHOICES[item];
     				new MyDownloadThreadsTask(getApplicationContext(), mClient, om, mSortByUrl, mSortByUrlExtra, mSubreddit).execute();
     			}
     		});
@@ -1180,23 +1187,19 @@ public final class ThreadsListActivity extends ListActivity {
     	case Constants.DIALOG_SORT_BY_TOP:
     		builder = new AlertDialog.Builder(this);
     		builder.setTitle("top scoring");
-    		builder.setSingleChoiceItems(Constants.ThreadsSort.SORT_BY_TOP_CHOICES, 0, new DialogInterface.OnClickListener() {
+    		int selectedSortByTop = 0;
+    		for (int i = 0; i < Constants.ThreadsSort.SORT_BY_TOP_URL_CHOICES.length; i++) {
+    			if (Constants.ThreadsSort.SORT_BY_TOP_URL_CHOICES[i].equals(mSortByUrlExtra)) {
+    				selectedSortByTop = i;
+    				break;
+    			}
+    		}
+    		builder.setSingleChoiceItems(Constants.ThreadsSort.SORT_BY_TOP_CHOICES, selectedSortByTop,
+    				new DialogInterface.OnClickListener() {
     			public void onClick(DialogInterface dialog, int item) {
     				dismissDialog(Constants.DIALOG_SORT_BY_TOP);
     				mSortByUrl = Constants.ThreadsSort.SORT_BY_TOP_URL;
-    				String itemString = Constants.ThreadsSort.SORT_BY_TOP_CHOICES[item];
-    				if (Constants.ThreadsSort.SORT_BY_TOP_HOUR.equals(itemString))
-    					mSortByUrlExtra = Constants.ThreadsSort.SORT_BY_TOP_HOUR_URL;
-    				else if (Constants.ThreadsSort.SORT_BY_TOP_DAY.equals(itemString))
-    					mSortByUrlExtra = Constants.ThreadsSort.SORT_BY_TOP_DAY_URL;
-    				else if (Constants.ThreadsSort.SORT_BY_TOP_WEEK.equals(itemString))
-    					mSortByUrlExtra = Constants.ThreadsSort.SORT_BY_TOP_WEEK_URL;
-    				else if (Constants.ThreadsSort.SORT_BY_TOP_MONTH.equals(itemString))
-    					mSortByUrlExtra = Constants.ThreadsSort.SORT_BY_TOP_MONTH_URL;
-    				else if (Constants.ThreadsSort.SORT_BY_TOP_YEAR.equals(itemString))
-    					mSortByUrlExtra = Constants.ThreadsSort.SORT_BY_TOP_YEAR_URL;
-    				else if (Constants.ThreadsSort.SORT_BY_TOP_ALL.equals(itemString))
-    					mSortByUrlExtra = Constants.ThreadsSort.SORT_BY_TOP_ALL_URL;
+    				mSortByUrlExtra = Constants.ThreadsSort.SORT_BY_TOP_URL_CHOICES[item];
     				new MyDownloadThreadsTask(getApplicationContext(), mClient, om, mSortByUrl, mSortByUrlExtra, mSubreddit).execute();
     			}
     		});

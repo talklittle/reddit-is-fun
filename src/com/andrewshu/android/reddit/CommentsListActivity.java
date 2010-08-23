@@ -2097,36 +2097,16 @@ public class CommentsListActivity extends ListActivity
     		builder = new AlertDialog.Builder(this);
     		builder.setTitle("Sort by:");
 			int selectedSortBy = 0;
-			if (Constants.CommentsSort.SORT_BY_BEST_URL.equals(mSettings.commentsSortByUrl)) {
-				selectedSortBy = 0;
-			} else if (Constants.CommentsSort.SORT_BY_HOT_URL.equals(mSettings.commentsSortByUrl)) {
-				selectedSortBy = 1;
-			} else if (Constants.CommentsSort.SORT_BY_NEW_URL.equals(mSettings.commentsSortByUrl)) {
-				selectedSortBy = 2;
-			} else if (Constants.CommentsSort.SORT_BY_CONTROVERSIAL_URL.equals(mSettings.commentsSortByUrl)) {
-				selectedSortBy = 3;
-			} else if (Constants.CommentsSort.SORT_BY_TOP_URL.equals(mSettings.commentsSortByUrl)) {
-				selectedSortBy = 4;
-			} else if (Constants.CommentsSort.SORT_BY_OLD_URL.equals(mSettings.commentsSortByUrl)) {
-				selectedSortBy = 5;
+			for (int i = 0; i < Constants.CommentsSort.SORT_BY_URL_CHOICES.length; i++) {
+				if (Constants.CommentsSort.SORT_BY_URL_CHOICES[i].equals(mSettings.commentsSortByUrl)) {
+					selectedSortBy = i;
+					break;
+				}
 			}
     		builder.setSingleChoiceItems(Constants.CommentsSort.SORT_BY_CHOICES, selectedSortBy, new DialogInterface.OnClickListener() {
     			public void onClick(DialogInterface dialog, int item) {
     				dismissDialog(Constants.DIALOG_SORT_BY);
-    				String itemString = Constants.CommentsSort.SORT_BY_CHOICES[item];
-    				if (Constants.CommentsSort.SORT_BY_BEST.equals(itemString)) {
-    					mSettings.setCommentsSortByUrl(Constants.CommentsSort.SORT_BY_BEST_URL);
-        			} else if (Constants.CommentsSort.SORT_BY_HOT.equals(itemString)) {
-        				mSettings.setCommentsSortByUrl(Constants.CommentsSort.SORT_BY_HOT_URL);
-        			} else if (Constants.CommentsSort.SORT_BY_NEW.equals(itemString)) {
-        				mSettings.setCommentsSortByUrl(Constants.CommentsSort.SORT_BY_NEW_URL);
-    				} else if (Constants.CommentsSort.SORT_BY_CONTROVERSIAL.equals(itemString)) {
-    					mSettings.setCommentsSortByUrl(Constants.CommentsSort.SORT_BY_CONTROVERSIAL_URL);
-    				} else if (Constants.CommentsSort.SORT_BY_TOP.equals(itemString)) {
-    					mSettings.setCommentsSortByUrl(Constants.CommentsSort.SORT_BY_TOP_URL);
-    				} else if (Constants.CommentsSort.SORT_BY_OLD.equals(itemString)) {
-    					mSettings.setCommentsSortByUrl(Constants.CommentsSort.SORT_BY_OLD_URL);
-    				}
+    				mSettings.setCommentsSortByUrl(Constants.CommentsSort.SORT_BY_URL_CHOICES[item]);
     				new DownloadCommentsTask().execute(Constants.DEFAULT_COMMENT_DOWNLOAD_LIMIT);
     			}
     		});
