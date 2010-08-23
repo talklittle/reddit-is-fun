@@ -140,6 +140,9 @@ public class Common {
     	// Use external browser instead of BrowserActivity
     	editor.putBoolean(Constants.PREF_USE_EXTERNAL_BROWSER, rSettings.useExternalBrowser);
     	
+    	// Comments sort order
+    	editor.putString(Constants.PREF_COMMENTS_SORT_BY_URL, rSettings.commentsSortByUrl);
+    	
     	// Theme
     	editor.putString(Constants.PREF_THEME, RedditSettings.Theme.toString(rSettings.theme));
     	
@@ -191,6 +194,9 @@ public class Common {
         
     	// Use external browser instead of BrowserActivity
         rSettings.setUseExternalBrowser(sessionPrefs.getBoolean(Constants.PREF_USE_EXTERNAL_BROWSER, false));
+        
+    	// Comments sort order
+        rSettings.setCommentsSortByUrl(sessionPrefs.getString(Constants.PREF_COMMENTS_SORT_BY_URL, Constants.CommentsSort.SORT_BY_BEST_URL));
         
         // Theme
         rSettings.setTheme(RedditSettings.Theme.valueOf(

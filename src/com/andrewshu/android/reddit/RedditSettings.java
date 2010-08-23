@@ -35,7 +35,9 @@ public class RedditSettings {
 	boolean useExternalBrowser = false;
 	
 	int threadDownloadLimit = Constants.DEFAULT_THREAD_DOWNLOAD_LIMIT;
+	String commentsSortByUrl = Constants.CommentsSort.SORT_BY_BEST_URL;
 	
+    
 	// --- Themes ---
 	int theme = R.style.Reddit_Light;
 	int rotation = -1;  // -1 means unspecified
@@ -106,6 +108,10 @@ public class RedditSettings {
 	}
 	
 	// --- Setters ---
+	
+	void setCommentsSortByUrl(String commentsSortByUrl) {
+		this.commentsSortByUrl = commentsSortByUrl;
+	}
 	
 	void setHomepage(String homepage) {
 		this.homepage = homepage;

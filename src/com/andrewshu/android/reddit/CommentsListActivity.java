@@ -126,7 +126,6 @@ public class CommentsListActivity extends ListActivity
     private int mJumpToCommentPosition = 0;
     private HashSet<Integer> mMorePositions = new HashSet<Integer>();
     private ThingInfo mOpThingInfo = null;
-    private String mSortByUrl = Constants.CommentsSort.SORT_BY_BEST_URL;
     private String mThreadTitle = null;
 	
     // Keep track of the row ids of comments that user has hidden
@@ -164,8 +163,7 @@ public class CommentsListActivity extends ListActivity
         setContentView(R.layout.comments_list_content);
         
         if (savedInstanceState != null) {
-        	mSortByUrl = savedInstanceState.getString(Constants.CommentsSort.SORT_BY_KEY);
-       		mJumpToCommentId = savedInstanceState.getString(Constants.JUMP_TO_COMMENT_ID_KEY);
+        	mJumpToCommentId = savedInstanceState.getString(Constants.JUMP_TO_COMMENT_ID_KEY);
        		mJumpToCommentContext = savedInstanceState.getInt(Constants.JUMP_TO_COMMENT_CONTEXT_KEY);
         	mReplyTargetName = savedInstanceState.getString(Constants.REPLY_TARGET_NAME_KEY);
         	mReportTargetName = savedInstanceState.getString(Constants.REPORT_TARGET_NAME_KEY);
@@ -842,7 +840,7 @@ public class CommentsListActivity extends ListActivity
 	        		}
 	        		sb.append("/comments/")
 	        		.append(mThreadId)
-	        		.append("/z/").append(_mMoreChildrenId).append(".json?").append(mSortByUrl).append("&");
+	        		.append("/z/").append(_mMoreChildrenId).append(".json?").append(mSettings.commentsSortByUrl).append("&");
 	        	if (mJumpToCommentContext != 0)
 	        		sb.append("context="+mJumpToCommentContext+"&");
 	        	
@@ -1730,17 +1728,17 @@ public class CommentsListActivity extends ListActivity
         dest.setTitle(src.getTitle());
         
         // Sort
-        if (Constants.CommentsSort.SORT_BY_BEST_URL.equals(mSortByUrl))
+        if (Constants.CommentsSort.SORT_BY_BEST_URL.equals(mSettings.commentsSortByUrl))
         	src = menu.findItem(R.id.sort_by_best_menu_id);
-        else if (Constants.CommentsSort.SORT_BY_HOT_URL.equals(mSortByUrl))
+        else if (Constants.CommentsSort.SORT_BY_HOT_URL.equals(mSettings.commentsSortByUrl))
         	src = menu.findItem(R.id.sort_by_hot_menu_id);
-        else if (Constants.CommentsSort.SORT_BY_NEW_URL.equals(mSortByUrl))
+        else if (Constants.CommentsSort.SORT_BY_NEW_URL.equals(mSettings.commentsSortByUrl))
         	src = menu.findItem(R.id.sort_by_new_menu_id);
-        else if (Constants.CommentsSort.SORT_BY_CONTROVERSIAL_URL.equals(mSortByUrl))
+        else if (Constants.CommentsSort.SORT_BY_CONTROVERSIAL_URL.equals(mSettings.commentsSortByUrl))
         	src = menu.findItem(R.id.sort_by_controversial_menu_id);
-        else if (Constants.CommentsSort.SORT_BY_TOP_URL.equals(mSortByUrl))
+        else if (Constants.CommentsSort.SORT_BY_TOP_URL.equals(mSettings.commentsSortByUrl))
         	src = menu.findItem(R.id.sort_by_top_menu_id);
-        else if (Constants.CommentsSort.SORT_BY_OLD_URL.equals(mSortByUrl))
+        else if (Constants.CommentsSort.SORT_BY_OLD_URL.equals(mSettings.commentsSortByUrl))
         	src = menu.findItem(R.id.sort_by_old_menu_id);
         dest = menu.findItem(R.id.sort_by_menu_id);
         dest.setTitle(src.getTitle());
@@ -2098,22 +2096,36 @@ public class CommentsListActivity extends ListActivity
     	case Constants.DIALOG_SORT_BY:
     		builder = new AlertDialog.Builder(this);
     		builder.setTitle("Sort by:");
-    		builder.setSingleChoiceItems(Constants.CommentsSort.SORT_BY_CHOICES, 0, new DialogInterface.OnClickListener() {
+			int selectedSortBy = 0;
+			if (Constants.CommentsSort.SORT_BY_BEST_URL.equals(mSettings.commentsSortByUrl)) {
+				selectedSortBy = 0;
+			} else if (Constants.CommentsSort.SORT_BY_HOT_URL.equals(mSettings.commentsSortByUrl)) {
+				selectedSortBy = 1;
+			} else if (Constants.CommentsSort.SORT_BY_NEW_URL.equals(mSettings.commentsSortByUrl)) {
+				selectedSortBy = 2;
+			} else if (Constants.CommentsSort.SORT_BY_CONTROVERSIAL_URL.equals(mSettings.commentsSortByUrl)) {
+				selectedSortBy = 3;
+			} else if (Constants.CommentsSort.SORT_BY_TOP_URL.equals(mSettings.commentsSortByUrl)) {
+				selectedSortBy = 4;
+			} else if (Constants.CommentsSort.SORT_BY_OLD_URL.equals(mSettings.commentsSortByUrl)) {
+				selectedSortBy = 5;
+			}
+    		builder.setSingleChoiceItems(Constants.CommentsSort.SORT_BY_CHOICES, selectedSortBy, new DialogInterface.OnClickListener() {
     			public void onClick(DialogInterface dialog, int item) {
     				dismissDialog(Constants.DIALOG_SORT_BY);
     				String itemString = Constants.CommentsSort.SORT_BY_CHOICES[item];
     				if (Constants.CommentsSort.SORT_BY_BEST.equals(itemString)) {
-    					mSortByUrl = Constants.CommentsSort.SORT_BY_BEST_URL;
+    					mSettings.setCommentsSortByUrl(Constants.CommentsSort.SORT_BY_BEST_URL);
         			} else if (Constants.CommentsSort.SORT_BY_HOT.equals(itemString)) {
-    					mSortByUrl = Constants.CommentsSort.SORT_BY_HOT_URL;
+        				mSettings.setCommentsSortByUrl(Constants.CommentsSort.SORT_BY_HOT_URL);
         			} else if (Constants.CommentsSort.SORT_BY_NEW.equals(itemString)) {
-        				mSortByUrl = Constants.CommentsSort.SORT_BY_NEW_URL;
+        				mSettings.setCommentsSortByUrl(Constants.CommentsSort.SORT_BY_NEW_URL);
     				} else if (Constants.CommentsSort.SORT_BY_CONTROVERSIAL.equals(itemString)) {
-    					mSortByUrl = Constants.CommentsSort.SORT_BY_CONTROVERSIAL_URL;
+    					mSettings.setCommentsSortByUrl(Constants.CommentsSort.SORT_BY_CONTROVERSIAL_URL);
     				} else if (Constants.CommentsSort.SORT_BY_TOP.equals(itemString)) {
-    					mSortByUrl = Constants.CommentsSort.SORT_BY_TOP_URL;
+    					mSettings.setCommentsSortByUrl(Constants.CommentsSort.SORT_BY_TOP_URL);
     				} else if (Constants.CommentsSort.SORT_BY_OLD.equals(itemString)) {
-    					mSortByUrl = Constants.CommentsSort.SORT_BY_OLD_URL;
+    					mSettings.setCommentsSortByUrl(Constants.CommentsSort.SORT_BY_OLD_URL);
     				}
     				new DownloadCommentsTask().execute(Constants.DEFAULT_COMMENT_DOWNLOAD_LIMIT);
     			}
@@ -2407,7 +2419,6 @@ public class CommentsListActivity extends ListActivity
     @Override
     protected void onSaveInstanceState(Bundle state) {
     	super.onSaveInstanceState(state);
-    	state.putString(Constants.CommentsSort.SORT_BY_KEY, mSortByUrl);
     	state.putInt(Constants.JUMP_TO_COMMENT_POSITION_KEY, mJumpToCommentPosition);
     	state.putString(Constants.JUMP_TO_COMMENT_ID_KEY, mJumpToCommentId);
     	state.putInt(Constants.JUMP_TO_COMMENT_CONTEXT_KEY, mJumpToCommentContext);
