@@ -39,7 +39,7 @@ public class RedditSettings {
 	
     
 	// --- Themes ---
-	int theme = R.style.Reddit_Light;
+	int theme = R.style.Reddit_Light_Medium;
 	int rotation = -1;  // -1 means unspecified
 	boolean loadThumbnails = true;
 	boolean loadThumbnailsOnlyWifi = false;
@@ -54,26 +54,6 @@ public class RedditSettings {
 	//
 	
 	// --- Preferences ---
-	// Don't use a HashMap because that would need to be initialized many times
-	public static class Theme {
-		public static int valueOf(String valueString) {
-			if (Constants.PREF_THEME_LIGHT.equals(valueString))
-				return R.style.Reddit_Light;
-			if (Constants.PREF_THEME_DARK.equals(valueString))
-				return R.style.Reddit_Dark;
-			return R.style.Reddit_Light;
-		}
-		public static String toString(int value) {
-			switch (value) {
-			case R.style.Reddit_Light:
-				return Constants.PREF_THEME_LIGHT;
-			case R.style.Reddit_Dark:
-				return Constants.PREF_THEME_DARK;
-			default:
-				return Constants.PREF_THEME_LIGHT;
-			}
-		}
-	}
 	public static class Rotation {
 		/* From http://developer.android.com/reference/android/R.attr.html#screenOrientation
 		 * unspecified -1

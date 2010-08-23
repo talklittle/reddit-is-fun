@@ -43,6 +43,13 @@
         		android:entryValues="@array/pref_theme_values"
         		android:dialogTitle="@string/pref_theme_dialogtitle" />
         		
+        <ListPreference
+                android:key="text_size"
+                android:title="@string/pref_text_size"
+                android:defaultValue="MEDIUM"
+                android:entries="@array/pref_text_size_choices"
+                android:entryValues="@array/pref_text_size_values"
+                android:dialogTitle="@string/pref_text_size_dialogtitle" />
         
                    
    		
@@ -70,16 +77,6 @@
         		android:entries="@array/pref_mail_notification_service_choices"
         		android:entryValues="@array/pref_mail_notification_service_values"
         		android:dialogTitle="@string/pref_mail_notification_service_dialogtitle" />
-
-		<!-- 
-        <ListPreference
-                android:key="text_size"
-                android:title="@string/pref_text_size"
-                android:defaultValue="NORMAL"
-                android:entries="@array/pref_text_size_choices"
-                android:entryValues="@array/pref_text_size_values"
-                android:dialogTitle="@string/pref_text_size_dialogtitle" />
-        -->
 
     </PreferenceCategory>
 	

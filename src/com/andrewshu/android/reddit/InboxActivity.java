@@ -183,7 +183,7 @@ public final class InboxActivity extends ListActivity
     public void setContentView(int layoutResID) {
     	super.setContentView(layoutResID);
     	// HACK: set background color directly for android 2.0
-        if (mSettings.theme == R.style.Reddit_Light)
+        if (Util.isLightTheme(mSettings.theme))
         	getListView().setBackgroundResource(R.color.white);
         registerForContextMenu(getListView());
     }
@@ -293,7 +293,7 @@ public final class InboxActivity extends ListActivity
             StyleSpan authorStyleSpan = new StyleSpan(Typeface.BOLD);
             authorSS.setSpan(authorStyleSpan, 0, authorLen, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
             ForegroundColorSpan fcs;
-            if (mSettings.theme == R.style.Reddit_Light)
+            if (Util.isLightTheme(mSettings.theme))
             	fcs = new ForegroundColorSpan(getResources().getColor(R.color.dark_blue));
             else
             	fcs = new ForegroundColorSpan(getResources().getColor(R.color.white));
@@ -396,7 +396,7 @@ public final class InboxActivity extends ListActivity
     }
     
     private void enableLoadingScreen() {
-    	if (mSettings.theme == R.style.Reddit_Light) {
+    	if (Util.isLightTheme(mSettings.theme)) {
     		setContentView(R.layout.loading_light);
     	} else {
     		setContentView(R.layout.loading_dark);

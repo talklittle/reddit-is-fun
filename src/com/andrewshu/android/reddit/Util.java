@@ -143,6 +143,78 @@ public class Util {
 		return path;
 	}
 	
+	// ===============
+	//      Theme
+	// ===============
+
+	static boolean isLightTheme(int theme) {
+		return theme == R.style.Reddit_Light_Medium || theme == R.style.Reddit_Light_Large || theme == R.style.Reddit_Light_Larger;
+	}
+	
+	static boolean isDarkTheme(int theme) {
+		return theme == R.style.Reddit_Dark_Medium || theme == R.style.Reddit_Dark_Large || theme == R.style.Reddit_Dark_Larger;
+	}
+	
+	static int getInvertedTheme(int theme) {
+		switch (theme) {
+		case R.style.Reddit_Light_Medium:
+			return R.style.Reddit_Dark_Medium;
+		case R.style.Reddit_Light_Large:
+			return R.style.Reddit_Dark_Large;
+		case R.style.Reddit_Light_Larger:
+			return R.style.Reddit_Dark_Larger;
+		case R.style.Reddit_Dark_Medium:
+			return R.style.Reddit_Light_Medium;
+		case R.style.Reddit_Dark_Large:
+			return R.style.Reddit_Light_Large;
+		case R.style.Reddit_Dark_Larger:
+			return R.style.Reddit_Light_Larger;
+		default:
+			return R.style.Reddit_Light_Medium;	
+		}
+	}
+	
+	static int getThemeResourceFromPrefs(String themePref, String textSizePref) {
+		if (Constants.PREF_THEME_LIGHT.equals(themePref)) {
+			if (Constants.PREF_TEXT_SIZE_MEDIUM.equals(textSizePref))
+				return R.style.Reddit_Light_Medium;
+			else if (Constants.PREF_TEXT_SIZE_LARGE.equals(textSizePref))
+				return R.style.Reddit_Light_Large;
+			else if (Constants.PREF_TEXT_SIZE_LARGER.equals(textSizePref))
+				return R.style.Reddit_Light_Larger;
+		} else /* if (Constants.PREF_THEME_DARK.equals(themePref)) */ {
+			if (Constants.PREF_TEXT_SIZE_MEDIUM.equals(textSizePref))
+				return R.style.Reddit_Dark_Medium;
+			else if (Constants.PREF_TEXT_SIZE_LARGE.equals(textSizePref))
+				return R.style.Reddit_Dark_Large;
+			else if (Constants.PREF_TEXT_SIZE_LARGER.equals(textSizePref))
+				return R.style.Reddit_Dark_Larger;
+		}
+		return R.style.Reddit_Light_Medium;
+	}
+	
+	/**
+	 * Return the theme and textSize String prefs
+	 */
+	static String[] getPrefsFromThemeResource(int theme) {
+		switch (theme) {
+		case R.style.Reddit_Light_Medium:
+			return new String[] { Constants.PREF_THEME_LIGHT, Constants.PREF_TEXT_SIZE_MEDIUM };
+		case R.style.Reddit_Light_Large:
+			return new String[] { Constants.PREF_THEME_LIGHT, Constants.PREF_TEXT_SIZE_LARGE };
+		case R.style.Reddit_Light_Larger:
+			return new String[] { Constants.PREF_THEME_LIGHT, Constants.PREF_TEXT_SIZE_LARGER };
+		case R.style.Reddit_Dark_Medium:
+			return new String[] { Constants.PREF_THEME_DARK, Constants.PREF_TEXT_SIZE_MEDIUM };
+		case R.style.Reddit_Dark_Large:
+			return new String[] { Constants.PREF_THEME_DARK, Constants.PREF_TEXT_SIZE_LARGE };
+		case R.style.Reddit_Dark_Larger:
+			return new String[] { Constants.PREF_THEME_DARK, Constants.PREF_TEXT_SIZE_LARGER };
+		default:
+			return new String[] { Constants.PREF_THEME_LIGHT, Constants.PREF_TEXT_SIZE_MEDIUM };
+		}
+	}
+	
 	
 	// ===============
 	//       Uri

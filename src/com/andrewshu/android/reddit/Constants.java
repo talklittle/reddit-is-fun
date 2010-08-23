@@ -275,6 +275,10 @@ public class Constants {
     static final String PREF_THEME = "theme";
     static final String PREF_THEME_LIGHT = "THEME_LIGHT";
     static final String PREF_THEME_DARK	 = "THEME_DARK";
+    static final String PREF_TEXT_SIZE = "text_size";
+    static final String PREF_TEXT_SIZE_MEDIUM = "TEXT_SIZE_MEDIUM";
+    static final String PREF_TEXT_SIZE_LARGE = "TEXT_SIZE_LARGE";
+    static final String PREF_TEXT_SIZE_LARGER = "TEXT_SIZE_LARGER";
     static final String PREF_ROTATION = "rotation";
     static final String PREF_ROTATION_UNSPECIFIED = "ROTATION_UNSPECIFIED";
     static final String PREF_ROTATION_PORTRAIT = "ROTATION_PORTRAIT";

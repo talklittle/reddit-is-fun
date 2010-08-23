@@ -62,6 +62,12 @@ public class RedditPreferencesPage extends PreferenceActivity
         		getPreferenceScreen().getSharedPreferences()
                 .getString(Constants.PREF_THEME, null)));
         
+        e = findPreference(Constants.PREF_TEXT_SIZE);
+        e.setOnPreferenceChangeListener(this);
+        e.setSummary(getVisualTextSizeName(
+        		getPreferenceScreen().getSharedPreferences()
+                .getString(Constants.PREF_TEXT_SIZE, null)));
+        
         e = findPreference(Constants.PREF_ROTATION);
         e.setOnPreferenceChangeListener(this);
         e.setSummary(getVisualRotationName(
@@ -108,6 +114,9 @@ public class RedditPreferencesPage extends PreferenceActivity
             return true;
     	} else if (pref.getKey().equals(Constants.PREF_THEME)) {
             pref.setSummary(getVisualThemeName((String) objValue));
+            return true;
+    	} else if (pref.getKey().equals(Constants.PREF_TEXT_SIZE)) {
+            pref.setSummary(getVisualTextSizeName((String) objValue));
             return true;
     	} else if (pref.getKey().equals(Constants.PREF_ROTATION)) {
             pref.setSummary(getVisualRotationName((String) objValue));
@@ -194,6 +203,23 @@ public class RedditPreferencesPage extends PreferenceActivity
                 R.array.pref_theme_choices);
         CharSequence[] enumNames = getResources().getTextArray(
                 R.array.pref_theme_values);
+        // Sanity check
+        if (visualNames.length != enumNames.length) {
+            return "";
+        }
+        for (int i = 0; i < enumNames.length; i++) {
+            if (enumNames[i].equals(enumName)) {
+                return visualNames[i];
+            }
+        }
+        return "";
+    }
+    
+    private CharSequence getVisualTextSizeName(String enumName) {
+        CharSequence[] visualNames = getResources().getTextArray(
+                R.array.pref_text_size_choices);
+        CharSequence[] enumNames = getResources().getTextArray(
+                R.array.pref_text_size_values);
         // Sanity check
         if (visualNames.length != enumNames.length) {
             return "";

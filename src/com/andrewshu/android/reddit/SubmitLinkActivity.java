@@ -102,7 +102,7 @@ public class SubmitLinkActivity extends TabActivity {
 		setContentView(R.layout.submit_link_main);
 
 		final FrameLayout fl = (FrameLayout) findViewById(android.R.id.tabcontent);
-		if (mSettings.theme == R.style.Reddit_Light) {
+		if (Util.isLightTheme(mSettings.theme)) {
 			fl.setBackgroundResource(R.color.light_gray);
 		} else {
 			fl.setBackgroundResource(R.color.android_dark_background);

@@ -131,6 +131,19 @@
         <item>THEME_LIGHT</item>
         <item>THEME_DARK</item>
     </string-array>
+    
+    <string name="pref_text_size">Text size</string>
+    <string name="pref_text_size_dialogtitle">Text size</string>
+    <string-array name="pref_text_size_choices">
+    	<item>Medium</item>
+    	<item>Large</item>
+    	<item>Larger</item>
+   	</string-array>
+	<string-array name="pref_text_size_values" translatable="false">
+        <item>TEXT_SIZE_MEDIUM</item>
+        <item>TEXT_SIZE_LARGE</item>
+        <item>TEXT_SIZE_LARGER</item>
+    </string-array>
 
 	<string name="pref_rotation">Screen rotation</string>
 	<string name="pref_rotation_dialogtitle">Screen rotation</string>

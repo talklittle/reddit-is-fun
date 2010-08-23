@@ -62,6 +62,7 @@
 		      	android:singleLine="true"
 		        android:ellipsize="marquee"
 		        android:gravity="center"
+		        android:textSize="14sp"
 		        android:textStyle="bold"
 		    />
 		
@@ -89,7 +90,7 @@
 		        android:layout_height="wrap_content"
 		        android:layout_marginBottom="1dip"
 		        android:layout_alignParentLeft="true"
-		        android:textSize="14sp"
+		        android:textAppearance="?android:attr/textAppearanceLarge"
 		    />
 		    
 		    <!-- Next row -->
@@ -100,7 +101,7 @@
 		        android:layout_below="@id/title"
 		        android:layout_alignLeft="@id/title"
 		        android:layout_marginRight="5dip"
-		        android:textSize="10sp"
+		        android:textAppearance="?android:attr/textAppearanceSmall"
 		        android:text="nsfw"
 		        android:textColor="#f00"
 		    />
@@ -116,7 +117,7 @@
 		
 		        android:singleLine="true"
 		        android:ellipsize="marquee"
-		        android:textSize="10sp"
+		        android:textAppearance="?android:attr/textAppearanceSmall"
 		    />
 		
 		    <TextView android:id="@+id/subreddit"
@@ -125,8 +126,7 @@
 		        android:layout_marginLeft="5dip"
 		        android:layout_toRightOf="@id/numComments"
 		        android:layout_alignBaseline="@id/numComments"
-		        android:textSize="10sp"
-		        android:text="funny"
+		        android:textAppearance="?android:attr/textAppearanceSmall"
 		    />
 	
 			<!-- A bottommost row used for OP posts in commentslist -->		
@@ -142,7 +142,7 @@
 		        
 		        android:singleLine="true"
 		        android:ellipsize="marquee"
-		        android:textSize="10sp"
+		        android:textAppearance="?android:attr/textAppearanceSmall"
 		    />
 		    
 		    <TextView android:id="@+id/submitter"
@@ -156,7 +156,7 @@
 		
 				android:singleLine="true"
 		        android:ellipsize="marquee"
-		        android:textSize="10sp"
+		        android:textAppearance="?android:attr/textAppearanceSmall"
 		    />
 		    
 		</RelativeLayout>
@@ -168,7 +168,7 @@
 	    android:layout_marginLeft="8dip"
 	    android:layout_marginRight="8dip"
 	    android:background="@drawable/selftext_border"
-	    android:textSize="14sp"
+	    android:textAppearance="?android:attr/textAppearanceLarge"
 	    android:visibility="gone"
     />
 

@@ -83,7 +83,7 @@
 		        
 		        android:singleLine="true"
 		        android:ellipsize="marquee"
-		        android:textSize="12sp"
+		        android:textAppearance="?android:attr/textAppearanceMedium"
 		        android:textColor="#888"
 		        android:textStyle="bold"
 		    />
@@ -96,7 +96,7 @@
 		        
 		      	android:singleLine="true"
 		        android:ellipsize="marquee"
-		        android:textSize="12sp"
+		        android:textAppearance="?android:attr/textAppearanceMedium"
 		        />
 			
 			<TextView android:id="@+id/submissionTime"
@@ -107,7 +107,7 @@
 		        
 		        android:singleLine="true"
 		        android:ellipsize="marquee"
-		        android:textSize="12sp"
+		        android:textAppearance="?android:attr/textAppearanceMedium"
 		    	/>
 		            
 	    
@@ -119,7 +119,7 @@
 		        android:layout_below="@id/submitter"
 		        android:layout_alignLeft="@id/submitter"
 		        android:text="Loading..."
-		        android:textSize="14sp"
+		        android:textAppearance="?android:attr/textAppearanceLarge"
 		    />
 		    
 	    </RelativeLayout>

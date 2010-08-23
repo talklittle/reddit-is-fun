@@ -107,9 +107,9 @@ public class Common {
      */
 	static void updateListDrawables(ListActivity la, int theme) {
 		ListView lv = la.getListView();
-		if (theme == R.style.Reddit_Light) {
+		if (Util.isLightTheme(theme)) {
     		lv.setSelector(R.drawable.list_selector_blue);
-    	} else if (theme == R.style.Reddit_Dark) {
+    	} else /* if (Common.isDarkTheme(theme)) */ {
     		lv.setSelector(android.R.drawable.list_selector_background);
     	}
 	}
@@ -143,8 +143,10 @@ public class Common {
     	// Comments sort order
     	editor.putString(Constants.PREF_COMMENTS_SORT_BY_URL, rSettings.commentsSortByUrl);
     	
-    	// Theme
-    	editor.putString(Constants.PREF_THEME, RedditSettings.Theme.toString(rSettings.theme));
+    	// Theme and text size
+    	String[] themeTextSize = Util.getPrefsFromThemeResource(rSettings.theme);
+    	editor.putString(Constants.PREF_THEME, themeTextSize[0]);
+    	editor.putString(Constants.PREF_TEXT_SIZE, themeTextSize[1]);
     	
     	// Rotation
     	editor.putString(Constants.PREF_ROTATION, RedditSettings.Rotation.toString(rSettings.rotation));
@@ -198,9 +200,10 @@ public class Common {
     	// Comments sort order
         rSettings.setCommentsSortByUrl(sessionPrefs.getString(Constants.PREF_COMMENTS_SORT_BY_URL, Constants.CommentsSort.SORT_BY_BEST_URL));
         
-        // Theme
-        rSettings.setTheme(RedditSettings.Theme.valueOf(
-        		sessionPrefs.getString(Constants.PREF_THEME, Constants.PREF_THEME_LIGHT)));
+        // Theme and text size
+        rSettings.setTheme(Util.getThemeResourceFromPrefs(
+        		sessionPrefs.getString(Constants.PREF_THEME, Constants.PREF_THEME_LIGHT),
+        		sessionPrefs.getString(Constants.PREF_TEXT_SIZE, Constants.PREF_TEXT_SIZE_MEDIUM)));
         
         // Rotation
         rSettings.setRotation(RedditSettings.Rotation.valueOf(

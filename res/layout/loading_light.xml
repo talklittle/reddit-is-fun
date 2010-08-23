@@ -49,6 +49,7 @@
       	android:singleLine="true"
         android:ellipsize="marquee"
         android:gravity="center"
+        android:textSize="14sp"
         android:textStyle="bold"
         android:text="@string/loading_splash_text"
 	    />

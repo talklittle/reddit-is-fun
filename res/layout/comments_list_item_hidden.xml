@@ -85,7 +85,7 @@
 		        
 		        android:singleLine="true"
 		        android:ellipsize="marquee"
-		        android:textSize="10sp"
+		        android:textAppearance="?android:attr/textAppearanceSmall"
 		        android:textColor="#888"
 		        android:textStyle="italic"
 		    />
@@ -98,7 +98,7 @@
 		        
 		      	android:singleLine="true"
 		        android:ellipsize="marquee"
-		        android:textSize="10sp"
+		        android:textAppearance="?android:attr/textAppearanceSmall"
 		        android:textStyle="italic"
 		        />
 			
@@ -110,7 +110,7 @@
 		        
 		        android:singleLine="true"
 		        android:ellipsize="marquee"
-		        android:textSize="10sp"
+		        android:textAppearance="?android:attr/textAppearanceSmall"
 		        android:textStyle="italic"
 		    	/>
 		    
@@ -121,7 +121,7 @@
 		        android:layout_alignBaseline="@id/submitter"
 		        android:layout_marginLeft="4dip"
 		    	android:singleLine="true"
-		        android:textSize="10sp"
+		        android:textAppearance="?android:attr/textAppearanceSmall"
 		        android:textStyle="bold"
 		    	/>
 	    

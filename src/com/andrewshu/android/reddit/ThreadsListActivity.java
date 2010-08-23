@@ -222,7 +222,7 @@ public final class ThreadsListActivity extends ListActivity {
     	super.setContentView(layoutResID);
 
     	// HACK: set background color directly for android 2.0
-        if (mSettings.theme == R.style.Reddit_Light)
+    	if (Util.isLightTheme(mSettings.theme))
         	getListView().setBackgroundResource(R.color.white);
         registerForContextMenu(getListView());
 
@@ -367,7 +367,7 @@ public final class ThreadsListActivity extends ListActivity {
 	            int titleLen = title.length();
 	            TextAppearanceSpan titleTAS = new TextAppearanceSpan(getApplicationContext(), R.style.TextAppearance_14sp);
 	            titleSS.setSpan(titleTAS, 0, titleLen, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
-	            if (mSettings.theme == R.style.Reddit_Light) {
+	            if (Util.isLightTheme(mSettings.theme)) {
 	            	// FIXME: This doesn't work persistently, since "clicked" is not delivered to reddit.com
 		            if (item.isClicked()) {
 		            	ForegroundColorSpan fcs = new ForegroundColorSpan(res.getColor(R.color.purple));
@@ -467,7 +467,7 @@ public final class ThreadsListActivity extends ListActivity {
 		            	}
 		            	
 		            	// Set thumbnail background based on current theme
-		            	if (mSettings.theme == R.style.Reddit_Light) {
+		            	if (Util.isLightTheme(mSettings.theme)) {
 		            		thumbnailView.setBackgroundResource(R.drawable.thumbnail_background_light);
 		            		indeterminateProgressBar.setBackgroundResource(R.drawable.thumbnail_background_light);
 		            	} else {
@@ -565,7 +565,7 @@ public final class ThreadsListActivity extends ListActivity {
     }
     
     private void enableLoadingScreen() {
-    	if (mSettings.theme == R.style.Reddit_Light) {
+    	if (Util.isLightTheme(mSettings.theme)) {
     		setContentView(R.layout.loading_light);
     	} else {
     		setContentView(R.layout.loading_dark);
@@ -996,7 +996,7 @@ public final class ThreadsListActivity extends ListActivity {
     	}
     	
     	// Theme: Light/Dark
-    	src = mSettings.theme == R.style.Reddit_Light ?
+    	src = Util.isLightTheme(mSettings.theme) ?
         		menu.findItem(R.id.dark_menu_id) :
         			menu.findItem(R.id.light_menu_id);
         dest = menu.findItem(R.id.light_dark_menu_id);
@@ -1060,11 +1060,7 @@ public final class ThreadsListActivity extends ListActivity {
     		Common.launchBrowser(url, this, false, true, true);
     		break;
         case R.id.light_dark_menu_id:
-    		if (mSettings.theme == R.style.Reddit_Light) {
-    			mSettings.setTheme(R.style.Reddit_Dark);
-    		} else {
-    			mSettings.setTheme(R.style.Reddit_Light);
-    		}
+    		mSettings.setTheme(Util.getInvertedTheme(mSettings.theme));
     		setTheme(mSettings.theme);
     		setContentView(R.layout.threads_list_content);
     		setListAdapter(mThreadsAdapter);

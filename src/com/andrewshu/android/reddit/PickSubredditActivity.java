@@ -135,7 +135,7 @@ public final class PickSubredditActivity extends ListActivity {
     public void setContentView(int layoutResID) {
     	super.setContentView(layoutResID);
     	// HACK: set background color directly for android 2.0
-        if (mSettings.theme == R.style.Reddit_Light)
+        if (Util.isLightTheme(mSettings.theme))
         	getListView().setBackgroundResource(R.color.white);
         registerForContextMenu(getListView());
 
@@ -208,7 +208,7 @@ public final class PickSubredditActivity extends ListActivity {
     }
     
     private void enableLoadingScreen() {
-    	if (mSettings.theme == R.style.Reddit_Light) {
+    	if (Util.isLightTheme(mSettings.theme)) {
     		setContentView(R.layout.loading_light);
     	} else {
     		setContentView(R.layout.loading_dark);
