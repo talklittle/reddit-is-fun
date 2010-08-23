@@ -206,7 +206,9 @@ public class Util {
 	}
 	
 	static boolean isRedditUri(Uri uri) {
-		return uri.getHost().endsWith(".reddit.com");
+		if (uri == null) return false;
+		String host = uri.getHost();
+		return host != null && host.endsWith(".reddit.com");
 	}
 	
     /**
@@ -225,8 +227,9 @@ public class Util {
      * @return if uri points to a non-mobile wikpedia uri.
      */
     static boolean isWikipediaUri(Uri uri) {
+    	if (uri == null) return false;
     	String host = uri.getHost();
-    	return host.endsWith(".wikipedia.org") && !host.contains(".m.wikipedia.org");
+    	return host != null && host.endsWith(".wikipedia.org") && !host.contains(".m.wikipedia.org");
     }
     
     /**
