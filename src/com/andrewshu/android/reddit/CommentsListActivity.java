@@ -382,8 +382,7 @@ public class CommentsListActivity extends ListActivity
 	                
 	                TextView titleView = (TextView) view.findViewById(R.id.title);
 	                TextView votesView = (TextView) view.findViewById(R.id.votes);
-	                TextView numCommentsView = (TextView) view.findViewById(R.id.numComments);
-	                TextView subredditView = (TextView) view.findViewById(R.id.subreddit);
+	                TextView numCommentsSubredditView = (TextView) view.findViewById(R.id.numCommentsSubreddit);
 	                TextView nsfwView = (TextView) view.findViewById(R.id.nsfw);
 	                TextView submissionTimeView = (TextView) view.findViewById(R.id.submissionTime);
 	                TextView submitterView = (TextView) view.findViewById(R.id.submitter);
@@ -424,8 +423,7 @@ public class CommentsListActivity extends ListActivity
 	                titleView.setText(builder);
 	                
 	                votesView.setText("" + mOpThingInfo.getScore());
-	                numCommentsView.setText(Util.showNumComments(mOpThingInfo.getNum_comments()));
-	                subredditView.setText(mOpThingInfo.getSubreddit());
+	                numCommentsSubredditView.setText(Util.showNumComments(mOpThingInfo.getNum_comments()) + "  " + mOpThingInfo.getSubreddit());
 	                submissionTimeView.setText(Util.getTimeAgo(mOpThingInfo.getCreated_utc()));
 	                submitterView.setText("by "+mOpThingInfo.getAuthor());
 	                

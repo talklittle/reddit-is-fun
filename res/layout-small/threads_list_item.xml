@@ -106,36 +106,27 @@
 		        android:textColor="#f00"
 		    />
 		    
-	        <TextView android:id="@+id/numComments"
+	        <TextView android:id="@+id/numCommentsSubreddit"
 		        android:layout_width="wrap_content"
 		        android:layout_height="wrap_content"
 		        android:layout_toRightOf="@id/nsfw"
-		        android:layout_alignBaseline="@id/nsfw"
-		        android:layout_marginRight="5dip"
+		        android:layout_toLeftOf="@id/thumbnail_view"
 		        android:layout_below="@id/title"
+		        android:layout_alignBaseline="@id/nsfw"
+		        android:layout_alignWithParentIfMissing="true"
+		        android:layout_marginRight="5dip"
+		        android:layout_gravity="left"
 		        android:text="0 cmts"
-		
-		        android:singleLine="true"
-		        android:ellipsize="marquee"
 		        android:textAppearance="?android:attr/textAppearanceSmall"
 		    />
 		
-		    <TextView android:id="@+id/subreddit"
-		        android:layout_width="wrap_content"
-		        android:layout_height="wrap_content"
-		        android:layout_marginLeft="5dip"
-		        android:layout_toRightOf="@id/numComments"
-		        android:layout_alignBaseline="@id/numComments"
-		        android:textAppearance="?android:attr/textAppearanceSmall"
-		    />
-	
 			<!-- A bottommost row used for OP posts in commentslist -->		
 		
 			<TextView android:id="@+id/submissionTime"
 		        android:layout_width="wrap_content"
 		        android:layout_height="wrap_content"
-				android:layout_below="@id/numComments"
-			    android:layout_alignLeft="@id/numComments"
+				android:layout_below="@id/numCommentsSubreddit"
+			    android:layout_alignLeft="@id/title"
 			    android:layout_marginRight="4dip"
 			    android:text="very recently"
 		        android:visibility="gone"

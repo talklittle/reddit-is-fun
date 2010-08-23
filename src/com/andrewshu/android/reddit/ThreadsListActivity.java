@@ -348,8 +348,7 @@ public final class ThreadsListActivity extends ListActivity {
 	            
 	            TextView titleView = (TextView) view.findViewById(R.id.title);
 	            TextView votesView = (TextView) view.findViewById(R.id.votes);
-	            TextView numCommentsView = (TextView) view.findViewById(R.id.numComments);
-	            TextView subredditView = (TextView) view.findViewById(R.id.subreddit);
+	            TextView numCommentsSubredditView = (TextView) view.findViewById(R.id.numCommentsSubreddit);
 	            TextView nsfwView = (TextView) view.findViewById(R.id.nsfw);
 	//            TextView submissionTimeView = (TextView) view.findViewById(R.id.submissionTime);
 	            ImageView voteUpView = (ImageView) view.findViewById(R.id.vote_up_image);
@@ -390,8 +389,7 @@ public final class ThreadsListActivity extends ListActivity {
 	            titleView.setText(builder);
 	            
 	            votesView.setText("" + item.getScore());
-	            numCommentsView.setText(Util.showNumComments(item.getNum_comments()));
-	            subredditView.setText(item.getSubreddit());
+	            numCommentsSubredditView.setText(Util.showNumComments(item.getNum_comments()) + "  " + item.getSubreddit());
 	            
                 if(item.isOver_18()){
                     nsfwView.setVisibility(View.VISIBLE);
