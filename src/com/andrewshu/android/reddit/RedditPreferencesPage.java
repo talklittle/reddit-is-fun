@@ -19,14 +19,10 @@
 
 package com.andrewshu.android.reddit;
 
-import android.app.AlarmManager;
 import android.app.NotificationManager;
-import android.app.PendingIntent;
 import android.content.Context;
-import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.Bundle;
-import android.os.SystemClock;
 import android.preference.Preference;
 import android.preference.PreferenceActivity;
 import android.preference.PreferenceManager;
@@ -36,16 +32,9 @@ public class RedditPreferencesPage extends PreferenceActivity
         implements Preference.OnPreferenceChangeListener, 
         Preference.OnPreferenceClickListener {
 	
-	private PendingIntent mAlarmSender;
-
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        
-        // Create an IntentSender that will launch our service, to be scheduled
-        // with the alarm manager.
-        mAlarmSender = PendingIntent.getService(this, 0, new Intent(getApplicationContext(), EnvelopeService.class), 0);
-
         
         // Load the XML preferences file
         addPreferencesFromResource(R.xml.reddit_preferences);
@@ -85,6 +74,12 @@ public class RedditPreferencesPage extends PreferenceActivity
         e.setSummary(getVisualMailNotificationServiceName(
         		getPreferenceScreen().getSharedPreferences()
         		.getString(Constants.PREF_MAIL_NOTIFICATION_SERVICE, null)));
+        // Disable mail notification service preference, if mail notification style is off
+        if (getPreferenceScreen().getSharedPreferences()
+        		.getString(Constants.PREF_MAIL_NOTIFICATION_STYLE, Constants.PREF_MAIL_NOTIFICATION_STYLE_OFF)
+        		.equals(Constants.PREF_MAIL_NOTIFICATION_STYLE_OFF)) {
+        	e.setEnabled(false);
+        }
         
     }
     
@@ -123,12 +118,8 @@ public class RedditPreferencesPage extends PreferenceActivity
             	NotificationManager notificationManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
         		notificationManager.cancel(Constants.NOTIFICATION_HAVE_MAIL);
         		// Disable the service too
+        		onPreferenceChange(servicePref, Constants.PREF_MAIL_NOTIFICATION_SERVICE_OFF);
         		servicePref.setEnabled(false);
-                AlarmManager am = (AlarmManager)getSystemService(ALARM_SERVICE);
-                am.cancel(mAlarmSender);
-                // Tell the user about what we did.
-                Toast.makeText(this, R.string.mail_notification_unscheduled,
-                        Toast.LENGTH_LONG).show();
             } else {
             	// Enable the service preference
             	if (!servicePref.isEnabled()) {
@@ -145,29 +136,12 @@ public class RedditPreferencesPage extends PreferenceActivity
         	pref.setSummary(getVisualMailNotificationServiceName((String) objValue));
         	if (Constants.PREF_MAIL_NOTIFICATION_SERVICE_OFF.equals(objValue)) {
         		// Cancel the service
-                AlarmManager am = (AlarmManager)getSystemService(ALARM_SERVICE);
-                am.cancel(mAlarmSender);
+                EnvelopeService.resetAlarm(this, 0);
                 // Tell the user about what we did.
-                Toast.makeText(this, R.string.mail_notification_unscheduled,
-                        Toast.LENGTH_LONG).show();
+                Toast.makeText(this, R.string.mail_notification_unscheduled, Toast.LENGTH_LONG).show();
         	} else {
-        		long durationMillis;
-        		if (Constants.PREF_MAIL_NOTIFICATION_SERVICE_5MIN.equals(objValue)) {
-        			durationMillis = 5 * 60 * 1000;
-        		} else if (Constants.PREF_MAIL_NOTIFICATION_SERVICE_30MIN.equals(objValue)) {
-        			durationMillis = 30 * 60 * 1000;
-        		} else if (Constants.PREF_MAIL_NOTIFICATION_SERVICE_1HOUR.equals(objValue)) {
-        			durationMillis = 1 * 3600 * 1000;
-        		} else if (Constants.PREF_MAIL_NOTIFICATION_SERVICE_6HOURS.equals(objValue)) {
-        			durationMillis = 6 * 3600 * 1000;
-        		} else /* if (Constants.PREF_MAIL_NOTIFICATION_SERVICE_1DAY.equals(objValue)) */ {
-        			durationMillis = 24 * 3600 * 1000;
-        		}
-                long firstTime = SystemClock.elapsedRealtime();
                 // Schedule the alarm!
-                AlarmManager am = (AlarmManager)getSystemService(ALARM_SERVICE);
-                am.setRepeating(AlarmManager.ELAPSED_REALTIME_WAKEUP,
-                                firstTime, durationMillis, mAlarmSender);
+                EnvelopeService.resetAlarm(this, Util.getMillisFromMailNotificationPref((String) objValue));
                 // Tell the user about what we did.
                 Toast.makeText(this, "Reddit mail will be checked: " +
                 		getVisualMailNotificationServiceName((String) objValue),

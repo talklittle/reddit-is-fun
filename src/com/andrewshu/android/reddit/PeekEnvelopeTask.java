@@ -13,7 +13,9 @@ import org.codehaus.jackson.JsonParser;
 import org.codehaus.jackson.JsonToken;
 
 import android.content.Context;
+import android.content.SharedPreferences;
 import android.os.AsyncTask;
+import android.preference.PreferenceManager;
 import android.util.Log;
 
 public class PeekEnvelopeTask extends AsyncTask<Void, Void, Integer> {
@@ -61,8 +63,14 @@ public class PeekEnvelopeTask extends AsyncTask<Void, Void, Integer> {
         }
         return null;
 	}
+	
 	@Override
 	public void onPostExecute(Integer count) {
+		// reset the alarm
+		SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(mContext);
+		EnvelopeService.resetAlarm(mContext, Util.getMillisFromMailNotificationPref(
+				prefs.getString(Constants.PREF_MAIL_NOTIFICATION_SERVICE, Constants.PREF_MAIL_NOTIFICATION_SERVICE_OFF)));
+
 		// null means error. Don't do anything.
 		if (count == null)
 			return;

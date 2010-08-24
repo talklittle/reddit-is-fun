@@ -264,6 +264,27 @@ public class Util {
 	}
 	
 	
+	// =======================
+	//    Mail Notification
+	// =======================
+	
+	static long getMillisFromMailNotificationPref(String pref) {
+		if (Constants.PREF_MAIL_NOTIFICATION_SERVICE_OFF.equals(pref)) {
+			return 0;
+		} else if (Constants.PREF_MAIL_NOTIFICATION_SERVICE_5MIN.equals(pref)) {
+			return 5 * 60 * 1000;
+		} else if (Constants.PREF_MAIL_NOTIFICATION_SERVICE_30MIN.equals(pref)) {
+			return 30 * 60 * 1000;
+		} else if (Constants.PREF_MAIL_NOTIFICATION_SERVICE_1HOUR.equals(pref)) {
+			return 1 * 3600 * 1000;
+		} else if (Constants.PREF_MAIL_NOTIFICATION_SERVICE_6HOURS.equals(pref)) {
+			return 6 * 3600 * 1000;
+		} else /* if (Constants.PREF_MAIL_NOTIFICATION_SERVICE_1DAY.equals(pref)) */ {
+			return 24 * 3600 * 1000;
+		}
+	}
+	
+	
 	// ===============
 	//       Uri
 	// ===============
