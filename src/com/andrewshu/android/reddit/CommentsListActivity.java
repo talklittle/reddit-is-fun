@@ -139,6 +139,7 @@ public class CommentsListActivity extends ListActivity
     private String mReplyTargetName = null;
     private String mEditTargetBody = null;
     private String mDeleteTargetKind = null;
+    private boolean mShouldClearReply = false;
     private AsyncTask<?, ?, ?> mCurrentDownloadCommentsTask = null;
     private final Object mCurrentDownloadCommentsTaskLock = new Object();
     
@@ -1101,6 +1102,8 @@ public class CommentsListActivity extends ListActivity
     			getWindow().setFeatureInt(Window.FEATURE_PROGRESS, 10000);
     		
     		if (success) {
+    			// We should clear any replies the user was composing.
+    			mShouldClearReply = true;
     			// We modified mCommentsList, which backs mCommentsAdapter, so mCommentsAdapter has changed too.
     			mCommentsAdapter.notifyDataSetChanged();
     			// Set title in android titlebar
@@ -2277,8 +2280,12 @@ public class CommentsListActivity extends ListActivity
     		
     	case Constants.DIALOG_REPLY:
     		if (mVoteTargetThing != null && mVoteTargetThing.getReplyDraft() != null) {
-    			EditText replyBodyView = (EditText) dialog.findViewById(R.id.body); 
+    			EditText replyBodyView = (EditText) dialog.findViewById(R.id.body);
     			replyBodyView.setText(mVoteTargetThing.getReplyDraft());
+    		} else if (mVoteTargetThing != null && mShouldClearReply) {
+    			EditText replyBodyView = (EditText) dialog.findViewById(R.id.body);
+    			replyBodyView.setText("");
+    			mShouldClearReply = false;
     		}
     		break;
     		
