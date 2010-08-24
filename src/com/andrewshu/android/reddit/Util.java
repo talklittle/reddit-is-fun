@@ -60,7 +60,12 @@ public class Util {
 				.append("</pre>");
 			preIndex = html.indexOf("<pre>", preEndIndex);
 		}
-		return bodyConverted.append(html.substring(preEndIndex + 6)).toString();
+		html = bodyConverted.append(html.substring(preEndIndex + 6)).toString();
+		
+		// Handle <li>
+		html = html.replaceAll("<li>", "* ").replaceAll("</li>", "<br>");
+		
+		return html;
 	}
 	
 	/**
