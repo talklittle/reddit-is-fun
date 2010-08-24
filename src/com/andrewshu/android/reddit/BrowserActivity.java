@@ -10,9 +10,9 @@ import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.Window;
 import android.webkit.WebChromeClient;
+import android.webkit.WebSettings;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
-import android.webkit.WebSettings.LayoutAlgorithm;
 
 public class BrowserActivity extends Activity {
 	
@@ -31,9 +31,11 @@ public class BrowserActivity extends Activity {
         setContentView(R.layout.browser);
 				
 		webview = (WebView) findViewById(R.id.webview);
-		webview.getSettings().setBuiltInZoomControls(true);
-		webview.getSettings().setJavaScriptEnabled(true);
-		webview.getSettings().setUseWideViewPort(true);
+		WebSettings settings = webview.getSettings();
+		settings.setBuiltInZoomControls(true);
+		settings.setPluginsEnabled(true);
+		settings.setJavaScriptEnabled(true);
+		settings.setUseWideViewPort(true);
 		webview.setWebViewClient(new WebViewClient() {
 		    @Override
 		    public boolean shouldOverrideUrlLoading(WebView view, String url) {
