@@ -36,6 +36,8 @@ public class BrowserActivity extends Activity {
 		settings.setPluginsEnabled(true);
 		settings.setJavaScriptEnabled(true);
 		settings.setUseWideViewPort(true);
+		
+		webview.setInitialScale(50);
 		webview.setWebViewClient(new WebViewClient() {
 		    @Override
 		    public boolean shouldOverrideUrlLoading(WebView view, String url) {
