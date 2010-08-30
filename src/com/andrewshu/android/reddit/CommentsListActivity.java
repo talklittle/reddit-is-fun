@@ -2207,7 +2207,7 @@ public class CommentsListActivity extends ListActivity
 	    			.append(" by ").append(mOpThingInfo.getAuthor());
         		submissionStuffView.setText(sb);
     			// For self posts, you're already there!
-    			if (("self.").toLowerCase().equals(mOpThingInfo.getDomain().substring(0, 5).toLowerCase())) {
+    			if (mOpThingInfo.getDomain().toLowerCase().startsWith("self.")) {
     				linkButton.setText(R.string.comment_links_button);
     				linkToEmbeddedURLs(linkButton);
     			} else {
