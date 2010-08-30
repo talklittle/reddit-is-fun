@@ -65,6 +65,11 @@ public class Util {
 		// Handle <li>
 		html = html.replaceAll("<li>", "* ").replaceAll("</li>", "<br>");
 		
+		// Handle <strong> and <em>, which are normally <b> and <i> respectively, but reversed in Android.
+		// ANDROID BUG: http://code.google.com/p/android/issues/detail?id=3473
+		html = html.replaceAll("<strong>", "<b>").replaceAll("</strong>", "</b>")
+		           .replaceAll("<em>", "<i>").replaceAll("</em>", "</i>");
+		
 		return html;
 	}
 	
