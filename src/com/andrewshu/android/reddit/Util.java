@@ -382,8 +382,9 @@ public class Util {
     }
     
     static boolean isYoutubeUri(Uri uri) {
+    	if (uri == null) return false;
     	String host = uri.getHost();
-    	return host.endsWith(".youtube.com");
+    	return host != null && host.endsWith(".youtube.com");
     }
     
 }
