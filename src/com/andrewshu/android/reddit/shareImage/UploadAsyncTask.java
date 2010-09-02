@@ -24,17 +24,28 @@ import android.net.Uri;
 import android.os.AsyncTask;
 
 /**
- * Version 1 of uploading an image will just show a spinning image until the
- * upload returns or fails. Version 2 can show an image upload bar. Apparently
- * HttpClient supports progress indications on uploads
+ * <p>
+ * Given a {@link Uri} that points to an image stream, this attempts to contact
+ * Imgur.com and upload that image. Additionally, UploadAsyncTask manages upload
+ * progress and sends updates to the user interface, allowing the UI to update
+ * itself. When the upload is complete, this returns the web link to the image.
+ * </p>
+ * 
+ * <p>
+ * Upload progress is reported in two manners. First, string status updates are
+ * reported, such as "Creating post", "Adding image", etc. Secondly,
+ * quantitative percentage updates are reported. These percentage updates become
+ * overwhelming if they are sent every few bytes of the upload, so percentage
+ * updates are only reported when the upload percentage has changed by at least
+ * 1%.
+ * </p>
  * 
  *@see <a href="http://code.google.com/p/imgur-api/wiki/ImageUploading">imgur
  *      upload API</a>
  * 
  * @author Hamilton Turner <hamiltont@gmail.com>
  */
-public class UploadAsyncTask extends AsyncTask<Uri, String, String> implements
-		UploadProgressListener {
+public class UploadAsyncTask extends AsyncTask<Uri, String, String> {
 
 	private static final String IMGUR_API_KEY = "347ec991d0079db6ea067c8471b74348";
 	private static final String IMGUR_POST_URI = "http://imgur.com/api/upload.json";
@@ -58,7 +69,6 @@ public class UploadAsyncTask extends AsyncTask<Uri, String, String> implements
 		test_.onPostUpload(result);
 	}
 
-	@Override
 	public void transferred(double num) {
 		publishProgress("Progress", Double.toString(num));
 	}
@@ -126,20 +136,15 @@ public class UploadAsyncTask extends AsyncTask<Uri, String, String> implements
 		publishProgress("Creating the post . . . ");
 		HttpClient client = new DefaultHttpClient();
 		HttpPost post = new HttpPost(IMGUR_POST_URI);
-		// MultipartEntity entity = new MultipartEntity(
-		// HttpMultipartMode.BROWSER_COMPATIBLE);
 
 		long length = getImageLength(uri);
-		CountingMultiPartEntity entity;
+		MultipartEntity entity;
 		if (length != -1) {
 			// TODO - add in length for the other parts of the HTTP Post
 			couldDetermineImageLength = true;
 			entity = new CountingMultiPartEntity(this, length);
-		} else 
-			entity = new CountingMultiPartEntity(this);
-		 
-		
-		
+		} else
+			entity = new MultipartEntity(HttpMultipartMode.BROWSER_COMPATIBLE);
 
 		publishProgress("Adding image to post . . . ");
 		HttpResponse response;

@@ -4,14 +4,40 @@ import java.io.FilterOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 
+import org.apache.http.client.HttpClient;
+import org.apache.http.client.methods.HttpPost;
 import org.apache.http.entity.mime.HttpMultipartMode;
 import org.apache.http.entity.mime.MultipartEntity;
 
-import android.util.Log;
-
+/**
+ * <p>
+ * An extension of {@link MultipartEntity} that can roughly count the number of
+ * bytes transmitted, and inform an observer when the percentage of the transfer
+ * changes by more than 0.5% to 1.0%. End result is that this class will inform
+ * a listener approximately every half-percent how far along the transfer is.
+ * </p>
+ * 
+ * <p>
+ * Intended to assist in monitoring the upload progress of an image uploaded
+ * with an {@link HttpPost} and {@link HttpClient}. If the length of the
+ * {@link OutputStream} cannot be determined, it is recommended to use a
+ * standard {@link MultipartEntity} rather than this class
+ * </p>
+ * 
+ * <p>
+ * Currently accepts an instance of {@link UploadAsyncTask} as the observer, and
+ * calls {@link UploadAsyncTask#transferred(double)} to inform of a percentage
+ * change. It would be relatively simple to extract some interface and just have
+ * this class accept any object that implements that interface, if there is a
+ * need for uploading to other image sites
+ * </p>
+ * 
+ * @author Hamilton Turner
+ * 
+ */
 public class CountingMultiPartEntity extends MultipartEntity {
 
-	private UploadProgressListener listener_;
+	private UploadAsyncTask listener_;
 	private CountingOutputStream outputStream_;
 	private OutputStream lastOutputStream_;
 
@@ -19,12 +45,7 @@ public class CountingMultiPartEntity extends MultipartEntity {
 	private int bytesPerPercent;
 	private int notificationCounter = 0;
 
-	public CountingMultiPartEntity(UploadProgressListener listener) {
-		this(listener, -1);
-	}
-
-	public CountingMultiPartEntity(UploadProgressListener listener,
-			long totalBytes) {
+	public CountingMultiPartEntity(UploadAsyncTask listener, long totalBytes) {
 		super(HttpMultipartMode.BROWSER_COMPATIBLE);
 		listener_ = listener;
 		totalBytes_ = totalBytes;

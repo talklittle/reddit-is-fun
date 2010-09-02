@@ -14,7 +14,13 @@ import android.widget.Toast;
 
 import com.andrewshu.android.reddit.R;
 
-public class Test extends Activity {
+/**
+ * Just a Test Activity showing how to use the system. 
+ * 
+ * @author hamiltont
+ *
+ */
+public class Test extends Activity implements UploadProgressListener {
 	private PreviewAsyncTask previewAsyncTask;
 	private UploadAsyncTask uploadAsyncTask;
 	private ProgressBar uploadProgress_;
@@ -103,5 +109,29 @@ public class Test extends Activity {
 
 	public void onUploadError(String string) {
 		Toast.makeText(this, string, Toast.LENGTH_LONG).show();
+	}
+
+	@Override
+	public void onUploadComplete(String imageUrl) {
+		// TODO Auto-generated method stub
+		
+	}
+
+	@Override
+	public void onUploadFatalError(String message) {
+		// TODO Auto-generated method stub
+		
+	}
+
+	@Override
+	public void onUploadProgressChange(double uploadPercentage) {
+		// TODO Auto-generated method stub
+		
+	}
+
+	@Override
+	public void onUploadStatusChange(String newStatus) {
+		// TODO Auto-generated method stub
+		
 	}
 }
