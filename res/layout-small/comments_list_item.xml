@@ -25,48 +25,53 @@
  */
 -->
 
-<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="fill_parent"
     android:layout_height="wrap_content"
-    android:paddingTop="2dip"
-    android:paddingBottom="2dip"
+    android:orientation="horizontal"
     >
     
     <!-- Comment Indentation hack -->
     <TextView android:id="@+id/left_indent"
     	android:layout_width="wrap_content"
-    	android:layout_height="wrap_content"
-    	android:visibility="invisible"
+    	android:layout_height="fill_parent"
+    	android:textColor="@android:color/transparent"
+    	android:background="@android:color/transparent"
     	/>
 
-<!-- Left section -->
-    <ImageView android:id="@+id/vote_up_image"
-		android:layout_width="8dip"
-		android:layout_height="8dip"
-		android:layout_marginLeft="2dip"
-		android:layout_marginRight="2dip"
-		android:layout_marginTop="4dip"
-		android:layout_toRightOf="@id/left_indent"
-		android:src="@drawable/vote_up_gray"
-		/>
-		
-	<ImageView android:id="@+id/vote_down_image"
-		android:layout_width="8dip"
-		android:layout_height="8dip"
-		android:layout_marginTop="2dip"
-		android:layout_marginLeft="2dip"
-		android:layout_marginRight="2dip"
-		android:layout_below="@id/vote_up_image"
-		android:layout_toRightOf="@id/left_indent"
-		android:src="@drawable/vote_down_gray"
-		/>
+	<!-- Left section -->
+	<LinearLayout android:id="@+id/vote_layout"
+		android:orientation="vertical"
+		android:layout_width="wrap_content"
+		android:layout_height="wrap_content"
+		>
+	    <ImageView android:id="@+id/vote_up_image"
+			android:layout_width="8dip"
+			android:layout_height="8dip"
+			android:layout_marginLeft="2dip"
+			android:layout_marginRight="2dip"
+			android:layout_marginTop="4dip"
+			android:src="@drawable/vote_up_gray"
+			/>
+			
+		<ImageView android:id="@+id/vote_down_image"
+			android:layout_width="8dip"
+			android:layout_height="8dip"
+			android:layout_marginTop="2dip"
+			android:layout_marginLeft="2dip"
+			android:layout_marginRight="2dip"
+			android:src="@drawable/vote_down_gray"
+			/>
+	</LinearLayout>
     
-	<LinearLayout
+	<LinearLayout android:id="@+id/text_layout"
 		android:orientation="vertical"
 		android:layout_width="fill_parent"
 		android:layout_height="wrap_content"
 		android:layout_weight="1"
-		android:layout_toRightOf="@id/vote_up_image">
+		android:paddingTop="2dip"
+		android:paddingBottom="2dip"
+		>
 
 		<!-- Top row -->
 		
@@ -125,5 +130,5 @@
 	    </RelativeLayout>
 	    
     </LinearLayout>
-
-</RelativeLayout>
+    
+</LinearLayout>

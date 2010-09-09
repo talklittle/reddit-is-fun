@@ -81,6 +81,7 @@ import android.widget.CheckBox;
 import android.widget.CompoundButton;
 import android.widget.EditText;
 import android.widget.ImageView;
+import android.widget.LinearLayout;
 import android.widget.ListView;
 import android.widget.ProgressBar;
 import android.widget.TextView;
@@ -538,17 +539,8 @@ public class CommentsListActivity extends ListActivity
 		            else
 		            	submitterView.setText(item.getAuthor());
 		            submissionTimeView.setText(Util.getTimeAgo(item.getCreated_utc()));
-		            switch (item.getIndent()) {
-		            case 0:  leftIndent.setText(""); break;
-		            case 1:  leftIndent.setText("W"); break;
-		            case 2:  leftIndent.setText("WW"); break;
-		            case 3:  leftIndent.setText("WWW"); break;
-		            case 4:  leftIndent.setText("WWWW"); break;
-		            case 5:  leftIndent.setText("WWWWW"); break;
-		            case 6:  leftIndent.setText("WWWWWW"); break;
-		            case 7:  leftIndent.setText("WWWWWWW"); break;
-		            default: leftIndent.setText("WWWWWWWW"); break;
-		            }
+		            setTextViewIndent(leftIndent, item.getIndent());
+		            
             	} else if (mMorePositions.contains(position)) {
 	            	// "load more comments"
 	            	if (convertView == null) {
@@ -556,18 +548,19 @@ public class CommentsListActivity extends ListActivity
 	            	} else {
 	            		view = convertView;
 	            	}
-	            	TextView leftIndent = (TextView) view.findViewById(R.id.left_indent);
-	            	switch (item.getIndent()) {
-		            case 0:  leftIndent.setText(""); break;
-		            case 1:  leftIndent.setText("W"); break;
-		            case 2:  leftIndent.setText("WW"); break;
-		            case 3:  leftIndent.setText("WWW"); break;
-		            case 4:  leftIndent.setText("WWWW"); break;
-		            case 5:  leftIndent.setText("WWWWW"); break;
-		            case 6:  leftIndent.setText("WWWWWW"); break;
-		            case 7:  leftIndent.setText("WWWWWWW"); break;
-		            default: leftIndent.setText("WWWWWWWW"); break;
+
+		            // Set colors based on theme
+	            	final TextView moreCommentsText = (TextView) view.findViewById(R.id.more_comments_text);
+	            	if (Util.isLightTheme(mSettings.theme)) {
+		            	view.setBackgroundResource(R.color.light_light_gray);
+		            	moreCommentsText.setBackgroundResource(R.color.white);
+		            } else {
+		            	view.setBackgroundResource(R.color.dark_dark_gray);
+		            	moreCommentsText.setBackgroundResource(android.R.color.background_dark);
 		            }
+
+	            	TextView leftIndent = (TextView) view.findViewById(R.id.left_indent);
+	            	setTextViewIndent(leftIndent, item.getIndent());
 	            	// TODO: Show number of replies, if possible
 	            	
 	            } else {  // Regular comment
@@ -576,6 +569,19 @@ public class CommentsListActivity extends ListActivity
 		                view = mInflater.inflate(R.layout.comments_list_item, null);
 		            } else {
 		                view = convertView;
+		            }
+		            
+		            // Set colors based on theme
+		            final LinearLayout textLayout = (LinearLayout) view.findViewById(R.id.text_layout);
+		            final LinearLayout voteLayout = (LinearLayout) view.findViewById(R.id.vote_layout);
+		            if (Util.isLightTheme(mSettings.theme)) {
+		            	view.setBackgroundResource(R.color.light_light_gray);
+		            	textLayout.setBackgroundResource(R.color.white);
+		            	voteLayout.setBackgroundResource(R.color.white);
+		            } else {
+		            	view.setBackgroundResource(R.color.dark_dark_gray);
+		            	textLayout.setBackgroundResource(android.R.color.background_dark);
+		            	voteLayout.setBackgroundResource(android.R.color.background_dark);
 		            }
 		            
 		            // Set the values of the Views for the CommentsListItem
@@ -611,17 +617,7 @@ public class CommentsListActivity extends ListActivity
 		            			indeterminateProgress, CommentsListActivity.this);
 		            }
 		            
-		            switch (item.getIndent()) {
-		            case 0:  leftIndent.setText(""); break;
-		            case 1:  leftIndent.setText("W"); break;
-		            case 2:  leftIndent.setText("WW"); break;
-		            case 3:  leftIndent.setText("WWW"); break;
-		            case 4:  leftIndent.setText("WWWW"); break;
-		            case 5:  leftIndent.setText("WWWWW"); break;
-		            case 6:  leftIndent.setText("WWWWWW"); break;
-		            case 7:  leftIndent.setText("WWWWWWW"); break;
-		            default: leftIndent.setText("WWWWWWWW"); break;
-		            }
+		            setTextViewIndent(leftIndent, item.getIndent());
 		            
 		            if ("[deleted]".equals(item.getAuthor())) {
 		            	voteUpView.setVisibility(View.INVISIBLE);
@@ -665,8 +661,22 @@ public class CommentsListActivity extends ListActivity
             }
             return view;
         }
+        
+        protected void setTextViewIndent(TextView leftIndent, int indentLevel) {
+            switch (indentLevel) {
+            case 0:  leftIndent.setText(""); break;
+            case 1:  leftIndent.setText("W"); break;
+            case 2:  leftIndent.setText("WW"); break;
+            case 3:  leftIndent.setText("WWW"); break;
+            case 4:  leftIndent.setText("WWWW"); break;
+            case 5:  leftIndent.setText("WWWWW"); break;
+            case 6:  leftIndent.setText("WWWWWW"); break;
+            case 7:  leftIndent.setText("WWWWWWW"); break;
+            default: leftIndent.setText("WWWWWWWW"); break;
+            }
+        }
     } // End of CommentsListAdapter
-
+    
     
     /**
      * Called when user clicks an item in the list. Starts an activity to
