@@ -21,6 +21,7 @@ Contributors:
 * faux
 * ddrboxman
 * jk3us
+* crabpot8
 
 Android Market QR Codes
 ----------------
