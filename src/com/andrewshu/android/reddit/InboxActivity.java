@@ -282,7 +282,7 @@ public final class InboxActivity extends ListActivity
             if (item.isNew())
             	fromInfoView.setTextColor(getResources().getColor(R.color.red));
             else
-            	fromInfoView.setTextColor(getResources().getColor(R.color.dark_gray));
+            	fromInfoView.setTextColor(getResources().getColor(R.color.gray_50));
             // Build fromInfoView using Spans. Example (** means bold & different color):
             // from *talklittle_test* sent 20 hours ago
             SpannableStringBuilder builder = new SpannableStringBuilder();

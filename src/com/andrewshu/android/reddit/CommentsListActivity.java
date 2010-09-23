@@ -423,10 +423,10 @@ public class CommentsListActivity extends ListActivity
 	    	            	ForegroundColorSpan fcs = new ForegroundColorSpan(res.getColor(R.color.blue));
 	    	            	titleSS.setSpan(fcs, 0, titleLen, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
 	    	            }
-	    	            domainSS.setSpan(new ForegroundColorSpan(res.getColor(R.color.dark_gray)),
+	    	            domainSS.setSpan(new ForegroundColorSpan(res.getColor(R.color.gray_50)),
 	    	            		0, domainLen+2, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
 	                } else {
-	                	domainSS.setSpan(new ForegroundColorSpan(res.getColor(R.color.light_gray)),
+	                	domainSS.setSpan(new ForegroundColorSpan(res.getColor(R.color.gray_75)),
 	    	            		0, domainLen+2, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
 	                }
 	                
@@ -449,7 +449,7 @@ public class CommentsListActivity extends ListActivity
 	                	if (mOpThingInfo.getLikes() == null) {
 	                		voteUpView.setImageResource(R.drawable.vote_up_gray);
 	                		voteDownView.setImageResource(R.drawable.vote_down_gray);
-	                		votesView.setTextColor(res.getColor(R.color.gray));
+	                		votesView.setTextColor(res.getColor(R.color.gray_75));
 	                	} else if (mOpThingInfo.getLikes() == true) {
 	                		voteUpView.setImageResource(R.drawable.vote_up_red);
 	                		voteDownView.setImageResource(R.drawable.vote_down_gray);
@@ -462,7 +462,7 @@ public class CommentsListActivity extends ListActivity
 	                } else {
 	            		voteUpView.setImageResource(R.drawable.vote_up_gray);
 	            		voteDownView.setImageResource(R.drawable.vote_down_gray);
-	            		votesView.setTextColor(res.getColor(R.color.gray));
+	            		votesView.setTextColor(res.getColor(R.color.gray_75));
 	                }
 	                
 	                // --- End part copied from ThreadsListAdapter ---
@@ -525,7 +525,6 @@ public class CommentsListActivity extends ListActivity
 	            	TextView votesView = (TextView) view.findViewById(R.id.votes);
 		            TextView submitterView = (TextView) view.findViewById(R.id.submitter);
 	                TextView submissionTimeView = (TextView) view.findViewById(R.id.submissionTime);
-		            TextView leftIndent = (TextView) view.findViewById(R.id.left_indent);
 		            
 		            try {
 		            	votesView.setText(Util.showNumPoints(item.getUps() - item.getDowns()));
@@ -539,7 +538,8 @@ public class CommentsListActivity extends ListActivity
 		            else
 		            	submitterView.setText(item.getAuthor());
 		            submissionTimeView.setText(Util.getTimeAgo(item.getCreated_utc()));
-		            setTextViewIndent(leftIndent, item.getIndent());
+		            
+		            setCommentIndent(view, item.getIndent());
 		            
             	} else if (mMorePositions.contains(position)) {
 	            	// "load more comments"
@@ -550,17 +550,16 @@ public class CommentsListActivity extends ListActivity
 	            	}
 
 		            // Set colors based on theme
-	            	final TextView moreCommentsText = (TextView) view.findViewById(R.id.more_comments_text);
-	            	if (Util.isLightTheme(mSettings.theme)) {
-		            	view.setBackgroundResource(R.color.light_light_gray);
-		            	moreCommentsText.setBackgroundResource(R.color.white);
-		            } else {
-		            	view.setBackgroundResource(R.color.dark_dark_gray);
-		            	moreCommentsText.setBackgroundResource(android.R.color.background_dark);
-		            }
+//	            	final TextView moreCommentsText = (TextView) view.findViewById(R.id.more_comments_text);
+//	            	if (Util.isLightTheme(mSettings.theme)) {
+//		            	view.setBackgroundResource(R.color.light_light_gray);
+//		            	moreCommentsText.setBackgroundResource(R.color.white);
+//		            } else {
+//		            	view.setBackgroundResource(R.color.dark_dark_gray);
+//		            	moreCommentsText.setBackgroundResource(android.R.color.background_dark);
+//		            }
 
-	            	TextView leftIndent = (TextView) view.findViewById(R.id.left_indent);
-	            	setTextViewIndent(leftIndent, item.getIndent());
+	            	setCommentIndent(view, item.getIndent());
 	            	// TODO: Show number of replies, if possible
 	            	
 	            } else {  // Regular comment
@@ -574,22 +573,21 @@ public class CommentsListActivity extends ListActivity
 		            // Set colors based on theme
 		            final LinearLayout textLayout = (LinearLayout) view.findViewById(R.id.text_layout);
 		            final LinearLayout voteLayout = (LinearLayout) view.findViewById(R.id.vote_layout);
-		            if (Util.isLightTheme(mSettings.theme)) {
-		            	view.setBackgroundResource(R.color.light_light_gray);
-		            	textLayout.setBackgroundResource(R.color.white);
-		            	voteLayout.setBackgroundResource(R.color.white);
-		            } else {
-		            	view.setBackgroundResource(R.color.dark_dark_gray);
-		            	textLayout.setBackgroundResource(android.R.color.background_dark);
-		            	voteLayout.setBackgroundResource(android.R.color.background_dark);
-		            }
+//		            if (Util.isLightTheme(mSettings.theme)) {
+//		            	view.setBackgroundResource(R.color.light_light_gray);
+//		            	textLayout.setBackgroundResource(R.color.white);
+//		            	voteLayout.setBackgroundResource(R.color.white);
+//		            } else {
+//		            	view.setBackgroundResource(R.color.dark_dark_gray);
+//		            	textLayout.setBackgroundResource(android.R.color.background_dark);
+//		            	voteLayout.setBackgroundResource(android.R.color.background_dark);
+//		            }
 		            
 		            // Set the values of the Views for the CommentsListItem
 		            
 		            TextView votesView = (TextView) view.findViewById(R.id.votes);
 		            TextView submitterView = (TextView) view.findViewById(R.id.submitter);
 		            TextView bodyView = (TextView) view.findViewById(R.id.body);
-		            TextView leftIndent = (TextView) view.findViewById(R.id.left_indent);
 		            ProgressBar indeterminateProgress = (ProgressBar) view.findViewById(R.id.indeterminate_progress);
 		            
 	                TextView submissionTimeView = (TextView) view.findViewById(R.id.submissionTime);
@@ -617,7 +615,7 @@ public class CommentsListActivity extends ListActivity
 		            			indeterminateProgress, CommentsListActivity.this);
 		            }
 		            
-		            setTextViewIndent(leftIndent, item.getIndent());
+		            setCommentIndent(view, item.getIndent());
 		            
 		            if ("[deleted]".equals(item.getAuthor())) {
 		            	voteUpView.setVisibility(View.INVISIBLE);
@@ -662,17 +660,27 @@ public class CommentsListActivity extends ListActivity
             return view;
         }
         
-        protected void setTextViewIndent(TextView leftIndent, int indentLevel) {
-            switch (indentLevel) {
-            case 0:  leftIndent.setText(""); break;
-            case 1:  leftIndent.setText("W"); break;
-            case 2:  leftIndent.setText("WW"); break;
-            case 3:  leftIndent.setText("WWW"); break;
-            case 4:  leftIndent.setText("WWWW"); break;
-            case 5:  leftIndent.setText("WWWWW"); break;
-            case 6:  leftIndent.setText("WWWWWW"); break;
-            case 7:  leftIndent.setText("WWWWWWW"); break;
-            default: leftIndent.setText("WWWWWWWW"); break;
+        protected void setCommentIndent(View commentListItemView, int indentLevel) {
+            View[] indentViews = new View[] {
+            	commentListItemView.findViewById(R.id.left_indent1),
+            	commentListItemView.findViewById(R.id.left_indent2),
+            	commentListItemView.findViewById(R.id.left_indent3),
+            	commentListItemView.findViewById(R.id.left_indent4),
+            	commentListItemView.findViewById(R.id.left_indent5),
+            	commentListItemView.findViewById(R.id.left_indent6),
+            	commentListItemView.findViewById(R.id.left_indent7),
+            	commentListItemView.findViewById(R.id.left_indent8)
+            };
+            for (int i = 0; i < indentLevel && i < indentViews.length; i++) {
+            	indentViews[i].setVisibility(View.VISIBLE);
+            	if (Util.isLightTheme(mSettings.theme)) {
+            		indentViews[i].setBackgroundResource(R.color.light_gray);
+            	} else {
+            		indentViews[i].setBackgroundResource(R.color.dark_gray);
+            	}
+            }
+            for (int i = indentLevel; i < indentViews.length; i++) {
+            	indentViews[i].setVisibility(View.GONE);
             }
         }
     } // End of CommentsListAdapter

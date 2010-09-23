@@ -386,10 +386,10 @@ public final class ThreadsListActivity extends ListActivity {
 		            	ForegroundColorSpan fcs = new ForegroundColorSpan(res.getColor(R.color.blue));
 		            	titleSS.setSpan(fcs, 0, titleLen, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
 		            }
-		            domainSS.setSpan(new ForegroundColorSpan(res.getColor(R.color.dark_gray)),
+		            domainSS.setSpan(new ForegroundColorSpan(res.getColor(R.color.gray_50)),
 		            		0, domainLen+2, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
 	            } else {
-	            	domainSS.setSpan(new ForegroundColorSpan(res.getColor(R.color.light_gray)),
+	            	domainSS.setSpan(new ForegroundColorSpan(res.getColor(R.color.gray_75)),
 		            		0, domainLen+2, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
 	            }
 	            
@@ -410,7 +410,7 @@ public final class ThreadsListActivity extends ListActivity {
 	            	if (item.getLikes() == null) {
 	            		voteUpView.setImageResource(R.drawable.vote_up_gray);
 	            		voteDownView.setImageResource(R.drawable.vote_down_gray);
-	            		votesView.setTextColor(res.getColor(R.color.gray));
+	            		votesView.setTextColor(res.getColor(R.color.gray_75));
 	            	} else if (item.getLikes() == true) {
 	            		voteUpView.setImageResource(R.drawable.vote_up_red);
 	            		voteDownView.setImageResource(R.drawable.vote_down_gray);
@@ -423,7 +423,7 @@ public final class ThreadsListActivity extends ListActivity {
 	            } else {
 	        		voteUpView.setImageResource(R.drawable.vote_up_gray);
 	        		voteDownView.setImageResource(R.drawable.vote_down_gray);
-	        		votesView.setTextColor(res.getColor(R.color.gray));
+	        		votesView.setTextColor(res.getColor(R.color.gray_75));
 	            }
 	            
 	            // Thumbnails open links

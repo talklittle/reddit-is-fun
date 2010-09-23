@@ -103,7 +103,7 @@ public class SubmitLinkActivity extends TabActivity {
 
 		final FrameLayout fl = (FrameLayout) findViewById(android.R.id.tabcontent);
 		if (Util.isLightTheme(mSettings.theme)) {
-			fl.setBackgroundResource(R.color.light_gray);
+			fl.setBackgroundResource(R.color.gray_75);
 		} else {
 			fl.setBackgroundResource(R.color.android_dark_background);
 		}
