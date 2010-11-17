@@ -674,7 +674,7 @@ public class CommentsListActivity extends ListActivity
             for (int i = 0; i < indentLevel && i < indentViews.length; i++) {
             	indentViews[i].setVisibility(View.VISIBLE);
             	if (Util.isLightTheme(mSettings.theme)) {
-            		indentViews[i].setBackgroundResource(R.color.light_gray);
+            		indentViews[i].setBackgroundResource(R.color.light_light_gray);
             	} else {
             		indentViews[i].setBackgroundResource(R.color.dark_gray);
             	}

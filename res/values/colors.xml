@@ -31,6 +31,7 @@
     <color name="gray_50">#ff7f7f7f</color>
     <color name="gray_75">#ffbfbfbf</color>
     <color name="light_gray">#ffdfdfdf</color>
+    <color name="light_light_gray">#ffefefef</color>
     <color name="red">#ffff0000</color>
     
     <color name="pale_blue">#ffcee2ff</color>
