@@ -533,7 +533,7 @@ public class CommentsListActivity extends ListActivity
 		            	// so the ListView might try to display the View before "ups" in JSON has been parsed.
 		            	if (Constants.LOGGING) Log.e(TAG, "getView, mHiddenCommentHeads", e);
 		            }
-		            if (mOpThingInfo != null && item.getAuthor().equals(mOpThingInfo.getAuthor()))
+		            if (mOpThingInfo != null && item.getAuthor().equalsIgnoreCase(mOpThingInfo.getAuthor()))
 		            	submitterView.setText(item.getAuthor() + " [S]");
 		            else
 		            	submitterView.setText(item.getAuthor());
@@ -785,7 +785,7 @@ public class CommentsListActivity extends ListActivity
     		for (int i = 0; i < mCommentsAdapter.getCount(); i++) {
     			ThingInfo ci = mCommentsAdapter.getItem(i);
     			// if it's the OP, mark his name
-    			if (mOpThingInfo.getAuthor().equals(ci.getAuthor()))
+    			if (mOpThingInfo.getAuthor().equalsIgnoreCase(ci.getAuthor()))
     	            ci.setSSAuthor(authorSS);
     		}
     	}
@@ -1718,7 +1718,7 @@ public class CommentsListActivity extends ListActivity
     	
     	// Edit and delete
     	if (mOpThingInfo != null) {
-	    	if (mSettings.username != null && mSettings.username.equals(mOpThingInfo.getAuthor())) {
+	    	if (mSettings.username != null && mSettings.username.equalsIgnoreCase(mOpThingInfo.getAuthor())) {
 				if (mOpThingInfo.getSelftext_html() != null)
 					menu.findItem(R.id.op_edit_menu_id).setVisible(true);
 				else
@@ -1868,7 +1868,7 @@ public class CommentsListActivity extends ListActivity
     		menu.add(0, Constants.DIALOG_GOTO_PARENT, Menu.NONE, "Go to parent");
     	} else {
     		synchronized (COMMENT_ADAPTER_LOCK) {
-	    		if (mSettings.username != null && mSettings.username.equals(mCommentsAdapter.getItem(rowId).getAuthor())) {
+	    		if (mSettings.username != null && mSettings.username.equalsIgnoreCase(mCommentsAdapter.getItem(rowId).getAuthor())) {
 	    			menu.add(0, Constants.DIALOG_EDIT, Menu.NONE, "Edit");
 	    			menu.add(0, Constants.DIALOG_DELETE, Menu.NONE, "Delete");
 	    		}
