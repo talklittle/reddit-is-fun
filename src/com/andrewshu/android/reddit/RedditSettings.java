@@ -27,7 +27,6 @@ import org.apache.http.cookie.Cookie;
  *
  */
 public class RedditSettings {
-	boolean loggedIn = false;
 	String username = null;
 	Cookie redditSessionCookie = null;
 	String modhash = null;
@@ -88,6 +87,12 @@ public class RedditSettings {
 		}
 	}
 	
+	// --- Query ---
+	
+	boolean isLoggedIn() {
+		return username != null;
+	}
+	
 	// --- Setters ---
 	
 	void setCommentsSortByUrl(String commentsSortByUrl) {
@@ -104,10 +109,6 @@ public class RedditSettings {
 	
 	void setLoadThumbnailsOnlyWifi(boolean loadThumbnails) {
 		this.loadThumbnailsOnlyWifi = loadThumbnails;
-	}
-	
-	void setLoggedIn(boolean loggedIn) {
-		this.loggedIn = loggedIn;
 	}
 	
 	void setMailNotificationService(String mailNotificationService) {

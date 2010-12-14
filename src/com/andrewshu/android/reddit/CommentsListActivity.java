@@ -445,7 +445,7 @@ public class CommentsListActivity extends ListActivity
 	                }
 	                
 		            // Set the up and down arrow colors based on whether user likes
-	                if (mSettings.loggedIn) {
+	                if (mSettings.isLoggedIn()) {
 	                	if (mOpThingInfo.getLikes() == null) {
 	                		voteUpView.setImageResource(R.drawable.vote_up_gray);
 	                		voteDownView.setImageResource(R.drawable.vote_down_gray);
@@ -609,7 +609,7 @@ public class CommentsListActivity extends ListActivity
 		            	voteDownView.setVisibility(View.INVISIBLE);
 		            }
 		            // Set the up and down arrow colors based on whether user likes
-		            else if (mSettings.loggedIn) {
+		            else if (mSettings.isLoggedIn()) {
 		            	voteUpView.setVisibility(View.VISIBLE);
 		            	voteDownView.setVisibility(View.VISIBLE);
 		            	if (item.getLikes() == null) {
@@ -1185,7 +1185,7 @@ public class CommentsListActivity extends ListActivity
         public String doInBackground(String... text) {
         	HttpEntity entity = null;
         	
-        	if (!mSettings.loggedIn) {
+        	if (!mSettings.isLoggedIn()) {
         		Common.showErrorToast("You must be logged in to reply.", Toast.LENGTH_LONG, CommentsListActivity.this);
         		_mUserError = "Not logged in";
         		return null;
@@ -1274,7 +1274,7 @@ public class CommentsListActivity extends ListActivity
         public String doInBackground(String... text) {
         	HttpEntity entity = null;
         	
-        	if (!mSettings.loggedIn) {
+        	if (!mSettings.isLoggedIn()) {
         		_mUserError = "You must be logged in to edit.";
         		return null;
         	}
@@ -1361,7 +1361,7 @@ public class CommentsListActivity extends ListActivity
     		
     		HttpEntity entity = null;
         	
-        	if (!mSettings.loggedIn) {
+        	if (!mSettings.isLoggedIn()) {
         		_mUserError = "You must be logged in to delete.";
         		return false;
         	}
@@ -1468,7 +1468,7 @@ public class CommentsListActivity extends ListActivity
     	public Boolean doInBackground(Void... v) {
         	HttpEntity entity = null;
         	
-        	if (!mSettings.loggedIn) {
+        	if (!mSettings.isLoggedIn()) {
         		_mUserError = "You must be logged in to vote.";
         		return false;
         	}
@@ -1525,7 +1525,7 @@ public class CommentsListActivity extends ListActivity
         }
     	
     	public void onPreExecute() {
-        	if (!mSettings.loggedIn) {
+        	if (!mSettings.isLoggedIn()) {
         		Common.showErrorToast("You must be logged in to vote.", Toast.LENGTH_LONG, CommentsListActivity.this);
         		cancel(true);
         		return;
@@ -1620,7 +1620,7 @@ public class CommentsListActivity extends ListActivity
     	public Boolean doInBackground(Void... v) {
         	HttpEntity entity = null;
         	
-        	if (!mSettings.loggedIn) {
+        	if (!mSettings.isLoggedIn()) {
         		_mUserError = "You must be logged in to report something.";
         		return false;
         	}
@@ -1678,7 +1678,7 @@ public class CommentsListActivity extends ListActivity
         }
     	
     	public void onPreExecute() {
-	        if (!mSettings.loggedIn) {
+	        if (!mSettings.isLoggedIn()) {
 	        	Common.showErrorToast("You must be logged in to report this.", Toast.LENGTH_LONG, CommentsListActivity.this);
 	        	cancel(true);
 	        	return;
@@ -1717,7 +1717,7 @@ public class CommentsListActivity extends ListActivity
     	MenuItem src, dest;
     	
         // Login/Logout
-    	if (mSettings.loggedIn) {
+    	if (mSettings.isLoggedIn()) {
 	        menu.findItem(R.id.login_logout_menu_id).setTitle(
 	        		getResources().getString(R.string.logout)+": " + mSettings.username);
 	        menu.findItem(R.id.inbox_menu_id).setVisible(true);
@@ -1788,7 +1788,7 @@ public class CommentsListActivity extends ListActivity
 			startActivity(intent);
 			break;
     	case R.id.login_logout_menu_id:
-        	if (mSettings.loggedIn) {
+        	if (mSettings.isLoggedIn()) {
         		Common.doLogout(mSettings, mClient, getApplicationContext());
         		Toast.makeText(this, "You have been logged out.", Toast.LENGTH_SHORT).show();
         		new DownloadCommentsTask().execute(Constants.DEFAULT_COMMENT_DOWNLOAD_LIMIT);
@@ -1884,7 +1884,7 @@ public class CommentsListActivity extends ListActivity
 	    		}
     		}
     		menu.add(0, Constants.DIALOG_HIDE_COMMENT, Menu.NONE, "Hide comment");
-//    		if (mSettings.loggedIn)
+//    		if (mSettings.isLoggedIn())
 //    			menu.add(0, Constants.DIALOG_REPORT, Menu.NONE, "Report comment");
     		menu.add(0, Constants.DIALOG_GOTO_PARENT, Menu.NONE, "Go to parent");
     	}
@@ -2248,7 +2248,7 @@ public class CommentsListActivity extends ListActivity
     		final Button loginButton = (Button) dialog.findViewById(R.id.login_button);
     		
     		// Only show upvote/downvote if user is logged in
-    		if (mSettings.loggedIn) {
+    		if (mSettings.isLoggedIn()) {
     			loginButton.setVisibility(View.GONE);
     			voteUpButton.setVisibility(View.VISIBLE);
     			voteDownButton.setVisibility(View.VISIBLE);

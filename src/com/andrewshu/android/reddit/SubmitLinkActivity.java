@@ -129,7 +129,7 @@ public class SubmitLinkActivity extends TabActivity {
 		});
 		mTabHost.setCurrentTab(0);
 		
-		if (mSettings.loggedIn) {
+		if (mSettings.isLoggedIn()) {
 			start();
 		} else {
 			showDialog(Constants.DIALOG_LOGIN);
@@ -288,7 +288,7 @@ public class SubmitLinkActivity extends TabActivity {
         	HttpEntity entity = null;
         	
         	String status = "";
-        	if (!mSettings.loggedIn) {
+        	if (!mSettings.isLoggedIn()) {
         		Common.showErrorToast("You must be logged in to reply.", Toast.LENGTH_LONG, SubmitLinkActivity.this);
         		_mUserError = "Not logged in";
         		return null;

@@ -119,19 +119,19 @@ public class Common {
     	SharedPreferences.Editor editor = settings.edit();
     	
     	// Session
-    	if (rSettings.loggedIn) {
-	    	if (rSettings.username != null)
-	    		editor.putString("username", rSettings.username.toString());
-	    	if (rSettings.redditSessionCookie != null) {
-	    		editor.putString("reddit_sessionValue",  rSettings.redditSessionCookie.getValue());
-	    		editor.putString("reddit_sessionDomain", rSettings.redditSessionCookie.getDomain());
-	    		editor.putString("reddit_sessionPath",   rSettings.redditSessionCookie.getPath());
-	    		if (rSettings.redditSessionCookie.getExpiryDate() != null)
-	    			editor.putLong("reddit_sessionExpiryDate", rSettings.redditSessionCookie.getExpiryDate().getTime());
-	    	}
-	    	if (rSettings.modhash != null)
-	    		editor.putString("modhash", rSettings.modhash.toString());
+    	if (rSettings.username != null)
+    		editor.putString("username", rSettings.username);
+    	else
+    		editor.remove("username");
+    	if (rSettings.redditSessionCookie != null) {
+    		editor.putString("reddit_sessionValue",  rSettings.redditSessionCookie.getValue());
+    		editor.putString("reddit_sessionDomain", rSettings.redditSessionCookie.getDomain());
+    		editor.putString("reddit_sessionPath",   rSettings.redditSessionCookie.getPath());
+    		if (rSettings.redditSessionCookie.getExpiryDate() != null)
+    			editor.putLong("reddit_sessionExpiryDate", rSettings.redditSessionCookie.getExpiryDate().getTime());
     	}
+    	if (rSettings.modhash != null)
+    		editor.putString("modhash", rSettings.modhash.toString());
     	
     	// Default subreddit
     	editor.putString(Constants.PREF_HOMEPAGE, rSettings.homepage.toString());
@@ -184,9 +184,6 @@ public class Common {
         	rSettings.setRedditSessionCookie(redditSessionCookie);
         	if (client != null)
         		client.getCookieStore().addCookie(redditSessionCookie);
-        	rSettings.setLoggedIn(true);
-        } else {
-        	rSettings.setLoggedIn(false);
         }
         
         // Default subreddit
@@ -308,7 +305,6 @@ public class Common {
         		}
         	}
         	settings.setUsername(username);
-        	settings.setLoggedIn(true);
         	
         	CacheInfo.invalidateAllCaches(context);
         	
@@ -324,7 +320,6 @@ public class Common {
     		}
     		if (Constants.LOGGING) Log.e(TAG, "doLogin()", e);
         }
-    	settings.setLoggedIn(false);
         return userError;
     }
     
@@ -333,7 +328,6 @@ public class Common {
     	client.getCookieStore().clear();
     	CacheInfo.invalidateAllCaches(context);
     	settings.setUsername(null);
-        settings.setLoggedIn(false);
     }
     
     

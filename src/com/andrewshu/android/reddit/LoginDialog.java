@@ -28,7 +28,7 @@ public abstract class LoginDialog extends Dialog {
 			// If user presses "back" then quit.
 			setOnCancelListener(new OnCancelListener() {
 				public void onCancel(DialogInterface d) {
-					if (!mSettings.loggedIn) {
+					if (!mSettings.isLoggedIn()) {
 						mActivity.setResult(Activity.RESULT_CANCELED);
 						mActivity.finish();
 					}

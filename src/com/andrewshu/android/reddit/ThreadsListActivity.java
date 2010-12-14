@@ -406,7 +406,7 @@ public final class ThreadsListActivity extends ListActivity {
                 }
                 
 	            // Set the up and down arrow colors based on whether user likes
-	            if (mSettings.loggedIn) {
+	            if (mSettings.isLoggedIn()) {
 	            	if (item.getLikes() == null) {
 	            		voteUpView.setImageResource(R.drawable.vote_up_gray);
 	            		voteDownView.setImageResource(R.drawable.vote_down_gray);
@@ -739,7 +739,7 @@ public final class ThreadsListActivity extends ListActivity {
     	public Boolean doInBackground(Void... v) {
         	HttpEntity entity = null;
         	
-        	if (!mSettings.loggedIn) {
+        	if (!mSettings.isLoggedIn()) {
         		_mUserError = "You must be logged in to vote.";
         		return false;
         	}
@@ -798,7 +798,7 @@ public final class ThreadsListActivity extends ListActivity {
     	
     	@Override
     	public void onPreExecute() {
-    		if (!mSettings.loggedIn) {
+    		if (!mSettings.isLoggedIn()) {
         		Common.showErrorToast("You must be logged in to vote.", Toast.LENGTH_LONG, ThreadsListActivity.this);
         		cancel(true);
         		return;
@@ -916,7 +916,7 @@ public final class ThreadsListActivity extends ListActivity {
     	menu.add(0, Constants.SHARE_CONTEXT_ITEM, 0, "Share");
     	menu.add(0, Constants.OPEN_COMMENTS_CONTEXT_ITEM, 0, "Comments");
     	
-    	if(mSettings.loggedIn){
+    	if(mSettings.isLoggedIn()){
     		if(!_item.isSaved()){
     			menu.add(0, Constants.SAVE_CONTEXT_ITEM, 0, "Save");
     		} else {
@@ -992,7 +992,7 @@ public final class ThreadsListActivity extends ListActivity {
     	MenuItem src, dest;
     	
         // Login/Logout
-    	if (mSettings.loggedIn) {
+    	if (mSettings.isLoggedIn()) {
 	        menu.findItem(R.id.login_logout_menu_id).setTitle(
 	        		getResources().getString(R.string.logout)+": " + mSettings.username);
 	        menu.findItem(R.id.inbox_menu_id).setVisible(true);
@@ -1037,7 +1037,7 @@ public final class ThreadsListActivity extends ListActivity {
     		startActivityForResult(pickSubredditIntent, Constants.ACTIVITY_PICK_SUBREDDIT);
     		break;
     	case R.id.login_logout_menu_id:
-        	if (mSettings.loggedIn) {
+        	if (mSettings.isLoggedIn()) {
         		Common.doLogout(mSettings, mClient, getApplicationContext());
         		Toast.makeText(this, "You have been logged out.", Toast.LENGTH_SHORT).show();
         		new MyDownloadThreadsTask(getApplicationContext(), mClient, om, mSortByUrl, mSortByUrlExtra, mSubreddit).execute();
@@ -1259,7 +1259,7 @@ public final class ThreadsListActivity extends ListActivity {
     		submissionStuffView.setText(sb);
             
     		// Only show upvote/downvote if user is logged in
-    		if (mSettings.loggedIn) {
+    		if (mSettings.isLoggedIn()) {
     			loginButton.setVisibility(View.GONE);
     			voteUpButton.setVisibility(View.VISIBLE);
     			voteDownButton.setVisibility(View.VISIBLE);

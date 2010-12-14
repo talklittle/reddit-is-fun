@@ -48,7 +48,7 @@ class SaveTask extends AsyncTask<Void, Void, Boolean> {
 	
 	@Override
 	public void onPreExecute() {
-		if (!mSettings.loggedIn) {
+		if (!mSettings.isLoggedIn()) {
     		Common.showErrorToast("You must be logged in to save.", Toast.LENGTH_LONG, mContext);
     		cancel(true);
     		return;
@@ -68,7 +68,7 @@ class SaveTask extends AsyncTask<Void, Void, Boolean> {
 		String status = "";
     	HttpEntity entity = null;
     	
-    	if (!mSettings.loggedIn) {
+    	if (!mSettings.isLoggedIn()) {
     		mUserError = "You must be logged in to save.";
     		return false;
     	}

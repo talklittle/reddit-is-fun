@@ -46,7 +46,7 @@ class HideTask extends AsyncTask<Void, Void, Boolean> {
 	
 	@Override
 	public void onPreExecute() {
-		if (!mSettings.loggedIn) {
+		if (!mSettings.isLoggedIn()) {
     		Common.showErrorToast("You must be logged in to hide/unhide a thread.", Toast.LENGTH_LONG, mContext);
     		cancel(true);
     		return;
@@ -66,7 +66,7 @@ class HideTask extends AsyncTask<Void, Void, Boolean> {
 		String status = "";
     	HttpEntity entity = null;
     	
-    	if (!mSettings.loggedIn) {
+    	if (!mSettings.isLoggedIn()) {
     		mUserError = "You must be logged in to hide/unhide a thread.";
     		return false;
     	}

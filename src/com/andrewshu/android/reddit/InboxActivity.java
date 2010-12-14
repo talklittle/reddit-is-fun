@@ -159,7 +159,7 @@ public final class InboxActivity extends ListActivity
         // which ListActivity adopts as its list -- we can
         // access it with getListView().
         
-		if (mSettings.loggedIn) {
+		if (mSettings.isLoggedIn()) {
 			if (savedInstanceState != null) {
 	        	mReplyTargetName = savedInstanceState.getString(Constants.REPLY_TARGET_NAME_KEY);
 	        	mMessagesList = (ArrayList<ThingInfo>) getLastNonConfigurationInstance();
@@ -198,7 +198,7 @@ public final class InboxActivity extends ListActivity
     protected void onResume() {
     	super.onResume();
     	int previousTheme = mSettings.theme;
-    	boolean previousLoggedIn = mSettings.loggedIn;
+    	boolean previousLoggedIn = mSettings.isLoggedIn();
     	Common.loadRedditPreferences(this, mSettings, mClient);
     	setRequestedOrientation(mSettings.rotation);
     	if (mSettings.theme != previousTheme) {
@@ -207,7 +207,7 @@ public final class InboxActivity extends ListActivity
     		setListAdapter(mMessagesAdapter);
     		Common.updateListDrawables(this, mSettings.theme);
     	}
-    	if (mSettings.loggedIn != previousLoggedIn) {
+    	if (mSettings.isLoggedIn() != previousLoggedIn) {
     		new DownloadMessagesTask().execute(Constants.DEFAULT_COMMENT_DOWNLOAD_LIMIT);
     	}
     }
@@ -587,7 +587,7 @@ public final class InboxActivity extends ListActivity
         	String status = "";
         	HttpEntity entity = null;
         	
-        	if (!mSettings.loggedIn) {
+        	if (!mSettings.isLoggedIn()) {
         		_mUserError = "You must be logged in to read the message.";
         		return false;
         	}
@@ -663,7 +663,7 @@ public final class InboxActivity extends ListActivity
     	
     	@Override
     	public void onPreExecute() {
-    		if (!mSettings.loggedIn) {
+    		if (!mSettings.isLoggedIn()) {
         		Common.showErrorToast("You must be logged in to read message.", Toast.LENGTH_LONG, InboxActivity.this);
         		cancel(true);
         		return;
@@ -699,7 +699,7 @@ public final class InboxActivity extends ListActivity
         	HttpEntity entity = null;
         	
         	String status = "";
-        	if (!mSettings.loggedIn) {
+        	if (!mSettings.isLoggedIn()) {
         		Common.showErrorToast("You must be logged in to reply.", Toast.LENGTH_LONG, InboxActivity.this);
         		_mUserError = "Not logged in";
         		return false;
@@ -787,7 +787,7 @@ public final class InboxActivity extends ListActivity
         public Boolean doInBackground(String... text) {
         	HttpEntity entity = null;
         	
-        	if (!mSettings.loggedIn) {
+        	if (!mSettings.isLoggedIn()) {
         		Common.showErrorToast("You must be logged in to compose a message.", Toast.LENGTH_LONG, InboxActivity.this);
         		_mUserError = "Not logged in";
         		return false;
