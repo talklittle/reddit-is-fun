@@ -172,6 +172,7 @@ public class CacheInfo implements Serializable {
 		    	oos.writeObject(new CacheInfo());
 		    	oos.close();
 		    	fos.close();
+		    	if (Constants.LOGGING) Log.d(TAG, "invalidateAllCaches: wrote blank CacheInfo");
     		}
     	} catch (IOException e) {
     		if (Constants.LOGGING) Log.e(TAG, "invalidateAllCaches: Error writing CacheInfo", e);

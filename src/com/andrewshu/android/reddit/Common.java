@@ -221,6 +221,20 @@ public class Common {
         rSettings.setMailNotificationService(sessionPrefs.getString(Constants.PREF_MAIL_NOTIFICATION_SERVICE, Constants.PREF_MAIL_NOTIFICATION_SERVICE_OFF));
     }
     
+    static void clearCookies(RedditSettings settings, DefaultHttpClient client, Context context) {
+        settings.setRedditSessionCookie(null);
+
+        client.getCookieStore().clear();
+        
+        SharedPreferences sessionPrefs = PreferenceManager.getDefaultSharedPreferences(context);
+    	SharedPreferences.Editor editor = sessionPrefs.edit();
+    	editor.remove("reddit_sessionValue");
+    	editor.remove("reddit_sessionDomain");
+    	editor.remove("reddit_sessionPath");
+    	editor.remove("reddit_sessionExpiryDate");
+        editor.commit();
+    }
+    
     /**
      * On success stores the session cookie and modhash in your RedditSettings.
      * On failure does not modify RedditSettings. 
@@ -325,7 +339,7 @@ public class Common {
     
         
     static void doLogout(RedditSettings settings, DefaultHttpClient client, Context context) {
-    	client.getCookieStore().clear();
+    	clearCookies(settings, client, context);
     	CacheInfo.invalidateAllCaches(context);
     	settings.setUsername(null);
     }
