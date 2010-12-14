@@ -51,6 +51,10 @@
                 android:entryValues="@array/pref_text_size_values"
                 android:dialogTitle="@string/pref_text_size_dialogtitle" />
         
+        <CheckBoxPreference
+			android:key="show_comment_guide_lines"
+			android:title="@string/pref_show_comment_guide_lines" />
+        
                    
    		
 

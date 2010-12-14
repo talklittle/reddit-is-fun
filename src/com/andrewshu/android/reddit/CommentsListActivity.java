@@ -66,27 +66,26 @@ import android.text.style.ForegroundColorSpan;
 import android.text.style.TextAppearanceSpan;
 import android.util.Log;
 import android.view.ContextMenu;
+import android.view.ContextMenu.ContextMenuInfo;
 import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
+import android.view.View.OnClickListener;
 import android.view.ViewGroup;
 import android.view.Window;
-import android.view.ContextMenu.ContextMenuInfo;
-import android.view.View.OnClickListener;
+import android.widget.AdapterView.AdapterContextMenuInfo;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.CheckBox;
 import android.widget.CompoundButton;
 import android.widget.EditText;
 import android.widget.ImageView;
-import android.widget.LinearLayout;
 import android.widget.ListView;
 import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.Toast;
-import android.widget.AdapterView.AdapterContextMenuInfo;
 
 /**
  * Main Activity class representing a Subreddit, i.e., a ThreadsList.
@@ -267,6 +266,7 @@ public class CommentsListActivity extends ListActivity
     protected void onResume() {
     	super.onResume();
     	int previousTheme = mSettings.theme;
+    	boolean previousShowCommentGuideLines = mSettings.showCommentGuideLines;
     	Common.loadRedditPreferences(this, mSettings, mClient);
     	setRequestedOrientation(mSettings.rotation);
     	if (mSettings.theme != previousTheme) {
@@ -570,19 +570,6 @@ public class CommentsListActivity extends ListActivity
 		                view = convertView;
 		            }
 		            
-		            // Set colors based on theme
-		            final LinearLayout textLayout = (LinearLayout) view.findViewById(R.id.text_layout);
-		            final LinearLayout voteLayout = (LinearLayout) view.findViewById(R.id.vote_layout);
-//		            if (Util.isLightTheme(mSettings.theme)) {
-//		            	view.setBackgroundResource(R.color.light_light_gray);
-//		            	textLayout.setBackgroundResource(R.color.white);
-//		            	voteLayout.setBackgroundResource(R.color.white);
-//		            } else {
-//		            	view.setBackgroundResource(R.color.dark_dark_gray);
-//		            	textLayout.setBackgroundResource(android.R.color.background_dark);
-//		            	voteLayout.setBackgroundResource(android.R.color.background_dark);
-//		            }
-		            
 		            // Set the values of the Views for the CommentsListItem
 		            
 		            TextView votesView = (TextView) view.findViewById(R.id.votes);
@@ -672,11 +659,15 @@ public class CommentsListActivity extends ListActivity
             	commentListItemView.findViewById(R.id.left_indent8)
             };
             for (int i = 0; i < indentLevel && i < indentViews.length; i++) {
-            	indentViews[i].setVisibility(View.VISIBLE);
-            	if (Util.isLightTheme(mSettings.theme)) {
-            		indentViews[i].setBackgroundResource(R.color.light_light_gray);
+            	if (mSettings.showCommentGuideLines) {
+	            	indentViews[i].setVisibility(View.VISIBLE);
+	            	if (Util.isLightTheme(mSettings.theme)) {
+	            		indentViews[i].setBackgroundResource(R.color.light_light_gray);
+	            	} else {
+	            		indentViews[i].setBackgroundResource(R.color.dark_gray);
+	            	}
             	} else {
-            		indentViews[i].setBackgroundResource(R.color.dark_gray);
+            		indentViews[i].setVisibility(View.INVISIBLE);
             	}
             }
             for (int i = indentLevel; i < indentViews.length; i++) {
@@ -928,6 +919,7 @@ public class CommentsListActivity extends ListActivity
                 	if (_mPositionOffset == 0) {
                 		// insert comments after OP
                 		mCommentsList.addAll(_mNewThingInfos);
+                		mMorePositions.clear();
                 	} else {
                 		int numNewComments = _mNewThingInfos.size();
                 		int numRemoved = 0;

@@ -144,6 +144,8 @@
         <item>TEXT_SIZE_LARGE</item>
         <item>TEXT_SIZE_LARGER</item>
     </string-array>
+    
+    <string name="pref_show_comment_guide_lines">Comment guide lines</string>
 
 	<string name="pref_rotation">Screen rotation</string>
 	<string name="pref_rotation_dialogtitle">Screen rotation</string>

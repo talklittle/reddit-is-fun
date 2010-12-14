@@ -33,6 +33,7 @@ public class RedditSettings {
 	String modhash = null;
 	String homepage = Constants.FRONTPAGE_STRING;
 	boolean useExternalBrowser = false;
+	boolean showCommentGuideLines = true;
 	
 	int threadDownloadLimit = Constants.DEFAULT_THREAD_DOWNLOAD_LIMIT;
 	String commentsSortByUrl = Constants.CommentsSort.SORT_BY_BEST_URL;
@@ -128,6 +129,10 @@ public class RedditSettings {
 	
 	void setRotation(int rotation) {
 		this.rotation = rotation;
+	}
+	
+	void setShowCommentGuideLines(boolean showCommentGuideLines) {
+		this.showCommentGuideLines = showCommentGuideLines;
 	}
 	
 	void setTheme(int theme) {

@@ -147,6 +147,9 @@ public class Common {
     	editor.putString(Constants.PREF_THEME, themeTextSize[0]);
     	editor.putString(Constants.PREF_TEXT_SIZE, themeTextSize[1]);
     	
+    	// Comment guide lines
+    	editor.putBoolean(Constants.PREF_SHOW_COMMENT_GUIDE_LINES, rSettings.showCommentGuideLines);
+    	
     	// Rotation
     	editor.putString(Constants.PREF_ROTATION, RedditSettings.Rotation.toString(rSettings.rotation));
     	
@@ -203,6 +206,9 @@ public class Common {
         rSettings.setTheme(Util.getThemeResourceFromPrefs(
         		sessionPrefs.getString(Constants.PREF_THEME, Constants.PREF_THEME_LIGHT),
         		sessionPrefs.getString(Constants.PREF_TEXT_SIZE, Constants.PREF_TEXT_SIZE_MEDIUM)));
+        
+        // Comment guide lines
+        rSettings.setShowCommentGuideLines(sessionPrefs.getBoolean(Constants.PREF_SHOW_COMMENT_GUIDE_LINES, true));
         
         // Rotation
         rSettings.setRotation(RedditSettings.Rotation.valueOf(
