@@ -105,7 +105,7 @@ public class SubmitLinkActivity extends TabActivity {
 		if (Util.isLightTheme(mSettings.theme)) {
 			fl.setBackgroundResource(R.color.gray_75);
 		} else {
-			fl.setBackgroundResource(R.color.android_dark_background);
+			fl.setBackgroundResource(R.color.black);
 		}
 		
 		mTabHost = getTabHost();

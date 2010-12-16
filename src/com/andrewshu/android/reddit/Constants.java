@@ -123,7 +123,7 @@ public class Constants {
 
     
     // Special CSS for webviews to match themes
-    static final String CSS_DARK = "<style>body{color:#c0c0c0;background-color:#191919}a:link{color:#ffffff}</style>";
+    static final String CSS_DARK = "<style>body{color:#c0c0c0;background-color:#000000}a:link{color:#ffffff}</style>";
 
     // Colors for markdown
     static final int MARKDOWN_LINK_COLOR = 0xff2288cc;
