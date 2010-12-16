@@ -58,6 +58,7 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.View.OnClickListener;
+import android.webkit.CookieSyncManager;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.FrameLayout;
@@ -94,6 +95,8 @@ public class SubmitLinkActivity extends TabActivity {
 	@Override
 	public void onCreate(Bundle icicle) {
 		super.onCreate(icicle);
+		
+		CookieSyncManager.createInstance(getApplicationContext());
 		
 		Common.loadRedditPreferences(this, mSettings, mClient);
 		setRequestedOrientation(mSettings.rotation);
@@ -136,6 +139,19 @@ public class SubmitLinkActivity extends TabActivity {
 		}
 	}
 	
+	@Override
+	public void onResume() {
+		super.onResume();
+		CookieSyncManager.getInstance().startSync();
+	}
+	
+	@Override
+    protected void onPause() {
+    	super.onPause();
+    	Common.saveRedditPreferences(this, mSettings);
+		CookieSyncManager.getInstance().stopSync();
+    }
+    
 	/**
 	 * Enable the UI after user is logged in.
 	 */
@@ -226,13 +242,6 @@ public class SubmitLinkActivity extends TabActivity {
 	}
 
 	
-	@Override
-    protected void onPause() {
-    	super.onPause();
-    	Common.saveRedditPreferences(this, mSettings);
-    }
-    
-    
 	
 	private class LoginTask extends AsyncTask<Void, Void, String> {
     	private String mUsername, mPassword;

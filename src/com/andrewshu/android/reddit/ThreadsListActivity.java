@@ -64,6 +64,7 @@ import android.view.ViewGroup;
 import android.view.Window;
 import android.view.ContextMenu.ContextMenuInfo;
 import android.view.View.OnClickListener;
+import android.webkit.CookieSyncManager;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
@@ -134,6 +135,8 @@ public final class ThreadsListActivity extends ListActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         
+		CookieSyncManager.createInstance(getApplicationContext());
+		
         Common.loadRedditPreferences(getApplicationContext(), mSettings, mClient);
         setRequestedOrientation(mSettings.rotation);
         setTheme(mSettings.theme);
@@ -200,6 +203,7 @@ public final class ThreadsListActivity extends ListActivity {
     @Override
     protected void onResume() {
     	super.onResume();
+		CookieSyncManager.getInstance().startSync();
     	int previousTheme = mSettings.theme;
     	Common.loadRedditPreferences(getApplicationContext(), mSettings, mClient);
     	setRequestedOrientation(mSettings.rotation);
@@ -233,7 +237,8 @@ public final class ThreadsListActivity extends ListActivity {
     @Override
     protected void onPause() {
     	super.onPause();
-    	Common.saveRedditPreferences(getApplicationContext(), mSettings);
+		CookieSyncManager.getInstance().stopSync();
+		Common.saveRedditPreferences(getApplicationContext(), mSettings);
     }
     
     @Override

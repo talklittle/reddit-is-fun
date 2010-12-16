@@ -74,6 +74,7 @@ import android.provider.Browser;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
+import android.webkit.CookieSyncManager;
 import android.widget.ListView;
 import android.widget.RemoteViews;
 import android.widget.TextView;
@@ -182,8 +183,10 @@ public class Common {
         	else
         		redditSessionCookie.setExpiryDate(null);
         	rSettings.setRedditSessionCookie(redditSessionCookie);
-        	if (client != null)
+        	if (client != null) {
         		client.getCookieStore().addCookie(redditSessionCookie);
+        		CookieSyncManager.getInstance().sync();
+        	}
         }
         
         // Default subreddit
@@ -225,6 +228,7 @@ public class Common {
         settings.setRedditSessionCookie(null);
 
         client.getCookieStore().clear();
+        CookieSyncManager.getInstance().sync();
         
         SharedPreferences sessionPrefs = PreferenceManager.getDefaultSharedPreferences(context);
     	SharedPreferences.Editor editor = sessionPrefs.edit();
@@ -320,6 +324,7 @@ public class Common {
         	}
         	settings.setUsername(username);
         	
+        	CookieSyncManager.getInstance().sync();
         	CacheInfo.invalidateAllCaches(context);
         	
         	return null;

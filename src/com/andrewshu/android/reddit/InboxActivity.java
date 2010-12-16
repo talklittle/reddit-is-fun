@@ -76,6 +76,7 @@ import android.view.ViewGroup;
 import android.view.Window;
 import android.view.ContextMenu.ContextMenuInfo;
 import android.view.View.OnClickListener;
+import android.webkit.CookieSyncManager;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.EditText;
@@ -148,6 +149,8 @@ public final class InboxActivity extends ListActivity
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         
+		CookieSyncManager.createInstance(getApplicationContext());
+		
         Common.loadRedditPreferences(this, mSettings, mClient);
         setRequestedOrientation(mSettings.rotation);
         setTheme(mSettings.theme);
@@ -197,6 +200,7 @@ public final class InboxActivity extends ListActivity
     @Override
     protected void onResume() {
     	super.onResume();
+		CookieSyncManager.getInstance().startSync();
     	int previousTheme = mSettings.theme;
     	boolean previousLoggedIn = mSettings.isLoggedIn();
     	Common.loadRedditPreferences(this, mSettings, mClient);
@@ -215,7 +219,8 @@ public final class InboxActivity extends ListActivity
     @Override
     protected void onPause() {
     	super.onPause();
-    	Common.saveRedditPreferences(this, mSettings);
+		CookieSyncManager.getInstance().stopSync();
+		Common.saveRedditPreferences(this, mSettings);
     }
     
     @Override

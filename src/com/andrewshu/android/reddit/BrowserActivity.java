@@ -9,6 +9,7 @@ import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.Window;
+import android.webkit.CookieSyncManager;
 import android.webkit.WebChromeClient;
 import android.webkit.WebSettings;
 import android.webkit.WebView;
@@ -22,10 +23,19 @@ public class BrowserActivity extends Activity {
 	private Uri mUri = null;
 	private String mTitle = null;
 	
+    // Common settings are stored here
+    private final RedditSettings mSettings = new RedditSettings();
+    
+	
 	@Override
 	public void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 		
+		CookieSyncManager.createInstance(getApplicationContext());
+		
+        Common.loadRedditPreferences(this, mSettings, null);
+        setRequestedOrientation(mSettings.rotation);
+        setTheme(mSettings.theme);
 		requestWindowFeature(Window.FEATURE_PROGRESS);
         requestWindowFeature(Window.FEATURE_INDETERMINATE_PROGRESS);
         setContentView(R.layout.browser);
@@ -47,6 +57,8 @@ public class BrowserActivity extends Activity {
 		    
 		    @Override
 		    public void onPageFinished(WebView view, String url) {
+		    	CookieSyncManager.getInstance().sync();
+
 		    	String host = Uri.parse(url).getHost();
 		    	if (host != null && mTitle != null) {
 		    		setTitle(host + " : " + mTitle);
@@ -82,6 +94,18 @@ public class BrowserActivity extends Activity {
 			if (Constants.LOGGING) Log.d(TAG, "Loading url " + mUri.toString());
 			webview.loadUrl(mUri.toString());
 		}
+	}
+	
+	@Override
+	public void onResume() {
+		super.onResume();
+		CookieSyncManager.getInstance().startSync();
+	}
+	
+	@Override
+	public void onPause() {
+		super.onPause();
+		CookieSyncManager.getInstance().stopSync();
 	}
 	
 	@Override

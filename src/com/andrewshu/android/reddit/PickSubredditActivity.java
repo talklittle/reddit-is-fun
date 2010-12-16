@@ -50,6 +50,7 @@ import android.view.ViewGroup;
 import android.view.Window;
 import android.view.View.OnClickListener;
 import android.view.View.OnKeyListener;
+import android.webkit.CookieSyncManager;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.EditText;
@@ -110,6 +111,8 @@ public final class PickSubredditActivity extends ListActivity {
     protected void onCreate(Bundle savedInstanceState) {
     	super.onCreate(savedInstanceState);
         
+		CookieSyncManager.createInstance(getApplicationContext());
+		
     	Common.loadRedditPreferences(this, mSettings, mClient);
     	setRequestedOrientation(mSettings.rotation);
     	setTheme(mSettings.theme);
@@ -127,6 +130,18 @@ public final class PickSubredditActivity extends ListActivity {
         	resetUI(new PickSubredditAdapter(this, mSubredditsList));
         	fixInputField();
         }
+    }
+    
+    @Override
+    public void onResume() {
+    	super.onResume();
+		CookieSyncManager.getInstance().startSync();
+    }
+    
+    @Override
+    public void onPause() {
+    	super.onPause();
+		CookieSyncManager.getInstance().stopSync();
     }
     
     /**

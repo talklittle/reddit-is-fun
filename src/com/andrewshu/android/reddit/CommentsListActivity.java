@@ -75,6 +75,7 @@ import android.view.View;
 import android.view.View.OnClickListener;
 import android.view.ViewGroup;
 import android.view.Window;
+import android.webkit.CookieSyncManager;
 import android.widget.AdapterView.AdapterContextMenuInfo;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
@@ -155,6 +156,8 @@ public class CommentsListActivity extends ListActivity
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         
+		CookieSyncManager.createInstance(getApplicationContext());
+		
         Common.loadRedditPreferences(this, mSettings, mClient);
         setRequestedOrientation(mSettings.rotation);
         setTheme(mSettings.theme);
@@ -265,6 +268,7 @@ public class CommentsListActivity extends ListActivity
     @Override
     protected void onResume() {
     	super.onResume();
+		CookieSyncManager.getInstance().startSync();
     	int previousTheme = mSettings.theme;
     	boolean previousShowCommentGuideLines = mSettings.showCommentGuideLines;
     	Common.loadRedditPreferences(this, mSettings, mClient);
@@ -286,7 +290,8 @@ public class CommentsListActivity extends ListActivity
     @Override
     protected void onPause() {
     	super.onPause();
-    	Common.saveRedditPreferences(this, mSettings);
+		CookieSyncManager.getInstance().stopSync();
+		Common.saveRedditPreferences(this, mSettings);
     }
     
     @Override
