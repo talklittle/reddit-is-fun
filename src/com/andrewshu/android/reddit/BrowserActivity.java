@@ -1,6 +1,7 @@
 package com.andrewshu.android.reddit;
 
 import android.app.Activity;
+import android.graphics.Color;
 import android.net.Uri;
 import android.os.Bundle;
 import android.util.Log;
@@ -39,7 +40,7 @@ public class BrowserActivity extends Activity {
 		requestWindowFeature(Window.FEATURE_PROGRESS);
         requestWindowFeature(Window.FEATURE_INDETERMINATE_PROGRESS);
         setContentView(R.layout.browser);
-				
+
 		webview = (WebView) findViewById(R.id.webview);
 		WebSettings settings = webview.getSettings();
 		settings.setBuiltInZoomControls(true);
@@ -47,6 +48,12 @@ public class BrowserActivity extends Activity {
 		settings.setJavaScriptEnabled(true);
 		settings.setUseWideViewPort(true);
 		
+    	// HACK: set background color directly for android 2.0
+        if (Util.isLightTheme(mSettings.theme))
+        	webview.setBackgroundResource(R.color.white);
+
+		// use transparent background while loading
+		webview.setBackgroundColor(0);
 		webview.setInitialScale(50);
 		webview.setWebViewClient(new WebViewClient() {
 		    @Override
@@ -58,6 +65,8 @@ public class BrowserActivity extends Activity {
 		    @Override
 		    public void onPageFinished(WebView view, String url) {
 		    	CookieSyncManager.getInstance().sync();
+		    	// restore default white background, no matter the theme
+		    	view.setBackgroundResource(R.color.white);
 
 		    	String host = Uri.parse(url).getHost();
 		    	if (host != null && mTitle != null) {
@@ -100,6 +109,16 @@ public class BrowserActivity extends Activity {
 	public void onResume() {
 		super.onResume();
 		CookieSyncManager.getInstance().startSync();
+    	Common.loadRedditPreferences(this, mSettings, null);
+    	setRequestedOrientation(mSettings.rotation);
+    	int previousTheme = mSettings.theme;
+    	if (mSettings.theme != previousTheme) {
+    		setTheme(mSettings.theme);
+            setContentView(R.layout.browser);
+        	// HACK: set background color directly for android 2.0
+            if (Util.isLightTheme(mSettings.theme))
+            	webview.setBackgroundResource(R.color.white);
+    	}
 	}
 	
 	@Override
