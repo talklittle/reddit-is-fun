@@ -270,7 +270,6 @@ public class CommentsListActivity extends ListActivity
     	super.onResume();
 		CookieSyncManager.getInstance().startSync();
     	int previousTheme = mSettings.theme;
-    	boolean previousShowCommentGuideLines = mSettings.showCommentGuideLines;
     	Common.loadRedditPreferences(this, mSettings, mClient);
     	setRequestedOrientation(mSettings.rotation);
     	if (mSettings.theme != previousTheme) {

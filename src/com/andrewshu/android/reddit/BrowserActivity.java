@@ -1,7 +1,6 @@
 package com.andrewshu.android.reddit;
 
 import android.app.Activity;
-import android.graphics.Color;
 import android.net.Uri;
 import android.os.Bundle;
 import android.util.Log;
