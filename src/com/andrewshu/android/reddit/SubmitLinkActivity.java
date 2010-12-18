@@ -55,6 +55,7 @@ import android.os.AsyncTask;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.Menu;
+import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.View.OnClickListener;
@@ -683,14 +684,10 @@ public class SubmitLinkActivity extends TabActivity {
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
         super.onCreateOptionsMenu(menu);
-        
-        menu.add(0, R.id.pick_subreddit_menu_id, 0, "Pick subreddit")
-            .setOnMenuItemClickListener(new SubmitLinkMenu(R.id.pick_subreddit_menu_id));
 
-        menu.add(0, Constants.DIALOG_DOWNLOAD_CAPTCHA, 1, "Update CAPTCHA")
-        	.setOnMenuItemClickListener(new SubmitLinkMenu(Constants.DIALOG_DOWNLOAD_CAPTCHA));
+        MenuInflater inflater = getMenuInflater();
+        inflater.inflate(R.menu.submit_link, menu);
 
-        
         return true;
     }
     
@@ -699,36 +696,29 @@ public class SubmitLinkActivity extends TabActivity {
     	super.onPrepareOptionsMenu(menu);
     	
     	if (mCaptchaUrl == null)
-    		menu.findItem(Constants.DIALOG_DOWNLOAD_CAPTCHA).setVisible(false);
+    		menu.findItem(R.id.update_captcha_menu_id).setVisible(false);
     	else
-    		menu.findItem(Constants.DIALOG_DOWNLOAD_CAPTCHA).setVisible(true);
+    		menu.findItem(R.id.update_captcha_menu_id).setVisible(true);
     	
     	return true;
     }
     
-    private class SubmitLinkMenu implements MenuItem.OnMenuItemClickListener {
-        private int mAction;
-
-        SubmitLinkMenu(int action) {
-            mAction = action;
-        }
-
-        public boolean onMenuItemClick(MenuItem item) {
-        	switch (mAction) {
-        	case R.id.pick_subreddit_menu_id:
-        		Intent pickSubredditIntent = new Intent(getApplicationContext(), PickSubredditActivity.class);
-        		pickSubredditIntent.putExtra(Constants.EXTRA_HIDE_FRONTPAGE_STRING, true);
-        		startActivityForResult(pickSubredditIntent, Constants.ACTIVITY_PICK_SUBREDDIT);
-        		break;
-        	case Constants.DIALOG_DOWNLOAD_CAPTCHA:
-        		new CheckCaptchaRequiredTask().execute();
-        		break;
-        	default:
-        		throw new IllegalArgumentException("Unexpected action value "+mAction);
-        	}
-        	
-        	return true;
-        }
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+    	switch (item.getItemId()) {
+    	case R.id.pick_subreddit_menu_id:
+    		Intent pickSubredditIntent = new Intent(getApplicationContext(), PickSubredditActivity.class);
+    		pickSubredditIntent.putExtra(Constants.EXTRA_HIDE_FRONTPAGE_STRING, true);
+    		startActivityForResult(pickSubredditIntent, Constants.ACTIVITY_PICK_SUBREDDIT);
+    		break;
+    	case R.id.update_captcha_menu_id:
+    		new CheckCaptchaRequiredTask().execute();
+    		break;
+    	default:
+    		throw new IllegalArgumentException("Unexpected action value "+item.getItemId());
+    	}
+    	
+    	return true;
     }
     
     @Override

@@ -82,14 +82,9 @@ public class Constants {
     // Menu and dialog actions
     static final int DIALOG_LOGIN = 2;
     static final int DIALOG_LOGOUT = 3;
-    static final int DIALOG_REFRESH = 4;
-    static final int DIALOG_SUBMIT_LINK = 5;
     static final int DIALOG_THING_CLICK = 6;
-    static final int DIALOG_OPEN_BROWSER = 11;
     static final int DIALOG_THEME = 12;
-    static final int DIALOG_OP = 13;
     static final int DIALOG_REPLY = 14;
-    static final int DIALOG_DOWNLOAD_CAPTCHA = 16;
     static final int DIALOG_HIDE_COMMENT = 17;
     static final int DIALOG_SHOW_COMMENT = 18;
     static final int DIALOG_SORT_BY = 20;

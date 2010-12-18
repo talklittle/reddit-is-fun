@@ -87,27 +87,29 @@
 	
 	<!--  === Menus === -->
 	
-	<string name="pick_subreddit">Pick subreddit</string>
+	<string name="compose_message">Compose message</string>
+	<string name="dark_theme">Use dark theme</string>
+	<string name="inbox">Inbox</string>
+	<string name="light_theme">Use light theme</string>
 	<string name="login">Login</string>
-	<string name="logout">Logout</string>
-	<string name="refresh">Refresh</string>
-	<string name="submit_link">Submit link</string>
+	<string name="logout">Logout: %s</string>
+	<string name="menu_preferences">Settings</string>
 	<string name="op">OP</string>
-	<string name="subreddit">View subreddit</string>
 	<string name="op_edit">Edit OP</string>
 	<string name="op_delete">Delete thread</string>
+	<string name="open_browser">Open in browser</string>
+	<string name="pick_subreddit">Pick subreddit</string>
+	<string name="refresh">Refresh</string>
 	<string name="sort_by_best">Sort by: best</string>
 	<string name="sort_by_hot">Sort by: hot</string>
 	<string name="sort_by_new">Sort by: new</string>
 	<string name="sort_by_controversial">Sort by: controversial</string>
 	<string name="sort_by_top">Sort by: top</string>
 	<string name="sort_by_old">Sort by: old</string>
-	<string name="light_theme">Use light theme</string>
-	<string name="dark_theme">Use dark theme</string>
-	<string name="open_browser">Open in browser</string>
-	<string name="inbox">Inbox</string>
+	<string name="submit_link">Submit link</string>
+	<string name="update_captcha">Update CAPTCHA</string>
 	<string name="user_profile">View user\'s profile</string>
-	<string name="menu_preferences">Settings</string>
+	<string name="view_subreddit">View subreddit</string>
 	
 	
 	<!-- === Preferences === -->

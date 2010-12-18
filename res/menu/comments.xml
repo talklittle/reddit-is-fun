@@ -21,7 +21,7 @@
 <menu xmlns:android="http://schemas.android.com/apk/res/android">
     <group android:id="@+id/MAIN_MENU">
         <item android:id="@+id/op_subreddit_menu_id"
-	    	android:title="@string/subreddit"
+	    	android:title="@string/view_subreddit"
 	    	android:icon="@drawable/ic_menu_back" />
         <item android:id="@+id/login_logout_menu_id"
         	android:icon="@drawable/ic_menu_login" />

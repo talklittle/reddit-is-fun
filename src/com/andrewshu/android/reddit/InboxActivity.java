@@ -70,6 +70,7 @@ import android.util.Log;
 import android.view.ContextMenu;
 import android.view.LayoutInflater;
 import android.view.Menu;
+import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
@@ -1008,8 +1009,8 @@ public final class InboxActivity extends ListActivity
     public boolean onCreateOptionsMenu(Menu menu) {
         super.onCreateOptionsMenu(menu);
         
-        menu.add(0, Constants.DIALOG_COMPOSE, 0, "Compose Message");
-        menu.add(0, Constants.DIALOG_REFRESH, 0, "Refresh");
+        MenuInflater inflater = getMenuInflater();
+        inflater.inflate(R.menu.inbox, menu);
         
         return true;
     }
@@ -1018,10 +1019,10 @@ public final class InboxActivity extends ListActivity
     public boolean onOptionsItemSelected(MenuItem item) {
     	
     	switch (item.getItemId()) {
-    	case Constants.DIALOG_COMPOSE:
+    	case R.id.compose_message_menu_id:
     		showDialog(Constants.DIALOG_COMPOSE);
     		break;
-    	case Constants.DIALOG_REFRESH:
+    	case R.id.refresh_menu_id:
 			new DownloadMessagesTask().execute(Constants.DEFAULT_COMMENT_DOWNLOAD_LIMIT);
 			break;
     	}

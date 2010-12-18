@@ -1723,7 +1723,7 @@ public class CommentsListActivity extends ListActivity
         // Login/Logout
     	if (mSettings.isLoggedIn()) {
 	        menu.findItem(R.id.login_logout_menu_id).setTitle(
-	        		getResources().getString(R.string.logout)+": " + mSettings.username);
+	        		String.format(getResources().getString(R.string.logout), mSettings.username));
 	        menu.findItem(R.id.inbox_menu_id).setVisible(true);
     	} else {
             menu.findItem(R.id.login_logout_menu_id).setTitle(getResources().getString(R.string.login));
