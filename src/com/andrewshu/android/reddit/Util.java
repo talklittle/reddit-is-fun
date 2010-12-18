@@ -19,12 +19,17 @@
 
 package com.andrewshu.android.reddit;
 
+import java.lang.reflect.Method;
 import java.util.ArrayList;
 
+import android.app.Activity;
 import android.net.Uri;
 import android.text.style.URLSpan;
+import android.util.Log;
 
 public class Util {
+	
+	private static final String TAG = "Util";
 	
 	public static ArrayList<String> extractUris(URLSpan[] spans) {
         int size = spans.length;
@@ -289,6 +294,21 @@ public class Util {
 		}
 	}
 	
+	
+	// ===============
+	//   Transitions
+	// ===============
+	
+	static void overridePendingTransition(Method activity_overridePendingTransition, Activity act, int enterAnim, int exitAnim) {
+		// only available in Android 2.0 (SDK Level 5) and later
+		if (activity_overridePendingTransition != null) {
+			try {
+				activity_overridePendingTransition.invoke(act, enterAnim, exitAnim);
+			} catch (Exception ex) {
+				if (Constants.LOGGING) Log.e(TAG, "overridePendingTransition", ex);
+			}
+		}
+	}
 	
 	// ===============
 	//       Uri

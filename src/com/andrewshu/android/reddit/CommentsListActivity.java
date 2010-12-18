@@ -23,6 +23,7 @@ import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 import java.io.IOException;
 import java.io.InputStream;
+import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -66,17 +67,16 @@ import android.text.style.ForegroundColorSpan;
 import android.text.style.TextAppearanceSpan;
 import android.util.Log;
 import android.view.ContextMenu;
-import android.view.ContextMenu.ContextMenuInfo;
 import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
-import android.view.View.OnClickListener;
 import android.view.ViewGroup;
 import android.view.Window;
+import android.view.ContextMenu.ContextMenuInfo;
+import android.view.View.OnClickListener;
 import android.webkit.CookieSyncManager;
-import android.widget.AdapterView.AdapterContextMenuInfo;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.CheckBox;
@@ -87,6 +87,7 @@ import android.widget.ListView;
 import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.Toast;
+import android.widget.AdapterView.AdapterContextMenuInfo;
 
 /**
  * Main Activity class representing a Subreddit, i.e., a ThreadsList.
@@ -145,6 +146,23 @@ public class CommentsListActivity extends ListActivity
     private final Object mCurrentDownloadCommentsTaskLock = new Object();
     
     private boolean mCanChord = false;
+    
+    // override transition animation available Android 2.0 (SDK Level 5) and above
+    private static Method mActivity_overridePendingTransition;
+    
+    static {
+        initCompatibility();
+    };
+
+    private static void initCompatibility() {
+        try {
+            mActivity_overridePendingTransition = Activity.class.getMethod(
+                    "overridePendingTransition", new Class[] { Integer.TYPE, Integer.TYPE } );
+            /* success, this is a newer device */
+        } catch (NoSuchMethodException nsme) {
+            /* failure, must be older device */
+        }
+    }
     
     /**
      * Called when the activity starts up. Do activity initialization
@@ -1792,6 +1810,8 @@ public class CommentsListActivity extends ListActivity
 			intent.setData(Util.createSubredditUri(mSubreddit));
 			intent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
 			startActivity(intent);
+			Util.overridePendingTransition(mActivity_overridePendingTransition, this,
+					android.R.anim.slide_in_left, android.R.anim.slide_out_right);
 			break;
     	case R.id.login_logout_menu_id:
         	if (mSettings.isLoggedIn()) {
