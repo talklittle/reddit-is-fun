@@ -21,14 +21,19 @@
 <menu xmlns:android="http://schemas.android.com/apk/res/android">
     <group android:id="@+id/MAIN_MENU">
         <item android:id="@+id/pick_subreddit_menu_id"
-            android:title="@string/pick_subreddit" />
-        <item android:id="@+id/login_logout_menu_id" />
+            android:title="@string/pick_subreddit"
+            android:icon="@drawable/ic_menu_alien" />
+        <item android:id="@+id/login_logout_menu_id"
+        	android:icon="@drawable/ic_menu_login" />
         <item android:id="@+id/refresh_menu_id"
             android:title="@string/refresh" 
+            android:icon="@drawable/ic_menu_refresh"
             android:alphabeticShortcut="r" />
         <item android:id="@+id/submit_link_menu_id"
-            android:title="@string/submit_link" />
+            android:title="@string/submit_link"
+            android:icon="@android:drawable/ic_menu_upload" />
         <item android:id="@+id/sort_by_menu_id"
+        	android:icon="@android:drawable/ic_menu_sort_by_size"
             android:alphabeticShortcut="s" />
         <item android:id="@+id/light_dark_menu_id" />
         <item android:id="@+id/open_browser_menu_id"
@@ -46,10 +51,10 @@
 
     <!-- these items are toggled in and out of @+id/login_logout_menu_id -->
     <item android:id="@+id/login_menu_id"
-        android:title="@string/login" 
+        android:title="@string/login"
         android:visible="false" />
     <item android:id="@+id/logout_menu_id"
-        android:title="@string/logout" 
+        android:title="@string/logout"
         android:visible="false" />
     <!-- these items are toggled in and out of @+id/light_dark_menu_id -->
     <item android:id="@+id/light_menu_id"
