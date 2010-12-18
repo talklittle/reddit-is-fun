@@ -24,6 +24,10 @@
             android:title="@string/open_browser"
             android:icon="@drawable/ic_menu_browser"
             />
+        <item android:id="@+id/view_comments_menu_id"
+            android:title="@string/view_comments"
+            android:icon="@drawable/ic_menu_start_conversation"
+            />
     </group>
 </menu>
  

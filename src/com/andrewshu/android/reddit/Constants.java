@@ -74,6 +74,7 @@ public class Constants {
     static final String EXTRA_MORE_CHILDREN_ID = "moreChildrenId";
     static final String EXTRA_NUM_COMMENTS = "num_comments";
     static final String EXTRA_SUBREDDIT = "subreddit";
+    static final String EXTRA_THREAD_URL = "thread_url";
     static final String EXTRA_TITLE = "title";
     
     // User-defined result codes

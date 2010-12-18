@@ -553,8 +553,8 @@ public class Common {
      * @param bypassParser
      * @param useExternalBrowser
      */
-    static void launchBrowser(String url, Context context, boolean requireNewTask,
-    		boolean bypassParser, boolean useExternalBrowser) {
+    static void launchBrowser(Context context, String url, String threadUrl,
+    		boolean requireNewTask, boolean bypassParser, boolean useExternalBrowser) {
     	
     	Uri uri = Uri.parse(url);
     	
@@ -596,6 +596,8 @@ public class Common {
     	} else {
 	    	Intent browser = new Intent(context, BrowserActivity.class);
 	    	browser.setData(uri);
+	    	if (threadUrl != null)
+	    		browser.putExtra(Constants.EXTRA_THREAD_URL, threadUrl);
 			if (requireNewTask)
 				browser.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
 			context.startActivity(browser);

@@ -451,18 +451,21 @@ public final class ThreadsListActivity extends ListActivity {
 	            		indeterminateProgressBar.setVisibility(View.GONE);
 	            		
 		            	final String url = item.getUrl();
+		            	final String threadUrl = Util.createThreadUri(item).toString();
 		            	final String jumpToId = item.getId();
 		            	if (url != null) {
 			            	thumbnailView.setOnClickListener(new OnClickListener() {
 			            		public void onClick(View v) {
 			            			mJumpToThreadId = jumpToId;
-			            			Common.launchBrowser(url, ThreadsListActivity.this, false, false, mSettings.useExternalBrowser);
+			            			Common.launchBrowser(ThreadsListActivity.this, url, threadUrl,
+			            					false, false, mSettings.useExternalBrowser);
 			            		}
 			            	});
 			            	indeterminateProgressBar.setOnClickListener(new OnClickListener() {
 			            		public void onClick(View v) {
 			            			mJumpToThreadId = jumpToId;
-			            			Common.launchBrowser(url, ThreadsListActivity.this, false, false, mSettings.useExternalBrowser);
+			            			Common.launchBrowser(ThreadsListActivity.this, url, threadUrl,
+			            					false, false, mSettings.useExternalBrowser);
 			            		}
 			            	});
 		            	}
@@ -953,7 +956,7 @@ public final class ThreadsListActivity extends ListActivity {
 			
 			return true;
 		case Constants.OPEN_IN_BROWSER_CONTEXT_ITEM:
-			Common.launchBrowser(_item.getUrl(), this, false, true, true);
+			Common.launchBrowser(this, _item.getUrl(), Util.createThreadUri(_item).toString(), false, true, true);
 			return true;
 			
 		case Constants.OPEN_COMMENTS_CONTEXT_ITEM:
@@ -1068,7 +1071,7 @@ public final class ThreadsListActivity extends ListActivity {
     			url = "http://www.reddit.com";
     		else
         		url = new StringBuilder("http://www.reddit.com/r/").append(mSubreddit).toString();
-    		Common.launchBrowser(url, this, false, true, true);
+    		Common.launchBrowser(this, url, null, false, true, true);
     		break;
         case R.id.light_dark_menu_id:
     		mSettings.setTheme(Util.getInvertedTheme(mSettings.theme));
@@ -1301,7 +1304,9 @@ public final class ThreadsListActivity extends ListActivity {
     				public void onClick(View v) {
     					dismissDialog(Constants.DIALOG_THING_CLICK);
     					// Launch Intent to goto the URL
-    					Common.launchBrowser(url, ThreadsListActivity.this, false, false, mSettings.useExternalBrowser);
+    					Common.launchBrowser(ThreadsListActivity.this, url,
+    							Util.createThreadUri(mVoteTargetThingInfo).toString(),
+    							false, false, mSettings.useExternalBrowser);
     				}
     			});
             	linkButton.setEnabled(true);

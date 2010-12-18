@@ -1,6 +1,7 @@
 package com.andrewshu.android.reddit;
 
 import android.app.Activity;
+import android.content.Intent;
 import android.net.Uri;
 import android.os.Bundle;
 import android.util.Log;
@@ -21,6 +22,7 @@ public class BrowserActivity extends Activity {
 
 	private WebView webview;
 	private Uri mUri = null;
+	private String mThreadUrl = null;
 	private String mTitle = null;
 	
     // Common settings are stored here
@@ -94,6 +96,7 @@ public class BrowserActivity extends Activity {
 		});
 		
 		mUri = getIntent().getData();
+		mThreadUrl = getIntent().getStringExtra(Constants.EXTRA_THREAD_URL);
 		
 		if (savedInstanceState != null) {
 			if (Constants.LOGGING) Log.d(TAG, "Restoring previous WebView state");
@@ -152,6 +155,18 @@ public class BrowserActivity extends Activity {
     }
     
     @Override
+    public boolean onPrepareOptionsMenu(Menu menu) {
+    	super.onPrepareOptionsMenu(menu);
+    	
+    	if (mThreadUrl == null)
+    		menu.findItem(R.id.view_comments_menu_id).setVisible(false);
+    	else
+    		menu.findItem(R.id.view_comments_menu_id).setVisible(true);
+    	
+    	return true;
+    }
+    
+    @Override
     public boolean onOptionsItemSelected(MenuItem item) {
 //        if (!mCanChord) {
 //            // The user has already fired a shortcut with this hold down of the
@@ -160,11 +175,22 @@ public class BrowserActivity extends Activity {
 //        }
         
         switch (item.getItemId()) {
+        
         case R.id.open_browser_menu_id:
     		if (mUri == null)
     			break;
-    		Common.launchBrowser(mUri.toString(), this, false, true, true);
+    		Common.launchBrowser(this, mUri.toString(), null, false, true, true);
     		break;
+        
+        case R.id.view_comments_menu_id:
+        	if (mThreadUrl == null)
+        		break;
+			Intent intent = new Intent(this, CommentsListActivity.class);
+			intent.setData(Uri.parse(mThreadUrl));
+			intent.putExtra(Constants.EXTRA_NUM_COMMENTS, Constants.DEFAULT_COMMENT_DOWNLOAD_LIMIT);
+			startActivity(intent);
+        	break;
+        
         default:
     		throw new IllegalArgumentException("Unexpected action value "+item.getItemId());
     	}
