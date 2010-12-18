@@ -435,7 +435,7 @@ public final class InboxActivity extends ListActivity
     	public Void doInBackground(Integer... maxComments) {
     		HttpEntity entity = null;
             try {
-            	HttpGet request = new HttpGet("http://www.reddit.com/message/inbox/.json");
+            	HttpGet request = new HttpGet("http://api.reddit.com/message/inbox/");
             	HttpResponse response = mClient.execute(request);
             	
             	// Read the header to get Content-Length since entity.getContentLength() returns -1

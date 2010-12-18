@@ -855,15 +855,16 @@ public class CommentsListActivity extends ListActivity
     	public Boolean doInBackground(Integer... maxComments) {
     		HttpEntity entity = null;
             try {
-            	StringBuilder sb = new StringBuilder("http://www.reddit.com/");
-	        		if (mSubreddit != null) {
-	        		  sb.append("/r/").append(mSubreddit.trim());
-	        		}
-	        		sb.append("/comments/")
+            	StringBuilder sb = new StringBuilder("http://api.reddit.com");
+        		if (mSubreddit != null) {
+        			sb.append("/r/").append(mSubreddit.trim());
+        		}
+        		sb.append("/comments/")
 	        		.append(mThreadId)
-	        		.append("/z/").append(_mMoreChildrenId).append(".json?").append(mSettings.commentsSortByUrl).append("&");
+	        		.append("/z/").append(_mMoreChildrenId).append("/?")
+	        		.append(mSettings.commentsSortByUrl).append("&");
 	        	if (mJumpToCommentContext != 0)
-	        		sb.append("context="+mJumpToCommentContext+"&");
+	        		sb.append("context=").append(mJumpToCommentContext).append("&");
 	        	
 	        	String url = sb.toString();
 	        	
