@@ -1789,6 +1789,7 @@ public class CommentsListActivity extends ListActivity
     	case R.id.op_subreddit_menu_id:
 			Intent intent = new Intent(getApplicationContext(), ThreadsListActivity.class);
 			intent.setData(Util.createSubredditUri(mSubreddit));
+			intent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
 			startActivity(intent);
 			break;
     	case R.id.login_logout_menu_id:
