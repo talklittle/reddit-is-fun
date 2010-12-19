@@ -518,6 +518,8 @@ public final class ThreadsListActivity extends ListActivity {
     	// Mark the thread as selected
     	mVoteTargetThingInfo = item;
     	mJumpToThreadId = item.getId();
+    	
+    	showDialog(Constants.DIALOG_THING_CLICK);
     }
 
     /**
