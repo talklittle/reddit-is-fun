@@ -164,13 +164,13 @@ public final class ThreadsListActivity extends ListActivity {
 		    if (mThreadsList == null) {
 	        	// Load previous view of threads
 		        if (mLastAfter != null) {
-		        	new MyDownloadThreadsTask(getApplicationContext(), mClient, om, mSortByUrl, mSortByUrlExtra,
+		        	new MyDownloadThreadsTask(getApplicationContext(),
 		        			mSubreddit, mLastAfter, null, mLastCount).execute();
 		        } else if (mLastBefore != null) {
-		        	new MyDownloadThreadsTask(getApplicationContext(), mClient, om, mSortByUrl, mSortByUrlExtra,
+		        	new MyDownloadThreadsTask(getApplicationContext(),
 		        			mSubreddit, null, mLastBefore, mLastCount).execute();
 		        } else {
-		        	new MyDownloadThreadsTask(getApplicationContext(), mClient, om, mSortByUrl, mSortByUrlExtra,
+		        	new MyDownloadThreadsTask(getApplicationContext(),
 		        			mSubreddit).execute();
 		        }
 		    } else {
@@ -186,17 +186,14 @@ public final class ThreadsListActivity extends ListActivity {
         else if (getIntent().getData() != null) {
 	    	Matcher redditContextMatcher = REDDIT_PATH_PATTERN.matcher(getIntent().getData().getPath());
 			if (redditContextMatcher.matches()) {
-				new MyDownloadThreadsTask(getApplicationContext(), mClient, om, mSortByUrl, mSortByUrlExtra,
-						redditContextMatcher.group(1)).execute();
+				new MyDownloadThreadsTask(getApplicationContext(), redditContextMatcher.group(1)).execute();
 			} else {
-				new MyDownloadThreadsTask(getApplicationContext(), mClient, om, mSortByUrl, mSortByUrlExtra,
-	           			mSettings.homepage).execute();
+				new MyDownloadThreadsTask(getApplicationContext(), mSettings.homepage).execute();
 			}
 		}
 		// No subreddit specified by Intent, so load the user's home reddit
 		else {
-        	new MyDownloadThreadsTask(getApplicationContext(), mClient, om, mSortByUrl, mSortByUrlExtra,
-           			mSettings.homepage).execute();
+        	new MyDownloadThreadsTask(getApplicationContext(), mSettings.homepage).execute();
         }
     }
     
@@ -264,8 +261,7 @@ public final class ThreadsListActivity extends ListActivity {
     		if (resultCode == Activity.RESULT_OK) {
     	    	Matcher redditContextMatcher = REDDIT_PATH_PATTERN.matcher(intent.getData().getPath());
     			if (redditContextMatcher.matches()) {
-    				new MyDownloadThreadsTask(getApplicationContext(), mClient, om, mSortByUrl, mSortByUrlExtra,
-    						redditContextMatcher.group(1)).execute();
+    				new MyDownloadThreadsTask(getApplicationContext(), redditContextMatcher.group(1)).execute();
     			}
     		}
     		break;
@@ -604,15 +600,23 @@ public final class ThreadsListActivity extends ListActivity {
      */
     private class MyDownloadThreadsTask extends DownloadThreadsTask {
     	
-    	public MyDownloadThreadsTask(Context context, DefaultHttpClient client, ObjectMapper om,
-				String sortByUrl, String sortByUrlExtra, String subreddit) {
-			super(context, client, om, sortByUrl, sortByUrlExtra, subreddit);
+    	public MyDownloadThreadsTask(Context context, String subreddit) {
+			super(context,
+					ThreadsListActivity.this.mClient,
+					ThreadsListActivity.this.om,
+					ThreadsListActivity.this.mSortByUrl,
+					ThreadsListActivity.this.mSortByUrlExtra,
+					subreddit);
 		}
     	
-    	public MyDownloadThreadsTask(Context context, DefaultHttpClient client, ObjectMapper om,
-				String sortByUrl, String sortByUrlExtra, String subreddit,
+    	public MyDownloadThreadsTask(Context context, String subreddit,
 				String after, String before, int count) {
-			super(context, client, om, sortByUrl, sortByUrlExtra, subreddit, after, before, count);
+			super(context,
+					ThreadsListActivity.this.mClient,
+					ThreadsListActivity.this.om,
+					ThreadsListActivity.this.mSortByUrl,
+					ThreadsListActivity.this.mSortByUrlExtra,
+					subreddit, after, before, count);
 		}
 
 		@Override
@@ -712,7 +716,7 @@ public final class ThreadsListActivity extends ListActivity {
     			// Check mail
     			new PeekEnvelopeTask(getApplicationContext(), mClient, mSettings.mailNotificationStyle).execute();
     			// Refresh the threads list
-    			new MyDownloadThreadsTask(getApplicationContext(), mClient, om, mSortByUrl, mSortByUrlExtra, mSubreddit).execute();
+    			new MyDownloadThreadsTask(getApplicationContext(), mSubreddit).execute();
         	} else {
             	Common.showErrorToast(errorMessage, Toast.LENGTH_LONG, ThreadsListActivity.this);
     		}
@@ -917,9 +921,9 @@ public final class ThreadsListActivity extends ListActivity {
     	
     	mVoteTargetThingInfo = _item;
     	
-    	menu.add(0, Constants.OPEN_IN_BROWSER_CONTEXT_ITEM, 0, "Open in browser");
-    	menu.add(0, Constants.SHARE_CONTEXT_ITEM, 0, "Share");
-    	menu.add(0, Constants.OPEN_COMMENTS_CONTEXT_ITEM, 0, "Comments");
+    	menu.add(0, Constants.VIEW_SUBREDDIT_CONTEXT_ITEM, 0, R.string.view_subreddit);
+    	menu.add(0, Constants.SHARE_CONTEXT_ITEM, 0, R.string.share);
+    	menu.add(0, Constants.OPEN_IN_BROWSER_CONTEXT_ITEM, 0, R.string.open_browser);
     	
     	if(mSettings.isLoggedIn()){
     		if(!_item.isSaved()){
@@ -939,32 +943,26 @@ public final class ThreadsListActivity extends ListActivity {
         ThingInfo _item = mThreadsAdapter.getItem(info.position);
         
         switch (item.getItemId()) {
-		case Constants.SHARE_CONTEXT_ITEM:
+        case Constants.VIEW_SUBREDDIT_CONTEXT_ITEM:
+        	new MyDownloadThreadsTask(getApplicationContext(), _item.getSubreddit()).execute();
+        	return true;
+        
+        case Constants.SHARE_CONTEXT_ITEM:
 			Intent intent = new Intent();
 			intent.setAction(Intent.ACTION_SEND);
 			intent.setType("text/plain");
 			intent.putExtra(Intent.EXTRA_TEXT, _item.getUrl());
-			
 			try {
 				startActivity(Intent.createChooser(intent, "Share Link"));
 			} catch (android.content.ActivityNotFoundException ex) {
-				
+				if (Constants.LOGGING) Log.e(TAG, "Share Link", ex);
 			}
-			
 			return true;
+			
 		case Constants.OPEN_IN_BROWSER_CONTEXT_ITEM:
 			Common.launchBrowser(this, _item.getUrl(), Util.createThreadUri(_item).toString(), false, true, true);
 			return true;
 			
-		case Constants.OPEN_COMMENTS_CONTEXT_ITEM:
-			Intent i = new Intent(getApplicationContext(), CommentsListActivity.class);
-			i.setData(Util.createThreadUri(_item));
-			i.putExtra(Constants.EXTRA_SUBREDDIT, _item.getSubreddit());
-			i.putExtra(Constants.EXTRA_TITLE, _item.getTitle());
-			i.putExtra(Constants.EXTRA_NUM_COMMENTS, _item.getNum_comments());
-			startActivity(i);
-			return true;
-		
 		case Constants.SAVE_CONTEXT_ITEM:
 			new SaveTask(true, _item, mSettings, getApplicationContext()).execute();
 			return true;
@@ -1045,14 +1043,14 @@ public final class ThreadsListActivity extends ListActivity {
         	if (mSettings.isLoggedIn()) {
         		Common.doLogout(mSettings, mClient, getApplicationContext());
         		Toast.makeText(this, "You have been logged out.", Toast.LENGTH_SHORT).show();
-        		new MyDownloadThreadsTask(getApplicationContext(), mClient, om, mSortByUrl, mSortByUrlExtra, mSubreddit).execute();
+        		new MyDownloadThreadsTask(getApplicationContext(), mSubreddit).execute();
         	} else {
         		showDialog(Constants.DIALOG_LOGIN);
         	}
     		break;
     	case R.id.refresh_menu_id:
     		CacheInfo.invalidateCachedSubreddit(getApplicationContext());
-    		new MyDownloadThreadsTask(getApplicationContext(), mClient, om, mSortByUrl, mSortByUrlExtra, mSubreddit).execute();
+    		new MyDownloadThreadsTask(getApplicationContext(), mSubreddit).execute();
     		break;
     	case R.id.submit_link_menu_id:
     		Intent submitLinkIntent = new Intent(getApplicationContext(), SubmitLinkActivity.class);
@@ -1313,14 +1311,12 @@ public final class ThreadsListActivity extends ListActivity {
 
 	private final OnClickListener downloadAfterOnClickListener = new OnClickListener() {
 		public void onClick(View v) {
-			new MyDownloadThreadsTask(getApplicationContext(), mClient, om, mSortByUrl, mSortByUrlExtra,
-					mSubreddit, mAfter, null, mCount).execute();
+			new MyDownloadThreadsTask(getApplicationContext(), mSubreddit, mAfter, null, mCount).execute();
 		}
 	};
 	private final OnClickListener downloadBeforeOnClickListener = new OnClickListener() {
 		public void onClick(View v) {
-			new MyDownloadThreadsTask(getApplicationContext(), mClient, om, mSortByUrl, mSortByUrlExtra,
-					mSubreddit, null, mBefore, mCount).execute();
+			new MyDownloadThreadsTask(getApplicationContext(), mSubreddit, null, mBefore, mCount).execute();
 		}
 	};
     
@@ -1374,7 +1370,7 @@ public final class ThreadsListActivity extends ListActivity {
 			if (Constants.ThreadsSort.SORT_BY_HOT.equals(itemString)) {
 				mSortByUrl = Constants.ThreadsSort.SORT_BY_HOT_URL;
 				mSortByUrlExtra = Constants.EMPTY_STRING;
-				new MyDownloadThreadsTask(getApplicationContext(), mClient, om, mSortByUrl, mSortByUrlExtra, mSubreddit).execute();
+				new MyDownloadThreadsTask(getApplicationContext(), mSubreddit).execute();
 			} else if (Constants.ThreadsSort.SORT_BY_NEW.equals(itemString)) {
 				showDialog(Constants.DIALOG_SORT_BY_NEW);
 			} else if (Constants.ThreadsSort.SORT_BY_CONTROVERSIAL.equals(itemString)) {
@@ -1389,7 +1385,7 @@ public final class ThreadsListActivity extends ListActivity {
 			dialog.dismiss();
 			mSortByUrl = Constants.ThreadsSort.SORT_BY_NEW_URL;
 			mSortByUrlExtra = Constants.ThreadsSort.SORT_BY_NEW_URL_CHOICES[item];
-			new MyDownloadThreadsTask(getApplicationContext(), mClient, om, mSortByUrl, mSortByUrlExtra, mSubreddit).execute();
+			new MyDownloadThreadsTask(getApplicationContext(), mSubreddit).execute();
 		}
 	};
 	private final DialogInterface.OnClickListener sortByControversialOnClickListener = new DialogInterface.OnClickListener() {
@@ -1397,7 +1393,7 @@ public final class ThreadsListActivity extends ListActivity {
 			dialog.dismiss();
 			mSortByUrl = Constants.ThreadsSort.SORT_BY_CONTROVERSIAL_URL;
 			mSortByUrlExtra = Constants.ThreadsSort.SORT_BY_CONTROVERSIAL_URL_CHOICES[item];
-			new MyDownloadThreadsTask(getApplicationContext(), mClient, om, mSortByUrl, mSortByUrlExtra, mSubreddit).execute();
+			new MyDownloadThreadsTask(getApplicationContext(), mSubreddit).execute();
 		}
 	};
 	private final DialogInterface.OnClickListener sortByTopOnClickListener = new DialogInterface.OnClickListener() {
@@ -1405,7 +1401,7 @@ public final class ThreadsListActivity extends ListActivity {
 			dialog.dismiss();
 			mSortByUrl = Constants.ThreadsSort.SORT_BY_TOP_URL;
 			mSortByUrlExtra = Constants.ThreadsSort.SORT_BY_TOP_URL_CHOICES[item];
-			new MyDownloadThreadsTask(getApplicationContext(), mClient, om, mSortByUrl, mSortByUrlExtra, mSubreddit).execute();
+			new MyDownloadThreadsTask(getApplicationContext(), mSubreddit).execute();
 		}
 	};
 	
