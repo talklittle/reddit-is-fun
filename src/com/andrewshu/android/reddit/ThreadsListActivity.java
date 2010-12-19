@@ -1126,7 +1126,7 @@ public final class ThreadsListActivity extends ListActivity {
     	case Constants.DIALOG_SORT_BY:
     		builder = new AlertDialog.Builder(this);
     		builder.setTitle("Sort by:");
-    		int selectedSortBy = 0;
+    		int selectedSortBy = -1;
     		for (int i = 0; i < Constants.ThreadsSort.SORT_BY_URL_CHOICES.length; i++) {
     			if (Constants.ThreadsSort.SORT_BY_URL_CHOICES[i].equals(mSortByUrl)) {
     				selectedSortBy = i;
@@ -1155,7 +1155,7 @@ public final class ThreadsListActivity extends ListActivity {
     	case Constants.DIALOG_SORT_BY_NEW:
     		builder = new AlertDialog.Builder(this);
     		builder.setTitle("what's new");
-    		int selectedSortByNew = 0;
+    		int selectedSortByNew = -1;
     		for (int i = 0; i < Constants.ThreadsSort.SORT_BY_NEW_URL_CHOICES.length; i++) {
     			if (Constants.ThreadsSort.SORT_BY_NEW_URL_CHOICES[i].equals(mSortByUrlExtra)) {
     				selectedSortByNew = i;
@@ -1176,7 +1176,7 @@ public final class ThreadsListActivity extends ListActivity {
     	case Constants.DIALOG_SORT_BY_CONTROVERSIAL:
     		builder = new AlertDialog.Builder(this);
     		builder.setTitle("most controversial");
-    		int selectedSortByControversial = 0;
+    		int selectedSortByControversial = -1;
     		for (int i = 0; i < Constants.ThreadsSort.SORT_BY_CONTROVERSIAL_URL_CHOICES.length; i++) {
     			if (Constants.ThreadsSort.SORT_BY_CONTROVERSIAL_URL_CHOICES[i].equals(mSortByUrlExtra)) {
     				selectedSortByControversial = i;
@@ -1197,7 +1197,7 @@ public final class ThreadsListActivity extends ListActivity {
     	case Constants.DIALOG_SORT_BY_TOP:
     		builder = new AlertDialog.Builder(this);
     		builder.setTitle("top scoring");
-    		int selectedSortByTop = 0;
+    		int selectedSortByTop = -1;
     		for (int i = 0; i < Constants.ThreadsSort.SORT_BY_TOP_URL_CHOICES.length; i++) {
     			if (Constants.ThreadsSort.SORT_BY_TOP_URL_CHOICES[i].equals(mSortByUrlExtra)) {
     				selectedSortByTop = i;

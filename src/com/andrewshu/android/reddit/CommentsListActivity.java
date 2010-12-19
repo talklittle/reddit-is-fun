@@ -2138,7 +2138,7 @@ public class CommentsListActivity extends ListActivity
     	case Constants.DIALOG_SORT_BY:
     		builder = new AlertDialog.Builder(this);
     		builder.setTitle("Sort by:");
-			int selectedSortBy = 0;
+			int selectedSortBy = -1;
 			for (int i = 0; i < Constants.CommentsSort.SORT_BY_URL_CHOICES.length; i++) {
 				if (Constants.CommentsSort.SORT_BY_URL_CHOICES[i].equals(mSettings.commentsSortByUrl)) {
 					selectedSortBy = i;
