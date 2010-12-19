@@ -213,6 +213,7 @@ public final class ThreadsListActivity extends ListActivity {
     		setListAdapter(mThreadsAdapter);
     		Common.updateListDrawables(this, mSettings.theme);
     	}
+    	updateNextPreviousButtons();
     	if (mThreadsAdapter != null) {
     		jumpToThread();
     	}
@@ -298,9 +299,8 @@ public final class ThreadsListActivity extends ListActivity {
     
     final class ThreadsListAdapter extends ArrayAdapter<ThingInfo> {
     	static final int THREAD_ITEM_VIEW_TYPE = 0;
-    	static final int MORE_ITEM_VIEW_TYPE = 1;
     	// The number of view types
-    	static final int VIEW_TYPE_COUNT = 2;
+    	static final int VIEW_TYPE_COUNT = 1;
     	public boolean mIsLoading = true;
     	private LayoutInflater mInflater;
     	private int mFrequentSeparatorPos = ListView.INVALID_POSITION;
@@ -316,10 +316,7 @@ public final class ThreadsListActivity extends ListActivity {
                 // We don't want the separator view to be recycled.
                 return IGNORE_ITEM_VIEW_TYPE;
             }
-        	// If we are on a subsequent page, return the item view type 
-            if (position < getCount() - 1 || (mAfter == null && mBefore == null))
-        		return THREAD_ITEM_VIEW_TYPE;
-        	return MORE_ITEM_VIEW_TYPE;
+    		return THREAD_ITEM_VIEW_TYPE;
         }
         
         @Override
@@ -339,181 +336,159 @@ public final class ThreadsListActivity extends ListActivity {
             View view;
             Resources res = getResources();
 
-            if (position < getCount() - 1 || (mAfter == null && mBefore == null)) {
-	            // Here view may be passed in for re-use, or we make a new one.
-	            if (convertView == null) {
-	                view = mInflater.inflate(R.layout.threads_list_item, null);
-	            } else {
-	                view = convertView;
-	            }
-	            
-	            ThingInfo item = this.getItem(position);
-	            
-	            // Set the values of the Views for the ThreadsListItem
-	            
-	            TextView titleView = (TextView) view.findViewById(R.id.title);
-	            TextView votesView = (TextView) view.findViewById(R.id.votes);
-	            TextView numCommentsSubredditView = (TextView) view.findViewById(R.id.numCommentsSubreddit);
-	            TextView nsfwView = (TextView) view.findViewById(R.id.nsfw);
-	//            TextView submissionTimeView = (TextView) view.findViewById(R.id.submissionTime);
-	            ImageView voteUpView = (ImageView) view.findViewById(R.id.vote_up_image);
-	            ImageView voteDownView = (ImageView) view.findViewById(R.id.vote_down_image);
-	            ImageView thumbnailView = (ImageView) view.findViewById(R.id.thumbnail);
-	            View dividerView = view.findViewById(R.id.divider);
-	            ProgressBar indeterminateProgressBar = (ProgressBar) view.findViewById(R.id.indeterminate_progress);
-	            
-	            // Set the title and domain using a SpannableStringBuilder
-	            SpannableStringBuilder builder = new SpannableStringBuilder();
-	            String title = item.getTitle();
-	            if (title == null)
-	            	title = "";
-	            SpannableString titleSS = new SpannableString(title);
-	            int titleLen = title.length();
-	            titleSS.setSpan(new TextAppearanceSpan(getApplicationContext(),
-	            		Util.getTextAppearanceResource(mSettings.theme, android.R.style.TextAppearance_Large)),
-	            		0, titleLen, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
-	            
-	            String domain = item.getDomain();
-	            if (domain == null)
-	            	domain = "";
-	            int domainLen = domain.length();
-	            SpannableString domainSS = new SpannableString("("+item.getDomain()+")");
-	            domainSS.setSpan(new TextAppearanceSpan(getApplicationContext(),
-	            		Util.getTextAppearanceResource(mSettings.theme, android.R.style.TextAppearance_Small)),
-	            		0, domainLen+2, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
-
-	            if (Util.isLightTheme(mSettings.theme)) {
-	            	// FIXME: This doesn't work persistently, since "clicked" is not delivered to reddit.com
-		            if (item.isClicked()) {
-		            	ForegroundColorSpan fcs = new ForegroundColorSpan(res.getColor(R.color.purple));
-		            	titleSS.setSpan(fcs, 0, titleLen, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
-		            } else {
-		            	ForegroundColorSpan fcs = new ForegroundColorSpan(res.getColor(R.color.blue));
-		            	titleSS.setSpan(fcs, 0, titleLen, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
-		            }
-		            domainSS.setSpan(new ForegroundColorSpan(res.getColor(R.color.gray_50)),
-		            		0, domainLen+2, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
-	            } else {
-	            	domainSS.setSpan(new ForegroundColorSpan(res.getColor(R.color.gray_75)),
-		            		0, domainLen+2, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
-	            }
-	            
-	            builder.append(titleSS).append(" ").append(domainSS);
-	            titleView.setText(builder);
-	            
-	            votesView.setText("" + item.getScore());
-	            numCommentsSubredditView.setText(Util.showNumComments(item.getNum_comments()) + "  " + item.getSubreddit());
-	            
-                if(item.isOver_18()){
-                    nsfwView.setVisibility(View.VISIBLE);
-                } else {
-                    nsfwView.setVisibility(View.GONE);
-                }
-                
-	            // Set the up and down arrow colors based on whether user likes
-	            if (mSettings.isLoggedIn()) {
-	            	if (item.getLikes() == null) {
-	            		voteUpView.setImageResource(R.drawable.vote_up_gray);
-	            		voteDownView.setImageResource(R.drawable.vote_down_gray);
-	            		votesView.setTextColor(res.getColor(R.color.gray_75));
-	            	} else if (item.getLikes() == true) {
-	            		voteUpView.setImageResource(R.drawable.vote_up_red);
-	            		voteDownView.setImageResource(R.drawable.vote_down_gray);
-	            		votesView.setTextColor(res.getColor(R.color.arrow_red));
-	            	} else {
-	            		voteUpView.setImageResource(R.drawable.vote_up_gray);
-	            		voteDownView.setImageResource(R.drawable.vote_down_blue);
-	            		votesView.setTextColor(res.getColor(R.color.arrow_blue));
-	            	}
-	            } else {
-	        		voteUpView.setImageResource(R.drawable.vote_up_gray);
-	        		voteDownView.setImageResource(R.drawable.vote_down_gray);
-	        		votesView.setTextColor(res.getColor(R.color.gray_75));
-	            }
-	            
-	            // Thumbnails open links
-	            if (thumbnailView != null) {
-	            	
-	            	//check for wifi connection and wifi thumbnail setting
-	            	boolean thumbOkay = true;
-	            	if (mSettings.loadThumbnailsOnlyWifi)
-	            	{
-	            		thumbOkay = false;
-	            		ConnectivityManager connMan = (ConnectivityManager) getSystemService(Context.CONNECTIVITY_SERVICE);
-	            		NetworkInfo netInfo = connMan.getActiveNetworkInfo();
-	            		if (netInfo != null && netInfo.getType() == ConnectivityManager.TYPE_WIFI && netInfo.isConnected()) {
-	            			thumbOkay = true;
-	            		}
-	            	}
-	            	if (mSettings.loadThumbnails && thumbOkay) {
-	            		dividerView.setVisibility(View.VISIBLE);
-	            		thumbnailView.setVisibility(View.VISIBLE);
-	            		indeterminateProgressBar.setVisibility(View.GONE);
-	            		
-		            	final String url = item.getUrl();
-		            	final String threadUrl = Util.createThreadUri(item).toString();
-		            	final String jumpToId = item.getId();
-		            	if (url != null) {
-			            	thumbnailView.setOnClickListener(new OnClickListener() {
-			            		public void onClick(View v) {
-			            			mJumpToThreadId = jumpToId;
-			            			Common.launchBrowser(ThreadsListActivity.this, url, threadUrl,
-			            					false, false, mSettings.useExternalBrowser);
-			            		}
-			            	});
-			            	indeterminateProgressBar.setOnClickListener(new OnClickListener() {
-			            		public void onClick(View v) {
-			            			mJumpToThreadId = jumpToId;
-			            			Common.launchBrowser(ThreadsListActivity.this, url, threadUrl,
-			            					false, false, mSettings.useExternalBrowser);
-			            		}
-			            	});
-		            	}
-		            	
-		            	// Fill in the thumbnail using a Thread. Note that thumbnail URL can be absolute path.
-		            	if (item.getThumbnail() != null && !Constants.EMPTY_STRING.equals(item.getThumbnail())) {
-		            		drawableManager.fetchBitmapOnThread(Util.absolutePathToURL(item.getThumbnail()),
-		            				thumbnailView, indeterminateProgressBar, ThreadsListActivity.this);
-		            	} else {
-		            		indeterminateProgressBar.setVisibility(View.GONE);
-		            		thumbnailView.setVisibility(View.VISIBLE);
-		            		thumbnailView.setImageResource(R.drawable.go_arrow);
-		            	}
-		            	
-		            	// Set thumbnail background based on current theme
-		            	if (Util.isLightTheme(mSettings.theme)) {
-		            		thumbnailView.setBackgroundResource(R.drawable.thumbnail_background_light);
-		            		indeterminateProgressBar.setBackgroundResource(R.drawable.thumbnail_background_light);
-		            	} else {
-		            		thumbnailView.setBackgroundResource(R.drawable.thumbnail_background_dark);
-		            		indeterminateProgressBar.setBackgroundResource(R.drawable.thumbnail_background_dark);
-		            	}
-	            	} else {
-	            		// if thumbnails disabled, hide thumbnail icon
-	            		dividerView.setVisibility(View.GONE);
-	            		thumbnailView.setVisibility(View.GONE);
-	            		indeterminateProgressBar.setVisibility(View.GONE);
-	            	}
-	            }
+            // Here view may be passed in for re-use, or we make a new one.
+            if (convertView == null) {
+                view = mInflater.inflate(R.layout.threads_list_item, null);
             } else {
-            	// The "25 more" list item
-            	if (convertView == null)
-            		view = mInflater.inflate(R.layout.more_threads_view, null);
-            	else
-            		view = convertView;
-            	final Button nextButton = (Button) view.findViewById(R.id.next_button);
-            	final Button previousButton = (Button) view.findViewById(R.id.previous_button);
-            	if (mAfter != null) {
-            		nextButton.setVisibility(View.VISIBLE);
-            		nextButton.setOnClickListener(downloadAfterOnClickListener);
+                view = convertView;
+            }
+            
+            ThingInfo item = this.getItem(position);
+            
+            // Set the values of the Views for the ThreadsListItem
+            
+            TextView titleView = (TextView) view.findViewById(R.id.title);
+            TextView votesView = (TextView) view.findViewById(R.id.votes);
+            TextView numCommentsSubredditView = (TextView) view.findViewById(R.id.numCommentsSubreddit);
+            TextView nsfwView = (TextView) view.findViewById(R.id.nsfw);
+//            TextView submissionTimeView = (TextView) view.findViewById(R.id.submissionTime);
+            ImageView voteUpView = (ImageView) view.findViewById(R.id.vote_up_image);
+            ImageView voteDownView = (ImageView) view.findViewById(R.id.vote_down_image);
+            ImageView thumbnailView = (ImageView) view.findViewById(R.id.thumbnail);
+            View dividerView = view.findViewById(R.id.divider);
+            ProgressBar indeterminateProgressBar = (ProgressBar) view.findViewById(R.id.indeterminate_progress);
+            
+            // Set the title and domain using a SpannableStringBuilder
+            SpannableStringBuilder builder = new SpannableStringBuilder();
+            String title = item.getTitle();
+            if (title == null)
+            	title = "";
+            SpannableString titleSS = new SpannableString(title);
+            int titleLen = title.length();
+            titleSS.setSpan(new TextAppearanceSpan(getApplicationContext(),
+            		Util.getTextAppearanceResource(mSettings.theme, android.R.style.TextAppearance_Large)),
+            		0, titleLen, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
+            
+            String domain = item.getDomain();
+            if (domain == null)
+            	domain = "";
+            int domainLen = domain.length();
+            SpannableString domainSS = new SpannableString("("+item.getDomain()+")");
+            domainSS.setSpan(new TextAppearanceSpan(getApplicationContext(),
+            		Util.getTextAppearanceResource(mSettings.theme, android.R.style.TextAppearance_Small)),
+            		0, domainLen+2, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
+
+            if (Util.isLightTheme(mSettings.theme)) {
+            	// FIXME: This doesn't work persistently, since "clicked" is not delivered to reddit.com
+	            if (item.isClicked()) {
+	            	ForegroundColorSpan fcs = new ForegroundColorSpan(res.getColor(R.color.purple));
+	            	titleSS.setSpan(fcs, 0, titleLen, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
+	            } else {
+	            	ForegroundColorSpan fcs = new ForegroundColorSpan(res.getColor(R.color.blue));
+	            	titleSS.setSpan(fcs, 0, titleLen, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
+	            }
+	            domainSS.setSpan(new ForegroundColorSpan(res.getColor(R.color.gray_50)),
+	            		0, domainLen+2, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
+            } else {
+            	domainSS.setSpan(new ForegroundColorSpan(res.getColor(R.color.gray_75)),
+	            		0, domainLen+2, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
+            }
+            
+            builder.append(titleSS).append(" ").append(domainSS);
+            titleView.setText(builder);
+            
+            votesView.setText("" + item.getScore());
+            numCommentsSubredditView.setText(Util.showNumComments(item.getNum_comments()) + "  " + item.getSubreddit());
+            
+            if(item.isOver_18()){
+                nsfwView.setVisibility(View.VISIBLE);
+            } else {
+                nsfwView.setVisibility(View.GONE);
+            }
+            
+            // Set the up and down arrow colors based on whether user likes
+            if (mSettings.isLoggedIn()) {
+            	if (item.getLikes() == null) {
+            		voteUpView.setImageResource(R.drawable.vote_up_gray);
+            		voteDownView.setImageResource(R.drawable.vote_down_gray);
+            		votesView.setTextColor(res.getColor(R.color.gray_75));
+            	} else if (item.getLikes() == true) {
+            		voteUpView.setImageResource(R.drawable.vote_up_red);
+            		voteDownView.setImageResource(R.drawable.vote_down_gray);
+            		votesView.setTextColor(res.getColor(R.color.arrow_red));
             	} else {
-            		nextButton.setVisibility(View.INVISIBLE);
+            		voteUpView.setImageResource(R.drawable.vote_up_gray);
+            		voteDownView.setImageResource(R.drawable.vote_down_blue);
+            		votesView.setTextColor(res.getColor(R.color.arrow_blue));
             	}
-            	if (mBefore != null && mCount != Constants.DEFAULT_THREAD_DOWNLOAD_LIMIT) {
-            		previousButton.setVisibility(View.VISIBLE);
-            		previousButton.setOnClickListener(downloadBeforeOnClickListener);
+            } else {
+        		voteUpView.setImageResource(R.drawable.vote_up_gray);
+        		voteDownView.setImageResource(R.drawable.vote_down_gray);
+        		votesView.setTextColor(res.getColor(R.color.gray_75));
+            }
+            
+            // Thumbnails open links
+            if (thumbnailView != null) {
+            	
+            	//check for wifi connection and wifi thumbnail setting
+            	boolean thumbOkay = true;
+            	if (mSettings.loadThumbnailsOnlyWifi)
+            	{
+            		thumbOkay = false;
+            		ConnectivityManager connMan = (ConnectivityManager) getSystemService(Context.CONNECTIVITY_SERVICE);
+            		NetworkInfo netInfo = connMan.getActiveNetworkInfo();
+            		if (netInfo != null && netInfo.getType() == ConnectivityManager.TYPE_WIFI && netInfo.isConnected()) {
+            			thumbOkay = true;
+            		}
+            	}
+            	if (mSettings.loadThumbnails && thumbOkay) {
+            		dividerView.setVisibility(View.VISIBLE);
+            		thumbnailView.setVisibility(View.VISIBLE);
+            		indeterminateProgressBar.setVisibility(View.GONE);
+            		
+	            	final String url = item.getUrl();
+	            	final String threadUrl = Util.createThreadUri(item).toString();
+	            	final String jumpToId = item.getId();
+	            	if (url != null) {
+		            	thumbnailView.setOnClickListener(new OnClickListener() {
+		            		public void onClick(View v) {
+		            			mJumpToThreadId = jumpToId;
+		            			Common.launchBrowser(ThreadsListActivity.this, url, threadUrl,
+		            					false, false, mSettings.useExternalBrowser);
+		            		}
+		            	});
+		            	indeterminateProgressBar.setOnClickListener(new OnClickListener() {
+		            		public void onClick(View v) {
+		            			mJumpToThreadId = jumpToId;
+		            			Common.launchBrowser(ThreadsListActivity.this, url, threadUrl,
+		            					false, false, mSettings.useExternalBrowser);
+		            		}
+		            	});
+	            	}
+	            	
+	            	// Fill in the thumbnail using a Thread. Note that thumbnail URL can be absolute path.
+	            	if (item.getThumbnail() != null && !Constants.EMPTY_STRING.equals(item.getThumbnail())) {
+	            		drawableManager.fetchBitmapOnThread(Util.absolutePathToURL(item.getThumbnail()),
+	            				thumbnailView, indeterminateProgressBar, ThreadsListActivity.this);
+	            	} else {
+	            		indeterminateProgressBar.setVisibility(View.GONE);
+	            		thumbnailView.setVisibility(View.VISIBLE);
+	            		thumbnailView.setImageResource(R.drawable.go_arrow);
+	            	}
+	            	
+	            	// Set thumbnail background based on current theme
+	            	if (Util.isLightTheme(mSettings.theme)) {
+	            		thumbnailView.setBackgroundResource(R.drawable.thumbnail_background_light);
+	            		indeterminateProgressBar.setBackgroundResource(R.drawable.thumbnail_background_light);
+	            	} else {
+	            		thumbnailView.setBackgroundResource(R.drawable.thumbnail_background_dark);
+	            		indeterminateProgressBar.setBackgroundResource(R.drawable.thumbnail_background_dark);
+	            	}
             	} else {
-            		previousButton.setVisibility(View.INVISIBLE);
+            		// if thumbnails disabled, hide thumbnail icon
+            		dividerView.setVisibility(View.GONE);
+            		thumbnailView.setVisibility(View.GONE);
+            		indeterminateProgressBar.setVisibility(View.GONE);
             	}
             }
             return view;
@@ -547,14 +522,6 @@ public final class ThreadsListActivity extends ListActivity {
     	// Mark the thread as selected
     	mVoteTargetThingInfo = item;
     	mJumpToThreadId = item.getId();
-
-    	// if mThreadsAdapter.getCount() - 1 contains the "next 25, prev 25" buttons,
-        // or if there are fewer than 25 threads...
-        if (position < mThreadsAdapter.getCount() - 1 || mThreadsAdapter.getCount() < Constants.DEFAULT_THREAD_DOWNLOAD_LIMIT + 1) {
-            showDialog(Constants.DIALOG_THING_CLICK);
-        } else {
-        	// 25 more. Use buttons.
-        }
     }
 
     /**
@@ -594,6 +561,38 @@ public final class ThreadsListActivity extends ListActivity {
     private void disableLoadingScreen() {
     	resetUI(mThreadsAdapter);
     	getWindow().setFeatureInt(Window.FEATURE_PROGRESS, 10000);
+    }
+    
+    private void updateNextPreviousButtons() {
+    	View nextPrevious = findViewById(R.id.next_previous_layout);
+    	View nextPreviousBorder = findViewById(R.id.next_previous_border_top);
+    	if (nextPrevious != null && nextPreviousBorder != null) {
+	    	if (Util.isLightTheme(mSettings.theme)) {
+	       		nextPrevious.setBackgroundResource(R.color.white);
+	       		nextPreviousBorder.setBackgroundResource(R.color.black);
+	    	} else {
+	       		nextPreviousBorder.setBackgroundResource(R.color.white);
+	    	}
+    	}
+		// update the "next 25" and "prev 25" buttons
+    	final Button nextButton = (Button) findViewById(R.id.next_button);
+    	final Button previousButton = (Button) findViewById(R.id.previous_button);
+    	if (nextButton != null) {
+	    	if (mAfter != null) {
+	    		nextButton.setVisibility(View.VISIBLE);
+	    		nextButton.setOnClickListener(downloadAfterOnClickListener);
+	    	} else {
+	    		nextButton.setVisibility(View.INVISIBLE);
+	    	}
+    	}
+    	if (previousButton != null) {
+	    	if (mBefore != null && mCount != Constants.DEFAULT_THREAD_DOWNLOAD_LIMIT) {
+	    		previousButton.setVisibility(View.VISIBLE);
+	    		previousButton.setOnClickListener(downloadBeforeOnClickListener);
+	    	} else {
+	    		previousButton.setVisibility(View.INVISIBLE);
+	    	}
+    	}
     }
     
     
@@ -663,12 +662,12 @@ public final class ThreadsListActivity extends ListActivity {
     			synchronized (THREAD_ADAPTER_LOCK) {
 		    		for (ThingInfo ti : mThingInfos)
 		        		mThreadsList.add(ti);
-		    		// "25 more" button.
-		    		if (mThreadsList.size() >= Constants.DEFAULT_THREAD_DOWNLOAD_LIMIT)
-		    			mThreadsList.add(new ThingInfo());
 		    		drawableManager = new BitmapManager();  // clear thumbnails
 		    		mThreadsAdapter.notifyDataSetChanged();
     			}
+    			
+    			updateNextPreviousButtons();
+
 	    		// Point the list to last thread user was looking at, if any
 	    		jumpToThread();
     		} else {
@@ -1079,6 +1078,7 @@ public final class ThreadsListActivity extends ListActivity {
     		setContentView(R.layout.threads_list_content);
     		setListAdapter(mThreadsAdapter);
     		Common.updateListDrawables(this, mSettings.theme);
+    		updateNextPreviousButtons();
     		break;
         case R.id.inbox_menu_id:
         	Intent inboxIntent = new Intent(getApplicationContext(), InboxActivity.class);

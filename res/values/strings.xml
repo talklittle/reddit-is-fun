@@ -63,8 +63,8 @@
 	
 	<string name="comment_hidden">[+]</string>
 	<string name="more_comments">load more comments</string>
-	<string name="next_threads">next 25</string>
-	<string name="previous_threads">prev 25</string>
+	<string name="next_threads">next</string>
+	<string name="previous_threads">prev</string>
 	
 	<string name="error_voting_toast">Error voting. Please try again.</string>
 	<string name="mail_notification_unscheduled">Reddit mail notification service disabled.</string>
