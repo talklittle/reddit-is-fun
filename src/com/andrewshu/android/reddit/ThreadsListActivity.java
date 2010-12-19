@@ -1126,93 +1126,29 @@ public final class ThreadsListActivity extends ListActivity {
     	case Constants.DIALOG_SORT_BY:
     		builder = new AlertDialog.Builder(this);
     		builder.setTitle("Sort by:");
-    		int selectedSortBy = -1;
-    		for (int i = 0; i < Constants.ThreadsSort.SORT_BY_URL_CHOICES.length; i++) {
-    			if (Constants.ThreadsSort.SORT_BY_URL_CHOICES[i].equals(mSortByUrl)) {
-    				selectedSortBy = i;
-    				break;
-    			}
-    		}
-    		builder.setSingleChoiceItems(Constants.ThreadsSort.SORT_BY_CHOICES, selectedSortBy, new DialogInterface.OnClickListener() {
-    			public void onClick(DialogInterface dialog, int item) {
-    				dismissDialog(Constants.DIALOG_SORT_BY);
-    				String itemString = Constants.ThreadsSort.SORT_BY_CHOICES[item];
-    				if (Constants.ThreadsSort.SORT_BY_HOT.equals(itemString)) {
-    					mSortByUrl = Constants.ThreadsSort.SORT_BY_HOT_URL;
-    					mSortByUrlExtra = Constants.EMPTY_STRING;
-    					new MyDownloadThreadsTask(getApplicationContext(), mClient, om, mSortByUrl, mSortByUrlExtra, mSubreddit).execute();
-        			} else if (Constants.ThreadsSort.SORT_BY_NEW.equals(itemString)) {
-    					showDialog(Constants.DIALOG_SORT_BY_NEW);
-    				} else if (Constants.ThreadsSort.SORT_BY_CONTROVERSIAL.equals(itemString)) {
-    					showDialog(Constants.DIALOG_SORT_BY_CONTROVERSIAL);
-    				} else if (Constants.ThreadsSort.SORT_BY_TOP.equals(itemString)) {
-    					showDialog(Constants.DIALOG_SORT_BY_TOP);
-    				}
-    			}
-    		});
+    		builder.setSingleChoiceItems(Constants.ThreadsSort.SORT_BY_CHOICES,
+    				getSelectedSortBy(), sortByOnClickListener);
     		dialog = builder.create();
     		break;
     	case Constants.DIALOG_SORT_BY_NEW:
     		builder = new AlertDialog.Builder(this);
     		builder.setTitle("what's new");
-    		int selectedSortByNew = -1;
-    		for (int i = 0; i < Constants.ThreadsSort.SORT_BY_NEW_URL_CHOICES.length; i++) {
-    			if (Constants.ThreadsSort.SORT_BY_NEW_URL_CHOICES[i].equals(mSortByUrlExtra)) {
-    				selectedSortByNew = i;
-    				break;
-    			}
-    		}
-    		builder.setSingleChoiceItems(Constants.ThreadsSort.SORT_BY_NEW_CHOICES, selectedSortByNew,
-    				new DialogInterface.OnClickListener() {
-    			public void onClick(DialogInterface dialog, int item) {
-    				dismissDialog(Constants.DIALOG_SORT_BY_NEW);
-    				mSortByUrl = Constants.ThreadsSort.SORT_BY_NEW_URL;
-    				mSortByUrlExtra = Constants.ThreadsSort.SORT_BY_NEW_URL_CHOICES[item];
-    				new MyDownloadThreadsTask(getApplicationContext(), mClient, om, mSortByUrl, mSortByUrlExtra, mSubreddit).execute();
-    			}
-    		});
+    		builder.setSingleChoiceItems(Constants.ThreadsSort.SORT_BY_NEW_CHOICES,
+    				getSelectedSortByNew(), sortByNewOnClickListener);
     		dialog = builder.create();
     		break;
     	case Constants.DIALOG_SORT_BY_CONTROVERSIAL:
     		builder = new AlertDialog.Builder(this);
     		builder.setTitle("most controversial");
-    		int selectedSortByControversial = -1;
-    		for (int i = 0; i < Constants.ThreadsSort.SORT_BY_CONTROVERSIAL_URL_CHOICES.length; i++) {
-    			if (Constants.ThreadsSort.SORT_BY_CONTROVERSIAL_URL_CHOICES[i].equals(mSortByUrlExtra)) {
-    				selectedSortByControversial = i;
-    				break;
-    			}
-    		}
-    		builder.setSingleChoiceItems(Constants.ThreadsSort.SORT_BY_CONTROVERSIAL_CHOICES, selectedSortByControversial,
-    				new DialogInterface.OnClickListener() {
-    			public void onClick(DialogInterface dialog, int item) {
-    				dismissDialog(Constants.DIALOG_SORT_BY_CONTROVERSIAL);
-    				mSortByUrl = Constants.ThreadsSort.SORT_BY_CONTROVERSIAL_URL;
-    				mSortByUrlExtra = Constants.ThreadsSort.SORT_BY_CONTROVERSIAL_URL_CHOICES[item];
-    				new MyDownloadThreadsTask(getApplicationContext(), mClient, om, mSortByUrl, mSortByUrlExtra, mSubreddit).execute();
-    			}
-    		});
+    		builder.setSingleChoiceItems(Constants.ThreadsSort.SORT_BY_CONTROVERSIAL_CHOICES,
+    				getSelectedSortByControversial(), sortByControversialOnClickListener);
     		dialog = builder.create();
     		break;
     	case Constants.DIALOG_SORT_BY_TOP:
     		builder = new AlertDialog.Builder(this);
     		builder.setTitle("top scoring");
-    		int selectedSortByTop = -1;
-    		for (int i = 0; i < Constants.ThreadsSort.SORT_BY_TOP_URL_CHOICES.length; i++) {
-    			if (Constants.ThreadsSort.SORT_BY_TOP_URL_CHOICES[i].equals(mSortByUrlExtra)) {
-    				selectedSortByTop = i;
-    				break;
-    			}
-    		}
-    		builder.setSingleChoiceItems(Constants.ThreadsSort.SORT_BY_TOP_CHOICES, selectedSortByTop,
-    				new DialogInterface.OnClickListener() {
-    			public void onClick(DialogInterface dialog, int item) {
-    				dismissDialog(Constants.DIALOG_SORT_BY_TOP);
-    				mSortByUrl = Constants.ThreadsSort.SORT_BY_TOP_URL;
-    				mSortByUrlExtra = Constants.ThreadsSort.SORT_BY_TOP_URL_CHOICES[item];
-    				new MyDownloadThreadsTask(getApplicationContext(), mClient, om, mSortByUrl, mSortByUrlExtra, mSubreddit).execute();
-    			}
-    		});
+    		builder.setSingleChoiceItems(Constants.ThreadsSort.SORT_BY_TOP_CHOICES,
+    				getSelectedSortByTop(), sortByTopOnClickListener);
     		dialog = builder.create();
     		break;
 
@@ -1316,6 +1252,19 @@ public final class ThreadsListActivity extends ListActivity {
             commentsButton.setOnClickListener(commentsOnClickListener);
     		
     		break;
+    		
+    	case Constants.DIALOG_SORT_BY:
+    		((AlertDialog) dialog).getListView().setItemChecked(getSelectedSortBy(), true);
+    		break;
+    	case Constants.DIALOG_SORT_BY_NEW:
+    		((AlertDialog) dialog).getListView().setItemChecked(getSelectedSortByNew(), true);
+    		break;
+    	case Constants.DIALOG_SORT_BY_CONTROVERSIAL:
+    		((AlertDialog) dialog).getListView().setItemChecked(getSelectedSortByControversial(), true);
+    		break;
+    	case Constants.DIALOG_SORT_BY_TOP:
+    		((AlertDialog) dialog).getListView().setItemChecked(getSelectedSortByTop(), true);
+    		break;
     	
 		default:
 			// No preparation based on app state is required.
@@ -1323,7 +1272,48 @@ public final class ThreadsListActivity extends ListActivity {
     	}
     }
     
-    private final OnClickListener downloadAfterOnClickListener = new OnClickListener() {
+	private int getSelectedSortBy() {
+		int selectedSortBy = -1;
+		for (int i = 0; i < Constants.ThreadsSort.SORT_BY_URL_CHOICES.length; i++) {
+			if (Constants.ThreadsSort.SORT_BY_URL_CHOICES[i].equals(mSortByUrl)) {
+				selectedSortBy = i;
+				break;
+			}
+		}
+		return selectedSortBy;
+	}
+	private int getSelectedSortByNew() {
+		int selectedSortByNew = -1;
+		for (int i = 0; i < Constants.ThreadsSort.SORT_BY_NEW_URL_CHOICES.length; i++) {
+			if (Constants.ThreadsSort.SORT_BY_NEW_URL_CHOICES[i].equals(mSortByUrlExtra)) {
+				selectedSortByNew = i;
+				break;
+			}
+		}
+		return selectedSortByNew;
+	}
+	private int getSelectedSortByControversial() {
+		int selectedSortByControversial = -1;
+		for (int i = 0; i < Constants.ThreadsSort.SORT_BY_CONTROVERSIAL_URL_CHOICES.length; i++) {
+			if (Constants.ThreadsSort.SORT_BY_CONTROVERSIAL_URL_CHOICES[i].equals(mSortByUrlExtra)) {
+				selectedSortByControversial = i;
+				break;
+			}
+		}
+		return selectedSortByControversial;
+	}
+	private int getSelectedSortByTop() {
+		int selectedSortByTop = -1;
+		for (int i = 0; i < Constants.ThreadsSort.SORT_BY_TOP_URL_CHOICES.length; i++) {
+			if (Constants.ThreadsSort.SORT_BY_TOP_URL_CHOICES[i].equals(mSortByUrlExtra)) {
+				selectedSortByTop = i;
+				break;
+			}
+		}
+		return selectedSortByTop;
+	}
+
+	private final OnClickListener downloadAfterOnClickListener = new OnClickListener() {
 		public void onClick(View v) {
 			new MyDownloadThreadsTask(getApplicationContext(), mClient, om, mSortByUrl, mSortByUrlExtra,
 					mSubreddit, mAfter, null, mCount).execute();
@@ -1379,6 +1369,47 @@ public final class ThreadsListActivity extends ListActivity {
 		}
     };
     
+	private final DialogInterface.OnClickListener sortByOnClickListener = new DialogInterface.OnClickListener() {
+		public void onClick(DialogInterface dialog, int item) {
+			dialog.dismiss();
+			String itemString = Constants.ThreadsSort.SORT_BY_CHOICES[item];
+			if (Constants.ThreadsSort.SORT_BY_HOT.equals(itemString)) {
+				mSortByUrl = Constants.ThreadsSort.SORT_BY_HOT_URL;
+				mSortByUrlExtra = Constants.EMPTY_STRING;
+				new MyDownloadThreadsTask(getApplicationContext(), mClient, om, mSortByUrl, mSortByUrlExtra, mSubreddit).execute();
+			} else if (Constants.ThreadsSort.SORT_BY_NEW.equals(itemString)) {
+				showDialog(Constants.DIALOG_SORT_BY_NEW);
+			} else if (Constants.ThreadsSort.SORT_BY_CONTROVERSIAL.equals(itemString)) {
+				showDialog(Constants.DIALOG_SORT_BY_CONTROVERSIAL);
+			} else if (Constants.ThreadsSort.SORT_BY_TOP.equals(itemString)) {
+				showDialog(Constants.DIALOG_SORT_BY_TOP);
+			}
+		}
+	};
+	private final DialogInterface.OnClickListener sortByNewOnClickListener = new DialogInterface.OnClickListener() {
+		public void onClick(DialogInterface dialog, int item) {
+			dialog.dismiss();
+			mSortByUrl = Constants.ThreadsSort.SORT_BY_NEW_URL;
+			mSortByUrlExtra = Constants.ThreadsSort.SORT_BY_NEW_URL_CHOICES[item];
+			new MyDownloadThreadsTask(getApplicationContext(), mClient, om, mSortByUrl, mSortByUrlExtra, mSubreddit).execute();
+		}
+	};
+	private final DialogInterface.OnClickListener sortByControversialOnClickListener = new DialogInterface.OnClickListener() {
+		public void onClick(DialogInterface dialog, int item) {
+			dialog.dismiss();
+			mSortByUrl = Constants.ThreadsSort.SORT_BY_CONTROVERSIAL_URL;
+			mSortByUrlExtra = Constants.ThreadsSort.SORT_BY_CONTROVERSIAL_URL_CHOICES[item];
+			new MyDownloadThreadsTask(getApplicationContext(), mClient, om, mSortByUrl, mSortByUrlExtra, mSubreddit).execute();
+		}
+	};
+	private final DialogInterface.OnClickListener sortByTopOnClickListener = new DialogInterface.OnClickListener() {
+		public void onClick(DialogInterface dialog, int item) {
+			dialog.dismiss();
+			mSortByUrl = Constants.ThreadsSort.SORT_BY_TOP_URL;
+			mSortByUrlExtra = Constants.ThreadsSort.SORT_BY_TOP_URL_CHOICES[item];
+			new MyDownloadThreadsTask(getApplicationContext(), mClient, om, mSortByUrl, mSortByUrlExtra, mSubreddit).execute();
+		}
+	};
 	
 	@Override
     protected void onSaveInstanceState(Bundle state) {

@@ -2145,13 +2145,7 @@ public class CommentsListActivity extends ListActivity
 					break;
 				}
 			}
-    		builder.setSingleChoiceItems(Constants.CommentsSort.SORT_BY_CHOICES, selectedSortBy, new DialogInterface.OnClickListener() {
-    			public void onClick(DialogInterface dialog, int item) {
-    				dismissDialog(Constants.DIALOG_SORT_BY);
-    				mSettings.setCommentsSortByUrl(Constants.CommentsSort.SORT_BY_URL_CHOICES[item]);
-    				new DownloadCommentsTask().execute(Constants.DEFAULT_COMMENT_DOWNLOAD_LIMIT);
-    			}
-    		});
+    		builder.setSingleChoiceItems(Constants.CommentsSort.SORT_BY_CHOICES, selectedSortBy, sortByOnClickListener);
     		dialog = builder.create();
     		break;
     		
@@ -2431,7 +2425,6 @@ public class CommentsListActivity extends ListActivity
 			showDialog(Constants.DIALOG_REPLY);
 		}
 	};
-    
     private final OnClickListener replyCancelOnClickListener = new OnClickListener() {
 		public void onClick(View v) {
 			dismissDialog(Constants.DIALOG_REPLY);
@@ -2445,6 +2438,13 @@ public class CommentsListActivity extends ListActivity
 		}
 	};
     
+	private final DialogInterface.OnClickListener sortByOnClickListener = new DialogInterface.OnClickListener() {
+		public void onClick(DialogInterface dialog, int item) {
+			dialog.dismiss();
+			mSettings.setCommentsSortByUrl(Constants.CommentsSort.SORT_BY_URL_CHOICES[item]);
+			new DownloadCommentsTask().execute(Constants.DEFAULT_COMMENT_DOWNLOAD_LIMIT);
+		}
+	};
     
     @Override
     protected void onSaveInstanceState(Bundle state) {
