@@ -607,14 +607,12 @@ public final class ThreadsListActivity extends ListActivity {
     	public MyDownloadThreadsTask(Context context, DefaultHttpClient client, ObjectMapper om,
 				String sortByUrl, String sortByUrlExtra, String subreddit) {
 			super(context, client, om, sortByUrl, sortByUrlExtra, subreddit);
-			// TODO Auto-generated constructor stub
 		}
     	
     	public MyDownloadThreadsTask(Context context, DefaultHttpClient client, ObjectMapper om,
 				String sortByUrl, String sortByUrlExtra, String subreddit,
 				String after, String before, int count) {
 			super(context, client, om, sortByUrl, sortByUrlExtra, subreddit, after, before, count);
-			// TODO Auto-generated constructor stub
 		}
 
 		@Override
