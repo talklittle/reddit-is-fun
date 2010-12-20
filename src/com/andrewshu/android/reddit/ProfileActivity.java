@@ -1216,7 +1216,7 @@ public final class ProfileActivity extends ListActivity
 				public void onClick(View v) {
 					dismissDialog(Constants.DIALOG_THREAD_CLICK);
 					// Launch Intent to goto the URL
-					Common.launchBrowser(getApplicationContext(), info.getUrl(),
+					Common.launchBrowser(ProfileActivity.this, info.getUrl(),
 							Util.createThreadUri(info).toString(),
 							false, false, fUseExternalBrowser);
 				}
@@ -1228,8 +1228,8 @@ public final class ProfileActivity extends ListActivity
 				public void onClick(View v) {
 					dismissDialog(Constants.DIALOG_THREAD_CLICK);
 					// Launch an Intent for CommentsListActivity
-					CacheInfo.invalidateCachedThread(getApplicationContext());
-					Intent i = new Intent(getApplicationContext(), CommentsListActivity.class);
+					CacheInfo.invalidateCachedThread(ProfileActivity.this);
+					Intent i = new Intent(ProfileActivity.this, CommentsListActivity.class);
 					i.setData(Util.createThreadUri(info));
 					i.putExtra(Constants.EXTRA_SUBREDDIT, info.getSubreddit());
 					i.putExtra(Constants.EXTRA_TITLE, info.getTitle());

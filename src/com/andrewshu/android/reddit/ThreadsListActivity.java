@@ -481,9 +481,8 @@ public final class ThreadsListActivity extends ListActivity {
 		titleView.setText(thingInfo.getTitle());
 		urlView.setText(thingInfo.getUrl());
 		StringBuilder sb = new StringBuilder(Util.getTimeAgo(thingInfo.getCreated_utc()))
-			.append(" by ").append(thingInfo.getAuthor());
-        // Show subreddit
-		sb.append(" to ").append(thingInfo.getSubreddit());
+			.append(" by ").append(thingInfo.getAuthor())
+			.append(" to ").append(thingInfo.getSubreddit());
 		submissionStuffView.setText(sb);
         
 		// Only show upvote/downvote if user is logged in
@@ -1318,7 +1317,7 @@ public final class ThreadsListActivity extends ListActivity {
 				public void onClick(View v) {
 					dismissDialog(Constants.DIALOG_THREAD_CLICK);
 					// Launch Intent to goto the URL
-					Common.launchBrowser(getApplicationContext(), info.getUrl(),
+					Common.launchBrowser(ThreadsListActivity.this, info.getUrl(),
 							Util.createThreadUri(info).toString(),
 							false, false, fUseExternalBrowser);
 				}
@@ -1330,8 +1329,8 @@ public final class ThreadsListActivity extends ListActivity {
 				public void onClick(View v) {
 					dismissDialog(Constants.DIALOG_THREAD_CLICK);
 					// Launch an Intent for CommentsListActivity
-					CacheInfo.invalidateCachedThread(getApplicationContext());
-					Intent i = new Intent(getApplicationContext(), CommentsListActivity.class);
+					CacheInfo.invalidateCachedThread(ThreadsListActivity.this);
+					Intent i = new Intent(ThreadsListActivity.this, CommentsListActivity.class);
 					i.setData(Util.createThreadUri(info));
 					i.putExtra(Constants.EXTRA_SUBREDDIT, info.getSubreddit());
 					i.putExtra(Constants.EXTRA_TITLE, info.getTitle());
