@@ -42,6 +42,7 @@ public class Constants {
 	// 1:subreddit 2:threadId 3:commentId
 	static final String COMMENT_PATH_PATTERN_STRING = "(?:/r/([^/]+))?/comments/([^/]+)(?:/?$|/[^/]+/(?:([a-zA-Z0-9]+))?)?";
 	static final String REDDIT_PATH_PATTERN_STRING = "(?:/r/([^/]+))?/?$";
+	static final String USER_PATH_PATTERN_STRING = "/user/([^/]+)/?$";
 	
 	static final String COMMENT_KIND = "t1";
 	static final String THREAD_KIND = "t3";
@@ -83,7 +84,6 @@ public class Constants {
     // Menu and dialog actions
     static final int DIALOG_LOGIN = 2;
     static final int DIALOG_LOGOUT = 3;
-    static final int DIALOG_THING_CLICK = 6;
     static final int DIALOG_THEME = 12;
     static final int DIALOG_REPLY = 14;
     static final int DIALOG_HIDE_COMMENT = 17;
@@ -99,6 +99,7 @@ public class Constants {
     static final int DIALOG_DELETE = 30;
     static final int DIALOG_COMPOSE = 31;
     static final int DIALOG_REPORT = 33;
+    static final int DIALOG_THREAD_CLICK = 34;
 
     // progress dialogs
     static final int DIALOG_LOGGING_IN = 1000;
@@ -157,6 +158,7 @@ public class Constants {
     static final String THREAD_ID_KEY = "thread_id";
     static final String THREAD_LAST_COUNT_KEY = "last_thread_count";
     static final String THREAD_TITLE_KEY = "thread_title";
+    static final String USERNAME_KEY = "username";
     static final String VOTE_TARGET_THING_INFO_KEY = "vote_target_thing_info";
     
     static final String SUBMIT_KIND_LINK = "link";

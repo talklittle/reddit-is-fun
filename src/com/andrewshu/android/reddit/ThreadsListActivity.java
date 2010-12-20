@@ -25,14 +25,7 @@ import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import org.apache.http.HttpEntity;
-import org.apache.http.HttpResponse;
-import org.apache.http.NameValuePair;
-import org.apache.http.client.entity.UrlEncodedFormEntity;
-import org.apache.http.client.methods.HttpPost;
 import org.apache.http.impl.client.DefaultHttpClient;
-import org.apache.http.message.BasicNameValuePair;
-import org.apache.http.protocol.HTTP;
 import org.codehaus.jackson.map.ObjectMapper;
 
 import android.app.Activity;
@@ -164,14 +157,11 @@ public final class ThreadsListActivity extends ListActivity {
 		    if (mThreadsList == null) {
 	        	// Load previous view of threads
 		        if (mLastAfter != null) {
-		        	new MyDownloadThreadsTask(getApplicationContext(),
-		        			mSubreddit, mLastAfter, null, mLastCount).execute();
+		        	new MyDownloadThreadsTask(mSubreddit, mLastAfter, null, mLastCount).execute();
 		        } else if (mLastBefore != null) {
-		        	new MyDownloadThreadsTask(getApplicationContext(),
-		        			mSubreddit, null, mLastBefore, mLastCount).execute();
+		        	new MyDownloadThreadsTask(mSubreddit, null, mLastBefore, mLastCount).execute();
 		        } else {
-		        	new MyDownloadThreadsTask(getApplicationContext(),
-		        			mSubreddit).execute();
+		        	new MyDownloadThreadsTask(mSubreddit).execute();
 		        }
 		    } else {
 		    	// Orientation change. Use prior instance.
@@ -186,14 +176,14 @@ public final class ThreadsListActivity extends ListActivity {
         else if (getIntent().getData() != null) {
 	    	Matcher redditContextMatcher = REDDIT_PATH_PATTERN.matcher(getIntent().getData().getPath());
 			if (redditContextMatcher.matches()) {
-				new MyDownloadThreadsTask(getApplicationContext(), redditContextMatcher.group(1)).execute();
+				new MyDownloadThreadsTask(redditContextMatcher.group(1)).execute();
 			} else {
-				new MyDownloadThreadsTask(getApplicationContext(), mSettings.homepage).execute();
+				new MyDownloadThreadsTask(mSettings.homepage).execute();
 			}
 		}
 		// No subreddit specified by Intent, so load the user's home reddit
 		else {
-        	new MyDownloadThreadsTask(getApplicationContext(), mSettings.homepage).execute();
+        	new MyDownloadThreadsTask(mSettings.homepage).execute();
         }
     }
     
@@ -261,7 +251,7 @@ public final class ThreadsListActivity extends ListActivity {
     		if (resultCode == Activity.RESULT_OK) {
     	    	Matcher redditContextMatcher = REDDIT_PATH_PATTERN.matcher(intent.getData().getPath());
     			if (redditContextMatcher.matches()) {
-    				new MyDownloadThreadsTask(getApplicationContext(), redditContextMatcher.group(1)).execute();
+    				new MyDownloadThreadsTask(redditContextMatcher.group(1)).execute();
     			}
     		}
     		break;
@@ -474,10 +464,76 @@ public final class ThreadsListActivity extends ListActivity {
         		indeterminateProgressBar.setVisibility(View.GONE);
         	}
         }
-
     }
     
-    /**
+	public static void fillThreadClickDialog(Dialog dialog, ThingInfo thingInfo, RedditSettings settings,
+			ThreadClickDialogOnClickListenerFactory threadClickDialogOnClickListenerFactory) {
+		
+		final CheckBox voteUpButton = (CheckBox) dialog.findViewById(R.id.vote_up_button);
+		final CheckBox voteDownButton = (CheckBox) dialog.findViewById(R.id.vote_down_button);
+		final TextView titleView = (TextView) dialog.findViewById(R.id.title);
+		final TextView urlView = (TextView) dialog.findViewById(R.id.url);
+		final TextView submissionStuffView = (TextView) dialog.findViewById(R.id.submissionTime_submitter_subreddit);
+		final Button loginButton = (Button) dialog.findViewById(R.id.login_button);
+		final Button linkButton = (Button) dialog.findViewById(R.id.thread_link_button);
+		final Button commentsButton = (Button) dialog.findViewById(R.id.thread_comments_button);
+		
+		titleView.setText(thingInfo.getTitle());
+		urlView.setText(thingInfo.getUrl());
+		StringBuilder sb = new StringBuilder(Util.getTimeAgo(thingInfo.getCreated_utc()))
+			.append(" by ").append(thingInfo.getAuthor());
+        // Show subreddit
+		sb.append(" to ").append(thingInfo.getSubreddit());
+		submissionStuffView.setText(sb);
+        
+		// Only show upvote/downvote if user is logged in
+		if (settings.isLoggedIn()) {
+			loginButton.setVisibility(View.GONE);
+			voteUpButton.setVisibility(View.VISIBLE);
+			voteDownButton.setVisibility(View.VISIBLE);
+			// Set initial states of the vote buttons based on user's past actions
+    		if (thingInfo.getLikes() == null) {
+    			// User is currently neutral
+    			voteUpButton.setChecked(false);
+    			voteDownButton.setChecked(false);
+    		} else if (thingInfo.getLikes() == true) {
+    			// User currenty likes it
+    			voteUpButton.setChecked(true);
+    			voteDownButton.setChecked(false);
+    		} else {
+    			// User currently dislikes it
+    			voteUpButton.setChecked(false);
+    			voteDownButton.setChecked(true);
+    		}
+    		voteUpButton.setOnCheckedChangeListener(
+    				threadClickDialogOnClickListenerFactory.getVoteUpOnCheckedChangeListener(thingInfo));
+    		voteDownButton.setOnCheckedChangeListener(
+    				threadClickDialogOnClickListenerFactory.getVoteDownOnCheckedChangeListener(thingInfo));
+		} else {
+			voteUpButton.setVisibility(View.GONE);
+			voteDownButton.setVisibility(View.GONE);
+			loginButton.setVisibility(View.VISIBLE);
+			loginButton.setOnClickListener(
+					threadClickDialogOnClickListenerFactory.getLoginOnClickListener());
+		}
+
+		// "link" button behaves differently for regular links vs. self posts and links to comments pages (e.g., bestof)
+        if (thingInfo.isIs_self()) {
+        	// It's a self post. Both buttons do the same thing.
+        	linkButton.setEnabled(false);
+        } else {
+        	linkButton.setOnClickListener(
+        			threadClickDialogOnClickListenerFactory.getLinkOnClickListener(thingInfo, settings.useExternalBrowser));
+        	linkButton.setEnabled(true);
+        }
+        
+        // "comments" button is easy: always does the same thing
+        commentsButton.setOnClickListener(
+        		threadClickDialogOnClickListenerFactory.getCommentsOnClickListener(thingInfo));
+	}
+
+	
+	/**
      * Jump to thread whose id is mJumpToThreadId. Then clear mJumpToThreadId.
      */
     private void jumpToThread() {
@@ -505,7 +561,7 @@ public final class ThreadsListActivity extends ListActivity {
     	mVoteTargetThingInfo = item;
     	mJumpToThreadId = item.getId();
     	
-    	showDialog(Constants.DIALOG_THING_CLICK);
+    	showDialog(Constants.DIALOG_THREAD_CLICK);
     }
 
     /**
@@ -588,8 +644,8 @@ public final class ThreadsListActivity extends ListActivity {
      */
     private class MyDownloadThreadsTask extends DownloadThreadsTask {
     	
-    	public MyDownloadThreadsTask(Context context, String subreddit) {
-			super(context,
+    	public MyDownloadThreadsTask(String subreddit) {
+			super(getApplicationContext(),
 					ThreadsListActivity.this.mClient,
 					ThreadsListActivity.this.mObjectMapper,
 					ThreadsListActivity.this.mSortByUrl,
@@ -597,9 +653,9 @@ public final class ThreadsListActivity extends ListActivity {
 					subreddit);
 		}
     	
-    	public MyDownloadThreadsTask(Context context, String subreddit,
+    	public MyDownloadThreadsTask(String subreddit,
 				String after, String before, int count) {
-			super(context,
+			super(getApplicationContext(),
 					ThreadsListActivity.this.mClient,
 					ThreadsListActivity.this.mObjectMapper,
 					ThreadsListActivity.this.mSortByUrl,
@@ -704,94 +760,25 @@ public final class ThreadsListActivity extends ListActivity {
     			// Check mail
     			new PeekEnvelopeTask(getApplicationContext(), mClient, mSettings.mailNotificationStyle).execute();
     			// Refresh the threads list
-    			new MyDownloadThreadsTask(getApplicationContext(), mSubreddit).execute();
+    			new MyDownloadThreadsTask(mSubreddit).execute();
         	} else {
             	Common.showErrorToast(errorMessage, Toast.LENGTH_LONG, ThreadsListActivity.this);
     		}
     	}
     }
     
-    private class VoteTask extends AsyncTask<Void, Void, Boolean> {
+    private class MyVoteTask extends VoteTask {
     	
-    	private static final String TAG = "VoteWorker";
-    	
-    	private String _mThingFullname, _mSubreddit;
-    	private int _mDirection;
-    	private String _mUserError = "Error voting.";
-    	private ThingInfo _mTargetThingInfo;
-    	
-    	// Save the previous arrow and score in case we need to revert
     	private int _mPreviousScore;
     	private Boolean _mPreviousLikes;
+    	private ThingInfo _mTargetThingInfo;
     	
-    	VoteTask(String thingFullname, int direction, String subreddit) {
-    		_mThingFullname = thingFullname;
-    		_mDirection = direction;
-    		_mSubreddit = subreddit;
-    		// Copy these because they can change while voting thread is running
-    		_mTargetThingInfo = mVoteTargetThingInfo;
+    	public MyVoteTask(ThingInfo thingInfo, int direction, String subreddit) {
+    		super(thingInfo.getName(), direction, subreddit, getApplicationContext(), mSettings, mClient);
+    		_mTargetThingInfo = thingInfo;
+    		_mPreviousScore = thingInfo.getScore();
+    		_mPreviousLikes = thingInfo.getLikes();
     	}
-    	
-    	@Override
-    	public Boolean doInBackground(Void... v) {
-        	HttpEntity entity = null;
-        	
-        	if (!mSettings.isLoggedIn()) {
-        		_mUserError = "You must be logged in to vote.";
-        		return false;
-        	}
-        	
-        	// Update the modhash if necessary
-        	if (mSettings.modhash == null) {
-        		String modhash = Common.doUpdateModhash(mClient);
-        		if (modhash == null) {
-        			// doUpdateModhash should have given an error about credentials
-        			Common.doLogout(mSettings, mClient, getApplicationContext());
-        			if (Constants.LOGGING) Log.e(TAG, "Vote failed because doUpdateModhash() failed");
-        			return false;
-        		}
-        		mSettings.setModhash(modhash);
-        	}
-        	
-        	try {
-        		// Construct data
-    			List<NameValuePair> nvps = new ArrayList<NameValuePair>();
-    			nvps.add(new BasicNameValuePair("id", _mThingFullname));
-    			nvps.add(new BasicNameValuePair("dir", String.valueOf(_mDirection)));
-    			nvps.add(new BasicNameValuePair("r", _mSubreddit));
-    			nvps.add(new BasicNameValuePair("uh", mSettings.modhash));
-    			// Votehash is currently unused by reddit 
-//    				nvps.add(new BasicNameValuePair("vh", "0d4ab0ffd56ad0f66841c15609e9a45aeec6b015"));
-    			
-    			HttpPost httppost = new HttpPost("http://www.reddit.com/api/vote");
-    	        httppost.setEntity(new UrlEncodedFormEntity(nvps, HTTP.UTF_8));
-    	        
-    	        if (Constants.LOGGING) Log.d(TAG, nvps.toString());
-    	        
-                // Perform the HTTP POST request
-    	    	HttpResponse response = mClient.execute(httppost);
-    	    	entity = response.getEntity();
-    	    	
-    	    	String error = Common.checkResponseErrors(response, entity);
-    	    	if (error != null)
-    	    		throw new Exception(error);
-    	    	
-            	return true;
-            	
-        	} catch (Exception e) {
-        		if (Constants.LOGGING) Log.e(TAG, "VoteTask", e);
-        		_mUserError = e.getMessage();
-        	} finally {
-        		if (entity != null) {
-        			try {
-        				entity.consumeContent();
-        			} catch (Exception e2) {
-        				if (Constants.LOGGING) Log.e(TAG, "entity.consumeContent", e2);
-        			}
-        		}
-        	}
-        	return false;
-        }
     	
     	@Override
     	public void onPreExecute() {
@@ -932,7 +919,7 @@ public final class ThreadsListActivity extends ListActivity {
         
         switch (item.getItemId()) {
         case Constants.VIEW_SUBREDDIT_CONTEXT_ITEM:
-        	new MyDownloadThreadsTask(getApplicationContext(), _item.getSubreddit()).execute();
+        	new MyDownloadThreadsTask(_item.getSubreddit()).execute();
         	return true;
         
         case Constants.SHARE_CONTEXT_ITEM:
@@ -1035,14 +1022,14 @@ public final class ThreadsListActivity extends ListActivity {
         	if (mSettings.isLoggedIn()) {
         		Common.doLogout(mSettings, mClient, getApplicationContext());
         		Toast.makeText(this, "You have been logged out.", Toast.LENGTH_SHORT).show();
-        		new MyDownloadThreadsTask(getApplicationContext(), mSubreddit).execute();
+        		new MyDownloadThreadsTask(mSubreddit).execute();
         	} else {
         		showDialog(Constants.DIALOG_LOGIN);
         	}
     		break;
     	case R.id.refresh_menu_id:
     		CacheInfo.invalidateCachedSubreddit(getApplicationContext());
-    		new MyDownloadThreadsTask(getApplicationContext(), mSubreddit).execute();
+    		new MyDownloadThreadsTask(mSubreddit).execute();
     		break;
     	case R.id.submit_link_menu_id:
     		Intent submitLinkIntent = new Intent(getApplicationContext(), SubmitLinkActivity.class);
@@ -1105,7 +1092,7 @@ public final class ThreadsListActivity extends ListActivity {
 			};
     		break;
     		
-    	case Constants.DIALOG_THING_CLICK:
+    	case Constants.DIALOG_THREAD_CLICK:
     		inflater = (LayoutInflater)this.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
     		builder = new AlertDialog.Builder(this);
     		dialog = builder.setView(inflater.inflate(R.layout.thread_click_dialog, null)).create();
@@ -1158,7 +1145,6 @@ public final class ThreadsListActivity extends ListActivity {
     @Override
     protected void onPrepareDialog(int id, Dialog dialog) {
     	super.onPrepareDialog(id, dialog);
-    	StringBuilder sb;
     	
     	switch (id) {
     	case Constants.DIALOG_LOGIN:
@@ -1170,75 +1156,10 @@ public final class ThreadsListActivity extends ListActivity {
     		loginPasswordInput.setText("");
     		break;
     		
-    	case Constants.DIALOG_THING_CLICK:
+    	case Constants.DIALOG_THREAD_CLICK:
     		if (mVoteTargetThingInfo == null)
     			break;
-    		final CheckBox voteUpButton = (CheckBox) dialog.findViewById(R.id.vote_up_button);
-    		final CheckBox voteDownButton = (CheckBox) dialog.findViewById(R.id.vote_down_button);
-    		final TextView titleView = (TextView) dialog.findViewById(R.id.title);
-    		final TextView urlView = (TextView) dialog.findViewById(R.id.url);
-    		final TextView submissionStuffView = (TextView) dialog.findViewById(R.id.submissionTime_submitter_subreddit);
-    		final Button loginButton = (Button) dialog.findViewById(R.id.login_button);
-    		final Button linkButton = (Button) dialog.findViewById(R.id.thread_link_button);
-    		final Button commentsButton = (Button) dialog.findViewById(R.id.thread_comments_button);
-    		
-    		titleView.setText(mVoteTargetThingInfo.getTitle());
-    		urlView.setText(mVoteTargetThingInfo.getUrl());
-    		sb = new StringBuilder(Util.getTimeAgo(mVoteTargetThingInfo.getCreated_utc()))
-    			.append(" by ").append(mVoteTargetThingInfo.getAuthor());
-            // Show subreddit
-    		sb.append(" to ").append(mVoteTargetThingInfo.getSubreddit());
-    		submissionStuffView.setText(sb);
-            
-    		// Only show upvote/downvote if user is logged in
-    		if (mSettings.isLoggedIn()) {
-    			loginButton.setVisibility(View.GONE);
-    			voteUpButton.setVisibility(View.VISIBLE);
-    			voteDownButton.setVisibility(View.VISIBLE);
-    			// Set initial states of the vote buttons based on user's past actions
-	    		if (mVoteTargetThingInfo.getLikes() == null) {
-	    			// User is currently neutral
-	    			voteUpButton.setChecked(false);
-	    			voteDownButton.setChecked(false);
-	    		} else if (mVoteTargetThingInfo.getLikes() == true) {
-	    			// User currenty likes it
-	    			voteUpButton.setChecked(true);
-	    			voteDownButton.setChecked(false);
-	    		} else {
-	    			// User currently dislikes it
-	    			voteUpButton.setChecked(false);
-	    			voteDownButton.setChecked(true);
-	    		}
-	    		voteUpButton.setOnCheckedChangeListener(voteUpOnCheckedChangeListener);
-	    		voteDownButton.setOnCheckedChangeListener(voteDownOnCheckedChangeListener);
-    		} else {
-    			voteUpButton.setVisibility(View.GONE);
-    			voteDownButton.setVisibility(View.GONE);
-    			loginButton.setVisibility(View.VISIBLE);
-    			loginButton.setOnClickListener(loginOnClickListener);
-    		}
-
-    		// "link" button behaves differently for regular links vs. self posts and links to comments pages (e.g., bestof)
-            if (mVoteTargetThingInfo.isIs_self()) {
-            	// It's a self post. Both buttons do the same thing.
-            	linkButton.setEnabled(false);
-            } else {
-            	final String url = mVoteTargetThingInfo.getUrl();
-            	linkButton.setOnClickListener(new OnClickListener() {
-    				public void onClick(View v) {
-    					dismissDialog(Constants.DIALOG_THING_CLICK);
-    					// Launch Intent to goto the URL
-    					Common.launchBrowser(ThreadsListActivity.this, url,
-    							Util.createThreadUri(mVoteTargetThingInfo).toString(),
-    							false, false, mSettings.useExternalBrowser);
-    				}
-    			});
-            	linkButton.setEnabled(true);
-            }
-            
-            // "comments" button is easy: always does the same thing
-            commentsButton.setOnClickListener(commentsOnClickListener);
-    		
+    		fillThreadClickDialog(dialog, mVoteTargetThingInfo, mSettings, threadClickDialogOnClickListenerFactory);
     		break;
     		
     	case Constants.DIALOG_SORT_BY:
@@ -1303,57 +1224,15 @@ public final class ThreadsListActivity extends ListActivity {
 
 	private final OnClickListener downloadAfterOnClickListener = new OnClickListener() {
 		public void onClick(View v) {
-			new MyDownloadThreadsTask(getApplicationContext(), mSubreddit, mAfter, null, mCount).execute();
+			new MyDownloadThreadsTask(mSubreddit, mAfter, null, mCount).execute();
 		}
 	};
 	private final OnClickListener downloadBeforeOnClickListener = new OnClickListener() {
 		public void onClick(View v) {
-			new MyDownloadThreadsTask(getApplicationContext(), mSubreddit, null, mBefore, mCount).execute();
+			new MyDownloadThreadsTask(mSubreddit, null, mBefore, mCount).execute();
 		}
 	};
     
-	private final OnClickListener loginOnClickListener = new OnClickListener() {
-		public void onClick(View v) {
-			dismissDialog(Constants.DIALOG_THING_CLICK);
-			showDialog(Constants.DIALOG_LOGIN);
-		}
-	};
-	
-	// Be sure to set mVoteTargetThingInfo before enabling this OnClickListener
-	private final OnClickListener commentsOnClickListener = new OnClickListener() {
-		public void onClick(View v) {
-			dismissDialog(Constants.DIALOG_THING_CLICK);
-			// Launch an Intent for CommentsListActivity
-			CacheInfo.invalidateCachedThread(getApplicationContext());
-			Intent i = new Intent(getApplicationContext(), CommentsListActivity.class);
-			i.setData(Util.createThreadUri(mVoteTargetThingInfo));
-			i.putExtra(Constants.EXTRA_SUBREDDIT, mVoteTargetThingInfo.getSubreddit());
-			i.putExtra(Constants.EXTRA_TITLE, mVoteTargetThingInfo.getTitle());
-			i.putExtra(Constants.EXTRA_NUM_COMMENTS, Integer.valueOf(mVoteTargetThingInfo.getNum_comments()));
-			startActivity(i);
-		}
-	};
-	
-	private final CompoundButton.OnCheckedChangeListener voteUpOnCheckedChangeListener = new CompoundButton.OnCheckedChangeListener() {
-    	public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
-	    	dismissDialog(Constants.DIALOG_THING_CLICK);
-			if (isChecked) {
-				new VoteTask(mVoteTargetThingInfo.getName(), 1, mVoteTargetThingInfo.getSubreddit()).execute();
-			} else {
-				new VoteTask(mVoteTargetThingInfo.getName(), 0, mVoteTargetThingInfo.getSubreddit()).execute();
-			}
-		}
-    };
-    private final CompoundButton.OnCheckedChangeListener voteDownOnCheckedChangeListener = new CompoundButton.OnCheckedChangeListener() {
-	    public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
-	    	dismissDialog(Constants.DIALOG_THING_CLICK);
-			if (isChecked) {
-				new VoteTask(mVoteTargetThingInfo.getName(), -1, mVoteTargetThingInfo.getSubreddit()).execute();
-			} else {
-				new VoteTask(mVoteTargetThingInfo.getName(), 0, mVoteTargetThingInfo.getSubreddit()).execute();
-			}
-		}
-    };
     
 	private final DialogInterface.OnClickListener sortByOnClickListener = new DialogInterface.OnClickListener() {
 		public void onClick(DialogInterface dialog, int item) {
@@ -1362,7 +1241,7 @@ public final class ThreadsListActivity extends ListActivity {
 			if (Constants.ThreadsSort.SORT_BY_HOT.equals(itemString)) {
 				mSortByUrl = Constants.ThreadsSort.SORT_BY_HOT_URL;
 				mSortByUrlExtra = Constants.EMPTY_STRING;
-				new MyDownloadThreadsTask(getApplicationContext(), mSubreddit).execute();
+				new MyDownloadThreadsTask(mSubreddit).execute();
 			} else if (Constants.ThreadsSort.SORT_BY_NEW.equals(itemString)) {
 				showDialog(Constants.DIALOG_SORT_BY_NEW);
 			} else if (Constants.ThreadsSort.SORT_BY_CONTROVERSIAL.equals(itemString)) {
@@ -1377,7 +1256,7 @@ public final class ThreadsListActivity extends ListActivity {
 			dialog.dismiss();
 			mSortByUrl = Constants.ThreadsSort.SORT_BY_NEW_URL;
 			mSortByUrlExtra = Constants.ThreadsSort.SORT_BY_NEW_URL_CHOICES[item];
-			new MyDownloadThreadsTask(getApplicationContext(), mSubreddit).execute();
+			new MyDownloadThreadsTask(mSubreddit).execute();
 		}
 	};
 	private final DialogInterface.OnClickListener sortByControversialOnClickListener = new DialogInterface.OnClickListener() {
@@ -1385,7 +1264,7 @@ public final class ThreadsListActivity extends ListActivity {
 			dialog.dismiss();
 			mSortByUrl = Constants.ThreadsSort.SORT_BY_CONTROVERSIAL_URL;
 			mSortByUrlExtra = Constants.ThreadsSort.SORT_BY_CONTROVERSIAL_URL_CHOICES[item];
-			new MyDownloadThreadsTask(getApplicationContext(), mSubreddit).execute();
+			new MyDownloadThreadsTask(mSubreddit).execute();
 		}
 	};
 	private final DialogInterface.OnClickListener sortByTopOnClickListener = new DialogInterface.OnClickListener() {
@@ -1393,7 +1272,7 @@ public final class ThreadsListActivity extends ListActivity {
 			dialog.dismiss();
 			mSortByUrl = Constants.ThreadsSort.SORT_BY_TOP_URL;
 			mSortByUrlExtra = Constants.ThreadsSort.SORT_BY_TOP_URL_CHOICES[item];
-			new MyDownloadThreadsTask(getApplicationContext(), mSubreddit).execute();
+			new MyDownloadThreadsTask(mSubreddit).execute();
 		}
 	};
 	
@@ -1413,8 +1292,82 @@ public final class ThreadsListActivity extends ListActivity {
 		}
 	};
 	
+	private final ThreadClickDialogOnClickListenerFactory threadClickDialogOnClickListenerFactory
+			= new ThreadClickDialogOnClickListenerFactory() {
+		public OnClickListener getLoginOnClickListener() {
+			return new OnClickListener() {
+				public void onClick(View v) {
+					dismissDialog(Constants.DIALOG_THREAD_CLICK);
+					showDialog(Constants.DIALOG_LOGIN);
+				}
+			};
+		}
+		public OnClickListener getLinkOnClickListener(ThingInfo thingInfo, boolean useExternalBrowser) {
+			final ThingInfo info = thingInfo;
+    		final boolean fUseExternalBrowser = useExternalBrowser;
+    		return new OnClickListener() {
+				public void onClick(View v) {
+					dismissDialog(Constants.DIALOG_THREAD_CLICK);
+					// Launch Intent to goto the URL
+					Common.launchBrowser(getApplicationContext(), info.getUrl(),
+							Util.createThreadUri(info).toString(),
+							false, false, fUseExternalBrowser);
+				}
+			};
+    	}
+		public OnClickListener getCommentsOnClickListener(ThingInfo thingInfo) {
+			final ThingInfo info = thingInfo;
+			return new OnClickListener() {
+				public void onClick(View v) {
+					dismissDialog(Constants.DIALOG_THREAD_CLICK);
+					// Launch an Intent for CommentsListActivity
+					CacheInfo.invalidateCachedThread(getApplicationContext());
+					Intent i = new Intent(getApplicationContext(), CommentsListActivity.class);
+					i.setData(Util.createThreadUri(info));
+					i.putExtra(Constants.EXTRA_SUBREDDIT, info.getSubreddit());
+					i.putExtra(Constants.EXTRA_TITLE, info.getTitle());
+					i.putExtra(Constants.EXTRA_NUM_COMMENTS, Integer.valueOf(info.getNum_comments()));
+					startActivity(i);
+				}
+			};
+		}
+		public CompoundButton.OnCheckedChangeListener getVoteUpOnCheckedChangeListener(ThingInfo thingInfo) {
+			final ThingInfo info = thingInfo;
+			return new CompoundButton.OnCheckedChangeListener() {
+		    	public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
+			    	if (isChecked) {
+						new MyVoteTask(info, 1, info.getSubreddit()).execute();
+					} else {
+						new MyVoteTask(info, 0, info.getSubreddit()).execute();
+					}
+				}
+		    };
+		}
+	    public CompoundButton.OnCheckedChangeListener getVoteDownOnCheckedChangeListener(ThingInfo thingInfo) {
+	    	final ThingInfo info = thingInfo;
+	    	return new CompoundButton.OnCheckedChangeListener() {
+		        public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
+			    	dismissDialog(Constants.DIALOG_THREAD_CLICK);
+					if (isChecked) {
+						new MyVoteTask(info, -1, info.getSubreddit()).execute();
+					} else {
+						new MyVoteTask(info, 0, info.getSubreddit()).execute();
+					}
+				}
+		    };
+	    }
+	};
+	
 	public interface ThumbnailOnClickListenerFactory {
 		public OnClickListener getThumbnailOnClickListener(String jumpToId, String url, String threadUrl, Context context);
+	}
+	
+	public interface ThreadClickDialogOnClickListenerFactory {
+		public OnClickListener getLoginOnClickListener();
+		public OnClickListener getLinkOnClickListener(ThingInfo thingInfo, boolean useExternalBrowser);
+		public OnClickListener getCommentsOnClickListener(ThingInfo thingInfo);
+		public CompoundButton.OnCheckedChangeListener getVoteUpOnCheckedChangeListener(ThingInfo thingInfo);
+		public CompoundButton.OnCheckedChangeListener getVoteDownOnCheckedChangeListener(ThingInfo thingInfo);
 	}
 
 	
@@ -1448,7 +1401,7 @@ public final class ThreadsListActivity extends ListActivity {
         	Constants.DIALOG_SORT_BY_CONTROVERSIAL,
         	Constants.DIALOG_SORT_BY_NEW,
         	Constants.DIALOG_SORT_BY_TOP,
-        	Constants.DIALOG_THING_CLICK,
+        	Constants.DIALOG_THREAD_CLICK,
         };
         for (int dialog : myDialogs) {
 	        try {

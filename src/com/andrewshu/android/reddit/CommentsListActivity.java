@@ -546,7 +546,7 @@ public class CommentsListActivity extends ListActivity
         } else {
         	mJumpToCommentId = item.getId();
         	if (!"[deleted]".equals(item.getAuthor()))
-        		showDialog(Constants.DIALOG_THING_CLICK);
+        		showDialog(Constants.DIALOG_COMMENT_CLICK);
         }
     }
     
@@ -1626,7 +1626,7 @@ public class CommentsListActivity extends ListActivity
         		break;
     		mVoteTargetThing = mOpThingInfo;
         	mReplyTargetName = mOpThingInfo.getName();
-    		showDialog(Constants.DIALOG_THING_CLICK);
+    		showDialog(Constants.DIALOG_COMMENT_CLICK);
     		break;
     	case R.id.op_subreddit_menu_id:
 			Intent intent = new Intent(getApplicationContext(), ThreadsListActivity.class);
@@ -1885,7 +1885,7 @@ public class CommentsListActivity extends ListActivity
 			};
     		break;
     		
-    	case Constants.DIALOG_THING_CLICK:
+    	case Constants.DIALOG_COMMENT_CLICK:
     		inflater = (LayoutInflater)this.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
     		builder = new AlertDialog.Builder(this);
     		dialog = builder.setView(inflater.inflate(R.layout.comment_click_dialog, null)).create();
@@ -2040,7 +2040,7 @@ public class CommentsListActivity extends ListActivity
     		loginPasswordInput.setText("");
     		break;
     		
-    	case Constants.DIALOG_THING_CLICK:
+    	case Constants.DIALOG_COMMENT_CLICK:
     		if (mVoteTargetThing == null)
     			break;
     		Boolean likes;
@@ -2068,7 +2068,7 @@ public class CommentsListActivity extends ListActivity
     				linkButton.setText(R.string.thread_link_button);
 	    			linkButton.setOnClickListener(new OnClickListener() {
 	    				public void onClick(View v) {
-	    					dismissDialog(Constants.DIALOG_THING_CLICK);
+	    					dismissDialog(Constants.DIALOG_COMMENT_CLICK);
 	    					// Launch Intent to goto the URL
 	    					Common.launchBrowser(CommentsListActivity.this, url,
 	    							Util.createThreadUri(mOpThingInfo).toString(),
@@ -2166,7 +2166,7 @@ public class CommentsListActivity extends ListActivity
         	linkButton.setEnabled(true);
         	linkButton.setOnClickListener(new OnClickListener() {
         		public void onClick(View v) {
-        			dismissDialog(Constants.DIALOG_THING_CLICK);
+        			dismissDialog(Constants.DIALOG_COMMENT_CLICK);
         			
     	            ArrayAdapter<String> adapter = 
     	                new ArrayAdapter<String>(CommentsListActivity.this, android.R.layout.select_dialog_item, urls) {
@@ -2291,7 +2291,7 @@ public class CommentsListActivity extends ListActivity
     
     private final CompoundButton.OnCheckedChangeListener voteUpOnCheckedChangeListener = new CompoundButton.OnCheckedChangeListener() {
     	public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
-	    	dismissDialog(Constants.DIALOG_THING_CLICK);
+	    	dismissDialog(Constants.DIALOG_COMMENT_CLICK);
 	    	String thingFullname = mVoteTargetThing.getName();
 			if (isChecked)
 				new VoteTask(thingFullname, 1).execute();
@@ -2301,7 +2301,7 @@ public class CommentsListActivity extends ListActivity
     };
     private final CompoundButton.OnCheckedChangeListener voteDownOnCheckedChangeListener = new CompoundButton.OnCheckedChangeListener() {
 	    public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
-	    	dismissDialog(Constants.DIALOG_THING_CLICK);
+	    	dismissDialog(Constants.DIALOG_COMMENT_CLICK);
 	    	String thingFullname = mVoteTargetThing.getName();
 			if (isChecked)
 				new VoteTask(thingFullname, -1).execute();
@@ -2312,7 +2312,7 @@ public class CommentsListActivity extends ListActivity
     
     private final OnClickListener replyOnClickListener = new OnClickListener() {
 		public void onClick(View v) {
-			dismissDialog(Constants.DIALOG_THING_CLICK);
+			dismissDialog(Constants.DIALOG_COMMENT_CLICK);
 			showDialog(Constants.DIALOG_REPLY);
 		}
 	};
@@ -2324,7 +2324,7 @@ public class CommentsListActivity extends ListActivity
 	
 	private final OnClickListener loginOnClickListener = new OnClickListener() {
 		public void onClick(View v) {
-			dismissDialog(Constants.DIALOG_THING_CLICK);
+			dismissDialog(Constants.DIALOG_COMMENT_CLICK);
 			showDialog(Constants.DIALOG_LOGIN);
 		}
 	};
@@ -2369,6 +2369,7 @@ public class CommentsListActivity extends ListActivity
     protected void onRestoreInstanceState(Bundle state) {
         super.onRestoreInstanceState(state);
         final int[] myDialogs = {
+    		Constants.DIALOG_COMMENT_CLICK,
         	Constants.DIALOG_DELETE,
         	Constants.DIALOG_DELETING,
         	Constants.DIALOG_EDIT,
@@ -2378,7 +2379,6 @@ public class CommentsListActivity extends ListActivity
         	Constants.DIALOG_REPLY,
         	Constants.DIALOG_REPLYING,
         	Constants.DIALOG_SORT_BY,
-        	Constants.DIALOG_THING_CLICK,
         	Constants.DIALOG_REPORT
         };
         for (int dialog : myDialogs) {
