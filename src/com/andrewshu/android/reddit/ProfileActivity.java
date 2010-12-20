@@ -21,8 +21,10 @@ package com.andrewshu.android.reddit;
 
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
+import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.regex.Matcher;
@@ -87,6 +89,8 @@ public final class ProfileActivity extends ListActivity
 	private static final String TAG = "ProfileActivity";
 	
 	static final Pattern USER_PATH_PATTERN = Pattern.compile(Constants.USER_PATH_PATTERN_STRING);
+	// 1: link karma; 2: comment karma
+	static final Pattern KARMA_PATTERN = Pattern.compile(">(\\d[^<]*)<.+link karma.*>(\\d[^<]*)<.+comment karma");
 	
     private final ObjectMapper mObjectMapper = Common.getObjectMapper();
     private final CommentManager mCommentManager = new CommentManager();
@@ -110,7 +114,7 @@ public final class ProfileActivity extends ListActivity
     private ThingInfo mVoteTargetThingInfo = null;
     private URLSpan[] mVoteTargetSpans = null;
     // TODO: String mVoteTargetId so when you rotate, you can find the TargetThingInfo again
-    private DownloadThingsTask mCurrentDownloadThingsTask = null;
+    private DownloadProfileTask mCurrentDownloadThingsTask = null;
     private final Object mCurrentDownloadThingsTaskLock = new Object();
     
     private String mUsername = null;
@@ -121,6 +125,7 @@ public final class ProfileActivity extends ListActivity
     private String mLastAfter = null;
     private String mLastBefore = null;
     private int mLastCount = 0;
+    private String[] mKarma = null;
     private String mSortByUrl = null;
     private String mSortByUrlExtra = null;
     
@@ -164,8 +169,9 @@ public final class ProfileActivity extends ListActivity
 	        mLastAfter = savedInstanceState.getString(Constants.LAST_AFTER_KEY);
 	        mLastBefore = savedInstanceState.getString(Constants.LAST_BEFORE_KEY);
 	        mLastCount = savedInstanceState.getInt(Constants.THREAD_LAST_COUNT_KEY);
-	        mSortByUrl = savedInstanceState.getString(Constants.CommentsSort.SORT_BY_KEY);
-		    mJumpToThreadId = savedInstanceState.getString(Constants.JUMP_TO_THREAD_ID_KEY);
+	        mKarma = savedInstanceState.getStringArray(Constants.KARMA_KEY);
+		    mSortByUrl = savedInstanceState.getString(Constants.CommentsSort.SORT_BY_KEY);
+	        mJumpToThreadId = savedInstanceState.getString(Constants.JUMP_TO_THREAD_ID_KEY);
 		    mVoteTargetThingInfo = savedInstanceState.getParcelable(Constants.VOTE_TARGET_THING_INFO_KEY);
 		    
 		    // try to restore mThingsList using getLastNonConfigurationInstance()
@@ -174,11 +180,11 @@ public final class ProfileActivity extends ListActivity
 		    if (mThingsList == null) {
 	        	// Load previous page of profile items
 		        if (mLastAfter != null) {
-		        	new DownloadThingsTask(mUsername, mLastAfter, null, mLastCount).execute();
+		        	new DownloadProfileTask(mUsername, mLastAfter, null, mLastCount).execute();
 		        } else if (mLastBefore != null) {
-		        	new DownloadThingsTask(mUsername, null, mLastBefore, mLastCount).execute();
+		        	new DownloadProfileTask(mUsername, null, mLastBefore, mLastCount).execute();
 		        } else {
-		        	new DownloadThingsTask(mUsername).execute();
+		        	new DownloadProfileTask(mUsername).execute();
 		        }
 		    } else {
 		    	// Orientation change. Use prior instance.
@@ -192,7 +198,7 @@ public final class ProfileActivity extends ListActivity
 	    	Matcher userPathMatcher = USER_PATH_PATTERN.matcher(getIntent().getData().getPath());
 			if (userPathMatcher.matches()) {
 				mUsername = userPathMatcher.group(1);
-				new DownloadThingsTask(mUsername).execute();
+				new DownloadProfileTask(mUsername).execute();
 				return;
 			}
 		}
@@ -200,7 +206,7 @@ public final class ProfileActivity extends ListActivity
 		// No username specified by Intent, so load the logged in user's profile
 		if (mSettings.isLoggedIn()) {
 			mUsername = mSettings.username;
-        	new DownloadThingsTask(mUsername).execute();
+        	new DownloadProfileTask(mUsername).execute();
         	return;
         }
 		
@@ -241,8 +247,9 @@ public final class ProfileActivity extends ListActivity
     		Common.updateListDrawables(this, mSettings.theme);
     	}
     	updateNextPreviousButtons();
+    	updateKarma();
     	if (mSettings.isLoggedIn() != previousLoggedIn) {
-    		new DownloadThingsTask(mSettings.username).execute(Constants.DEFAULT_COMMENT_DOWNLOAD_LIMIT);
+    		new DownloadProfileTask(mSettings.username).execute(Constants.DEFAULT_COMMENT_DOWNLOAD_LIMIT);
     	}
     }
     
@@ -495,10 +502,29 @@ public final class ProfileActivity extends ListActivity
 	    	}
     	}
     }
+    
+    private void updateKarma() {
+    	if (mKarma == null)
+    		return;
+    	View karmaLayout = findViewById(R.id.karma_layout);
+    	View karmaLayoutBorder = findViewById(R.id.karma_border_bottom);
+    	if (karmaLayout != null && karmaLayoutBorder != null) {
+	    	if (Util.isLightTheme(mSettings.theme)) {
+	       		karmaLayout.setBackgroundResource(R.color.white);
+	       		karmaLayoutBorder.setBackgroundResource(R.color.black);
+	    	} else {
+	       		karmaLayoutBorder.setBackgroundResource(R.color.white);
+	    	}
+    	}
+    	TextView linkKarma = (TextView) findViewById(R.id.link_karma);
+    	TextView commentKarma = (TextView) findViewById(R.id.comment_karma);
+    	linkKarma.setText(mKarma[0] + " link karma");
+    	commentKarma.setText(mKarma[1] + " comment karma");
+    }
 
         
     
-    private class DownloadThingsTask extends AsyncTask<Integer, Long, Void>
+    private class DownloadProfileTask extends AsyncTask<Integer, Long, Void>
     		implements PropertyChangeListener {
     	
     	private ArrayList<ThingInfo> _mThingInfos = new ArrayList<ThingInfo>();
@@ -511,15 +537,16 @@ public final class ProfileActivity extends ListActivity
     	private String mLastAfter = null;
     	private String mLastBefore = null;
     	private int mLastCount = 0;
+    	private String[] mKarma;
     	private String mSortByUrl;
     	private String mSortByUrlExtra;
     	
-    	public DownloadThingsTask(String username) {
+    	public DownloadProfileTask(String username) {
     		this(username, null, null, Constants.DEFAULT_THREAD_DOWNLOAD_LIMIT,
     				ProfileActivity.this.mSortByUrl, ProfileActivity.this.mSortByUrlExtra);
     	}
     	
-    	public DownloadThingsTask(String username, String after, String before, int count) {
+    	public DownloadProfileTask(String username, String after, String before, int count) {
     		this(username, after, before, count,
     				ProfileActivity.this.mSortByUrl, ProfileActivity.this.mSortByUrlExtra);
     	}
@@ -533,7 +560,7 @@ public final class ProfileActivity extends ListActivity
     	 * @param sortByUrl
     	 * @param sortByUrlExtra
     	 */
-    	public DownloadThingsTask(String username, String after, String before, int count,
+    	public DownloadProfileTask(String username, String after, String before, int count,
     			String sortByUrl, String sortByUrlExtra) {
     		mUsername = username;
     		mAfter = after;
@@ -550,6 +577,7 @@ public final class ProfileActivity extends ListActivity
 			ProfileActivity.this.mAfter = mAfter;
 			ProfileActivity.this.mBefore = mBefore;
 			ProfileActivity.this.mCount = mCount;
+			ProfileActivity.this.mKarma = mKarma;
 			ProfileActivity.this.mSortByUrl = mSortByUrl;
 			ProfileActivity.this.mSortByUrlExtra = mSortByUrlExtra;
     	}
@@ -563,6 +591,9 @@ public final class ProfileActivity extends ListActivity
     		ProgressInputStream pin = null;
         	
     		try {
+    			
+    			mKarma = getKarma();
+    			
             	String url;
         		StringBuilder sb = new StringBuilder("http://api.reddit.com/user/")
         			.append(mUsername.trim())
@@ -639,6 +670,50 @@ public final class ProfileActivity extends ListActivity
             return null;
 	    }
     	
+    	private String[] getKarma() throws IOException {
+        	String url;
+    		StringBuilder sb = new StringBuilder("http://www.reddit.com/user/")
+    			.append(mUsername.trim());
+    		
+    		url = sb.toString();
+    		if (Constants.LOGGING) Log.d(TAG, "karma url=" + url);
+    		
+    		HttpGet request = new HttpGet(url);
+        	HttpResponse response = mClient.execute(request);
+        	
+        	HttpEntity entity = null;
+        	BufferedReader in = null;
+        	try {
+	        	entity = response.getEntity();
+	        	in = new BufferedReader(new InputStreamReader(entity.getContent()));
+	        	String line;
+	        	while ((line = in.readLine()) != null) {
+	        		Matcher m = KARMA_PATTERN.matcher(line);
+	        		if (m.find()) {
+	        			return new String[] { m.group(1), m.group(2) };
+	        		}
+	        	}
+        	} catch (IOException ex) {
+        		throw ex;
+        	} catch (Exception ex) {
+        		if (Constants.LOGGING) Log.e(TAG, "getKarma", ex);
+        	} finally {
+        		try {
+        			in.close();
+        		} catch (NullPointerException ex2) {
+        		} catch (Exception ex2) {
+        			if (Constants.LOGGING) Log.e(TAG, "in.close()", ex2);
+        		}
+        		try {
+        			entity.consumeContent();
+        		} catch (Exception ex2) {
+        			if (Constants.LOGGING) Log.e(TAG, "entity.consumeContent()", ex2);
+        		}
+        	}
+        	
+        	return null;
+    	}
+    	
     	private void parseThingsJSON(InputStream in) throws IOException,
 		    	JsonParseException, IllegalStateException {
 		
@@ -710,6 +785,7 @@ public final class ProfileActivity extends ListActivity
 			disableLoadingScreen();
 			setTitle(String.format(getResources().getString(R.string.user_profile), mUsername));
 			updateNextPreviousButtons();
+			updateKarma();
     	}
 		
     	@Override
@@ -746,7 +822,7 @@ public final class ProfileActivity extends ListActivity
     		if (errorMessage == null) {
     			Toast.makeText(ProfileActivity.this, "Logged in as "+mUsername, Toast.LENGTH_SHORT).show();
 	    		// Refresh the threads list
-    			new DownloadThingsTask(mUsername).execute(Constants.DEFAULT_COMMENT_DOWNLOAD_LIMIT);
+    			new DownloadProfileTask(mUsername).execute(Constants.DEFAULT_COMMENT_DOWNLOAD_LIMIT);
     		} else {
             	Common.showErrorToast(mUserError, Toast.LENGTH_LONG, ProfileActivity.this);
     			returnStatus(Constants.RESULT_LOGIN_REQUIRED);
@@ -956,7 +1032,7 @@ public final class ProfileActivity extends ListActivity
     		showDialog(Constants.DIALOG_COMPOSE);
     		break;
     	case R.id.refresh_menu_id:
-			new DownloadThingsTask(mSettings.username).execute(Constants.DEFAULT_COMMENT_DOWNLOAD_LIMIT);
+			new DownloadProfileTask(mSettings.username).execute(Constants.DEFAULT_COMMENT_DOWNLOAD_LIMIT);
 			break;
     	}
     	
@@ -1098,12 +1174,12 @@ public final class ProfileActivity extends ListActivity
     
 	private final OnClickListener downloadAfterOnClickListener = new OnClickListener() {
 		public void onClick(View v) {
-			new DownloadThingsTask(mUsername, mAfter, null, mCount).execute();
+			new DownloadProfileTask(mUsername, mAfter, null, mCount).execute();
 		}
 	};
 	private final OnClickListener downloadBeforeOnClickListener = new OnClickListener() {
 		public void onClick(View v) {
-			new DownloadThingsTask(mUsername, null, mBefore, mCount).execute();
+			new DownloadProfileTask(mUsername, null, mBefore, mCount).execute();
 		}
 	};
     
@@ -1203,6 +1279,7 @@ public final class ProfileActivity extends ListActivity
     	state.putString(Constants.LAST_AFTER_KEY, mLastAfter);
     	state.putString(Constants.LAST_BEFORE_KEY, mLastBefore);
     	state.putInt(Constants.THREAD_LAST_COUNT_KEY, mLastCount);
+    	state.putStringArray(Constants.KARMA_KEY, mKarma);
     	state.putParcelable(Constants.VOTE_TARGET_THING_INFO_KEY, mVoteTargetThingInfo);
     }
     

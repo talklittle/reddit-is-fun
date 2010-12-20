@@ -150,6 +150,7 @@ public class Constants {
     static final String JUMP_TO_COMMENT_CONTEXT_KEY = "jump_to_comment_context";
     static final String JUMP_TO_COMMENT_POSITION_KEY = "jump_to_comment_position";
     static final String JUMP_TO_THREAD_ID_KEY = "jump_to_thread_id";
+    static final String KARMA_KEY = "karma";
     static final String LAST_AFTER_KEY = "last_after";
     static final String LAST_BEFORE_KEY = "last_before";
     static final String REPORT_TARGET_NAME_KEY = "report_target_name";
