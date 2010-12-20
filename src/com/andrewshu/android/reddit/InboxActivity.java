@@ -27,7 +27,6 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.regex.Pattern;
 
 import org.apache.http.Header;
 import org.apache.http.HttpEntity;
@@ -93,11 +92,6 @@ public final class InboxActivity extends ListActivity
 
 	private static final String TAG = "InboxActivity";
 	
-	// Captcha "iden"
-    private final Pattern CAPTCHA_IDEN_PATTERN = Pattern.compile("name=\"iden\" value=\"([^\"]+?)\"");
-    // Group 2: Captcha image absolute path
-    private final Pattern CAPTCHA_IMAGE_PATTERN = Pattern.compile("<img class=\"capimage\"( alt=\".*?\")? src=\"(/captcha/[^\"]+?)\"");
-
     private final ObjectMapper mObjectMapper = Common.getObjectMapper();
     private final Markdown markdown = new Markdown();
     
@@ -923,7 +917,7 @@ public final class InboxActivity extends ListActivity
     	Dialog _mDialog;
     	
     	public MyCaptchaDownloadTask(Dialog dialog) {
-    		super(mCaptchaUrl, mClient, getApplicationContext());
+    		super(mCaptchaUrl, mClient);
     		_mDialog = dialog;
     	}
     	

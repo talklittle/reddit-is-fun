@@ -684,7 +684,7 @@ public class Common {
 				c = msg.charAt(k + i);
 				sb.append((char) c);
 			}
-			if (Constants.LOGGING) Log.d(tag, "doReply response content: " + sb.toString());
+			if (Constants.LOGGING) Log.d(tag, "multipart log: " + sb.toString());
 			sb = new StringBuilder();
 			if (done)
 				break;

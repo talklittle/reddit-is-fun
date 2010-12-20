@@ -6,7 +6,6 @@ import org.apache.http.HttpResponse;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.impl.client.DefaultHttpClient;
 
-import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Matrix;
@@ -14,7 +13,6 @@ import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.Drawable;
 import android.os.AsyncTask;
 import android.util.Log;
-import android.widget.Toast;
 
 public abstract class CaptchaDownloadTask extends AsyncTask<Void, Void, Drawable> {
 	
@@ -22,12 +20,10 @@ public abstract class CaptchaDownloadTask extends AsyncTask<Void, Void, Drawable
 	
 	private String _mCaptchaUrl;
 	private DefaultHttpClient _mClient;
-	private Context _mContext;
 	
-	public CaptchaDownloadTask(String captchaUrl, DefaultHttpClient client, Context context) {
+	public CaptchaDownloadTask(String captchaUrl, DefaultHttpClient client) {
 		_mCaptchaUrl = captchaUrl;
 		_mClient = client;
-		_mContext = context;
 	}
 	@Override
 	public Drawable doInBackground(Void... voidz) {
@@ -54,7 +50,6 @@ public abstract class CaptchaDownloadTask extends AsyncTask<Void, Void, Drawable
 			return bmd;
 		
 		} catch (Exception e) {
-			Common.showErrorToast("Error downloading captcha.", Toast.LENGTH_LONG, _mContext);
 			if (Constants.LOGGING) Log.e(TAG, "download captcha", e);
 		}
 		

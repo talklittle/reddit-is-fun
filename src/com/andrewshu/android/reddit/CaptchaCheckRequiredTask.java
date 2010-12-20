@@ -20,10 +20,10 @@ public abstract class CaptchaCheckRequiredTask extends AsyncTask<Void, Void, Boo
 	
 	// Captcha "iden"
     private static final Pattern CAPTCHA_IDEN_PATTERN
-    	= Pattern.compile("name=\"iden\" value=\"([^\"]+?)\"");
+    	= Pattern.compile("name=\"iden\" value=\"([^\"]+)\"");
     // Group 2: Captcha image absolute path
     private static final Pattern CAPTCHA_IMAGE_PATTERN
-    	= Pattern.compile("<img class=\"capimage\"( alt=\".*?\")? src=\"(/captcha/[^\"]+?)\"");
+    	= Pattern.compile("<img class=\"capimage\"( alt=\"[^\"]*\")? src=\"(/captcha/[^\"]+)\"");
 
     
     String _mCaptchaIden;
@@ -40,6 +40,7 @@ public abstract class CaptchaCheckRequiredTask extends AsyncTask<Void, Void, Boo
 	@Override
 	public Boolean doInBackground(Void... voidz) {
 		HttpEntity entity = null;
+		BufferedReader in = null;
 		try {
 			HttpGet request = new HttpGet(_mCheckUrl);
 			HttpResponse response = _mClient.execute(request);
@@ -47,26 +48,35 @@ public abstract class CaptchaCheckRequiredTask extends AsyncTask<Void, Void, Boo
 				throw new HttpException("bad HTTP response: "+response);
 			}
 			entity = response.getEntity();
-    		BufferedReader in = new BufferedReader(new InputStreamReader(entity.getContent()));
-        	String line = in.readLine();
-        	in.close();
-
-        	Matcher idenMatcher = CAPTCHA_IDEN_PATTERN.matcher(line);
-        	Matcher urlMatcher = CAPTCHA_IMAGE_PATTERN.matcher(line);
-        	if (idenMatcher.find() && urlMatcher.find()) {
-        		_mCaptchaIden = idenMatcher.group(1);
-        		_mCaptchaUrl = urlMatcher.group(2);
-        		saveState();
-        		return true;
-        	} else {
-        		_mCaptchaIden = null;
-        		_mCaptchaUrl = null;
-        		saveState();
-        		return false;
+    		in = new BufferedReader(new InputStreamReader(entity.getContent()));
+        	String line;
+        	
+        	while ((line = in.readLine()) != null) {
+	        	Matcher idenMatcher = CAPTCHA_IDEN_PATTERN.matcher(line);
+	        	Matcher urlMatcher = CAPTCHA_IMAGE_PATTERN.matcher(line);
+	        	if (idenMatcher.find() && urlMatcher.find()) {
+	        		_mCaptchaIden = idenMatcher.group(1);
+	        		_mCaptchaUrl = urlMatcher.group(2);
+	        		saveState();
+	        		return true;
+	        	}
         	}
+        	
+    		_mCaptchaIden = null;
+    		_mCaptchaUrl = null;
+    		saveState();
+    		return false;
+    		
 		} catch (Exception e) {
 			if (Constants.LOGGING) Log.e(TAG, "Error accessing "+_mCheckUrl+" to check for CAPTCHA", e);
     	} finally {
+    		if (in != null) {
+    			try {
+    				in.close();
+    			} catch (Exception e2) {
+    				if (Constants.LOGGING) Log.e(TAG, "in.Close()", e2);
+    			}
+    		}
     		if (entity != null) {
     			try {
     				entity.consumeContent();

@@ -20,7 +20,6 @@
 package com.andrewshu.android.reddit;
 
 import java.io.BufferedReader;
-import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.List;
@@ -32,7 +31,6 @@ import org.apache.http.HttpException;
 import org.apache.http.HttpResponse;
 import org.apache.http.NameValuePair;
 import org.apache.http.client.entity.UrlEncodedFormEntity;
-import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.impl.client.DefaultHttpClient;
 import org.apache.http.message.BasicNameValuePair;
@@ -45,10 +43,6 @@ import android.app.Dialog;
 import android.app.ProgressDialog;
 import android.app.TabActivity;
 import android.content.Intent;
-import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
-import android.graphics.Matrix;
-import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.Drawable;
 import android.net.Uri;
 import android.os.AsyncTask;
@@ -78,7 +72,7 @@ public class SubmitLinkActivity extends TabActivity {
     // Group 1: whole error. Group 2: the time part
     private final Pattern RATELIMIT_RETRY_PATTERN = Pattern.compile("(you are trying to submit too fast. try again in (.+?)\\.)");
 	// Group 1: Subreddit
-    private final Pattern SUBMIT_PATH_PATTERN = Pattern.compile("/(?:r/(.+?)/)?submit/?");
+    private final Pattern SUBMIT_PATH_PATTERN = Pattern.compile("/(?:r/([^/]+)/)?submit/?");
     
 	TabHost mTabHost;
 	
@@ -390,7 +384,7 @@ public class SubmitLinkActivity extends TabActivity {
                 	}
             		if (line.contains("BAD_CAPTCHA")) {
             			_mUserError = "Bad CAPTCHA. Try again.";
-            			new DownloadCaptchaTask().execute();
+            			new MyCaptchaDownloadTask().execute();
             		}
                 	throw new Exception("No id returned by reply POST.");
             	}
@@ -436,6 +430,7 @@ public class SubmitLinkActivity extends TabActivity {
     			i.setData(Util.createThreadUri(newlyCreatedThread));
     			i.putExtra(Constants.EXTRA_SUBREDDIT, newlyCreatedThread.getSubreddit());
     			i.putExtra(Constants.EXTRA_TITLE, newlyCreatedThread.getTitle());
+    			i.putExtra(Constants.EXTRA_NUM_COMMENTS, 0);
     			startActivity(i);
     			finish();
     		}
@@ -491,7 +486,7 @@ public class SubmitLinkActivity extends TabActivity {
 				textCaptchaImage.setVisibility(View.VISIBLE);
 				textCaptchaEdit.setVisibility(View.VISIBLE);
 				// Launch a task to download captcha and display it
-				new DownloadCaptchaTask().execute();
+				new MyCaptchaDownloadTask().execute();
 			} else {
 				linkCaptchaLabel.setVisibility(View.GONE);
 				linkCaptchaImage.setVisibility(View.GONE);
@@ -507,38 +502,11 @@ public class SubmitLinkActivity extends TabActivity {
 		}
 	}
 	
-	private class DownloadCaptchaTask extends AsyncTask<Void, Void, Drawable> {
-		@Override
-		public Drawable doInBackground(Void... voidz) {
-			try {
-				HttpGet request = new HttpGet("http://www.reddit.com/" + mCaptchaUrl);
-				HttpResponse response = mClient.execute(request);
-	    	
-				InputStream in = response.getEntity().getContent();
-				
-				//get image as bitmap
-				Bitmap captchaOrg  = BitmapFactory.decodeStream(in);
-
-				// create matrix for the manipulation
-				Matrix matrix = new Matrix();
-				// resize the bit map
-				matrix.postScale(2f, 2f);
-
-				// recreate the new Bitmap
-				Bitmap resizedBitmap = Bitmap.createScaledBitmap (captchaOrg,
-						captchaOrg.getWidth() * 3, captchaOrg.getHeight() * 3, true);
-			 
-				BitmapDrawable bmd = new BitmapDrawable(resizedBitmap);
-				
-				return bmd;
-			
-			} catch (Exception e) {
-				if (Constants.LOGGING) Log.e(TAG, "error downloading CAPTCHA", e);
-			}
-			
-			return null;
+	private class MyCaptchaDownloadTask extends CaptchaDownloadTask {
+		public MyCaptchaDownloadTask() {
+			super(mCaptchaUrl, mClient);
 		}
-		
+
 		@Override
 		public void onPostExecute(Drawable captcha) {
 			if (captcha == null) {
