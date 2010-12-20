@@ -25,6 +25,8 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import org.apache.http.Header;
 import org.apache.http.HttpEntity;
@@ -61,6 +63,7 @@ import android.view.View.OnClickListener;
 import android.webkit.CookieSyncManager;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
+import android.widget.CompoundButton;
 import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.ListView;
@@ -68,6 +71,7 @@ import android.widget.TextView;
 import android.widget.Toast;
 import android.widget.AdapterView.AdapterContextMenuInfo;
 
+import com.andrewshu.android.reddit.ThreadsListActivity.ThreadClickDialogOnClickListenerFactory;
 import com.andrewshu.android.reddit.ThreadsListActivity.ThumbnailOnClickListenerFactory;
 
 /**
@@ -82,8 +86,9 @@ public final class ProfileActivity extends ListActivity
 
 	private static final String TAG = "ProfileActivity";
 	
+	static final Pattern USER_PATH_PATTERN = Pattern.compile(Constants.USER_PATH_PATTERN_STRING);
+	
     private final ObjectMapper mObjectMapper = Common.getObjectMapper();
-    private final Markdown markdown = new Markdown();
     private final CommentManager mCommentManager = new CommentManager();
     private BitmapManager mBitmapManager = new BitmapManager();
     
@@ -108,8 +113,18 @@ public final class ProfileActivity extends ListActivity
     private DownloadThingsTask mCurrentDownloadThingsTask = null;
     private final Object mCurrentDownloadThingsTaskLock = new Object();
     
+    private String mUsername = null;
+    
     private String mAfter = null;
     private String mBefore = null;
+    private int mCount = 0;
+    private String mLastAfter = null;
+    private String mLastBefore = null;
+    private int mLastCount = 0;
+    private String mSortByUrl = null;
+    private String mSortByUrlExtra = null;
+    
+    private String mJumpToThreadId = null;
 
     private volatile String mCaptchaIden = null;
 	private volatile String mCaptchaUrl = null;
@@ -140,21 +155,58 @@ public final class ProfileActivity extends ListActivity
         
         setContentView(R.layout.profile_list_content);
         
-		if (mSettings.isLoggedIn()) {
-			if (savedInstanceState != null) {
-	        	mThingsList = (ArrayList<ThingInfo>) getLastNonConfigurationInstance();
-	        	if (mThingsList == null) {
-	        		new DownloadThingsTask(mSettings.username).execute(Constants.DEFAULT_COMMENT_DOWNLOAD_LIMIT);
-	        	} else {
-			    	// Orientation change. Use prior instance.
-	        		resetUI(new ThingsListAdapter(this, mThingsList));
-	        	}
-			} else {
-				new DownloadThingsTask(mSettings.username).execute(Constants.DEFAULT_COMMENT_DOWNLOAD_LIMIT);
+		if (savedInstanceState != null) {
+        	if (Constants.LOGGING) Log.d(TAG, "using savedInstanceState");
+        	mUsername = savedInstanceState.getString(Constants.USERNAME_KEY);
+        	mAfter = savedInstanceState.getString(Constants.AFTER_KEY);
+	        mBefore = savedInstanceState.getString(Constants.BEFORE_KEY);
+	        mCount = savedInstanceState.getInt(Constants.THREAD_COUNT_KEY);
+	        mLastAfter = savedInstanceState.getString(Constants.LAST_AFTER_KEY);
+	        mLastBefore = savedInstanceState.getString(Constants.LAST_BEFORE_KEY);
+	        mLastCount = savedInstanceState.getInt(Constants.THREAD_LAST_COUNT_KEY);
+	        mSortByUrl = savedInstanceState.getString(Constants.CommentsSort.SORT_BY_KEY);
+		    mJumpToThreadId = savedInstanceState.getString(Constants.JUMP_TO_THREAD_ID_KEY);
+		    mVoteTargetThingInfo = savedInstanceState.getParcelable(Constants.VOTE_TARGET_THING_INFO_KEY);
+		    
+		    // try to restore mThingsList using getLastNonConfigurationInstance()
+		    // (separate function to avoid a compiler warning casting ArrayList<ThingInfo>
+		    restoreLastNonConfigurationInstance();
+		    if (mThingsList == null) {
+	        	// Load previous page of profile items
+		        if (mLastAfter != null) {
+		        	new DownloadThingsTask(mUsername, mLastAfter, null, mLastCount).execute();
+		        } else if (mLastBefore != null) {
+		        	new DownloadThingsTask(mUsername, null, mLastBefore, mLastCount).execute();
+		        } else {
+		        	new DownloadThingsTask(mUsername).execute();
+		        }
+		    } else {
+		    	// Orientation change. Use prior instance.
+		    	resetUI(new ThingsListAdapter(this, mThingsList));
+	    		setTitle(mUsername + "'s profile");
+		    }
+		    return;
+        }
+		// Handle subreddit Uri passed via Intent
+        else if (getIntent().getData() != null) {
+	    	Matcher userPathMatcher = USER_PATH_PATTERN.matcher(getIntent().getData().getPath());
+			if (userPathMatcher.matches()) {
+				mUsername = userPathMatcher.group(1);
+				new DownloadThingsTask(mUsername).execute();
+				return;
 			}
-		} else {
-			showDialog(Constants.DIALOG_LOGIN);
 		}
+		
+		// No username specified by Intent, so load the logged in user's profile
+		if (mSettings.isLoggedIn()) {
+			mUsername = mSettings.username;
+        	new DownloadThingsTask(mUsername).execute();
+        	return;
+        }
+		
+		// Can't find a username to use. Quit.
+    	if (Constants.LOGGING) Log.e(TAG, "Could not find a username to use for ProfileActivity");
+    	finish();
     }
     
     /**
@@ -188,6 +240,7 @@ public final class ProfileActivity extends ListActivity
     		setListAdapter(mThingsAdapter);
     		Common.updateListDrawables(this, mSettings.theme);
     	}
+    	updateNextPreviousButtons();
     	if (mSettings.isLoggedIn() != previousLoggedIn) {
     		new DownloadThingsTask(mSettings.username).execute(Constants.DEFAULT_COMMENT_DOWNLOAD_LIMIT);
     	}
@@ -207,6 +260,11 @@ public final class ProfileActivity extends ListActivity
     	return mThingsList;
     }
     
+    @SuppressWarnings("unchecked")
+	private void restoreLastNonConfigurationInstance() {
+    	mThingsList = (ArrayList<ThingInfo>) getLastNonConfigurationInstance();
+    }
+
     
     
     /**
@@ -290,6 +348,7 @@ public final class ProfileActivity extends ListActivity
 	            }
 	            
             	CommentsListActivity.fillCommentsListItemView(view, item, ProfileActivity.this, mSettings, mCommentManager);
+            	view.setPadding(15, 5, 0, 5);
             }
             
 	        return view;
@@ -309,7 +368,11 @@ public final class ProfileActivity extends ListActivity
         mVoteTargetThingInfo = item;
         mVoteTargetView = v;
         
-        openContextMenu(v);
+		if (item.getName().startsWith(Constants.THREAD_KIND)) {
+			showDialog(Constants.DIALOG_THREAD_CLICK);
+		} else {
+			openContextMenu(v);
+		}
     }
     
     @Override
@@ -323,27 +386,37 @@ public final class ProfileActivity extends ListActivity
         mVoteTargetThingInfo = item;
         mVoteTargetView = v;
         
-        if (item.isWas_comment()) {
+        if (item.getName().startsWith(Constants.THREAD_KIND)) {
+            menu.add(0, Constants.DIALOG_THREAD_CLICK, Menu.NONE, "Go to thread");
+    	} else {
         	// TODO: include the context!
         	menu.add(0, Constants.DIALOG_COMMENT_CLICK, Menu.NONE, "Go to comment");
-    	} else {
-            menu.add(0, Constants.DIALOG_MESSAGE_CLICK, Menu.NONE, "Reply");
     	}
     }
     
     @Override
     public boolean onContextItemSelected(MenuItem item) {
+    	Intent i;
+    	
     	switch (item.getItemId()) {
     	case Constants.DIALOG_COMMENT_CLICK:
-			Intent i = new Intent(getApplicationContext(), CommentsListActivity.class);
+			i = new Intent(getApplicationContext(), CommentsListActivity.class);
 			i.setData(Util.createCommentUri(mVoteTargetThingInfo));
 			i.putExtra(Constants.EXTRA_SUBREDDIT, mVoteTargetThingInfo.getSubreddit());
 			i.putExtra(Constants.EXTRA_TITLE, mVoteTargetThingInfo.getTitle());
 			startActivity(i);
 			return true;
-    	case Constants.DIALOG_MESSAGE_CLICK:
-    		showDialog(Constants.DIALOG_REPLY);
-    		return true;
+    	case Constants.DIALOG_THREAD_CLICK:
+			dismissDialog(Constants.DIALOG_THREAD_CLICK);
+			// Launch an Intent for CommentsListActivity
+			CacheInfo.invalidateCachedThread(getApplicationContext());
+			i = new Intent(getApplicationContext(), CommentsListActivity.class);
+			i.setData(Util.createThreadUri(mVoteTargetThingInfo));
+			i.putExtra(Constants.EXTRA_SUBREDDIT, mVoteTargetThingInfo.getSubreddit());
+			i.putExtra(Constants.EXTRA_TITLE, mVoteTargetThingInfo.getTitle());
+			i.putExtra(Constants.EXTRA_NUM_COMMENTS, Integer.valueOf(mVoteTargetThingInfo.getNum_comments()));
+			startActivity(i);
+			return true;
 		default:
     		return super.onContextItemSelected(item);	
     	}
@@ -356,7 +429,7 @@ public final class ProfileActivity extends ListActivity
      * @param messagesAdapter A MessagesListAdapter to use. Pass in null if you want a new empty one created.
      */
     void resetUI(ThingsListAdapter messagesAdapter) {
-    	setContentView(R.layout.inbox_list_content);
+    	setContentView(R.layout.profile_list_content);
     	synchronized (MESSAGE_ADAPTER_LOCK) {
 	    	if (messagesAdapter == null) {
 	            // Reset the list to be empty.
@@ -391,6 +464,38 @@ public final class ProfileActivity extends ListActivity
     	getWindow().setFeatureInt(Window.FEATURE_PROGRESS, 10000);
     }
 
+    private void updateNextPreviousButtons() {
+    	View nextPrevious = findViewById(R.id.next_previous_layout);
+    	View nextPreviousBorder = findViewById(R.id.next_previous_border_top);
+    	if (nextPrevious != null && nextPreviousBorder != null) {
+	    	if (Util.isLightTheme(mSettings.theme)) {
+	       		nextPrevious.setBackgroundResource(R.color.white);
+	       		nextPreviousBorder.setBackgroundResource(R.color.black);
+	    	} else {
+	       		nextPreviousBorder.setBackgroundResource(R.color.white);
+	    	}
+    	}
+		// update the "next 25" and "prev 25" buttons
+    	final Button nextButton = (Button) findViewById(R.id.next_button);
+    	final Button previousButton = (Button) findViewById(R.id.previous_button);
+    	if (nextButton != null) {
+	    	if (mAfter != null) {
+	    		nextButton.setVisibility(View.VISIBLE);
+	    		nextButton.setOnClickListener(downloadAfterOnClickListener);
+	    	} else {
+	    		nextButton.setVisibility(View.INVISIBLE);
+	    	}
+    	}
+    	if (previousButton != null) {
+	    	if (mBefore != null && mCount != Constants.DEFAULT_THREAD_DOWNLOAD_LIMIT) {
+	    		previousButton.setVisibility(View.VISIBLE);
+	    		previousButton.setOnClickListener(downloadBeforeOnClickListener);
+	    	} else {
+	    		previousButton.setVisibility(View.INVISIBLE);
+	    	}
+    	}
+    }
+
         
     
     private class DownloadThingsTask extends AsyncTask<Integer, Long, Void>
@@ -399,17 +504,89 @@ public final class ProfileActivity extends ListActivity
     	private ArrayList<ThingInfo> _mThingInfos = new ArrayList<ThingInfo>();
     	private long _mContentLength;
     	
-    	private String _mUsername;
+    	private String mUsername;
+    	private String mAfter;
+    	private String mBefore;
+    	private int mCount;
+    	private String mLastAfter = null;
+    	private String mLastBefore = null;
+    	private int mLastCount = 0;
+    	private String mSortByUrl;
+    	private String mSortByUrlExtra;
     	
     	public DownloadThingsTask(String username) {
-    		_mUsername = username;
+    		this(username, null, null, Constants.DEFAULT_THREAD_DOWNLOAD_LIMIT,
+    				ProfileActivity.this.mSortByUrl, ProfileActivity.this.mSortByUrlExtra);
+    	}
+    	
+    	public DownloadThingsTask(String username, String after, String before, int count) {
+    		this(username, after, before, count,
+    				ProfileActivity.this.mSortByUrl, ProfileActivity.this.mSortByUrlExtra);
+    	}
+    	
+    	/**
+    	 * The real constructor
+    	 * @param username
+    	 * @param after
+    	 * @param before
+    	 * @param count
+    	 * @param sortByUrl
+    	 * @param sortByUrlExtra
+    	 */
+    	public DownloadThingsTask(String username, String after, String before, int count,
+    			String sortByUrl, String sortByUrlExtra) {
+    		mUsername = username;
+    		mAfter = after;
+    		mBefore = before;
+    		mCount = count;
+    		mSortByUrl = sortByUrl;
+    		mSortByUrlExtra = sortByUrlExtra;
+    	}
+    	
+    	protected void saveState() {
+			ProfileActivity.this.mLastAfter = mLastAfter;
+			ProfileActivity.this.mLastBefore = mLastBefore;
+			ProfileActivity.this.mLastCount = mLastCount;
+			ProfileActivity.this.mAfter = mAfter;
+			ProfileActivity.this.mBefore = mBefore;
+			ProfileActivity.this.mCount = mCount;
+			ProfileActivity.this.mSortByUrl = mSortByUrl;
+			ProfileActivity.this.mSortByUrlExtra = mSortByUrlExtra;
     	}
     	
     	// XXX: maxComments is unused for now
     	public Void doInBackground(Integer... maxComments) {
     		HttpEntity entity = null;
-            try {
-            	HttpGet request = new HttpGet("http://api.reddit.com/user/"+_mUsername);
+    		boolean isAfter = false;
+    		boolean isBefore = false;
+    		InputStream in = null;
+    		ProgressInputStream pin = null;
+        	
+    		try {
+            	String url;
+        		StringBuilder sb = new StringBuilder("http://api.reddit.com/user/")
+        			.append(mUsername.trim())
+        			.append("/?").append(mSortByUrl).append("&")
+        			.append(mSortByUrlExtra).append("&");
+        		
+    			// "before" always comes back null unless you provide correct "count"
+        		if (mAfter != null) {
+        			// count: 25, 50, ...
+    				sb = sb.append("count=").append(mCount)
+    					.append("&after=").append(mAfter).append("&");
+    				isAfter = true;
+        		}
+        		else if (mBefore != null) {
+        			// count: nothing, 26, 51, ...
+        			sb = sb.append("count=").append(mCount + 1 - Constants.DEFAULT_THREAD_DOWNLOAD_LIMIT)
+        				.append("&before=").append(mBefore).append("&");
+        			isBefore = true;
+        		}
+        		
+        		url = sb.toString();
+        		if (Constants.LOGGING) Log.d(TAG, "url=" + url);
+        		
+        		HttpGet request = new HttpGet(url);
             	HttpResponse response = mClient.execute(request);
             	
             	// Read the header to get Content-Length since entity.getContentLength() returns -1
@@ -418,25 +595,39 @@ public final class ProfileActivity extends ListActivity
             	if (Constants.LOGGING) Log.d(TAG, "Content length: "+_mContentLength);
 
             	entity = response.getEntity();
-            	InputStream in = entity.getContent();
+            	in = entity.getContent();
             	
             	// setup a special InputStream to report progress
-            	ProgressInputStream pin = new ProgressInputStream(in, _mContentLength);
+            	pin = new ProgressInputStream(in, _mContentLength);
             	pin.addPropertyChangeListener(this);
             	
                 parseThingsJSON(pin);
                 
-                pin.close();
-                in.close();
-                
-                // XXX: HACK: http://code.reddit.com/ticket/709
-                // Marking messages as read is currently broken (even with mark=
-                // For now, just send an extra request to the regular non-JSON i
-                mClient.execute(new HttpGet("http://www.reddit.com/message/inbox"));
+            	mLastCount = mCount;
+            	if (isAfter)
+            		mCount += Constants.DEFAULT_THREAD_DOWNLOAD_LIMIT;
+            	else if (isBefore)
+            		mCount -= Constants.DEFAULT_THREAD_DOWNLOAD_LIMIT;
+            	
+                saveState();
 
             } catch (Exception e) {
             	if (Constants.LOGGING) Log.e(TAG, "failed", e);
         	} finally {
+        		if (pin != null) {
+        			try {
+						pin.close();
+					} catch (IOException e2) {
+						if (Constants.LOGGING) Log.e(TAG, "pin.close()", e2);
+					}
+        		}
+        		if (in != null) {
+        			try {
+						in.close();
+					} catch (IOException e2) {
+						if (Constants.LOGGING) Log.e(TAG, "in.close()", e2);
+					}
+        		}
         		if (entity != null) {
         			try {
         				entity.consumeContent();
@@ -451,7 +642,7 @@ public final class ProfileActivity extends ListActivity
     	private void parseThingsJSON(InputStream in) throws IOException,
 		    	JsonParseException, IllegalStateException {
 		
-    		String genericListingError = "Not an inbox listing";
+    		String genericListingError = "Not a user page listing";
     		try {
     			Listing listing = mObjectMapper.readValue(in, Listing.class);
     			
@@ -463,6 +654,9 @@ public final class ProfileActivity extends ListActivity
     				mSettings.setModhash(null);
     			else
     				mSettings.setModhash(data.getModhash());
+    			
+    			mLastAfter = mAfter;
+    			mLastBefore = mBefore;
     			mAfter = data.getAfter();
     			mBefore = data.getBefore();
     			
@@ -489,7 +683,7 @@ public final class ProfileActivity extends ListActivity
     				}
     			}
     		} catch (Exception ex) {
-    			if (Constants.LOGGING) Log.e(TAG, "parseInboxJSON", ex);
+    			if (Constants.LOGGING) Log.e(TAG, "parseThingsJSON", ex);
     		}
     	}
 
@@ -514,7 +708,8 @@ public final class ProfileActivity extends ListActivity
     				mThingsAdapter.add(mi);
     		}
 			disableLoadingScreen();
-			Common.cancelMailNotification(ProfileActivity.this.getApplicationContext());
+			setTitle(String.format(getResources().getString(R.string.user_profile), mUsername));
+			updateNextPreviousButtons();
     	}
 		
     	@Override
@@ -583,6 +778,88 @@ public final class ProfileActivity extends ListActivity
     	}
     }
     
+    private class MyVoteTask extends VoteTask {
+    	
+    	private int _mPreviousScore;
+    	private Boolean _mPreviousLikes;
+    	private ThingInfo _mTargetThingInfo;
+    	
+    	public MyVoteTask(ThingInfo thingInfo, int direction, String subreddit) {
+    		super(thingInfo.getName(), direction, subreddit, getApplicationContext(), mSettings, mClient);
+    		_mTargetThingInfo = thingInfo;
+    		_mPreviousScore = thingInfo.getScore();
+    		_mPreviousLikes = thingInfo.getLikes();
+    	}
+    	
+    	@Override
+    	public void onPreExecute() {
+    		if (!mSettings.isLoggedIn()) {
+        		Common.showErrorToast("You must be logged in to vote.", Toast.LENGTH_LONG, ProfileActivity.this);
+        		cancel(true);
+        		return;
+        	}
+        	if (_mDirection < -1 || _mDirection > 1) {
+        		if (Constants.LOGGING) Log.e(TAG, "WTF: _mDirection = " + _mDirection);
+        		throw new RuntimeException("How the hell did you vote something besides -1, 0, or 1?");
+        	}
+        	int newScore;
+        	Boolean newLikes;
+        	_mPreviousScore = Integer.valueOf(_mTargetThingInfo.getScore());
+        	_mPreviousLikes = _mTargetThingInfo.getLikes();
+        	if (_mPreviousLikes == null) {
+        		if (_mDirection == 1) {
+        			newScore = _mPreviousScore + 1;
+        			newLikes = true;
+        		} else if (_mDirection == -1) {
+        			newScore = _mPreviousScore - 1;
+        			newLikes = false;
+        		} else {
+        			cancel(true);
+        			return;
+        		}
+        	} else if (_mPreviousLikes == true) {
+        		if (_mDirection == 0) {
+        			newScore = _mPreviousScore - 1;
+        			newLikes = null;
+        		} else if (_mDirection == -1) {
+        			newScore = _mPreviousScore - 2;
+        			newLikes = false;
+        		} else {
+        			cancel(true);
+        			return;
+        		}
+        	} else {
+        		if (_mDirection == 1) {
+        			newScore = _mPreviousScore + 2;
+        			newLikes = true;
+        		} else if (_mDirection == 0) {
+        			newScore = _mPreviousScore + 1;
+        			newLikes = null;
+        		} else {
+        			cancel(true);
+        			return;
+        		}
+        	}
+    		_mTargetThingInfo.setLikes(newLikes);
+    		_mTargetThingInfo.setScore(newScore);
+    		mThingsAdapter.notifyDataSetChanged();
+    	}
+    	
+    	@Override
+    	public void onPostExecute(Boolean success) {
+    		if (success) {
+    			CacheInfo.invalidateCachedSubreddit(getApplicationContext());
+    		} else {
+    			// Vote failed. Undo the score.
+            	_mTargetThingInfo.setLikes(_mPreviousLikes);
+        		_mTargetThingInfo.setScore(_mPreviousScore);
+        		mThingsAdapter.notifyDataSetChanged();
+        		
+    			Common.showErrorToast(_mUserError, Toast.LENGTH_LONG, ProfileActivity.this);
+    		}
+    	}
+    }
+    
     private class MyCaptchaCheckRequiredTask extends CaptchaCheckRequiredTask {
     	
     	Dialog _mDialog;
@@ -641,6 +918,7 @@ public final class ProfileActivity extends ListActivity
     	
     	public MyCaptchaDownloadTask(Dialog dialog) {
     		super(mCaptchaUrl, mClient);
+    		_mDialog = dialog;
     	}
     	
 		@Override
@@ -665,7 +943,7 @@ public final class ProfileActivity extends ListActivity
         super.onCreateOptionsMenu(menu);
         
         MenuInflater inflater = getMenuInflater();
-        inflater.inflate(R.menu.inbox, menu);
+        inflater.inflate(R.menu.profile, menu);
         
         return true;
     }
@@ -708,14 +986,16 @@ public final class ProfileActivity extends ListActivity
     		inflater = (LayoutInflater) getSystemService(Context.LAYOUT_INFLATER_SERVICE);
     		builder = new AlertDialog.Builder(this);
     		layout = inflater.inflate(R.layout.compose_dialog, null);
-    		dialog = builder.setView(layout).create();
-    		final Dialog composeDialog = dialog;
     		final EditText composeDestination = (EditText) layout.findViewById(R.id.compose_destination_input);
     		final EditText composeSubject = (EditText) layout.findViewById(R.id.compose_subject_input);
     		final EditText composeText = (EditText) layout.findViewById(R.id.compose_text_input);
     		final Button composeSendButton = (Button) layout.findViewById(R.id.compose_send_button);
     		final Button composeCancelButton = (Button) layout.findViewById(R.id.compose_cancel_button);
     		final EditText composeCaptcha = (EditText) layout.findViewById(R.id.compose_captcha_input);
+    		composeDestination.setText(mUsername);
+    		
+    		dialog = builder.setView(layout).create();
+    		final Dialog composeDialog = dialog;
     		composeSendButton.setOnClickListener(new OnClickListener() {
 				public void onClick(View v) {
 		    		ThingInfo hi = new ThingInfo();
@@ -749,6 +1029,12 @@ public final class ProfileActivity extends ListActivity
 				}
     		});
     		break;
+    		
+    	case Constants.DIALOG_THREAD_CLICK:
+    		inflater = (LayoutInflater)this.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
+			builder = new AlertDialog.Builder(this);
+			dialog = builder.setView(inflater.inflate(R.layout.thread_click_dialog, null)).create();
+			break;
     		
    		// "Please wait"
     	case Constants.DIALOG_LOGGING_IN:
@@ -793,15 +1079,15 @@ public final class ProfileActivity extends ListActivity
     		loginPasswordInput.setText("");
     		break;
     		
-    	case Constants.DIALOG_REPLY:
-    		if (mVoteTargetThingInfo != null && mVoteTargetThingInfo.getReplyDraft() != null) {
-    			EditText replyBodyView = (EditText) dialog.findViewById(R.id.body); 
-    			replyBodyView.setText(mVoteTargetThingInfo.getReplyDraft());
-    		}
+    	case Constants.DIALOG_COMPOSE:
+    		final EditText composeDestination = (EditText) dialog.findViewById(R.id.compose_destination_input);
+    		composeDestination.setText(mUsername);
+    		new MyCaptchaCheckRequiredTask(dialog).execute();
     		break;
     		
-    	case Constants.DIALOG_COMPOSE:
-    		new MyCaptchaCheckRequiredTask(dialog).execute();
+    	case Constants.DIALOG_THREAD_CLICK:
+    		ThreadsListActivity.fillThreadClickDialog(dialog, mVoteTargetThingInfo, mSettings,
+    				threadClickDialogOnClickListenerFactory);
     		break;
     		
 		default:
@@ -809,6 +1095,17 @@ public final class ProfileActivity extends ListActivity
 			break;
     	}
     }
+    
+	private final OnClickListener downloadAfterOnClickListener = new OnClickListener() {
+		public void onClick(View v) {
+			new DownloadThingsTask(mUsername, mAfter, null, mCount).execute();
+		}
+	};
+	private final OnClickListener downloadBeforeOnClickListener = new OnClickListener() {
+		public void onClick(View v) {
+			new DownloadThingsTask(mUsername, null, mBefore, mCount).execute();
+		}
+	};
     
 	private final ThumbnailOnClickListenerFactory thumbnailOnClickListenerFactory
 			= new ThumbnailOnClickListenerFactory() {
@@ -825,10 +1122,87 @@ public final class ProfileActivity extends ListActivity
 			};
 		}
 	};
+	
+	private final ThreadClickDialogOnClickListenerFactory threadClickDialogOnClickListenerFactory
+			= new ThreadClickDialogOnClickListenerFactory() {
+		public OnClickListener getLoginOnClickListener() {
+			return new OnClickListener() {
+				public void onClick(View v) {
+					dismissDialog(Constants.DIALOG_THREAD_CLICK);
+					showDialog(Constants.DIALOG_LOGIN);
+				}
+			};
+		}
+		public OnClickListener getLinkOnClickListener(ThingInfo thingInfo, boolean useExternalBrowser) {
+			final ThingInfo info = thingInfo;
+			final boolean fUseExternalBrowser = useExternalBrowser;
+			return new OnClickListener() {
+				public void onClick(View v) {
+					dismissDialog(Constants.DIALOG_THREAD_CLICK);
+					// Launch Intent to goto the URL
+					Common.launchBrowser(getApplicationContext(), info.getUrl(),
+							Util.createThreadUri(info).toString(),
+							false, false, fUseExternalBrowser);
+				}
+			};
+		}
+		public OnClickListener getCommentsOnClickListener(ThingInfo thingInfo) {
+			final ThingInfo info = thingInfo;
+			return new OnClickListener() {
+				public void onClick(View v) {
+					dismissDialog(Constants.DIALOG_THREAD_CLICK);
+					// Launch an Intent for CommentsListActivity
+					CacheInfo.invalidateCachedThread(getApplicationContext());
+					Intent i = new Intent(getApplicationContext(), CommentsListActivity.class);
+					i.setData(Util.createThreadUri(info));
+					i.putExtra(Constants.EXTRA_SUBREDDIT, info.getSubreddit());
+					i.putExtra(Constants.EXTRA_TITLE, info.getTitle());
+					i.putExtra(Constants.EXTRA_NUM_COMMENTS, Integer.valueOf(info.getNum_comments()));
+					startActivity(i);
+				}
+			};
+		}
+		public CompoundButton.OnCheckedChangeListener getVoteUpOnCheckedChangeListener(ThingInfo thingInfo) {
+			final ThingInfo info = thingInfo;
+			return new CompoundButton.OnCheckedChangeListener() {
+		    	public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
+			    	if (isChecked) {
+						new MyVoteTask(info, 1, info.getSubreddit()).execute();
+					} else {
+						new MyVoteTask(info, 0, info.getSubreddit()).execute();
+					}
+				}
+		    };
+		}
+		public CompoundButton.OnCheckedChangeListener getVoteDownOnCheckedChangeListener(ThingInfo thingInfo) {
+			final ThingInfo info = thingInfo;
+			return new CompoundButton.OnCheckedChangeListener() {
+		        public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
+			    	dismissDialog(Constants.DIALOG_THREAD_CLICK);
+					if (isChecked) {
+						new MyVoteTask(info, -1, info.getSubreddit()).execute();
+					} else {
+						new MyVoteTask(info, 0, info.getSubreddit()).execute();
+					}
+				}
+		    };
+		}
+		};
+
 
 	@Override
     protected void onSaveInstanceState(Bundle state) {
     	super.onSaveInstanceState(state);
+    	state.putString(Constants.USERNAME_KEY, mUsername);
+    	state.putString(Constants.CommentsSort.SORT_BY_KEY, mSortByUrl);
+    	state.putString(Constants.JUMP_TO_THREAD_ID_KEY, mJumpToThreadId);
+    	state.putString(Constants.AFTER_KEY, mAfter);
+    	state.putString(Constants.BEFORE_KEY, mBefore);
+    	state.putInt(Constants.THREAD_COUNT_KEY, mCount);
+    	state.putString(Constants.LAST_AFTER_KEY, mLastAfter);
+    	state.putString(Constants.LAST_BEFORE_KEY, mLastBefore);
+    	state.putInt(Constants.THREAD_LAST_COUNT_KEY, mLastCount);
+    	state.putParcelable(Constants.VOTE_TARGET_THING_INFO_KEY, mVoteTargetThingInfo);
     }
     
     /**

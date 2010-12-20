@@ -84,6 +84,8 @@
 	
 	<string name="select_link_title">Select action</string>
 	
+	<string name="inbox_title">%s\'s inbox</string>
+	
 	
 	<!--  === Menus === -->
 	
