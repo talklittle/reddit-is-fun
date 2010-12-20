@@ -20,7 +20,7 @@ import android.os.AsyncTask;
 import android.util.Log;
 import android.widget.Toast;
 
-class HideTask extends AsyncTask<Void, Void, Boolean> {
+public class HideTask extends AsyncTask<Void, Void, Boolean> {
 	private static final String TAG = "HideTask";
 	
 	private ThingInfo mTargetThreadInfo;

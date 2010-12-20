@@ -20,7 +20,7 @@ import android.os.AsyncTask;
 import android.util.Log;
 import android.widget.Toast;
 
-class SaveTask extends AsyncTask<Void, Void, Boolean> {
+public class SaveTask extends AsyncTask<Void, Void, Boolean> {
 	private static final String TAG = "SaveWorker";
 	
 	private ThingInfo mTargetThreadInfo;

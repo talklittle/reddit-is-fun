@@ -27,7 +27,6 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import org.apache.http.Header;
@@ -51,11 +50,7 @@ import android.app.ListActivity;
 import android.app.ProgressDialog;
 import android.content.Context;
 import android.content.Intent;
-import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
-import android.graphics.Matrix;
 import android.graphics.Typeface;
-import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.Drawable;
 import android.os.AsyncTask;
 import android.os.Bundle;
@@ -701,10 +696,8 @@ public final class InboxActivity extends ListActivity
     	
     	@Override
         public Boolean doInBackground(String... text) {
-        	String userError = "Error replying. Please try again.";
         	HttpEntity entity = null;
         	
-        	String status = "";
         	if (!mSettings.isLoggedIn()) {
         		Common.showErrorToast("You must be logged in to reply.", Toast.LENGTH_LONG, InboxActivity.this);
         		_mUserError = "Not logged in";
@@ -840,7 +833,7 @@ public final class InboxActivity extends ListActivity
         	} catch (CaptchaException e) {
         		if (Constants.LOGGING) Log.e(TAG, "CaptchaException", e);
         		_mUserError = e.getMessage();
-    			new DownloadCaptchaTask(_mDialog).execute();
+    			new MyCaptchaDownloadTask(_mDialog).execute();
         	} catch (Exception e) {
         		if (Constants.LOGGING) Log.e(TAG, "MessageComposeTask", e);
         		_mUserError = e.getMessage();
@@ -873,48 +866,21 @@ public final class InboxActivity extends ListActivity
     	}
     }
     
-    private class CheckCaptchaRequiredTask extends AsyncTask<Void, Void, Boolean> {
-    	private Dialog _mDialog;
-    	public CheckCaptchaRequiredTask(Dialog dialog) {
-    		_mDialog = dialog;
-    	}
+    private class MyCaptchaCheckRequiredTask extends CaptchaCheckRequiredTask {
     	
-		@Override
-		public Boolean doInBackground(Void... voidz) {
-			HttpEntity entity = null;
-			try {
-				HttpGet request = new HttpGet("http://www.reddit.com/message/compose/");
-				HttpResponse response = mClient.execute(request);
-				entity = response.getEntity(); 
-	    		BufferedReader in = new BufferedReader(new InputStreamReader(entity.getContent()));
-            	String line = in.readLine();
-            	in.close();
-
-            	Matcher idenMatcher = CAPTCHA_IDEN_PATTERN.matcher(line);
-            	Matcher urlMatcher = CAPTCHA_IMAGE_PATTERN.matcher(line);
-            	if (idenMatcher.find() && urlMatcher.find()) {
-            		mCaptchaIden = idenMatcher.group(1);
-            		mCaptchaUrl = urlMatcher.group(2);
-            		return true;
-            	} else {
-            		mCaptchaIden = null;
-            		mCaptchaUrl = null;
-            		return false;
-            	}
-			} catch (Exception e) {
-				if (Constants.LOGGING) Log.e(TAG, "Error accessing http://www.reddit.com/message/compose/ to check for CAPTCHA");
-        	} finally {
-        		if (entity != null) {
-        			try {
-        				entity.consumeContent();
-        			} catch (Exception e2) {
-        				if (Constants.LOGGING) Log.e(TAG, "entity.consumeContent()", e2);
-        			}
-        		}
-			}
-			return null;
+    	Dialog _mDialog;
+    	
+		public MyCaptchaCheckRequiredTask(Dialog dialog) {
+			super(mClient);
+			_mDialog = dialog;
 		}
 		
+		@Override
+		protected void saveState() {
+			InboxActivity.this.mCaptchaIden = _mCaptchaIden;
+			InboxActivity.this.mCaptchaUrl = _mCaptchaUrl;
+		}
+
 		@Override
 		public void onPreExecute() {
 			// Hide send button so user can't send until we know whether he needs captcha
@@ -941,7 +907,7 @@ public final class InboxActivity extends ListActivity
 				captchaImage.setVisibility(View.VISIBLE);
 				captchaEdit.setVisibility(View.VISIBLE);
 				// Launch a task to download captcha and display it
-				new DownloadCaptchaTask(_mDialog).execute();
+				new MyCaptchaDownloadTask(_mDialog).execute();
 			} else {
 				captchaLabel.setVisibility(View.GONE);
 				captchaImage.setVisibility(View.GONE);
@@ -952,42 +918,15 @@ public final class InboxActivity extends ListActivity
 		}
 	}
 	
-    private class DownloadCaptchaTask extends AsyncTask<Void, Void, Drawable> {
-    	private Dialog _mDialog;
-    	public DownloadCaptchaTask(Dialog dialog) {
+    private class MyCaptchaDownloadTask extends CaptchaDownloadTask {
+    	
+    	Dialog _mDialog;
+    	
+    	public MyCaptchaDownloadTask(Dialog dialog) {
+    		super(mCaptchaUrl, mClient, getApplicationContext());
     		_mDialog = dialog;
     	}
-		@Override
-		public Drawable doInBackground(Void... voidz) {
-			try {
-				HttpGet request = new HttpGet("http://www.reddit.com/" + mCaptchaUrl);
-				HttpResponse response = mClient.execute(request);
-	    	
-				InputStream in = response.getEntity().getContent();
-				
-				//get image as bitmap
-				Bitmap captchaOrg  = BitmapFactory.decodeStream(in);
-
-				// create matrix for the manipulation
-				Matrix matrix = new Matrix();
-				// resize the bit map
-				matrix.postScale(2f, 2f);
-
-				// recreate the new Bitmap
-				Bitmap resizedBitmap = Bitmap.createScaledBitmap (captchaOrg,
-						captchaOrg.getWidth() * 3, captchaOrg.getHeight() * 3, true);
-			 
-				BitmapDrawable bmd = new BitmapDrawable(resizedBitmap);
-				
-				return bmd;
-			
-			} catch (Exception e) {
-				Common.showErrorToast("Error downloading captcha.", Toast.LENGTH_LONG, InboxActivity.this);
-			}
-			
-			return null;
-		}
-		
+    	
 		@Override
 		public void onPostExecute(Drawable captcha) {
 			if (captcha == null) {
@@ -1029,59 +968,6 @@ public final class InboxActivity extends ListActivity
     	
     	return true;
     }
-//
-//    private class CommentsListMenu implements MenuItem.OnMenuItemClickListener {
-//        private int mAction;
-//
-//        CommentsListMenu(int action) {
-//            mAction = action;
-//        }
-//
-//        public boolean onMenuItemClick(MenuItem item) {
-//        	switch (mAction) {
-//        	case Constants.DIALOG_OP:
-//        		mVoteTargetThingInfo = mMessagesAdapter.getItem(0);
-//        		showDialog(Constants.DIALOG_THING_CLICK);
-//        		break;
-//        	case Constants.DIALOG_REPLY:
-//        		// From the menu, only used for the OP, which is a thread.
-//            	mVoteTargetThingInfo = mMessagesAdapter.getItem(0);
-//                showDialog(mAction);
-//                break;
-//        	case Constants.DIALOG_LOGIN:
-//        		showDialog(mAction);
-//        		break;
-//        	case Constants.DIALOG_LOGOUT:
-//        		Common.doLogout(mSettings, mClient);
-//        		Toast.makeText(InboxActivity.this, "You have been logged out.", Toast.LENGTH_SHORT).show();
-//        		new DownloadMessagesTask().execute(Constants.DEFAULT_COMMENT_DOWNLOAD_LIMIT);
-//        		break;
-//        	case Constants.DIALOG_REFRESH:
-//        		new DownloadMessagesTask().execute(Constants.DEFAULT_COMMENT_DOWNLOAD_LIMIT);
-//        		break;
-//        	case Constants.DIALOG_OPEN_BROWSER:
-//        		String url = "http://www.reddit.com/message/inbox";
-//        		Common.launchBrowser(url, InboxActivity.this);
-//        		break;
-//        	case Constants.DIALOG_THEME:
-//        		if (mSettings.theme == R.style.Reddit_Light) {
-//        			mSettings.setTheme(R.style.Reddit_Dark);
-//        		} else {
-//        			mSettings.setTheme(R.style.Reddit_Light);
-//        		}
-//        		InboxActivity.this.setTheme(mSettings.theme);
-//        		InboxActivity.this.setContentView(R.layout.comments_list_content);
-//        		registerForContextMenu(getListView());
-//                InboxActivity.this.setListAdapter(mMessagesAdapter);
-//                Common.updateListDrawables(InboxActivity.this, mSettings.theme);
-//        		break;
-//        	default:
-//        		throw new IllegalArgumentException("Unexpected action value "+mAction);
-//        	}
-//        	
-//        	return true;
-//        }
-//    }
     
     @Override
     protected Dialog onCreateDialog(int id) {
@@ -1222,7 +1108,7 @@ public final class InboxActivity extends ListActivity
     		break;
     		
     	case Constants.DIALOG_COMPOSE:
-    		new CheckCaptchaRequiredTask(dialog).execute();
+    		new MyCaptchaCheckRequiredTask(dialog).execute();
     		break;
     		
 		default:
