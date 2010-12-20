@@ -93,7 +93,6 @@ public final class InboxActivity extends ListActivity
 	private static final String TAG = "InboxActivity";
 	
     private final ObjectMapper mObjectMapper = Common.getObjectMapper();
-    private final Markdown markdown = new Markdown();
     
     /** Custom list adapter that fits our threads data into the list. */
     private MessagesListAdapter mMessagesAdapter;
@@ -119,6 +118,10 @@ public final class InboxActivity extends ListActivity
     
     private String mAfter = null;
     private String mBefore = null;
+    private int mCount = 0;
+    private String mLastAfter = null;
+    private String mLastBefore = null;
+    private int mLastCount = 0;
     
     private volatile String mCaptchaIden = null;
 	private volatile String mCaptchaUrl = null;
@@ -155,10 +158,25 @@ public final class InboxActivity extends ListActivity
 		if (mSettings.isLoggedIn()) {
 			if (savedInstanceState != null) {
 	        	mReplyTargetName = savedInstanceState.getString(Constants.REPLY_TARGET_NAME_KEY);
-	        	mMessagesList = (ArrayList<ThingInfo>) getLastNonConfigurationInstance();
+	        	mAfter = savedInstanceState.getString(Constants.AFTER_KEY);
+		        mBefore = savedInstanceState.getString(Constants.BEFORE_KEY);
+		        mCount = savedInstanceState.getInt(Constants.THREAD_COUNT_KEY);
+		        mLastAfter = savedInstanceState.getString(Constants.LAST_AFTER_KEY);
+		        mLastBefore = savedInstanceState.getString(Constants.LAST_BEFORE_KEY);
+		        mLastCount = savedInstanceState.getInt(Constants.THREAD_LAST_COUNT_KEY);
+			    mVoteTargetThingInfo = savedInstanceState.getParcelable(Constants.VOTE_TARGET_THING_INFO_KEY);
+
+			    restoreLastNonConfigurationInstance();
 	        	if (mMessagesList == null) {
-	        		new DownloadMessagesTask().execute(Constants.DEFAULT_COMMENT_DOWNLOAD_LIMIT);
-	        	} else {
+	        		// Load previous view of threads
+			        if (mLastAfter != null) {
+			        	new DownloadMessagesTask(mLastAfter, null, mLastCount).execute(Constants.DEFAULT_COMMENT_DOWNLOAD_LIMIT);
+			        } else if (mLastBefore != null) {
+			        	new DownloadMessagesTask(null, mLastBefore, mLastCount).execute(Constants.DEFAULT_COMMENT_DOWNLOAD_LIMIT);
+			        } else {
+			        	new DownloadMessagesTask().execute(Constants.DEFAULT_COMMENT_DOWNLOAD_LIMIT);
+			        }
+		        } else {
 			    	// Orientation change. Use prior instance.
 	        		resetUI(new MessagesListAdapter(this, mMessagesList));
 	        	}
@@ -168,7 +186,9 @@ public final class InboxActivity extends ListActivity
 		} else {
 			showDialog(Constants.DIALOG_LOGIN);
 		}
+		setTitle(String.format(getResources().getString(R.string.inbox_title), mSettings.username));
     }
+    
     
     /**
      * Hack to explicitly set background color whenever changing ListView.
@@ -201,6 +221,7 @@ public final class InboxActivity extends ListActivity
     		setListAdapter(mMessagesAdapter);
     		Common.updateListDrawables(this, mSettings.theme);
     	}
+    	updateNextPreviousButtons();
     	if (mSettings.isLoggedIn() != previousLoggedIn) {
     		new DownloadMessagesTask().execute(Constants.DEFAULT_COMMENT_DOWNLOAD_LIMIT);
     	}
@@ -220,6 +241,11 @@ public final class InboxActivity extends ListActivity
     	return mMessagesList;
     }
     
+    @SuppressWarnings("unchecked")
+	private void restoreLastNonConfigurationInstance() {
+    	mMessagesList = (ArrayList<ThingInfo>) getLastNonConfigurationInstance();
+    }
+
     
     
     /**
@@ -408,6 +434,38 @@ public final class InboxActivity extends ListActivity
     	getWindow().setFeatureInt(Window.FEATURE_PROGRESS, 10000);
     }
 
+    private void updateNextPreviousButtons() {
+    	View nextPrevious = findViewById(R.id.next_previous_layout);
+    	View nextPreviousBorder = findViewById(R.id.next_previous_border_top);
+    	if (nextPrevious != null && nextPreviousBorder != null) {
+	    	if (Util.isLightTheme(mSettings.theme)) {
+	       		nextPrevious.setBackgroundResource(R.color.white);
+	       		nextPreviousBorder.setBackgroundResource(R.color.black);
+	    	} else {
+	       		nextPreviousBorder.setBackgroundResource(R.color.white);
+	    	}
+    	}
+		// update the "next 25" and "prev 25" buttons
+    	final Button nextButton = (Button) findViewById(R.id.next_button);
+    	final Button previousButton = (Button) findViewById(R.id.previous_button);
+    	if (nextButton != null) {
+	    	if (mAfter != null) {
+	    		nextButton.setVisibility(View.VISIBLE);
+	    		nextButton.setOnClickListener(downloadAfterOnClickListener);
+	    	} else {
+	    		nextButton.setVisibility(View.INVISIBLE);
+	    	}
+    	}
+    	if (previousButton != null) {
+	    	if (mBefore != null && mCount != Constants.DEFAULT_THREAD_DOWNLOAD_LIMIT) {
+	    		previousButton.setVisibility(View.VISIBLE);
+	    		previousButton.setOnClickListener(downloadBeforeOnClickListener);
+	    	} else {
+	    		previousButton.setVisibility(View.INVISIBLE);
+	    	}
+    	}
+    }
+
         
     
     /**
@@ -420,11 +478,62 @@ public final class InboxActivity extends ListActivity
     	private ArrayList<ThingInfo> _mThingInfos = new ArrayList<ThingInfo>();
     	private long _mContentLength;
     	
+    	private String mAfter;
+    	private String mBefore;
+    	private int mCount;
+    	private String mLastAfter = null;
+    	private String mLastBefore = null;
+    	private int mLastCount = 0;
+    	
+    	public DownloadMessagesTask() {
+    		this(null, null, Constants.DEFAULT_THREAD_DOWNLOAD_LIMIT);
+    	}
+    	
+    	public DownloadMessagesTask(String after, String before, int count) {
+    		mAfter = after;
+    		mBefore = before;
+    		mCount = count;
+    	}
+    	
+    	protected void saveState() {
+			InboxActivity.this.mLastAfter = mLastAfter;
+			InboxActivity.this.mLastBefore = mLastBefore;
+			InboxActivity.this.mLastCount = mLastCount;
+			InboxActivity.this.mAfter = mAfter;
+			InboxActivity.this.mBefore = mBefore;
+			InboxActivity.this.mCount = mCount;
+    	}
+    	
     	// XXX: maxComments is unused for now
     	public Void doInBackground(Integer... maxComments) {
     		HttpEntity entity = null;
-            try {
-            	HttpGet request = new HttpGet("http://api.reddit.com/message/inbox/");
+    		boolean isAfter = false;
+    		boolean isBefore = false;
+    		InputStream in = null;
+    		ProgressInputStream pin = null;
+            
+    		try {
+            	String url;
+            	StringBuilder sb = new StringBuilder("http://api.reddit.com/message/inbox/?");
+            	
+            	// "before" always comes back null unless you provide correct "count"
+        		if (mAfter != null) {
+        			// count: 25, 50, ...
+    				sb = sb.append("count=").append(mCount)
+    					.append("&after=").append(mAfter).append("&");
+    				isAfter = true;
+        		}
+        		else if (mBefore != null) {
+        			// count: nothing, 26, 51, ...
+        			sb = sb.append("count=").append(mCount + 1 - Constants.DEFAULT_THREAD_DOWNLOAD_LIMIT)
+        				.append("&before=").append(mBefore).append("&");
+        			isBefore = true;
+        		}
+        		
+        		url = sb.toString();
+        		if (Constants.LOGGING) Log.d(TAG, "url=" + url);
+        		
+        		HttpGet request = new HttpGet(url);
             	HttpResponse response = mClient.execute(request);
             	
             	// Read the header to get Content-Length since entity.getContentLength() returns -1
@@ -433,25 +542,44 @@ public final class InboxActivity extends ListActivity
             	if (Constants.LOGGING) Log.d(TAG, "Content length: "+_mContentLength);
 
             	entity = response.getEntity();
-            	InputStream in = entity.getContent();
+            	in = entity.getContent();
             	
             	// setup a special InputStream to report progress
-            	ProgressInputStream pin = new ProgressInputStream(in, _mContentLength);
+            	pin = new ProgressInputStream(in, _mContentLength);
             	pin.addPropertyChangeListener(this);
             	
                 parseInboxJSON(pin);
-                
-                pin.close();
-                in.close();
                 
                 // XXX: HACK: http://code.reddit.com/ticket/709
                 // Marking messages as read is currently broken (even with mark=
                 // For now, just send an extra request to the regular non-JSON i
                 mClient.execute(new HttpGet("http://www.reddit.com/message/inbox"));
 
+            	mLastCount = mCount;
+            	if (isAfter)
+            		mCount += Constants.DEFAULT_THREAD_DOWNLOAD_LIMIT;
+            	else if (isBefore)
+            		mCount -= Constants.DEFAULT_THREAD_DOWNLOAD_LIMIT;
+            	
+                saveState();
+
             } catch (Exception e) {
             	if (Constants.LOGGING) Log.e(TAG, "failed", e);
         	} finally {
+        		if (pin != null) {
+        			try {
+						pin.close();
+					} catch (IOException e2) {
+						if (Constants.LOGGING) Log.e(TAG, "pin.close()", e2);
+					}
+        		}
+        		if (in != null) {
+        			try {
+						in.close();
+					} catch (IOException e2) {
+						if (Constants.LOGGING) Log.e(TAG, "in.close()", e2);
+					}
+        		}
         		if (entity != null) {
         			try {
         				entity.consumeContent();
@@ -520,6 +648,7 @@ public final class InboxActivity extends ListActivity
     				mMessagesAdapter.add(mi);
     		}
 			disableLoadingScreen();
+			updateNextPreviousButtons();
 			Common.cancelMailNotification(InboxActivity.this.getApplicationContext());
     	}
 		
@@ -1111,10 +1240,28 @@ public final class InboxActivity extends ListActivity
     	}
     }
     
+	private final OnClickListener downloadAfterOnClickListener = new OnClickListener() {
+		public void onClick(View v) {
+			new DownloadMessagesTask(mAfter, null, mCount).execute();
+		}
+	};
+	private final OnClickListener downloadBeforeOnClickListener = new OnClickListener() {
+		public void onClick(View v) {
+			new DownloadMessagesTask(null, mBefore, mCount).execute();
+		}
+	};
+    
     @Override
     protected void onSaveInstanceState(Bundle state) {
     	super.onSaveInstanceState(state);
     	state.putString(Constants.REPLY_TARGET_NAME_KEY, mReplyTargetName);
+    	state.putString(Constants.AFTER_KEY, mAfter);
+    	state.putString(Constants.BEFORE_KEY, mBefore);
+    	state.putInt(Constants.THREAD_COUNT_KEY, mCount);
+    	state.putString(Constants.LAST_AFTER_KEY, mLastAfter);
+    	state.putString(Constants.LAST_BEFORE_KEY, mLastBefore);
+    	state.putInt(Constants.THREAD_LAST_COUNT_KEY, mLastCount);
+    	state.putParcelable(Constants.VOTE_TARGET_THING_INFO_KEY, mVoteTargetThingInfo);
     }
     
     /**
