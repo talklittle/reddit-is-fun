@@ -296,7 +296,6 @@ public class SubmitLinkActivity extends TabActivity {
         	
         	String status = "";
         	if (!mSettings.isLoggedIn()) {
-        		Common.showErrorToast("You must be logged in to reply.", Toast.LENGTH_LONG, SubmitLinkActivity.this);
         		_mUserError = "Not logged in";
         		return null;
         	}
@@ -534,7 +533,7 @@ public class SubmitLinkActivity extends TabActivity {
 				return bmd;
 			
 			} catch (Exception e) {
-				Common.showErrorToast("Error downloading captcha.", Toast.LENGTH_LONG, SubmitLinkActivity.this);
+				if (Constants.LOGGING) Log.e(TAG, "error downloading CAPTCHA", e);
 			}
 			
 			return null;
