@@ -987,9 +987,13 @@ public final class ThreadsListActivity extends ListActivity {
 	        menu.findItem(R.id.login_logout_menu_id).setTitle(
 	        		String.format(getResources().getString(R.string.logout), mSettings.username));
 	        menu.findItem(R.id.inbox_menu_id).setVisible(true);
+	        menu.findItem(R.id.user_profile_menu_id).setVisible(true);
+	        menu.findItem(R.id.user_profile_menu_id).setTitle(
+	        		String.format(getResources().getString(R.string.user_profile), mSettings.username));
     	} else {
             menu.findItem(R.id.login_logout_menu_id).setTitle(getResources().getString(R.string.login));
             menu.findItem(R.id.inbox_menu_id).setVisible(false);
+            menu.findItem(R.id.user_profile_menu_id).setVisible(false);
     	}
     	
     	// Theme: Light/Dark
@@ -1068,10 +1072,10 @@ public final class ThreadsListActivity extends ListActivity {
         	Intent inboxIntent = new Intent(getApplicationContext(), InboxActivity.class);
         	startActivity(inboxIntent);
         	break;
-//        case R.id.user_profile_menu_id:
-//        	Intent profileIntent = new Intent(getApplicationContext(), UserActivity.class);
-//        	startActivity(profileIntent);
-//        	break;
+        case R.id.user_profile_menu_id:
+        	Intent profileIntent = new Intent(getApplicationContext(), ProfileActivity.class);
+        	startActivity(profileIntent);
+        	break;
     	case R.id.preferences_menu_id:
             Intent prefsIntent = new Intent(getApplicationContext(), RedditPreferencesPage.class);
             startActivity(prefsIntent);

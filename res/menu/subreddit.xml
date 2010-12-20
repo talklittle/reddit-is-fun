@@ -40,10 +40,8 @@
         	android:title="@string/open_browser" />
         <item android:id="@+id/inbox_menu_id"
             android:title="@string/inbox" />
-        <!-- 
         <item android:id="@+id/user_profile_menu_id"
             android:title="@string/user_profile" />
-        -->
         <item android:id="@+id/preferences_menu_id"
             android:title="@string/menu_preferences"
             android:alphabeticShortcut="p" />

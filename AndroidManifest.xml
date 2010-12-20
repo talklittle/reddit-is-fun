@@ -55,6 +55,7 @@
            	</intent-filter>
 	    </activity>
 	    <activity android:name=".InboxActivity"></activity>
+	    <activity android:name=".ProfileActivity"></activity>
 	    <activity android:name=".RedditPreferencesPage"></activity>
 	    <activity android:name=".BrowserActivity" android:configChanges="keyboardHidden|orientation"></activity>
 	    <service android:name=".EnvelopeService" android:label="@string/pref_mail_notification_service"></service>

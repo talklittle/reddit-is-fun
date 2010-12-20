@@ -1683,10 +1683,10 @@ public class CommentsListActivity extends ListActivity
         	Intent inboxIntent = new Intent(getApplicationContext(), InboxActivity.class);
         	startActivity(inboxIntent);
         	break;
-//        case R.id.user_profile_menu_id:
-//        	Intent profileIntent = new Intent(getApplicationContext(), UserActivity.class);
-//        	startActivity(profileIntent);
-//        	break;
+        case R.id.user_profile_menu_id:
+        	Intent profileIntent = new Intent(getApplicationContext(), ProfileActivity.class);
+        	startActivity(profileIntent);
+        	break;
     	case R.id.preferences_menu_id:
             Intent prefsIntent = new Intent(getApplicationContext(), RedditPreferencesPage.class);
             startActivity(prefsIntent);
