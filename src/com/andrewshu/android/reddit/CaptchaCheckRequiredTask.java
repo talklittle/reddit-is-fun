@@ -75,6 +75,11 @@ public abstract class CaptchaCheckRequiredTask extends AsyncTask<Void, Void, Boo
     			}
     		}
 		}
+    	// mCaptchaIden and mCaptchaUrl are null if not required
+    	// so on error, set them to some non-null dummy value
+    	_mCaptchaIden = "";
+    	_mCaptchaUrl = "";
+    	saveState();
 		return null;
 	}
 	
