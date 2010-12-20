@@ -165,7 +165,7 @@ public class Markdown {
 	        // protect emphasis (* and _) within urls
 //	        url = url.replaceAll("\\*", CHAR_PROTECTOR.encode("*"));
 //	        url = url.replaceAll("_", CHAR_PROTECTOR.encode("_"));
-	        urls.add(new MarkdownURL(start + anchorStart, url));
+	        urls.add(new MarkdownURL(start + anchorStart, Util.absolutePathToURL(url)));
 //	        StringBuffer result = new StringBuffer();
 	        // TODO: Show title (if any) alongside url in popup menu
 //	        if (title != null) {
@@ -202,7 +202,7 @@ public class Markdown {
         // Colorize URLs
         AutomatonMatcher am = autoLinkUrlAutomaton.newMatcher(txt);
         while (am.find()) {
-        	urls.add(new MarkdownURL(am.start(), am.group()));
+        	urls.add(new MarkdownURL(am.start(), Util.absolutePathToURL(am.group())));
         }
         // Don't autolink emails for now. Neither does reddit.com
 //        m = autoLinkEmail.matcher(ssb);
