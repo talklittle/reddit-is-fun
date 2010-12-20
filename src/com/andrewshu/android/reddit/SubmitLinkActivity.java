@@ -427,11 +427,11 @@ public class SubmitLinkActivity extends TabActivity {
     			Common.showErrorToast(_mUserError, Toast.LENGTH_LONG, SubmitLinkActivity.this);
     		} else {
         		// Success. Return the subreddit and thread id
-    			Intent i = new Intent();
+    			Intent i = new Intent(getApplicationContext(), CommentsListActivity.class);
     			i.setData(Util.createThreadUri(newlyCreatedThread));
     			i.putExtra(Constants.EXTRA_SUBREDDIT, newlyCreatedThread.getSubreddit());
     			i.putExtra(Constants.EXTRA_TITLE, newlyCreatedThread.getTitle());
-    			setResult(Activity.RESULT_OK, i);
+    			startActivity(i);
     			finish();
     		}
     	}

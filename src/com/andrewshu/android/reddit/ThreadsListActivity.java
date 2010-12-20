@@ -265,28 +265,6 @@ public final class ThreadsListActivity extends ListActivity {
     			}
     		}
     		break;
-    	case Constants.ACTIVITY_SUBMIT_LINK:
-    		if (resultCode == Activity.RESULT_OK) {
-    	    	// Returns the new thread's Uri as the Intent.getData()
-    			// Extras: subreddit, thread title
-    			
-    			// Set the new subreddit
-    			Bundle extras = intent.getExtras();
-    			if (extras == null) {
-    				if (Constants.LOGGING) Log.e(TAG, "onActivityResult: ACTIVITY_SUBMIT_LINK: extras unexpectedly null");
-    			} else {
-    				mSubreddit = extras.getString(Constants.EXTRA_SUBREDDIT);
-    			}
-				// Start up comments list with the new thread
-	    		CacheInfo.invalidateCachedThread(getApplicationContext());
-	    		Intent i = new Intent(getApplicationContext(), CommentsListActivity.class);
-				i.putExtras(intent.getExtras());
-				i.putExtra(Constants.EXTRA_NUM_COMMENTS, 0);
-				startActivity(i);
-    		} else if (resultCode == Constants.RESULT_LOGIN_REQUIRED) {
-    			Common.showErrorToast("You must be logged in to make a submission.", Toast.LENGTH_LONG, this);
-    		}
-    		break;
     	default:
     		break;
     	}
@@ -1057,7 +1035,7 @@ public final class ThreadsListActivity extends ListActivity {
     	case R.id.submit_link_menu_id:
     		Intent submitLinkIntent = new Intent(getApplicationContext(), SubmitLinkActivity.class);
     		submitLinkIntent.setData(Util.createSubmitUri(mSubreddit));
-    		startActivityForResult(submitLinkIntent, Constants.ACTIVITY_SUBMIT_LINK);
+    		startActivity(submitLinkIntent);
     		break;
     	case R.id.sort_by_menu_id:
     		showDialog(Constants.DIALOG_SORT_BY);
