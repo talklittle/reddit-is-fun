@@ -60,6 +60,7 @@ import org.apache.http.protocol.HttpContext;
 import org.codehaus.jackson.JsonFactory;
 import org.codehaus.jackson.JsonParser;
 import org.codehaus.jackson.JsonToken;
+import org.codehaus.jackson.map.ObjectMapper;
 
 import android.app.ListActivity;
 import android.app.Notification;
@@ -91,6 +92,7 @@ public class Common {
       "(?:/comments/([^/.]+)/[^/.]+" +
           "(?:/([^/.]+))?" +
       ")?/?");
+	private static final ObjectMapper mObjectMapper = new ObjectMapper();
 
 	static void showErrorToast(String error, int duration, Context context) {
 		LayoutInflater inflater = (LayoutInflater) context.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
@@ -603,6 +605,10 @@ public class Common {
 			context.startActivity(browser);
     	}
 	}
+    
+    static ObjectMapper getObjectMapper() {
+    	return mObjectMapper;
+    }
     
 	/**
 	 * http://hc.apache.org/httpcomponents-client/examples.html

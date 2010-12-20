@@ -104,7 +104,7 @@ public class CommentsListActivity extends ListActivity
     private final Pattern COMMENT_PATH_PATTERN = Pattern.compile(Constants.COMMENT_PATH_PATTERN_STRING);
     private final Pattern COMMENT_CONTEXT_PATTERN = Pattern.compile("context=(\\d+)");
 
-    private final ObjectMapper om = new ObjectMapper();
+    private final ObjectMapper mObjectMapper = Common.getObjectMapper();
     private final BitmapManager drawableManager = new BitmapManager();
     private final CommentManager commentManager = new CommentManager();
     private final Markdown markdown = new Markdown();
@@ -986,7 +986,7 @@ public class CommentsListActivity extends ListActivity
 			
 			String genericListingError = "Not a comments listing";
 			try {
-				Listing[] listings = om.readValue(in, Listing[].class);
+				Listing[] listings = mObjectMapper.readValue(in, Listing[].class);
 
 				// listings[0] is a thread Listing for the OP.
 				// process same as a thread listing more or less

@@ -103,7 +103,7 @@ public final class InboxActivity extends ListActivity
     // Group 2: Captcha image absolute path
     private final Pattern CAPTCHA_IMAGE_PATTERN = Pattern.compile("<img class=\"capimage\"( alt=\".*?\")? src=\"(/captcha/[^\"]+?)\"");
 
-    private final ObjectMapper om = new ObjectMapper();
+    private final ObjectMapper mObjectMapper = Common.getObjectMapper();
     private final Markdown markdown = new Markdown();
     
     /** Custom list adapter that fits our threads data into the list. */
@@ -479,7 +479,7 @@ public final class InboxActivity extends ListActivity
 		
     		String genericListingError = "Not an inbox listing";
     		try {
-    			Listing listing = om.readValue(in, Listing.class);
+    			Listing listing = mObjectMapper.readValue(in, Listing.class);
     			
     			if (!Constants.JSON_LISTING.equals(listing.getKind()))
     				throw new IllegalStateException(genericListingError);

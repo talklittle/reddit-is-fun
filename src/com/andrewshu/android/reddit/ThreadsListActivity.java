@@ -87,7 +87,7 @@ public final class ThreadsListActivity extends ListActivity {
 	private static final String TAG = "ThreadsListActivity";
 	private final Pattern REDDIT_PATH_PATTERN = Pattern.compile(Constants.REDDIT_PATH_PATTERN_STRING);
 	
-	private final ObjectMapper om = new ObjectMapper();
+	private final ObjectMapper mObjectMapper = Common.getObjectMapper();
 	// BitmapManager helps with filling in thumbnails
 	private BitmapManager drawableManager = new BitmapManager();
 
@@ -605,7 +605,7 @@ public final class ThreadsListActivity extends ListActivity {
     	public MyDownloadThreadsTask(Context context, String subreddit) {
 			super(context,
 					ThreadsListActivity.this.mClient,
-					ThreadsListActivity.this.om,
+					ThreadsListActivity.this.mObjectMapper,
 					ThreadsListActivity.this.mSortByUrl,
 					ThreadsListActivity.this.mSortByUrlExtra,
 					subreddit);
@@ -615,7 +615,7 @@ public final class ThreadsListActivity extends ListActivity {
 				String after, String before, int count) {
 			super(context,
 					ThreadsListActivity.this.mClient,
-					ThreadsListActivity.this.om,
+					ThreadsListActivity.this.mObjectMapper,
 					ThreadsListActivity.this.mSortByUrl,
 					ThreadsListActivity.this.mSortByUrlExtra,
 					subreddit, after, before, count);
