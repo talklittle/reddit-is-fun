@@ -162,7 +162,7 @@
 		
 			<!-- A bottommost row used for OP posts in commentslist -->		
 		
-			<TextView android:id="@+id/submissionTime"
+			<TextView android:id="@+id/submissionTime_submitter"
 		        android:layout_width="wrap_content"
 		        android:layout_height="wrap_content"
 				android:layout_below="@id/numCommentsSubreddit"
@@ -175,22 +175,6 @@
 		        android:ellipsize="marquee"
 		        android:textAppearance="?android:attr/textAppearanceSmall"
 		    />
-		    
-		    <TextView android:id="@+id/submitter"
-		    	android:layout_width="wrap_content"
-			    android:layout_height="wrap_content"
-			   	android:layout_toRightOf="@id/submissionTime"
-			   	android:layout_toLeftOf="@id/thumbnail_view"
-		        android:layout_alignBaseline="@id/submissionTime"
-			    android:layout_marginRight="4dip"
-				android:text="by talklittle"
-				android:visibility="gone"
-		
-				android:singleLine="true"
-		        android:ellipsize="marquee"
-		        android:textAppearance="?android:attr/textAppearanceSmall"
-		    />
-		    
 		</RelativeLayout>
 	</LinearLayout>
 	

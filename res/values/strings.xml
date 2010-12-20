@@ -47,6 +47,7 @@
 	
 	<string name="thread_link_button">link</string>
 	<string name="thread_comments_button">comments</string>
+	<string name="thread_time_submitter">%1$s by %2$s</string>
 	
 	<string name="comment_links_button">links</string>
 	<string name="comment_reply_button">reply</string>

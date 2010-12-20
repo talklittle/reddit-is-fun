@@ -404,7 +404,13 @@ public class CommentsListActivity extends ListActivity
 	                // In addition to stuff from ThreadsListActivity,
 	            	// we want to show selftext in CommentsListActivity.
 	                
+	            	TextView submissionStuffView = (TextView) view.findViewById(R.id.submissionTime_submitter);
 	                TextView selftextView = (TextView) view.findViewById(R.id.selftext);
+	                
+	                submissionStuffView.setVisibility(View.VISIBLE);
+	                submissionStuffView.setText(
+	                		String.format(getResources().getString(R.string.thread_time_submitter),
+	                				Util.getTimeAgo(item.getCreated_utc()), item.getAuthor()));
 	                
 	            	if (mOpThingInfo.getSelftext() != null
 	            			&& !Constants.EMPTY_STRING.equals(mOpThingInfo.getSelftext())) {
