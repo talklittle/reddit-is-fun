@@ -871,7 +871,7 @@ public final class InboxActivity extends ListActivity
     	Dialog _mDialog;
     	
 		public MyCaptchaCheckRequiredTask(Dialog dialog) {
-			super(mClient);
+			super("http://www.reddit.com/message/compose/", mClient);
 			_mDialog = dialog;
 		}
 		

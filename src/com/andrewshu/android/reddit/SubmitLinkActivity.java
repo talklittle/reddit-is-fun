@@ -84,6 +84,8 @@ public class SubmitLinkActivity extends TabActivity {
 	
 	private RedditSettings mSettings = new RedditSettings();
 	private final DefaultHttpClient mClient = Common.getGzipHttpClient();
+
+	private String mSubmitUrl;
 	
 	private volatile String mCaptchaIden = null;
 	private volatile String mCaptchaUrl = null;
@@ -165,6 +167,7 @@ public class SubmitLinkActivity extends TabActivity {
 	        	submitLinkUrl.setText(url);
 	        	submitLinkReddit.setText("reddit.com");
         		submitTextReddit.setText("reddit.com");
+        		mSubmitUrl = "http://www.reddit.com/submit";
 	        }
         } else {
         	String submitPath = null;
@@ -173,6 +176,9 @@ public class SubmitLinkActivity extends TabActivity {
         		submitPath = data.getPath();
         	if (submitPath == null)
     			submitPath = "/submit";
+        	
+        	// the URL to do HTTP POST to
+        	mSubmitUrl = Util.absolutePathToURL(submitPath);
         	
         	// Put the subreddit in the text field
         	final EditText submitLinkReddit = (EditText) findViewById(R.id.submit_link_reddit);
@@ -439,7 +445,7 @@ public class SubmitLinkActivity extends TabActivity {
 	
 	private class MyCaptchaCheckRequiredTask extends CaptchaCheckRequiredTask {
 		public MyCaptchaCheckRequiredTask() {
-			super(mClient);
+			super(mSubmitUrl, mClient);
 		}
 		
 		@Override

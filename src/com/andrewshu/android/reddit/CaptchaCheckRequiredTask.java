@@ -6,6 +6,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import org.apache.http.HttpEntity;
+import org.apache.http.HttpException;
 import org.apache.http.HttpResponse;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.impl.client.DefaultHttpClient;
@@ -28,9 +29,11 @@ public abstract class CaptchaCheckRequiredTask extends AsyncTask<Void, Void, Boo
     String _mCaptchaIden;
     String _mCaptchaUrl;
     
+    private String _mCheckUrl;
     private DefaultHttpClient _mClient;
     
-	public CaptchaCheckRequiredTask(DefaultHttpClient client) {
+	public CaptchaCheckRequiredTask(String checkUrl, DefaultHttpClient client) {
+		_mCheckUrl = checkUrl;
 		_mClient = client;
 	}
 	
@@ -38,9 +41,12 @@ public abstract class CaptchaCheckRequiredTask extends AsyncTask<Void, Void, Boo
 	public Boolean doInBackground(Void... voidz) {
 		HttpEntity entity = null;
 		try {
-			HttpGet request = new HttpGet("http://www.reddit.com/message/compose/");
+			HttpGet request = new HttpGet(_mCheckUrl);
 			HttpResponse response = _mClient.execute(request);
-			entity = response.getEntity(); 
+			if (!Util.isHttpStatusOK(response)) {
+				throw new HttpException("bad HTTP response: "+response);
+			}
+			entity = response.getEntity();
     		BufferedReader in = new BufferedReader(new InputStreamReader(entity.getContent()));
         	String line = in.readLine();
         	in.close();
@@ -59,7 +65,7 @@ public abstract class CaptchaCheckRequiredTask extends AsyncTask<Void, Void, Boo
         		return false;
         	}
 		} catch (Exception e) {
-			if (Constants.LOGGING) Log.e(TAG, "Error accessing http://www.reddit.com/message/compose/ to check for CAPTCHA");
+			if (Constants.LOGGING) Log.e(TAG, "Error accessing "+_mCheckUrl+" to check for CAPTCHA", e);
     	} finally {
     		if (entity != null) {
     			try {

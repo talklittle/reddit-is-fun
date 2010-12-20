@@ -22,6 +22,8 @@ package com.andrewshu.android.reddit;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
 
+import org.apache.http.HttpResponse;
+
 import android.app.Activity;
 import android.net.Uri;
 import android.text.style.URLSpan;
@@ -156,6 +158,13 @@ public class Util {
 		if (path.startsWith("/"))
 			return "http://www.reddit.com" + path;
 		return path;
+	}
+	
+	public static boolean isHttpStatusOK(HttpResponse response) {
+		if (response == null || response.getStatusLine() == null) {
+			return false;
+		}
+		return response.getStatusLine().getStatusCode() == 200;
 	}
 	
 	// ===============
