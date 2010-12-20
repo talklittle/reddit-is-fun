@@ -100,6 +100,7 @@ public class Constants {
     static final int DIALOG_COMPOSE = 31;
     static final int DIALOG_REPORT = 33;
     static final int DIALOG_THREAD_CLICK = 34;
+    static final int DIALOG_VIEW_PROFILE = 35;
 
     // progress dialogs
     static final int DIALOG_LOGGING_IN = 1000;

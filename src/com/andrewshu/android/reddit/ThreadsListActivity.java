@@ -908,6 +908,9 @@ public final class ThreadsListActivity extends ListActivity {
     		}
     		menu.add(0, Constants.HIDE_CONTEXT_ITEM, 0, "Hide");
     	}
+    	
+		menu.add(0, Constants.DIALOG_VIEW_PROFILE, Menu.NONE,
+				String.format(getResources().getString(R.string.user_profile), _item.getAuthor()));
     }
     
     @Override
@@ -953,6 +956,12 @@ public final class ThreadsListActivity extends ListActivity {
 		case Constants.UNHIDE_CONTEXT_ITEM:
 			new MyHideTask(false, _item, mSettings, getApplicationContext()).execute();
 			
+    	case Constants.DIALOG_VIEW_PROFILE:
+    		Intent i = new Intent(this, ProfileActivity.class);
+    		i.setData(Util.createProfileUri(_item.getAuthor()));
+    		startActivity(i);
+    		return true;
+    		
 		default:
 			return super.onContextItemSelected(item);
 		}

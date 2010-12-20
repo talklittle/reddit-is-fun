@@ -1711,6 +1711,8 @@ public class CommentsListActivity extends ListActivity
     	AdapterContextMenuInfo info = (AdapterContextMenuInfo) menuInfo;
     	int rowId = (int) info.id;
     	
+    	ThingInfo item = mCommentsAdapter.getItem(rowId);
+    	
     	if (rowId == 0) {
     		menu.add(0, Constants.SHARE_CONTEXT_ITEM, Menu.NONE, "Share");
 
@@ -1724,6 +1726,10 @@ public class CommentsListActivity extends ListActivity
     		} else {
     			menu.add(0, Constants.HIDE_CONTEXT_ITEM, Menu.NONE, "Hide");
     		}
+    		
+    		menu.add(0, Constants.DIALOG_VIEW_PROFILE, Menu.NONE,
+    				String.format(getResources().getString(R.string.user_profile), item.getAuthor()));
+    		
     	} else if (mMorePositions.contains(rowId)) {
     		menu.add(0, Constants.DIALOG_GOTO_PARENT, Menu.NONE, "Go to parent");
     	} else if (mHiddenCommentHeads.contains(rowId)) {
@@ -1731,7 +1737,7 @@ public class CommentsListActivity extends ListActivity
     		menu.add(0, Constants.DIALOG_GOTO_PARENT, Menu.NONE, "Go to parent");
     	} else {
     		synchronized (COMMENT_ADAPTER_LOCK) {
-	    		if (mSettings.username != null && mSettings.username.equalsIgnoreCase(mCommentsAdapter.getItem(rowId).getAuthor())) {
+	    		if (mSettings.username != null && mSettings.username.equalsIgnoreCase(item.getAuthor())) {
 	    			menu.add(0, Constants.DIALOG_EDIT, Menu.NONE, "Edit");
 	    			menu.add(0, Constants.DIALOG_DELETE, Menu.NONE, "Delete");
 	    		}
@@ -1740,6 +1746,8 @@ public class CommentsListActivity extends ListActivity
 //    		if (mSettings.isLoggedIn())
 //    			menu.add(0, Constants.DIALOG_REPORT, Menu.NONE, "Report comment");
     		menu.add(0, Constants.DIALOG_GOTO_PARENT, Menu.NONE, "Go to parent");
+    		menu.add(0, Constants.DIALOG_VIEW_PROFILE, Menu.NONE,
+    				String.format(getResources().getString(R.string.user_profile), item.getAuthor()));
     	}
     }
     
@@ -1797,6 +1805,12 @@ public class CommentsListActivity extends ListActivity
 	    				break;
 	    		getListView().setSelectionFromTop(parentRowId, 10);
     		}
+    		return true;
+    		
+    	case Constants.DIALOG_VIEW_PROFILE:
+    		Intent i = new Intent(this, ProfileActivity.class);
+    		i.setData(Util.createProfileUri(mCommentsAdapter.getItem(rowId).getAuthor()));
+    		startActivity(i);
     		return true;
     		
     	case Constants.DIALOG_EDIT:

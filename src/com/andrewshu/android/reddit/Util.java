@@ -341,6 +341,12 @@ public class Util {
 			.toString());
 	}
 	
+	static Uri createProfileUri(String username) {
+		return Uri.parse(new StringBuilder("http://www.reddit.com/user/")
+			.append(username)
+			.toString());
+	}
+	
 	static Uri createSubmitUri(String subreddit) {
 		if (Constants.FRONTPAGE_STRING.equals(subreddit))
 			return Uri.parse("http://www.reddit.com/submit");
