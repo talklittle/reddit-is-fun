@@ -1567,9 +1567,13 @@ public class CommentsListActivity extends ListActivity
 	        menu.findItem(R.id.login_logout_menu_id).setTitle(
 	        		String.format(getResources().getString(R.string.logout), mSettings.username));
 	        menu.findItem(R.id.inbox_menu_id).setVisible(true);
+	        menu.findItem(R.id.user_profile_menu_id).setVisible(true);
+	        menu.findItem(R.id.user_profile_menu_id).setTitle(
+	        		String.format(getResources().getString(R.string.user_profile), mSettings.username));
     	} else {
             menu.findItem(R.id.login_logout_menu_id).setTitle(getResources().getString(R.string.login));
             menu.findItem(R.id.inbox_menu_id).setVisible(false);
+	        menu.findItem(R.id.user_profile_menu_id).setVisible(false);
     	}
     	
     	// Edit and delete
