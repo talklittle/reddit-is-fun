@@ -782,8 +782,8 @@ public final class ThreadsListActivity extends ListActivity {
     	
     	@Override
     	public void onPreExecute() {
-    		if (!mSettings.isLoggedIn()) {
-        		Common.showErrorToast("You must be logged in to vote.", Toast.LENGTH_LONG, ThreadsListActivity.this);
+    		if (!_mSettings.isLoggedIn()) {
+        		Common.showErrorToast("You must be logged in to vote.", Toast.LENGTH_LONG, _mContext);
         		cancel(true);
         		return;
         	}
@@ -837,14 +837,14 @@ public final class ThreadsListActivity extends ListActivity {
     	@Override
     	public void onPostExecute(Boolean success) {
     		if (success) {
-    			CacheInfo.invalidateCachedSubreddit(getApplicationContext());
+    			CacheInfo.invalidateCachedSubreddit(_mContext);
     		} else {
     			// Vote failed. Undo the score.
             	_mTargetThingInfo.setLikes(_mPreviousLikes);
         		_mTargetThingInfo.setScore(_mPreviousScore);
         		mThreadsAdapter.notifyDataSetChanged();
         		
-    			Common.showErrorToast(_mUserError, Toast.LENGTH_LONG, ThreadsListActivity.this);
+    			Common.showErrorToast(_mUserError, Toast.LENGTH_LONG, _mContext);
     		}
     	}
     }
@@ -1335,6 +1335,7 @@ public final class ThreadsListActivity extends ListActivity {
 			final ThingInfo info = thingInfo;
 			return new CompoundButton.OnCheckedChangeListener() {
 		    	public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
+		    		dismissDialog(Constants.DIALOG_THREAD_CLICK);
 			    	if (isChecked) {
 						new MyVoteTask(info, 1, info.getSubreddit()).execute();
 					} else {

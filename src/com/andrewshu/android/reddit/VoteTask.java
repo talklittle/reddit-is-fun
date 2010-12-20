@@ -17,15 +17,15 @@ import android.os.AsyncTask;
 import android.util.Log;
 
 public class VoteTask extends AsyncTask<Void, Void, Boolean> {
-	private static final String TAG = "VoteWorker";
+	private static final String TAG = "VoteTask";
 	
 	protected String _mThingFullname, _mSubreddit;
 	protected int _mDirection;
 	protected String _mUserError = "Error voting.";
 	
-	private RedditSettings _mSettings;
-	private DefaultHttpClient _mClient;
-	private Context _mContext;
+	protected RedditSettings _mSettings;
+	protected DefaultHttpClient _mClient;
+	protected Context _mContext;
 	
 	public VoteTask(String thingFullname, int direction, String subreddit,
 			Context context, RedditSettings settings, DefaultHttpClient client) {
