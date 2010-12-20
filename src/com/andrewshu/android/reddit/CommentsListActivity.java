@@ -53,7 +53,6 @@ import android.app.ProgressDialog;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
-import android.content.res.Resources;
 import android.graphics.drawable.Drawable;
 import android.net.Uri;
 import android.os.AsyncTask;
@@ -61,10 +60,8 @@ import android.os.Bundle;
 import android.telephony.PhoneNumberUtils;
 import android.text.Html;
 import android.text.SpannableString;
-import android.text.SpannableStringBuilder;
 import android.text.Spanned;
 import android.text.style.ForegroundColorSpan;
-import android.text.style.TextAppearanceSpan;
 import android.util.Log;
 import android.view.ContextMenu;
 import android.view.LayoutInflater;
@@ -88,6 +85,8 @@ import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.Toast;
 import android.widget.AdapterView.AdapterContextMenuInfo;
+
+import com.andrewshu.android.reddit.ThreadsListActivity.ThumbnailOnClickListenerFactory;
 
 /**
  * Main Activity class representing a Subreddit, i.e., a ThreadsList.
@@ -387,7 +386,6 @@ public class CommentsListActivity extends ListActivity
         @Override
         public View getView(int position, View convertView, ViewGroup parent) {
             View view;
-            Resources res = getResources();
             
             ThingInfo item = this.getItem(position);
             
@@ -400,94 +398,13 @@ public class CommentsListActivity extends ListActivity
 	            		view = convertView;
 	            	}
 	            	
-	            	// --- Copied from ThreadsListAdapter ---
-	
-	                // Set the values of the Views for the CommentsListItem
+	            	ThreadsListActivity.fillThreadsListItemView(view, item, CommentsListActivity.this,
+	                		mSettings, drawableManager, false, thumbnailOnClickListenerFactory);
 	                
-	                TextView titleView = (TextView) view.findViewById(R.id.title);
-	                TextView votesView = (TextView) view.findViewById(R.id.votes);
-	                TextView numCommentsSubredditView = (TextView) view.findViewById(R.id.numCommentsSubreddit);
-	                TextView nsfwView = (TextView) view.findViewById(R.id.nsfw);
-	                TextView submissionTimeView = (TextView) view.findViewById(R.id.submissionTime);
-	                TextView submitterView = (TextView) view.findViewById(R.id.submitter);
-	                ImageView voteUpView = (ImageView) view.findViewById(R.id.vote_up_image);
-	                ImageView voteDownView = (ImageView) view.findViewById(R.id.vote_down_image);
+	                // In addition to stuff from ThreadsListActivity,
+	            	// we want to show selftext in CommentsListActivity.
+	                
 	                TextView selftextView = (TextView) view.findViewById(R.id.selftext);
-	                ImageView thumbnailView = (ImageView) view.findViewById(R.id.thumbnail);
-	                View dividerView = view.findViewById(R.id.divider);
-	                ProgressBar indeterminateProgressBar = (ProgressBar) view.findViewById(R.id.indeterminate_progress);
-	                
-	                submitterView.setVisibility(View.VISIBLE);
-	                submissionTimeView.setVisibility(View.VISIBLE);
-	                
-	                // Set the title and domain using a SpannableStringBuilder
-	                SpannableStringBuilder builder = new SpannableStringBuilder();
-	                String title = mOpThingInfo.getTitle();
-	                SpannableString titleSS = new SpannableString(title);
-	                int titleLen = title.length();
-	                titleSS.setSpan(new TextAppearanceSpan(getApplicationContext(),
-	                		Util.getTextAppearanceResource(mSettings.theme, android.R.style.TextAppearance_Large)),
-	                		0, titleLen, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
-	                
-	                SpannableString domainSS = new SpannableString("("+mOpThingInfo.getDomain()+")");
-	                int domainLen = mOpThingInfo.getDomain().length();
-	                domainSS.setSpan(new TextAppearanceSpan(getApplicationContext(),
-	                		Util.getTextAppearanceResource(mSettings.theme, android.R.style.TextAppearance_Small)),
-	                		0, domainLen+2, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
-
-	                if (Util.isLightTheme(mSettings.theme)) {
-	                	// FIXME: This doesn't work persistently, since "clicked" is not delivered to reddit.com
-	    	            if (mOpThingInfo.isClicked()) {
-	    	            	ForegroundColorSpan fcs = new ForegroundColorSpan(res.getColor(R.color.purple));
-	    	            	titleView.setTextColor(res.getColor(R.color.purple));
-	    	            	titleSS.setSpan(fcs, 0, titleLen, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
-	    	            } else {
-	    	            	ForegroundColorSpan fcs = new ForegroundColorSpan(res.getColor(R.color.blue));
-	    	            	titleSS.setSpan(fcs, 0, titleLen, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
-	    	            }
-	    	            domainSS.setSpan(new ForegroundColorSpan(res.getColor(R.color.gray_50)),
-	    	            		0, domainLen+2, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
-	                } else {
-	                	domainSS.setSpan(new ForegroundColorSpan(res.getColor(R.color.gray_75)),
-	    	            		0, domainLen+2, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
-	                }
-	                
-	                builder.append(titleSS).append(" ").append(domainSS);
-	                titleView.setText(builder);
-	                
-	                votesView.setText("" + mOpThingInfo.getScore());
-	                numCommentsSubredditView.setText(Util.showNumComments(mOpThingInfo.getNum_comments()) + "  " + mOpThingInfo.getSubreddit());
-	                submissionTimeView.setText(Util.getTimeAgo(mOpThingInfo.getCreated_utc()));
-	                submitterView.setText("by "+mOpThingInfo.getAuthor());
-	                
-	                if(item.isOver_18()){
-	                    nsfwView.setVisibility(View.VISIBLE);
-	                } else {
-	                    nsfwView.setVisibility(View.GONE);
-	                }
-	                
-		            // Set the up and down arrow colors based on whether user likes
-	                if (mSettings.isLoggedIn()) {
-	                	if (mOpThingInfo.getLikes() == null) {
-	                		voteUpView.setImageResource(R.drawable.vote_up_gray);
-	                		voteDownView.setImageResource(R.drawable.vote_down_gray);
-	                		votesView.setTextColor(res.getColor(R.color.gray_75));
-	                	} else if (mOpThingInfo.getLikes() == true) {
-	                		voteUpView.setImageResource(R.drawable.vote_up_red);
-	                		voteDownView.setImageResource(R.drawable.vote_down_gray);
-	                		votesView.setTextColor(res.getColor(R.color.arrow_red));
-	                	} else {
-	                		voteUpView.setImageResource(R.drawable.vote_up_gray);
-	                		voteDownView.setImageResource(R.drawable.vote_down_blue);
-	                		votesView.setTextColor(res.getColor(R.color.arrow_blue));
-	                	}
-	                } else {
-	            		voteUpView.setImageResource(R.drawable.vote_up_gray);
-	            		voteDownView.setImageResource(R.drawable.vote_down_gray);
-	            		votesView.setTextColor(res.getColor(R.color.gray_75));
-	                }
-	                
-	                // --- End part copied from ThreadsListAdapter ---
 	                
 	            	if (mOpThingInfo.getSelftext() != null
 	            			&& !Constants.EMPTY_STRING.equals(mOpThingInfo.getSelftext())) {
@@ -496,40 +413,6 @@ public class CommentsListActivity extends ListActivity
 	            	} else {
 	            		selftextView.setVisibility(View.GONE);
 	            	}
-	            	
-		            // Thumbnails open links
-		            if (thumbnailView != null) {
-		            	if (mSettings.loadThumbnails) {
-		            		dividerView.setVisibility(View.VISIBLE);
-		            		thumbnailView.setVisibility(View.VISIBLE);
-		            		indeterminateProgressBar.setVisibility(View.GONE);
-		            		
-		            		// Fill in the thumbnail using a Thread. Note that thumbnail URL can be absolute path.
-			            	if (item.getThumbnail() != null && !Constants.EMPTY_STRING.equals(item.getThumbnail())) {
-			            		drawableManager.fetchBitmapOnThread(Util.absolutePathToURL(item.getThumbnail()),
-			            				thumbnailView, indeterminateProgressBar, CommentsListActivity.this);
-			            	} else {
-			            		// if no thumbnail image, hide thumbnail icon
-			            		dividerView.setVisibility(View.GONE);
-			            		thumbnailView.setVisibility(View.GONE);
-			            		indeterminateProgressBar.setVisibility(View.GONE);
-			            	}
-			            	
-			            	// Set thumbnail background based on current theme
-			            	if (Util.isLightTheme(mSettings.theme)) {
-			            		thumbnailView.setBackgroundResource(R.drawable.thumbnail_background_light);
-			            		indeterminateProgressBar.setBackgroundResource(R.drawable.thumbnail_background_light);
-			            	} else {
-			            		thumbnailView.setBackgroundResource(R.drawable.thumbnail_background_dark);
-			            		indeterminateProgressBar.setBackgroundResource(R.drawable.thumbnail_background_dark);
-			            	}
-		            	} else {
-		            		// if thumbnails disabled, hide thumbnail icon
-		            		dividerView.setVisibility(View.GONE);
-		            		thumbnailView.setVisibility(View.GONE);
-		            		indeterminateProgressBar.setVisibility(View.GONE);
-		            	}
-		            }
 	            	
 	            } else if (mHiddenComments.contains(position)) { 
 	            	if (convertView == null) {
@@ -561,7 +444,7 @@ public class CommentsListActivity extends ListActivity
 		            	submitterView.setText(item.getAuthor());
 		            submissionTimeView.setText(Util.getTimeAgo(item.getCreated_utc()));
 		            
-		            setCommentIndent(view, item.getIndent());
+		            setCommentIndent(view, item.getIndent(), mSettings);
 		            
             	} else if (mMorePositions.contains(position)) {
 	            	// "load more comments"
@@ -581,79 +464,19 @@ public class CommentsListActivity extends ListActivity
 //		            	moreCommentsText.setBackgroundResource(android.R.color.background_dark);
 //		            }
 
-	            	setCommentIndent(view, item.getIndent());
+	            	setCommentIndent(view, item.getIndent(), mSettings);
 	            	// TODO: Show number of replies, if possible
 	            	
 	            } else {  // Regular comment
-		            // Here view may be passed in for re-use, or we make a new one.
+	            	// Here view may be passed in for re-use, or we make a new one.
 		            if (convertView == null) {
 		                view = mInflater.inflate(R.layout.comments_list_item, null);
 		            } else {
 		                view = convertView;
 		            }
 		            
-		            // Set the values of the Views for the CommentsListItem
-		            
-		            TextView votesView = (TextView) view.findViewById(R.id.votes);
-		            TextView submitterView = (TextView) view.findViewById(R.id.submitter);
-		            TextView bodyView = (TextView) view.findViewById(R.id.body);
-		            ProgressBar indeterminateProgress = (ProgressBar) view.findViewById(R.id.indeterminate_progress);
-		            
-	                TextView submissionTimeView = (TextView) view.findViewById(R.id.submissionTime);
-		            ImageView voteUpView = (ImageView) view.findViewById(R.id.vote_up_image);
-		            ImageView voteDownView = (ImageView) view.findViewById(R.id.vote_down_image);
-		            
-		            try {
-		            	votesView.setText(Util.showNumPoints(item.getUps() - item.getDowns()));
-		            } catch (NumberFormatException e) {
-		            	// This happens because "ups" comes after the potentially long "replies" object,
-		            	// so the ListView might try to display the View before "ups" in JSON has been parsed.
-		            	if (Constants.LOGGING) Log.e(TAG, "getView, normal comment", e);
-		            }
-		            if (item.getSSAuthor() != null)
-		            	submitterView.setText(item.getSSAuthor());
-		            else
-		            	submitterView.setText(item.getAuthor());
-		            submissionTimeView.setText(Util.getTimeAgo(item.getCreated_utc()));
-		            
-		            if (item.getSpannedBody() != null) {
-		            	bodyView.setText(item.getSpannedBody());
-		            } else {
-			            // Fill in the comment body using a Thread.
-		            	commentManager.createSpannedOnThread(item.getBody_html(), bodyView, item,
-		            			indeterminateProgress, CommentsListActivity.this);
-		            }
-		            
-		            setCommentIndent(view, item.getIndent());
-		            
-		            if ("[deleted]".equals(item.getAuthor())) {
-		            	voteUpView.setVisibility(View.INVISIBLE);
-		            	voteDownView.setVisibility(View.INVISIBLE);
-		            }
-		            // Set the up and down arrow colors based on whether user likes
-		            else if (mSettings.isLoggedIn()) {
-		            	voteUpView.setVisibility(View.VISIBLE);
-		            	voteDownView.setVisibility(View.VISIBLE);
-		            	if (item.getLikes() == null) {
-		            		voteUpView.setImageResource(R.drawable.vote_up_gray);
-		            		voteDownView.setImageResource(R.drawable.vote_down_gray);
-//		            		votesView.setTextColor(res.getColor(R.color.gray));
-		            	} else if (item.getLikes() == true) {
-		            		voteUpView.setImageResource(R.drawable.vote_up_red);
-		            		voteDownView.setImageResource(R.drawable.vote_down_gray);
-//		            		votesView.setTextColor(res.getColor(R.color.arrow_red));
-		            	} else {
-		            		voteUpView.setImageResource(R.drawable.vote_up_gray);
-		            		voteDownView.setImageResource(R.drawable.vote_down_blue);
-//		            		votesView.setTextColor(res.getColor(R.color.arrow_blue));
-		            	}
-		            } else {
-		            	voteUpView.setVisibility(View.VISIBLE);
-		            	voteDownView.setVisibility(View.VISIBLE);
-		            	voteUpView.setImageResource(R.drawable.vote_up_gray);
-		        		voteDownView.setImageResource(R.drawable.vote_down_gray);
-//		        		votesView.setTextColor(res.getColor(R.color.gray));
-		            }
+		            fillCommentsListItemView(view, item, CommentsListActivity.this, mSettings, commentManager);
+
 	            }
             } catch (NullPointerException e) {
             	// Probably means that the List is still being built, and OP probably got put in wrong position
@@ -668,36 +491,36 @@ public class CommentsListActivity extends ListActivity
             }
             return view;
         }
-        
-        protected void setCommentIndent(View commentListItemView, int indentLevel) {
-            View[] indentViews = new View[] {
-            	commentListItemView.findViewById(R.id.left_indent1),
-            	commentListItemView.findViewById(R.id.left_indent2),
-            	commentListItemView.findViewById(R.id.left_indent3),
-            	commentListItemView.findViewById(R.id.left_indent4),
-            	commentListItemView.findViewById(R.id.left_indent5),
-            	commentListItemView.findViewById(R.id.left_indent6),
-            	commentListItemView.findViewById(R.id.left_indent7),
-            	commentListItemView.findViewById(R.id.left_indent8)
-            };
-            for (int i = 0; i < indentLevel && i < indentViews.length; i++) {
-            	if (mSettings.showCommentGuideLines) {
-	            	indentViews[i].setVisibility(View.VISIBLE);
-	            	if (Util.isLightTheme(mSettings.theme)) {
-	            		indentViews[i].setBackgroundResource(R.color.light_light_gray);
-	            	} else {
-	            		indentViews[i].setBackgroundResource(R.color.dark_gray);
-	            	}
-            	} else {
-            		indentViews[i].setVisibility(View.INVISIBLE);
-            	}
-            }
-            for (int i = indentLevel; i < indentViews.length; i++) {
-            	indentViews[i].setVisibility(View.GONE);
-            }
-        }
     } // End of CommentsListAdapter
-    
+
+    public static void setCommentIndent(View commentListItemView, int indentLevel, RedditSettings settings) {
+        View[] indentViews = new View[] {
+        	commentListItemView.findViewById(R.id.left_indent1),
+        	commentListItemView.findViewById(R.id.left_indent2),
+        	commentListItemView.findViewById(R.id.left_indent3),
+        	commentListItemView.findViewById(R.id.left_indent4),
+        	commentListItemView.findViewById(R.id.left_indent5),
+        	commentListItemView.findViewById(R.id.left_indent6),
+        	commentListItemView.findViewById(R.id.left_indent7),
+        	commentListItemView.findViewById(R.id.left_indent8)
+        };
+        for (int i = 0; i < indentLevel && i < indentViews.length; i++) {
+        	if (settings.showCommentGuideLines) {
+            	indentViews[i].setVisibility(View.VISIBLE);
+            	if (Util.isLightTheme(settings.theme)) {
+            		indentViews[i].setBackgroundResource(R.color.light_light_gray);
+            	} else {
+            		indentViews[i].setBackgroundResource(R.color.dark_gray);
+            	}
+        	} else {
+        		indentViews[i].setVisibility(View.INVISIBLE);
+        	}
+        }
+        for (int i = indentLevel; i < indentViews.length; i++) {
+        	indentViews[i].setVisibility(View.GONE);
+        }
+    }
+
     
     /**
      * Called when user clicks an item in the list. Starts an activity to
@@ -2398,6 +2221,74 @@ public class CommentsListActivity extends ListActivity
         }
     }
     
+    static void fillCommentsListItemView(View view, ThingInfo item,
+    		Activity activity, RedditSettings settings, CommentManager commentManager) {
+        // Set the values of the Views for the CommentsListItem
+        
+        TextView votesView = (TextView) view.findViewById(R.id.votes);
+        TextView submitterView = (TextView) view.findViewById(R.id.submitter);
+        TextView bodyView = (TextView) view.findViewById(R.id.body);
+        ProgressBar indeterminateProgress = (ProgressBar) view.findViewById(R.id.indeterminate_progress);
+        
+        TextView submissionTimeView = (TextView) view.findViewById(R.id.submissionTime);
+        ImageView voteUpView = (ImageView) view.findViewById(R.id.vote_up_image);
+        ImageView voteDownView = (ImageView) view.findViewById(R.id.vote_down_image);
+        
+        try {
+        	votesView.setText(Util.showNumPoints(item.getUps() - item.getDowns()));
+        } catch (NumberFormatException e) {
+        	// This happens because "ups" comes after the potentially long "replies" object,
+        	// so the ListView might try to display the View before "ups" in JSON has been parsed.
+        	if (Constants.LOGGING) Log.e(TAG, "getView, normal comment", e);
+        }
+        if (item.getSSAuthor() != null)
+        	submitterView.setText(item.getSSAuthor());
+        else
+        	submitterView.setText(item.getAuthor());
+        submissionTimeView.setText(Util.getTimeAgo(item.getCreated_utc()));
+        
+        if (item.getSpannedBody() != null) {
+        	bodyView.setText(item.getSpannedBody());
+        } else {
+            // Fill in the comment body using a Thread.
+        	commentManager.createSpannedOnThread(item.getBody_html(), bodyView, item,
+        			indeterminateProgress, activity);
+        }
+        
+        setCommentIndent(view, item.getIndent(), settings);
+        
+        if ("[deleted]".equals(item.getAuthor())) {
+        	voteUpView.setVisibility(View.INVISIBLE);
+        	voteDownView.setVisibility(View.INVISIBLE);
+        }
+        // Set the up and down arrow colors based on whether user likes
+        else if (settings.isLoggedIn()) {
+        	voteUpView.setVisibility(View.VISIBLE);
+        	voteDownView.setVisibility(View.VISIBLE);
+        	if (item.getLikes() == null) {
+        		voteUpView.setImageResource(R.drawable.vote_up_gray);
+        		voteDownView.setImageResource(R.drawable.vote_down_gray);
+//        		votesView.setTextColor(res.getColor(R.color.gray));
+        	} else if (item.getLikes() == true) {
+        		voteUpView.setImageResource(R.drawable.vote_up_red);
+        		voteDownView.setImageResource(R.drawable.vote_down_gray);
+//        		votesView.setTextColor(res.getColor(R.color.arrow_red));
+        	} else {
+        		voteUpView.setImageResource(R.drawable.vote_up_gray);
+        		voteDownView.setImageResource(R.drawable.vote_down_blue);
+//        		votesView.setTextColor(res.getColor(R.color.arrow_blue));
+        	}
+        } else {
+        	voteUpView.setVisibility(View.VISIBLE);
+        	voteDownView.setVisibility(View.VISIBLE);
+        	voteUpView.setImageResource(R.drawable.vote_up_gray);
+    		voteDownView.setImageResource(R.drawable.vote_down_gray);
+//    		votesView.setTextColor(res.getColor(R.color.gray));
+        }
+
+    }
+
+    
     private final CompoundButton.OnCheckedChangeListener voteUpOnCheckedChangeListener = new CompoundButton.OnCheckedChangeListener() {
     	public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
 	    	dismissDialog(Constants.DIALOG_THING_CLICK);
@@ -2445,6 +2336,14 @@ public class CommentsListActivity extends ListActivity
 			new DownloadCommentsTask().execute(Constants.DEFAULT_COMMENT_DOWNLOAD_LIMIT);
 		}
 	};
+	
+	private final ThumbnailOnClickListenerFactory thumbnailOnClickListenerFactory
+			= new ThumbnailOnClickListenerFactory() {
+		public OnClickListener getThumbnailOnClickListener(String jumpToId, String url, String threadUrl, Context context) {
+			return null;
+		}
+	};
+
     
     @Override
     protected void onSaveInstanceState(Bundle state) {
