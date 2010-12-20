@@ -592,7 +592,8 @@ public final class ProfileActivity extends ListActivity
         	
     		try {
     			
-    			mKarma = getKarma();
+    			if (mKarma == null)
+    				mKarma = getKarma();
     			
             	String url;
         		StringBuilder sb = new StringBuilder("http://api.reddit.com/user/")
