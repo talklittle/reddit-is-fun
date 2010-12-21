@@ -34,6 +34,10 @@
 			android:key="use_external_browser"
 			android:title="@string/pref_use_external_browser" />
 			
+		<CheckBoxPreference
+			android:key="confirm_quit"
+			android:title="@string/pref_confirm_quit" />
+			
 	</PreferenceCategory>
 	
 	<PreferenceCategory android:title="@string/pref_appearance_category">

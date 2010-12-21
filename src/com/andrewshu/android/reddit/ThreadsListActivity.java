@@ -267,7 +267,7 @@ public final class ThreadsListActivity extends ListActivity {
     @Override
     public boolean onKeyDown(int keyCode, KeyEvent event) {
         //Handle the back button
-        if(keyCode == KeyEvent.KEYCODE_BACK && isTaskRoot()) {
+        if(mSettings.confirmQuit && keyCode == KeyEvent.KEYCODE_BACK && isTaskRoot()) {
             //Ask the user if they want to quit
             new AlertDialog.Builder(this)
             .setIcon(android.R.drawable.ic_dialog_alert)

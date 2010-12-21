@@ -33,6 +33,7 @@ public class RedditSettings {
 	String homepage = Constants.FRONTPAGE_STRING;
 	boolean useExternalBrowser = false;
 	boolean showCommentGuideLines = true;
+	boolean confirmQuit = true;
 	
 	int threadDownloadLimit = Constants.DEFAULT_THREAD_DOWNLOAD_LIMIT;
 	String commentsSortByUrl = Constants.CommentsSort.SORT_BY_BEST_URL;
@@ -97,6 +98,10 @@ public class RedditSettings {
 	
 	void setCommentsSortByUrl(String commentsSortByUrl) {
 		this.commentsSortByUrl = commentsSortByUrl;
+	}
+	
+	void setConfirmQuit(boolean confirmQuit) {
+		this.confirmQuit = confirmQuit;
 	}
 	
 	void setHomepage(String homepage) {

@@ -140,6 +140,9 @@ public class Common {
     	// Use external browser instead of BrowserActivity
     	editor.putBoolean(Constants.PREF_USE_EXTERNAL_BROWSER, rSettings.useExternalBrowser);
     	
+    	// Show confirmation dialog when backing out of root Activity
+    	editor.putBoolean(Constants.PREF_CONFIRM_QUIT, rSettings.confirmQuit);
+    	
     	// Comments sort order
     	editor.putString(Constants.PREF_COMMENTS_SORT_BY_URL, rSettings.commentsSortByUrl);
     	
@@ -198,6 +201,9 @@ public class Common {
         
     	// Use external browser instead of BrowserActivity
         rSettings.setUseExternalBrowser(sessionPrefs.getBoolean(Constants.PREF_USE_EXTERNAL_BROWSER, false));
+        
+    	// Show confirmation dialog when backing out of root Activity
+        rSettings.setConfirmQuit(sessionPrefs.getBoolean(Constants.PREF_CONFIRM_QUIT, true));
         
     	// Comments sort order
         rSettings.setCommentsSortByUrl(sessionPrefs.getString(Constants.PREF_COMMENTS_SORT_BY_URL, Constants.CommentsSort.SORT_BY_BEST_URL));
