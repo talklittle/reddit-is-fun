@@ -724,8 +724,13 @@ public final class ThreadsListActivity extends ListActivity {
     		resetUI(null);
     		enableLoadingScreen();
 			
-	    	getWindow().setFeatureInt(Window.FEATURE_PROGRESS, 0);
-	    	
+    		if (mContentLength == -1) {
+    			getWindow().setFeatureInt(Window.FEATURE_PROGRESS, Window.PROGRESS_INDETERMINATE_ON);
+    		}
+    		else {
+    			getWindow().setFeatureInt(Window.FEATURE_PROGRESS, 0);
+    		}
+    		
 	    	if (Constants.FRONTPAGE_STRING.equals(mSubreddit))
 	    		setTitle("reddit.com: what's new online!");
 	    	else
@@ -737,7 +742,12 @@ public final class ThreadsListActivity extends ListActivity {
     		synchronized (mCurrentDownloadThreadsTaskLock) {
     			mCurrentDownloadThreadsTask = null;
     		}
+
     		disableLoadingScreen();
+
+    		if (mContentLength == -1) {
+    			getWindow().setFeatureInt(Window.FEATURE_PROGRESS, Window.PROGRESS_INDETERMINATE_OFF);
+    		}
 
     		if (success) {
     			synchronized (THREAD_ADAPTER_LOCK) {
@@ -760,7 +770,12 @@ public final class ThreadsListActivity extends ListActivity {
     	@Override
     	public void onProgressUpdate(Long... progress) {
     		// 0-9999 is ok, 10000 means it's finished
-    		getWindow().setFeatureInt(Window.FEATURE_PROGRESS, progress[0].intValue() * 9999 / (int) mContentLength);
+    		if (mContentLength == -1) {
+//    			getWindow().setFeatureInt(Window.FEATURE_PROGRESS, progress[0].intValue() * 9999 / (int) mContentLength);
+    		}
+    		else {
+    			getWindow().setFeatureInt(Window.FEATURE_PROGRESS, progress[0].intValue() * 9999 / (int) mContentLength);
+    		}
     	}
     	
     	public void propertyChange(PropertyChangeEvent event) {
