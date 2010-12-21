@@ -46,19 +46,19 @@
 	    		android:layout_width="wrap_content"
 	    		android:layout_height="wrap_content"
 	    		android:layout_weight="1"
-	    		android:text="link karma"
+	    		style="?android:attr/textAppearanceLarge"
 	    		/>
 	    	<TextView android:id="@+id/comment_karma"
 	    		android:layout_width="wrap_content"
 	    		android:layout_height="wrap_content"
 	    		android:layout_weight="1"
-	    		android:text="comment karma"
+	    		style="?android:attr/textAppearanceLarge"
 	    		/>
    		</LinearLayout>
     	<View android:id="@+id/karma_border_bottom"
     		android:layout_width="fill_parent"
     		android:layout_height="1dp"
-    		android:layout_marginBottom="1dp"
+    		android:layout_marginTop="1dp"
     		android:layout_alignParentBottom="true"
     		/>
    	</LinearLayout>

@@ -90,7 +90,7 @@ public final class ProfileActivity extends ListActivity
 	
 	static final Pattern USER_PATH_PATTERN = Pattern.compile(Constants.USER_PATH_PATTERN_STRING);
 	// 1: link karma; 2: comment karma
-	static final Pattern KARMA_PATTERN = Pattern.compile(">(\\d[^<]*)<.+link karma.*>(\\d[^<]*)<.+comment karma");
+	static final Pattern KARMA_PATTERN = Pattern.compile(">(\\d[^<]*)<.{2,20}link karma.+>(\\d[^<]*)<.{2,20}comment karma");
 	
     private final ObjectMapper mObjectMapper = Common.getObjectMapper();
     private final CommentManager mCommentManager = new CommentManager();
