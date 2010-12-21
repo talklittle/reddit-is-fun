@@ -408,7 +408,7 @@ public final class ProfileActivity extends ListActivity
     	switch (item.getItemId()) {
     	case Constants.DIALOG_COMMENT_CLICK:
 			i = new Intent(getApplicationContext(), CommentsListActivity.class);
-			i.setData(Util.createCommentUri(mVoteTargetThingInfo));
+			i.setData(Util.createCommentUri(mVoteTargetThingInfo, 0));
 			i.putExtra(Constants.EXTRA_SUBREDDIT, mVoteTargetThingInfo.getSubreddit());
 			i.putExtra(Constants.EXTRA_TITLE, mVoteTargetThingInfo.getTitle());
 			startActivity(i);

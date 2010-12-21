@@ -160,6 +160,11 @@ public class Util {
 		return path;
 	}
 	
+	public static String nameToId(String name) {
+		// indexOf('_') == -1 if not found; -1 + 1 == 0
+		return name.substring(name.indexOf('_') + 1);
+	}
+	
 	public static boolean isHttpStatusOK(HttpResponse response) {
 		if (response == null || response.getStatusLine() == null) {
 			return false;
@@ -323,11 +328,9 @@ public class Util {
 	//       Uri
 	// ===============
 	
-	static Uri createCommentUri(String subreddit, String threadId, String commentId, int commentContext) {
-		return Uri.parse(new StringBuilder("http://www.reddit.com/r/")
-			.append(subreddit)
-			.append("/comments/")
-			.append(threadId)
+	static Uri createCommentUri(String linkId, String commentId, int commentContext) {
+		return Uri.parse(new StringBuilder("http://www.reddit.com/comments/")
+			.append(linkId)
 			.append("/z/")
 			.append(commentId)
 			.append("?context=")
@@ -335,10 +338,12 @@ public class Util {
 			.toString());
 	}
 	
-	static Uri createCommentUri(ThingInfo commentThingInfo) {
-		return Uri.parse(new StringBuilder("http://www.reddit.com/r/")
-			.append(commentThingInfo.getContext())
-			.toString());
+	static Uri createCommentUri(ThingInfo commentThingInfo, int commentContext) {
+		if (commentThingInfo.getContext() != null)
+			return Uri.parse(absolutePathToURL(commentThingInfo.getContext()));
+		if (commentThingInfo.getLink_id() != null)
+			return createCommentUri(nameToId(commentThingInfo.getLink_id()), commentThingInfo.getId(), commentContext);
+		return null;
 	}
 	
 	static Uri createProfileUri(String username) {
