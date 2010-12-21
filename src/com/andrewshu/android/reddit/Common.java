@@ -188,7 +188,11 @@ public class Common {
         	rSettings.setRedditSessionCookie(redditSessionCookie);
         	if (client != null) {
         		client.getCookieStore().addCookie(redditSessionCookie);
-        		CookieSyncManager.getInstance().sync();
+        		try {
+        			CookieSyncManager.getInstance().sync();
+        		} catch (IllegalStateException ex) {
+        			if (Constants.LOGGING) Log.e(TAG, "CookieSyncManager.getInstance().sync()", ex);
+        		}
         	}
         }
         
