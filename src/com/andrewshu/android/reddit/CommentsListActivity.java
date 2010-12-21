@@ -231,11 +231,17 @@ public class CommentsListActivity extends ListActivity
         	if (commentPath != null) {
         		if (Constants.LOGGING) Log.d(TAG, "comment path: "+commentPath);
         		
-        		Matcher m = COMMENT_PATH_PATTERN.matcher(commentPath);
-        		if (m.matches()) {
-            		mSubreddit = m.group(1);
-        			mThreadId = m.group(2);
-        			mJumpToCommentId = m.group(3);
+        		if (Util.isRedditShortenedUri(data)) {
+        			// http://redd.it/abc12
+        			mThreadId = commentPath.substring(1);
+        		} else {
+        			// http://www.reddit.com/...
+	        		Matcher m = COMMENT_PATH_PATTERN.matcher(commentPath);
+	        		if (m.matches()) {
+	            		mSubreddit = m.group(1);
+	        			mThreadId = m.group(2);
+	        			mJumpToCommentId = m.group(3);
+	        		}
         		}
         	} else {
     			if (Constants.LOGGING) Log.e(TAG, "Quitting because of bad comment path.");

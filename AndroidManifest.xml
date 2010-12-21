@@ -36,6 +36,7 @@
                 <action android:name="android.intent.action.VIEW" />
                 <category android:name="android.intent.category.BROWSABLE" />
                 <data android:scheme="http" android:host="www.reddit.com" android:pathPattern="/r/.*/" />
+                <data android:scheme="http" android:host="redd.it" android:pathPattern="/" />
             </intent-filter>
         </activity>
 	    <activity android:name=".CommentsListActivity">
@@ -43,7 +44,10 @@
 	            <action android:name="android.intent.action.VIEW" />
 	            <category android:name="android.intent.category.DEFAULT" />
 	            <category android:name="android.intent.category.BROWSABLE" />
-	            <data android:scheme="http" android:host="www.reddit.com" android:pathPattern="/r/.*/comments.*" />
+	            <data android:scheme="http" android:host="www.reddit.com" android:pathPattern="/r/.*/comments/.*" />
+	            <data android:scheme="http" android:host="www.reddit.com" android:pathPrefix="/comments/" />
+	            <data android:scheme="http" android:host="www.reddit.com" android:pathPrefix="/tb/" />
+	            <data android:scheme="http" android:host="redd.it" android:pathPattern="/..*" />
 	        </intent-filter>
 	    </activity>
 	    <activity android:name=".PickSubredditActivity"></activity>
@@ -55,7 +59,14 @@
            	</intent-filter>
 	    </activity>
 	    <activity android:name=".InboxActivity"></activity>
-	    <activity android:name=".ProfileActivity"></activity>
+	    <activity android:name=".ProfileActivity">
+	        <intent-filter>
+	            <action android:name="android.intent.action.VIEW" />
+	            <category android:name="android.intent.category.DEFAULT" />
+	            <category android:name="android.intent.category.BROWSABLE" />
+	            <data android:scheme="http" android:host="www.reddit.com" android:pathPrefix="/user/" />
+	        </intent-filter>
+	    </activity>
 	    <activity android:name=".RedditPreferencesPage"></activity>
 	    <activity android:name=".BrowserActivity" android:configChanges="keyboardHidden|orientation"></activity>
 	    <service android:name=".EnvelopeService" android:label="@string/pref_mail_notification_service"></service>

@@ -394,7 +394,13 @@ public class Util {
 	static boolean isRedditUri(Uri uri) {
 		if (uri == null) return false;
 		String host = uri.getHost();
-		return host != null && host.endsWith(".reddit.com");
+		return host != null && (host.equals("reddit.com") || host.endsWith(".reddit.com"));
+	}
+	
+	static boolean isRedditShortenedUri(Uri uri) {
+		if (uri == null) return false;
+		String host = uri.getHost();
+		return host != null && host.equals("redd.it");
 	}
 	
     /**

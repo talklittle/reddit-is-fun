@@ -87,11 +87,9 @@ public class Common {
 	
 	private static final DefaultHttpClient mGzipHttpClient = createGzipHttpClient();
 	// 1:subreddit 2:threadId 3:commentId
-	private static final Pattern REDDIT_LINK = Pattern.compile(
-      "(?:/r/([^/.]+|reddit\\.com))?" +
-      "(?:/comments/([^/.]+)/[^/.]+" +
-          "(?:/([^/.]+))?" +
-      ")?/?");
+	private static final Pattern COMMENT_LINK = Pattern.compile(Constants.COMMENT_PATH_PATTERN_STRING);
+	private static final Pattern REDDIT_LINK = Pattern.compile(Constants.REDDIT_PATH_PATTERN_STRING);
+	private static final Pattern USER_LINK = Pattern.compile(Constants.USER_PATH_PATTERN_STRING);
 	private static final ObjectMapper mObjectMapper = new ObjectMapper();
 
 	static void showErrorToast(String error, int duration, Context context) {
@@ -560,19 +558,24 @@ public class Common {
     	
     	Uri uri = Uri.parse(url);
     	
-    	if (!bypassParser && Util.isRedditUri(uri)) {
-	    	Matcher matcher = REDDIT_LINK.matcher(uri.getPath());
-	    	if (matcher.matches()) {
-	    		if (matcher.group(3) != null || matcher.group(2) != null) {
-	    			CacheInfo.invalidateCachedThread(context);
-	    			Intent intent = new Intent(context, CommentsListActivity.class);
-	    			intent.setData(uri);
-	    			intent.putExtra(Constants.EXTRA_NUM_COMMENTS, Constants.DEFAULT_COMMENT_DOWNLOAD_LIMIT);
-	    			if (requireNewTask)
-	    				intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-	    			context.startActivity(intent);
-	    			return;
-	    		} else if (matcher.group(1) != null) {
+    	if (!bypassParser) {
+    		if (Util.isRedditUri(uri)) {
+	    		String path = uri.getPath();
+	    		Matcher matcher = COMMENT_LINK.matcher(path);
+		    	if (matcher.matches()) {
+		    		if (matcher.group(3) != null || matcher.group(2) != null) {
+		    			CacheInfo.invalidateCachedThread(context);
+		    			Intent intent = new Intent(context, CommentsListActivity.class);
+		    			intent.setData(uri);
+		    			intent.putExtra(Constants.EXTRA_NUM_COMMENTS, Constants.DEFAULT_COMMENT_DOWNLOAD_LIMIT);
+		    			if (requireNewTask)
+		    				intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+		    			context.startActivity(intent);
+		    			return;
+		    		}
+		    	}
+		    	matcher = REDDIT_LINK.matcher(path);
+		    	if (matcher.matches()) {
 	    			CacheInfo.invalidateCachedSubreddit(context);
 	    			Intent intent = new Intent(context, ThreadsListActivity.class);
 	    			intent.setData(uri);
@@ -580,7 +583,37 @@ public class Common {
 	    				intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
 	    			context.startActivity(intent);
 	    			return;
+		    	}
+		    	matcher = USER_LINK.matcher(path);
+		    	if (matcher.matches()) {
+		    		Intent intent = new Intent(context, ProfileActivity.class);
+		    		intent.setData(uri);
+	    			if (requireNewTask)
+	    				intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+	    			context.startActivity(intent);
+	    			return;
+		    	}
+	    	} else if (Util.isRedditShortenedUri(uri)) {
+	    		String path = uri.getPath();
+	    		if (path.equals("") || path.equals("/")) {
+	    			CacheInfo.invalidateCachedSubreddit(context);
+	    			Intent intent = new Intent(context, ThreadsListActivity.class);
+	    			intent.setData(uri);
+	    			if (requireNewTask)
+	    				intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+	    			context.startActivity(intent);
+	    			return;
+	    		} else {
+		    		// Assume it points to a thread aka CommentsList
+	    			CacheInfo.invalidateCachedThread(context);
+	    			Intent intent = new Intent(context, CommentsListActivity.class);
+	    			intent.setData(uri);
+	    			intent.putExtra(Constants.EXTRA_NUM_COMMENTS, Constants.DEFAULT_COMMENT_DOWNLOAD_LIMIT);
+	    			if (requireNewTask)
+	    				intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+	    			context.startActivity(intent);
 	    		}
+    			return;
 	    	}
     	}
     	uri = Util.optimizeMobileUri(uri);
