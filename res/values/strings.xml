@@ -22,6 +22,11 @@
 
     <string name="app_name">reddit is fun</string>
     
+    <string name="yes">Yes</string>
+    <string name="no">No</string>
+    <string name="quit">Quit</string>
+    <string name="really_quit">Really quit?</string>
+    
     <string name="noThreads">No threads here</string>
     <string name="noComments">No comments here</string>
     <string name="noMessages">Your inbox is empty.</string>
