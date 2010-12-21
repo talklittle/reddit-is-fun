@@ -519,6 +519,13 @@ public final class ThreadsListActivity extends ListActivity {
 			loginButton.setVisibility(View.GONE);
 			voteUpButton.setVisibility(View.VISIBLE);
 			voteDownButton.setVisibility(View.VISIBLE);
+			
+			// Remove the OnCheckedChangeListeners because we are about to setChecked(),
+			// and I think the Buttons are recycled, so old listeners will fire
+			// for the previous vote target ThingInfo.
+			voteUpButton.setOnCheckedChangeListener(null);
+			voteDownButton.setOnCheckedChangeListener(null);
+			
 			// Set initial states of the vote buttons based on user's past actions
     		if (thingInfo.getLikes() == null) {
     			// User is currently neutral
@@ -893,7 +900,7 @@ public final class ThreadsListActivity extends ListActivity {
 				synchronized (THREAD_ADAPTER_LOCK) {
 					// Remove from list even if unhiding--because the only place you can
 					// unhide from is the list of Hidden threads.
-					mThreadsAdapter.remove(mVoteTargetThingInfo);
+					mThreadsAdapter.remove(mTargetThreadInfo);
 					mThreadsAdapter.notifyDataSetChanged();
 				}
 			}

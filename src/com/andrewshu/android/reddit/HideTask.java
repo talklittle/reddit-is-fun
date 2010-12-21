@@ -23,12 +23,12 @@ import android.widget.Toast;
 public class HideTask extends AsyncTask<Void, Void, Boolean> {
 	private static final String TAG = "HideTask";
 	
-	private ThingInfo mTargetThreadInfo;
-	private String mUserError = "Error hiding thread.";
-	private String mUrl;
+	protected ThingInfo mTargetThreadInfo;
+	protected String mUserError = "Error hiding thread.";
+	protected String mUrl;
 	private RedditSettings mSettings;
 	private Context mContext;
-	private boolean mHide;
+	protected boolean mHide;
 	
 	private final DefaultHttpClient mClient = Common.getGzipHttpClient();
 	
