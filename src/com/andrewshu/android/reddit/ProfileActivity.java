@@ -226,12 +226,6 @@ public final class ProfileActivity extends ListActivity
         registerForContextMenu(getListView());
     }
     
-	private void returnStatus(int status) {
-		Intent i = new Intent();
-		setResult(status, i);
-		finish();
-	}
-    
     @Override
     protected void onResume() {
     	super.onResume();
@@ -802,7 +796,7 @@ public final class ProfileActivity extends ListActivity
     
     
     private class LoginTask extends AsyncTask<Void, Void, String> {
-    	private String mUsername, mPassword, mUserError;
+    	private String mUsername, mPassword;
     	
     	LoginTask(String username, String password) {
     		mUsername = username;
@@ -822,11 +816,9 @@ public final class ProfileActivity extends ListActivity
     		dismissDialog(Constants.DIALOG_LOGGING_IN);
     		if (errorMessage == null) {
     			Toast.makeText(ProfileActivity.this, "Logged in as "+mUsername, Toast.LENGTH_SHORT).show();
-	    		// Refresh the threads list
-    			new DownloadProfileTask(mUsername).execute(Constants.DEFAULT_COMMENT_DOWNLOAD_LIMIT);
+    			showDialog(Constants.DIALOG_COMPOSE);
     		} else {
-            	Common.showErrorToast(mUserError, Toast.LENGTH_LONG, ProfileActivity.this);
-    			returnStatus(Constants.RESULT_LOGIN_REQUIRED);
+            	Common.showErrorToast(errorMessage, Toast.LENGTH_LONG, ProfileActivity.this);
     		}
     	}
     }
@@ -1030,7 +1022,11 @@ public final class ProfileActivity extends ListActivity
     	
     	switch (item.getItemId()) {
     	case R.id.compose_message_menu_id:
-    		showDialog(Constants.DIALOG_COMPOSE);
+    		if (mSettings.isLoggedIn()) {
+    			showDialog(Constants.DIALOG_COMPOSE);
+    		} else {
+    			showDialog(Constants.DIALOG_LOGIN);
+    		}
     		break;
     	case R.id.refresh_menu_id:
 			new DownloadProfileTask(mSettings.username).execute(Constants.DEFAULT_COMMENT_DOWNLOAD_LIMIT);
@@ -1050,7 +1046,7 @@ public final class ProfileActivity extends ListActivity
     	
     	switch (id) {
     	case Constants.DIALOG_LOGIN:
-    		dialog = new LoginDialog(this, mSettings, true) {
+    		dialog = new LoginDialog(this, mSettings, false) {
 				@Override
 				public void onLoginChosen(String user, String password) {
 					dismissDialog(Constants.DIALOG_LOGIN);
@@ -1147,14 +1143,14 @@ public final class ProfileActivity extends ListActivity
     	super.onPrepareDialog(id, dialog);
     	    	
     	switch (id) {
-    	case Constants.DIALOG_LOGIN:
-    		if (mSettings.username != null) {
-	    		final TextView loginUsernameInput = (TextView) dialog.findViewById(R.id.login_username_input);
-	    		loginUsernameInput.setText(mSettings.username);
-    		}
-    		final TextView loginPasswordInput = (TextView) dialog.findViewById(R.id.login_password_input);
-    		loginPasswordInput.setText("");
-    		break;
+//    	case Constants.DIALOG_LOGIN:
+//    		if (mSettings.username != null) {
+//	    		final TextView loginUsernameInput = (TextView) dialog.findViewById(R.id.login_username_input);
+//	    		loginUsernameInput.setText(mSettings.username);
+//    		}
+//    		final TextView loginPasswordInput = (TextView) dialog.findViewById(R.id.login_password_input);
+//    		loginPasswordInput.setText("");
+//    		break;
     		
     	case Constants.DIALOG_COMPOSE:
     		final EditText composeDestination = (EditText) dialog.findViewById(R.id.compose_destination_input);
