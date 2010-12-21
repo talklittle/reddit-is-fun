@@ -141,12 +141,19 @@ public abstract class DownloadThreadsTask extends AsyncTask<Void, Long, Boolean>
 
             	// Read the header to get Content-Length since entity.getContentLength() returns -1
             	Header contentLengthHeader = response.getFirstHeader("Content-Length");
-            	mContentLength = Long.valueOf(contentLengthHeader.getValue());
-            	if (Constants.LOGGING) Log.d(TAG, "Content length: "+mContentLength);
-
+            	
             	entity = response.getEntity();
             	in = entity.getContent();
-            	
+
+            	if (contentLengthHeader != null) {
+            		mContentLength = Long.valueOf(contentLengthHeader.getValue());
+                	if (Constants.LOGGING) Log.d(TAG, "Content length [sent]: "+mContentLength);
+            	}
+            	else {
+            		mContentLength = -1;
+                	if (Constants.LOGGING) Log.d(TAG, "Content length not available");
+            	}
+           	
             	if (Constants.USE_THREADS_CACHE) {
                 	in = CacheInfo.writeThenRead(mContext, in, Constants.FILENAME_SUBREDDIT_CACHE);
                 	try {
