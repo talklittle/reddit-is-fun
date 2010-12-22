@@ -734,8 +734,14 @@ public class CommentsListActivity extends ListActivity
 	            	
 	                // Read the header to get Content-Length since entity.getContentLength() returns -1
 	            	Header contentLengthHeader = response.getFirstHeader("Content-Length");
-	            	_mContentLength = Long.valueOf(contentLengthHeader.getValue());
-	            	if (Constants.LOGGING) Log.d(TAG, "Content length: "+_mContentLength);
+	            	if (contentLengthHeader != null) {
+	            		_mContentLength = Long.valueOf(contentLengthHeader.getValue());
+		            	if (Constants.LOGGING) Log.d(TAG, "Content length: "+_mContentLength);
+	            	}
+	            	else {
+	            		_mContentLength = -1; 
+		            	if (Constants.LOGGING) Log.d(TAG, "Content length: UNAVAILABLE");
+	            	}
 	
 	            	entity = response.getEntity();
 	            	in = entity.getContent();
@@ -943,7 +949,10 @@ public class CommentsListActivity extends ListActivity
     		if (_mPositionOffset == 0)
     			enableLoadingScreen();
     		
-	    	if (mThreadTitle != null)
+    		if (_mContentLength == -1)
+    			getWindow().setFeatureInt(Window.FEATURE_PROGRESS, Window.PROGRESS_INDETERMINATE_ON);
+
+    		if (mThreadTitle != null)
 	    		setTitle(mThreadTitle + " : " + mSubreddit);
     	}
     	
@@ -956,7 +965,12 @@ public class CommentsListActivity extends ListActivity
     		if (_mPositionOffset == 0)
     			disableLoadingScreen();
     		else
-    			getWindow().setFeatureInt(Window.FEATURE_PROGRESS, 10000);
+    		{
+	    		if (_mContentLength == -1)
+	    			getWindow().setFeatureInt(Window.FEATURE_PROGRESS, Window.PROGRESS_INDETERMINATE_OFF);
+	    		else
+	    			getWindow().setFeatureInt(Window.FEATURE_PROGRESS, 10000);
+    		}
     		
     		if (success) {
     			// We should clear any replies the user was composing.
@@ -977,7 +991,12 @@ public class CommentsListActivity extends ListActivity
     	@Override
     	public void onProgressUpdate(Long... progress) {
     		// 0-9999 is ok, 10000 means it's finished
-    		getWindow().setFeatureInt(Window.FEATURE_PROGRESS, progress[0].intValue() * 9999 / (int) _mContentLength);
+    		if (_mContentLength == -1) {
+    			getWindow().setFeatureInt(Window.FEATURE_PROGRESS, Window.PROGRESS_INDETERMINATE_ON);
+    		}
+    		else {
+    			getWindow().setFeatureInt(Window.FEATURE_PROGRESS, progress[0].intValue() * 9999 / (int) _mContentLength);
+    		}
     	}
     	
     	public void propertyChange(PropertyChangeEvent event) {
