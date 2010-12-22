@@ -1253,7 +1253,6 @@ public final class InboxActivity extends ListActivity
 	};
 	
 	private final AbsListView.OnScrollListener listViewOnScrollListener = new AbsListView.OnScrollListener() {
-		@Override
 		public void onScroll(AbsListView view, int firstVisibleItem,
 				int visibleItemCount, int totalItemCount) {
 			if (!mSettings.alwaysShowNextPrevious) {
@@ -1261,7 +1260,6 @@ public final class InboxActivity extends ListActivity
 			}
 		}
 
-		@Override
 		public void onScrollStateChanged(AbsListView view, int scrollState) {
 			// NOOP
 		}
