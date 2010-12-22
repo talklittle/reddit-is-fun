@@ -279,6 +279,7 @@ public class Constants {
     static final String PREF_HOMEPAGE = "homepage";
     static final String PREF_USE_EXTERNAL_BROWSER = "use_external_browser";
     static final String PREF_CONFIRM_QUIT = "confirm_quit";
+    static final String PREF_ALWAYS_SHOW_NEXT_PREVIOUS = "always_show_next_previous";
     static final String PREF_COMMENTS_SORT_BY_URL = "sort_by_url";
     static final String PREF_THEME = "theme";
     static final String PREF_THEME_LIGHT = "THEME_LIGHT";

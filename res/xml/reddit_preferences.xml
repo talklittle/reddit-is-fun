@@ -61,6 +61,10 @@
         <CheckBoxPreference
 			android:key="show_comment_guide_lines"
 			android:title="@string/pref_show_comment_guide_lines" />
+			
+		<CheckBoxPreference
+			android:key="always_show_next_previous"
+			android:title="@string/pref_always_show_next_previous" />
 
    		<ListPreference
 			android:key="rotation"

@@ -63,6 +63,7 @@ import android.view.View.OnClickListener;
 import android.view.ViewGroup;
 import android.view.Window;
 import android.webkit.CookieSyncManager;
+import android.widget.AbsListView;
 import android.widget.AdapterView.AdapterContextMenuInfo;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
@@ -458,33 +459,44 @@ public final class ProfileActivity extends ListActivity
     private void updateNextPreviousButtons() {
     	View nextPrevious = findViewById(R.id.next_previous_layout);
     	View nextPreviousBorder = findViewById(R.id.next_previous_border_top);
-    	if (nextPrevious != null && nextPreviousBorder != null) {
-	    	if (Util.isLightTheme(mSettings.theme)) {
-	       		nextPrevious.setBackgroundResource(R.color.white);
-	       		nextPreviousBorder.setBackgroundResource(R.color.black);
-	    	} else {
-	       		nextPreviousBorder.setBackgroundResource(R.color.white);
+    	
+    	if (nextPrevious == null)
+    		return;
+		
+    	boolean shouldShow = (mAfter != null || mBefore != null) &&
+    		(mSettings.alwaysShowNextPrevious || getListView().getLastVisiblePosition() == getListView().getCount() - 1);
+		
+		if (shouldShow && nextPrevious.getVisibility() != View.VISIBLE) {
+	    	if (nextPrevious != null && nextPreviousBorder != null) {
+		    	if (Util.isLightTheme(mSettings.theme)) {
+		       		nextPrevious.setBackgroundResource(R.color.white);
+		       		nextPreviousBorder.setBackgroundResource(R.color.black);
+		    	} else {
+		       		nextPreviousBorder.setBackgroundResource(R.color.white);
+		    	}
 	    	}
-    	}
-		// update the "next 25" and "prev 25" buttons
-    	final Button nextButton = (Button) findViewById(R.id.next_button);
-    	final Button previousButton = (Button) findViewById(R.id.previous_button);
-    	if (nextButton != null) {
-	    	if (mAfter != null) {
-	    		nextButton.setVisibility(View.VISIBLE);
-	    		nextButton.setOnClickListener(downloadAfterOnClickListener);
-	    	} else {
-	    		nextButton.setVisibility(View.INVISIBLE);
+			// update the "next 25" and "prev 25" buttons
+	    	final Button nextButton = (Button) findViewById(R.id.next_button);
+	    	final Button previousButton = (Button) findViewById(R.id.previous_button);
+	    	if (nextButton != null) {
+		    	if (mAfter != null) {
+		    		nextButton.setVisibility(View.VISIBLE);
+		    		nextButton.setOnClickListener(downloadAfterOnClickListener);
+		    	} else {
+		    		nextButton.setVisibility(View.INVISIBLE);
+		    	}
 	    	}
-    	}
-    	if (previousButton != null) {
-	    	if (mBefore != null && mCount != Constants.DEFAULT_THREAD_DOWNLOAD_LIMIT) {
-	    		previousButton.setVisibility(View.VISIBLE);
-	    		previousButton.setOnClickListener(downloadBeforeOnClickListener);
-	    	} else {
-	    		previousButton.setVisibility(View.INVISIBLE);
+	    	if (previousButton != null) {
+		    	if (mBefore != null && mCount != Constants.DEFAULT_THREAD_DOWNLOAD_LIMIT) {
+		    		previousButton.setVisibility(View.VISIBLE);
+		    		previousButton.setOnClickListener(downloadBeforeOnClickListener);
+		    	} else {
+		    		previousButton.setVisibility(View.INVISIBLE);
+		    	}
 	    	}
-    	}
+		} else if (!shouldShow && nextPrevious.getVisibility() == View.VISIBLE) {
+			nextPrevious.setVisibility(View.GONE);
+		}
     }
     
     private void updateKarma() {
@@ -1169,7 +1181,22 @@ public final class ProfileActivity extends ListActivity
 			new DownloadProfileTask(mUsername, null, mBefore, mCount).execute();
 		}
 	};
-    
+	
+	private final AbsListView.OnScrollListener listViewOnScrollListener = new AbsListView.OnScrollListener() {
+		@Override
+		public void onScroll(AbsListView view, int firstVisibleItem,
+				int visibleItemCount, int totalItemCount) {
+			if (!mSettings.alwaysShowNextPrevious) {
+				updateNextPreviousButtons();
+			}
+		}
+
+		@Override
+		public void onScrollStateChanged(AbsListView view, int scrollState) {
+			// NOOP
+		}
+	};
+	
 	private final ThumbnailOnClickListenerFactory thumbnailOnClickListenerFactory
 			= new ThumbnailOnClickListenerFactory() {
 		public OnClickListener getThumbnailOnClickListener(String jumpToId, String url, String threadUrl, Context context) {
@@ -1251,7 +1278,7 @@ public final class ProfileActivity extends ListActivity
 				}
 		    };
 		}
-		};
+	};
 
 
 	@Override

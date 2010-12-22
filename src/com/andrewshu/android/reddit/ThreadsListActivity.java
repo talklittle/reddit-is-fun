@@ -48,17 +48,18 @@ import android.text.style.ForegroundColorSpan;
 import android.text.style.TextAppearanceSpan;
 import android.util.Log;
 import android.view.ContextMenu;
+import android.view.ContextMenu.ContextMenuInfo;
 import android.view.KeyEvent;
 import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
+import android.view.View.OnClickListener;
 import android.view.ViewGroup;
 import android.view.Window;
-import android.view.ContextMenu.ContextMenuInfo;
-import android.view.View.OnClickListener;
 import android.webkit.CookieSyncManager;
+import android.widget.AbsListView;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
@@ -589,6 +590,7 @@ public final class ThreadsListActivity extends ListActivity {
     	setTheme(mSettings.theme);
     	setContentView(R.layout.threads_list_content);
         registerForContextMenu(getListView());
+        getListView().setOnScrollListener(listViewOnScrollListener);
 
     	synchronized (THREAD_ADAPTER_LOCK) {
 	    	if (threadsAdapter == null) {
@@ -627,32 +629,44 @@ public final class ThreadsListActivity extends ListActivity {
     private void updateNextPreviousButtons() {
     	View nextPrevious = findViewById(R.id.next_previous_layout);
     	View nextPreviousBorder = findViewById(R.id.next_previous_border_top);
-    	if (nextPrevious != null && nextPreviousBorder != null) {
-	    	if (Util.isLightTheme(mSettings.theme)) {
-	       		nextPrevious.setBackgroundResource(R.color.white);
-	       		nextPreviousBorder.setBackgroundResource(R.color.black);
-	    	} else {
-	       		nextPreviousBorder.setBackgroundResource(R.color.white);
+    	
+    	if (nextPrevious == null)
+    		return;
+		
+    	boolean shouldShow = (mAfter != null || mBefore != null) &&
+			(mSettings.alwaysShowNextPrevious || getListView().getLastVisiblePosition() == getListView().getCount() - 1);
+		
+		if (shouldShow && nextPrevious.getVisibility() != View.VISIBLE) {
+	    	if (nextPrevious != null && nextPreviousBorder != null) {
+		    	if (Util.isLightTheme(mSettings.theme)) {
+		       		nextPrevious.setBackgroundResource(R.color.white);
+		       		nextPreviousBorder.setBackgroundResource(R.color.black);
+		    	} else {
+		       		nextPreviousBorder.setBackgroundResource(R.color.white);
+		    	}
+		    	nextPrevious.setVisibility(View.VISIBLE);
 	    	}
-    	}
-		// update the "next 25" and "prev 25" buttons
-    	final Button nextButton = (Button) findViewById(R.id.next_button);
-    	final Button previousButton = (Button) findViewById(R.id.previous_button);
-    	if (nextButton != null) {
-	    	if (mAfter != null) {
-	    		nextButton.setVisibility(View.VISIBLE);
-	    		nextButton.setOnClickListener(downloadAfterOnClickListener);
-	    	} else {
-	    		nextButton.setVisibility(View.INVISIBLE);
+			// update the "next 25" and "prev 25" buttons
+	    	final Button nextButton = (Button) findViewById(R.id.next_button);
+	    	final Button previousButton = (Button) findViewById(R.id.previous_button);
+	    	if (nextButton != null) {
+		    	if (mAfter != null) {
+		    		nextButton.setVisibility(View.VISIBLE);
+		    		nextButton.setOnClickListener(downloadAfterOnClickListener);
+		    	} else {
+		    		nextButton.setVisibility(View.INVISIBLE);
+		    	}
 	    	}
-    	}
-    	if (previousButton != null) {
-	    	if (mBefore != null && mCount != Constants.DEFAULT_THREAD_DOWNLOAD_LIMIT) {
-	    		previousButton.setVisibility(View.VISIBLE);
-	    		previousButton.setOnClickListener(downloadBeforeOnClickListener);
-	    	} else {
-	    		previousButton.setVisibility(View.INVISIBLE);
+	    	if (previousButton != null) {
+		    	if (mBefore != null && mCount != Constants.DEFAULT_THREAD_DOWNLOAD_LIMIT) {
+		    		previousButton.setVisibility(View.VISIBLE);
+		    		previousButton.setOnClickListener(downloadBeforeOnClickListener);
+		    	} else {
+		    		previousButton.setVisibility(View.INVISIBLE);
+		    	}
 	    	}
+		} else if (!shouldShow && nextPrevious.getVisibility() == View.VISIBLE) {
+    		nextPrevious.setVisibility(View.GONE);
     	}
     }
     
@@ -1314,6 +1328,21 @@ public final class ThreadsListActivity extends ListActivity {
 			mSortByUrl = Constants.ThreadsSort.SORT_BY_TOP_URL;
 			mSortByUrlExtra = Constants.ThreadsSort.SORT_BY_TOP_URL_CHOICES[item];
 			new MyDownloadThreadsTask(mSubreddit).execute();
+		}
+	};
+	
+	private final AbsListView.OnScrollListener listViewOnScrollListener = new AbsListView.OnScrollListener() {
+		@Override
+		public void onScroll(AbsListView view, int firstVisibleItem,
+				int visibleItemCount, int totalItemCount) {
+			if (!mSettings.alwaysShowNextPrevious) {
+				updateNextPreviousButtons();
+			}
+		}
+
+		@Override
+		public void onScrollStateChanged(AbsListView view, int scrollState) {
+			// NOOP
 		}
 	};
 	

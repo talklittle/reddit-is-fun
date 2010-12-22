@@ -145,6 +145,9 @@ public class Common {
     	// Show confirmation dialog when backing out of root Activity
     	editor.putBoolean(Constants.PREF_CONFIRM_QUIT, rSettings.confirmQuit);
     	
+    	// Whether to always show the next/previous buttons, or only at bottom of list
+    	editor.putBoolean(Constants.PREF_ALWAYS_SHOW_NEXT_PREVIOUS, rSettings.alwaysShowNextPrevious);
+    	
     	// Comments sort order
     	editor.putString(Constants.PREF_COMMENTS_SORT_BY_URL, rSettings.commentsSortByUrl);
     	
@@ -210,6 +213,9 @@ public class Common {
         
     	// Show confirmation dialog when backing out of root Activity
         rSettings.setConfirmQuit(sessionPrefs.getBoolean(Constants.PREF_CONFIRM_QUIT, true));
+        
+    	// Whether to always show the next/previous buttons, or only at bottom of list
+        rSettings.setAlwaysShowNextPrevious(sessionPrefs.getBoolean(Constants.PREF_ALWAYS_SHOW_NEXT_PREVIOUS, true));
         
     	// Comments sort order
         rSettings.setCommentsSortByUrl(sessionPrefs.getString(Constants.PREF_COMMENTS_SORT_BY_URL, Constants.CommentsSort.SORT_BY_BEST_URL));
