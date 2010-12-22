@@ -53,16 +53,17 @@ import android.text.Spanned;
 import android.text.style.URLSpan;
 import android.util.Log;
 import android.view.ContextMenu;
+import android.view.ContextMenu.ContextMenuInfo;
 import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
+import android.view.View.OnClickListener;
 import android.view.ViewGroup;
 import android.view.Window;
-import android.view.ContextMenu.ContextMenuInfo;
-import android.view.View.OnClickListener;
 import android.webkit.CookieSyncManager;
+import android.widget.AdapterView.AdapterContextMenuInfo;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.CompoundButton;
@@ -71,7 +72,6 @@ import android.widget.ImageView;
 import android.widget.ListView;
 import android.widget.TextView;
 import android.widget.Toast;
-import android.widget.AdapterView.AdapterContextMenuInfo;
 
 import com.andrewshu.android.reddit.ThreadsListActivity.ThreadClickDialogOnClickListenerFactory;
 import com.andrewshu.android.reddit.ThreadsListActivity.ThumbnailOnClickListenerFactory;
@@ -215,17 +215,6 @@ public final class ProfileActivity extends ListActivity
     	finish();
     }
     
-    /**
-     * Hack to explicitly set background color whenever changing ListView.
-     */
-    public void setContentView(int layoutResID) {
-    	super.setContentView(layoutResID);
-    	// HACK: set background color directly for android 2.0
-        if (Util.isLightTheme(mSettings.theme))
-        	getListView().setBackgroundResource(R.color.white);
-        registerForContextMenu(getListView());
-    }
-    
     @Override
     protected void onResume() {
     	super.onResume();
@@ -235,10 +224,7 @@ public final class ProfileActivity extends ListActivity
     	Common.loadRedditPreferences(this, mSettings, mClient);
     	setRequestedOrientation(mSettings.rotation);
     	if (mSettings.theme != previousTheme) {
-    		setTheme(mSettings.theme);
-    		setContentView(R.layout.profile_list_content);
-    		setListAdapter(mThingsAdapter);
-    		Common.updateListDrawables(this, mSettings.theme);
+    		resetUI(mThingsAdapter);
     	}
     	updateNextPreviousButtons();
     	updateKarma();
@@ -430,8 +416,11 @@ public final class ProfileActivity extends ListActivity
      * @param messagesAdapter A MessagesListAdapter to use. Pass in null if you want a new empty one created.
      */
     void resetUI(ThingsListAdapter messagesAdapter) {
+    	setTheme(mSettings.theme);
     	setContentView(R.layout.profile_list_content);
-    	synchronized (MESSAGE_ADAPTER_LOCK) {
+        registerForContextMenu(getListView());
+
+        synchronized (MESSAGE_ADAPTER_LOCK) {
 	    	if (messagesAdapter == null) {
 	            // Reset the list to be empty.
 	    		mThingsList = new ArrayList<ThingInfo>();
@@ -445,6 +434,7 @@ public final class ProfileActivity extends ListActivity
 		}
     	getListView().setDivider(null);
         Common.updateListDrawables(this, mSettings.theme);
+        updateNextPreviousButtons();
     }
     
     private void enableLoadingScreen() {

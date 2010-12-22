@@ -196,31 +196,13 @@ public final class ThreadsListActivity extends ListActivity {
     	Common.loadRedditPreferences(getApplicationContext(), mSettings, mClient);
     	setRequestedOrientation(mSettings.rotation);
     	if (mSettings.theme != previousTheme) {
-    		setTheme(mSettings.theme);
-    		setContentView(R.layout.threads_list_content);
-    		setListAdapter(mThreadsAdapter);
-    		Common.updateListDrawables(this, mSettings.theme);
+    		resetUI(mThreadsAdapter);
     	}
     	updateNextPreviousButtons();
     	if (mThreadsAdapter != null) {
     		jumpToThread();
     	}
     	new PeekEnvelopeTask(this, mClient, mSettings.mailNotificationStyle).execute();
-    }
-    
-    /**
-     * Wrapper method to do additional changes associated with changing the content view.
-     */
-    public void setContentView(int layoutResID) {
-    	super.setContentView(layoutResID);
-
-    	// HACK: set background color directly for android 2.0
-    	if (Util.isLightTheme(mSettings.theme))
-        	getListView().setBackgroundResource(R.color.white);
-        registerForContextMenu(getListView());
-
-        // allow the trackball to select next25 and prev25 buttons
-        getListView().setItemsCanFocus(true);
     }
     
     @Override
@@ -604,7 +586,10 @@ public final class ThreadsListActivity extends ListActivity {
      * @param threadsAdapter A ThreadsListAdapter to use. Pass in null if you want a new empty one created.
      */
     void resetUI(ThreadsListAdapter threadsAdapter) {
+    	setTheme(mSettings.theme);
     	setContentView(R.layout.threads_list_content);
+        registerForContextMenu(getListView());
+
     	synchronized (THREAD_ADAPTER_LOCK) {
 	    	if (threadsAdapter == null) {
 	            // Reset the list to be empty.
@@ -618,6 +603,7 @@ public final class ThreadsListActivity extends ListActivity {
 		    mThreadsAdapter.notifyDataSetChanged();  // Just in case
 		}
 	    Common.updateListDrawables(this, mSettings.theme);
+	    updateNextPreviousButtons();
     }
     
     private void enableLoadingScreen() {
@@ -1108,11 +1094,7 @@ public final class ThreadsListActivity extends ListActivity {
     		break;
         case R.id.light_dark_menu_id:
     		mSettings.setTheme(Util.getInvertedTheme(mSettings.theme));
-    		setTheme(mSettings.theme);
-    		setContentView(R.layout.threads_list_content);
-    		setListAdapter(mThreadsAdapter);
-    		Common.updateListDrawables(this, mSettings.theme);
-    		updateNextPreviousButtons();
+    		resetUI(mThreadsAdapter);
     		break;
         case R.id.inbox_menu_id:
         	Intent inboxIntent = new Intent(getApplicationContext(), InboxActivity.class);

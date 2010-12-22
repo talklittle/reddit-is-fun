@@ -37,12 +37,10 @@ public class BrowserActivity extends Activity {
 		
         Common.loadRedditPreferences(this, mSettings, null);
         setRequestedOrientation(mSettings.rotation);
-        setTheme(mSettings.theme);
 		requestWindowFeature(Window.FEATURE_PROGRESS);
         requestWindowFeature(Window.FEATURE_INDETERMINATE_PROGRESS);
-        setContentView(R.layout.browser);
-
-		webview = (WebViewFixed) findViewById(R.id.webview);
+        
+        resetUI();
 		WebSettings settings = webview.getSettings();
 		settings.setBuiltInZoomControls(true);
 		settings.setPluginsEnabled(true);
@@ -115,11 +113,7 @@ public class BrowserActivity extends Activity {
     	setRequestedOrientation(mSettings.rotation);
     	int previousTheme = mSettings.theme;
     	if (mSettings.theme != previousTheme) {
-    		setTheme(mSettings.theme);
-            setContentView(R.layout.browser);
-        	// HACK: set background color directly for android 2.0
-            if (Util.isLightTheme(mSettings.theme))
-            	webview.setBackgroundResource(R.color.white);
+    		resetUI();
     	}
 	}
 	
@@ -134,6 +128,15 @@ public class BrowserActivity extends Activity {
 		super.onDestroy();
 		webview.destroy();
 		webview = null;
+	}
+	
+	private void resetUI() {
+		setTheme(mSettings.theme);
+        setContentView(R.layout.browser);
+        webview = (WebViewFixed) findViewById(R.id.webview);
+    	// HACK: set background color directly for android 2.0
+        if (Util.isLightTheme(mSettings.theme))
+        	webview.setBackgroundResource(R.color.white);
 	}
 	
 	@Override

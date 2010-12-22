@@ -115,11 +115,10 @@ public final class PickSubredditActivity extends ListActivity {
 		
     	Common.loadRedditPreferences(this, mSettings, mClient);
     	setRequestedOrientation(mSettings.rotation);
-    	setTheme(mSettings.theme);
     	requestWindowFeature(Window.FEATURE_PROGRESS);
     	requestWindowFeature(Window.FEATURE_INDETERMINATE_PROGRESS);
     	
-        setContentView(R.layout.pick_subreddit_view);
+    	resetUI(null);
         
         // Try to restore mSubredditsList using getLastNonConfigurationInstance()
         restoreLastNonConfigurationInstance();
@@ -128,7 +127,6 @@ public final class PickSubredditActivity extends ListActivity {
         } else {
 	    	// Orientation change. Use prior instance.
         	resetUI(new PickSubredditAdapter(this, mSubredditsList));
-        	fixInputField();
         }
     }
     
@@ -142,39 +140,6 @@ public final class PickSubredditActivity extends ListActivity {
     public void onPause() {
     	super.onPause();
 		CookieSyncManager.getInstance().stopSync();
-    }
-    
-    /**
-     * Hack to explicitly set background color whenever changing ListView.
-     */
-    public void setContentView(int layoutResID) {
-    	super.setContentView(layoutResID);
-    	// HACK: set background color directly for android 2.0
-        if (Util.isLightTheme(mSettings.theme))
-        	getListView().setBackgroundResource(R.color.white);
-        registerForContextMenu(getListView());
-
-        // Set the EditText to do same thing as onListItemClick
-        mEt = (EditText) findViewById(R.id.pick_subreddit_input);
-        if (mEt != null) {
-			mEt.setOnKeyListener(new OnKeyListener() {
-				public boolean onKey(View v, int keyCode, KeyEvent event) {
-			        if ((event.getAction() == KeyEvent.ACTION_DOWN) && (keyCode == KeyEvent.KEYCODE_ENTER)) {
-			        	returnSubreddit(mEt.getText().toString().trim());
-			        	return true;
-			        }
-			        return false;
-			    }
-			});
-        }
-        Button goButton = (Button) findViewById(R.id.pick_subreddit_button);
-        if (goButton != null) {
-	        goButton.setOnClickListener(new OnClickListener() {
-	        	public void onClick(View v) {
-	        		returnSubreddit(mEt.getText().toString().trim());
-	        	}
-	        });
-        }
     }
     
     @Override
@@ -192,7 +157,10 @@ public final class PickSubredditActivity extends ListActivity {
     
     
     void resetUI(PickSubredditAdapter adapter) {
+    	setTheme(mSettings.theme);
     	setContentView(R.layout.pick_subreddit_view);
+        registerForContextMenu(getListView());
+
     	synchronized (ADAPTER_LOCK) {
 	    	if (adapter == null) {
 	            // Reset the list to be empty.
@@ -206,6 +174,31 @@ public final class PickSubredditActivity extends ListActivity {
 		    mSubredditsAdapter.notifyDataSetChanged();  // Just in case
 		}
 	    Common.updateListDrawables(this, mSettings.theme);
+	    
+        // Set the EditText to do same thing as onListItemClick
+        mEt = (EditText) findViewById(R.id.pick_subreddit_input);
+        if (mEt != null) {
+			mEt.setOnKeyListener(new OnKeyListener() {
+				public boolean onKey(View v, int keyCode, KeyEvent event) {
+			        if ((event.getAction() == KeyEvent.ACTION_DOWN) && (keyCode == KeyEvent.KEYCODE_ENTER)) {
+			        	returnSubreddit(mEt.getText().toString().trim());
+			        	return true;
+			        }
+			        return false;
+			    }
+			});
+	        mEt.setFocusableInTouchMode(true);
+        }
+        Button goButton = (Button) findViewById(R.id.pick_subreddit_button);
+        if (goButton != null) {
+	        goButton.setOnClickListener(new OnClickListener() {
+	        	public void onClick(View v) {
+	        		returnSubreddit(mEt.getText().toString().trim());
+	        	}
+	        });
+        }
+        
+        getListView().requestFocus();
     }
     
         
@@ -238,13 +231,6 @@ public final class PickSubredditActivity extends ListActivity {
     private void disableLoadingScreen() {
     	resetUI(mSubredditsAdapter);
     	getWindow().setFeatureInt(Window.FEATURE_PROGRESS, 10000);
-    }
-    
-    private void fixInputField() {
-        // Enable EditText focus, but set focus to ListView, so soft keyboard doesn't pop up.
-        final EditText pickSubredditInput = (EditText) findViewById(R.id.pick_subreddit_input);
-        pickSubredditInput.setFocusableInTouchMode(true);
-        getListView().requestFocus();
     }
     
     class DownloadRedditsTask extends AsyncTask<Void, Void, ArrayList<String>> {
@@ -352,7 +338,6 @@ public final class PickSubredditActivity extends ListActivity {
 	        	mSubredditsList.add(0, Constants.FRONTPAGE_STRING);
 	        }
 	        resetUI(new PickSubredditAdapter(PickSubredditActivity.this, mSubredditsList));
-	        fixInputField();
     	}
     }
 

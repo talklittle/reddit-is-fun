@@ -277,17 +277,6 @@ public class CommentsListActivity extends ListActivity
         }
     }
     
-    /**
-     * Hack to explicitly set background color whenever changing ListView.
-     */
-    public void setContentView(int layoutResID) {
-    	super.setContentView(layoutResID);
-    	// HACK: set background color directly for android 2.0
-        if (Util.isLightTheme(mSettings.theme))
-        	getListView().setBackgroundResource(R.color.white);
-        registerForContextMenu(getListView());
-    }
-    
     @Override
     protected void onResume() {
     	super.onResume();
@@ -296,11 +285,7 @@ public class CommentsListActivity extends ListActivity
     	Common.loadRedditPreferences(this, mSettings, mClient);
     	setRequestedOrientation(mSettings.rotation);
     	if (mSettings.theme != previousTheme) {
-    		setTheme(mSettings.theme);
-    		setContentView(R.layout.comments_list_content);
-    		setListAdapter(mCommentsAdapter);
-    		getListView().setDivider(null);
-    		Common.updateListDrawables(this, mSettings.theme);
+    		resetUI(mCommentsAdapter);
     	}
     	if (mCommentsAdapter != null) {
     		jumpToComment();
@@ -595,8 +580,11 @@ public class CommentsListActivity extends ListActivity
      * @param commentsAdapter A new CommentsListAdapter to use. Pass in null to create a new empty one.
      */
     public void resetUI(CommentsListAdapter commentsAdapter) {
+    	setTheme(mSettings.theme);
     	setContentView(R.layout.comments_list_content);
-    	synchronized (COMMENT_ADAPTER_LOCK) {
+        registerForContextMenu(getListView());
+
+        synchronized (COMMENT_ADAPTER_LOCK) {
 	    	if (commentsAdapter == null) {
 	    		// Reset the list to be empty.
 	    		mCommentsList = new ArrayList<ThingInfo>();
@@ -610,6 +598,7 @@ public class CommentsListActivity extends ListActivity
     	}
         getListView().setDivider(null);
         Common.updateListDrawables(this, mSettings.theme);
+        
         mHiddenComments.clear();
         mHiddenCommentHeads.clear();
     }
@@ -1685,11 +1674,7 @@ public class CommentsListActivity extends ListActivity
     		break;
     	case R.id.light_dark_menu_id:
     		mSettings.setTheme(Util.getInvertedTheme(mSettings.theme));
-    		setTheme(mSettings.theme);
-    		setContentView(R.layout.comments_list_content);
-    		setListAdapter(mCommentsAdapter);
-    		getListView().setDivider(null);
-    		Common.updateListDrawables(this, mSettings.theme);
+    		resetUI(mCommentsAdapter);
     		if (mCommentsAdapter != null) {
     			markSubmitterComments();
     			mCommentsAdapter.notifyDataSetChanged();

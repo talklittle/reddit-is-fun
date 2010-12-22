@@ -62,16 +62,17 @@ import android.text.style.StyleSpan;
 import android.text.style.URLSpan;
 import android.util.Log;
 import android.view.ContextMenu;
+import android.view.ContextMenu.ContextMenuInfo;
 import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
+import android.view.View.OnClickListener;
 import android.view.ViewGroup;
 import android.view.Window;
-import android.view.ContextMenu.ContextMenuInfo;
-import android.view.View.OnClickListener;
 import android.webkit.CookieSyncManager;
+import android.widget.AdapterView.AdapterContextMenuInfo;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.EditText;
@@ -79,7 +80,6 @@ import android.widget.ImageView;
 import android.widget.ListView;
 import android.widget.TextView;
 import android.widget.Toast;
-import android.widget.AdapterView.AdapterContextMenuInfo;
 
 /**
  * Main Activity class representing a Subreddit, i.e., a ThreadsList.
@@ -190,17 +190,6 @@ public final class InboxActivity extends ListActivity
     }
     
     
-    /**
-     * Hack to explicitly set background color whenever changing ListView.
-     */
-    public void setContentView(int layoutResID) {
-    	super.setContentView(layoutResID);
-    	// HACK: set background color directly for android 2.0
-        if (Util.isLightTheme(mSettings.theme))
-        	getListView().setBackgroundResource(R.color.white);
-        registerForContextMenu(getListView());
-    }
-    
 	private void returnStatus(int status) {
 		Intent i = new Intent();
 		setResult(status, i);
@@ -216,10 +205,7 @@ public final class InboxActivity extends ListActivity
     	Common.loadRedditPreferences(this, mSettings, mClient);
     	setRequestedOrientation(mSettings.rotation);
     	if (mSettings.theme != previousTheme) {
-    		setTheme(mSettings.theme);
-    		setContentView(R.layout.inbox_list_content);
-    		setListAdapter(mMessagesAdapter);
-    		Common.updateListDrawables(this, mSettings.theme);
+    		resetUI(mMessagesAdapter);
     	}
     	updateNextPreviousButtons();
     	if (mSettings.isLoggedIn() != previousLoggedIn) {
@@ -399,8 +385,11 @@ public final class InboxActivity extends ListActivity
      * @param messagesAdapter A MessagesListAdapter to use. Pass in null if you want a new empty one created.
      */
     void resetUI(MessagesListAdapter messagesAdapter) {
+    	setTheme(mSettings.theme);
     	setContentView(R.layout.inbox_list_content);
-    	synchronized (MESSAGE_ADAPTER_LOCK) {
+        registerForContextMenu(getListView());
+
+        synchronized (MESSAGE_ADAPTER_LOCK) {
 	    	if (messagesAdapter == null) {
 	            // Reset the list to be empty.
 	    		mMessagesList = new ArrayList<ThingInfo>();
@@ -414,6 +403,7 @@ public final class InboxActivity extends ListActivity
 		}
     	getListView().setDivider(null);
         Common.updateListDrawables(this, mSettings.theme);
+        updateNextPreviousButtons();
     }
     
     private void enableLoadingScreen() {
@@ -648,7 +638,6 @@ public final class InboxActivity extends ListActivity
     				mMessagesAdapter.add(mi);
     		}
 			disableLoadingScreen();
-			updateNextPreviousButtons();
 			Common.cancelMailNotification(InboxActivity.this.getApplicationContext());
     	}
 		

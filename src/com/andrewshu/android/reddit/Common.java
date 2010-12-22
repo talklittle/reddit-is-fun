@@ -110,6 +110,8 @@ public class Common {
 		ListView lv = la.getListView();
 		if (Util.isLightTheme(theme)) {
     		lv.setSelector(R.drawable.list_selector_blue);
+        	// HACK: set background color directly for android 2.0
+        	lv.setBackgroundResource(R.color.white);
     	} else /* if (Common.isDarkTheme(theme)) */ {
     		lv.setSelector(android.R.drawable.list_selector_background);
     	}
