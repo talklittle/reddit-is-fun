@@ -608,6 +608,9 @@ public final class InboxActivity extends ListActivity
     				mSettings.setModhash(null);
     			else
     				mSettings.setModhash(data.getModhash());
+    			
+    			mLastAfter = mAfter;
+    			mLastBefore = mBefore;
     			mAfter = data.getAfter();
     			mBefore = data.getBefore();
     			
