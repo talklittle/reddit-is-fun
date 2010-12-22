@@ -339,10 +339,8 @@ public class Util {
 	}
 	
 	static Uri createCommentUri(ThingInfo commentThingInfo, int commentContext) {
-		// Inbox
 		if (commentThingInfo.getContext() != null)
 			return Uri.parse(absolutePathToURL(commentThingInfo.getContext()));
-		// Profile
 		if (commentThingInfo.getLink_id() != null)
 			return createCommentUri(nameToId(commentThingInfo.getLink_id()), commentThingInfo.getId(), commentContext);
 		return null;

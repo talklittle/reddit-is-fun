@@ -235,7 +235,7 @@ public class CommentsListActivity extends ListActivity
         			// http://redd.it/abc12
         			mThreadId = commentPath.substring(1);
         		} else {
-        			// http://www.reddit.com/r/(subreddit)/comments/(threadId)/thread_slug/(commentId)
+        			// http://www.reddit.com/...
 	        		Matcher m = COMMENT_PATH_PATTERN.matcher(commentPath);
 	        		if (m.matches()) {
 	            		mSubreddit = m.group(1);
@@ -575,7 +575,13 @@ public class CommentsListActivity extends ListActivity
 				for (int k = 0; k < mCommentsAdapter.getCount(); k++) {
 					ThingInfo item = mCommentsAdapter.getItem(k);
 					if (mJumpToCommentId.equals(item.getId())) {
-						getListView().setSelectionFromTop(k, 10);
+						// jump to comment with correct amount of context
+						int targetIndex = k;
+						int desiredIndent = item.getIndent() - mJumpToCommentContext;
+						item = mCommentsAdapter.getItem(targetIndex);
+						while (item.getIndent() > 0 && item.getIndent() != desiredIndent)
+							item = mCommentsAdapter.getItem(--targetIndex);
+						getListView().setSelectionFromTop(targetIndex, 10);
 						mJumpToCommentId = null;
 						break;
 					}
@@ -609,16 +615,11 @@ public class CommentsListActivity extends ListActivity
     }
     
     private void enableLoadingScreen() {
-    	View light = findViewById(R.id.loading_screen_light);
-    	View dark = findViewById(R.id.loading_screen_dark);
     	if (Util.isLightTheme(mSettings.theme)) {
-    		light.setVisibility(View.VISIBLE);
-    		dark.setVisibility(View.GONE);
+    		setContentView(R.layout.loading_light);
     	} else {
-    		light.setVisibility(View.GONE);
-    		dark.setVisibility(View.VISIBLE);
+    		setContentView(R.layout.loading_dark);
     	}
-    	findViewById(R.id.content_layout).setVisibility(View.GONE);
     	synchronized (COMMENT_ADAPTER_LOCK) {
 	    	if (mCommentsAdapter != null)
 	    		mCommentsAdapter.mIsLoading = true;
@@ -627,13 +628,7 @@ public class CommentsListActivity extends ListActivity
     }
     
     private void disableLoadingScreen() {
-    	findViewById(R.id.content_layout).setVisibility(View.VISIBLE);
-    	findViewById(R.id.loading_screen_light).setVisibility(View.GONE);
-    	findViewById(R.id.loading_screen_dark).setVisibility(View.GONE);
-    	synchronized (COMMENT_ADAPTER_LOCK) {
-	    	if (mCommentsAdapter != null)
-	    		mCommentsAdapter.mIsLoading = false;
-    	}
+    	resetUI(mCommentsAdapter);
     	getWindow().setFeatureInt(Window.FEATURE_PROGRESS, 10000);
     }
 
@@ -969,11 +964,10 @@ public class CommentsListActivity extends ListActivity
     		}
     		
     		// if loading new thread, disable loading screen. otherwise "load more comments" so just stop the progress bar
-    		if (_mPositionOffset == 0) {
+    		if (_mPositionOffset == 0)
     			disableLoadingScreen();
-    		} else {
+    		else
     			getWindow().setFeatureInt(Window.FEATURE_PROGRESS, 10000);
-    		}
     		
     		if (success) {
     			// We should clear any replies the user was composing.
