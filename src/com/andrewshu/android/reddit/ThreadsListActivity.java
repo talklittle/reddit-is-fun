@@ -83,7 +83,7 @@ public final class ThreadsListActivity extends ListActivity {
 	
 	private final ObjectMapper mObjectMapper = Common.getObjectMapper();
 	// BitmapManager helps with filling in thumbnails
-	private BitmapManager drawableManager = new BitmapManager();
+	private final BitmapManager drawableManager = new BitmapManager();
 
     /** Custom list adapter that fits our threads data into the list. */
     private ThreadsListAdapter mThreadsAdapter = null;
@@ -621,11 +621,16 @@ public final class ThreadsListActivity extends ListActivity {
     }
     
     private void enableLoadingScreen() {
+    	View light = findViewById(R.id.loading_screen_light);
+    	View dark = findViewById(R.id.loading_screen_dark);
     	if (Util.isLightTheme(mSettings.theme)) {
-    		setContentView(R.layout.loading_light);
+    		light.setVisibility(View.VISIBLE);
+    		dark.setVisibility(View.GONE);
     	} else {
-    		setContentView(R.layout.loading_dark);
+    		light.setVisibility(View.GONE);
+    		dark.setVisibility(View.VISIBLE);
     	}
+    	findViewById(R.id.content_layout).setVisibility(View.GONE);
     	synchronized (THREAD_ADAPTER_LOCK) {
 	    	if (mThreadsAdapter != null)
 	    		mThreadsAdapter.mIsLoading = true;
@@ -634,7 +639,13 @@ public final class ThreadsListActivity extends ListActivity {
     }
     
     private void disableLoadingScreen() {
-    	resetUI(mThreadsAdapter);
+    	findViewById(R.id.content_layout).setVisibility(View.VISIBLE);
+    	findViewById(R.id.loading_screen_light).setVisibility(View.GONE);
+    	findViewById(R.id.loading_screen_dark).setVisibility(View.GONE);
+    	synchronized (THREAD_ADAPTER_LOCK) {
+	    	if (mThreadsAdapter != null)
+	    		mThreadsAdapter.mIsLoading = false;
+    	}
     	getWindow().setFeatureInt(Window.FEATURE_PROGRESS, 10000);
     }
     
@@ -744,7 +755,7 @@ public final class ThreadsListActivity extends ListActivity {
     		}
 
     		disableLoadingScreen();
-
+    		
     		if (mContentLength == -1) {
     			getWindow().setFeatureInt(Window.FEATURE_PROGRESS, Window.PROGRESS_INDETERMINATE_OFF);
     		}
@@ -752,8 +763,8 @@ public final class ThreadsListActivity extends ListActivity {
     		if (success) {
     			synchronized (THREAD_ADAPTER_LOCK) {
 		    		for (ThingInfo ti : mThingInfos)
-		        		mThreadsList.add(ti);
-		    		drawableManager = new BitmapManager();  // clear thumbnails
+		    			mThreadsAdapter.add(ti);
+		    		drawableManager.clearCache();  // clear thumbnails
 		    		mThreadsAdapter.notifyDataSetChanged();
     			}
     			

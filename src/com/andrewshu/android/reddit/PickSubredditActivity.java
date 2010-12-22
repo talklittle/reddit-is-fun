@@ -223,11 +223,16 @@ public final class PickSubredditActivity extends ListActivity {
     }
     
     private void enableLoadingScreen() {
+    	View light = findViewById(R.id.loading_screen_light);
+    	View dark = findViewById(R.id.loading_screen_dark);
     	if (Util.isLightTheme(mSettings.theme)) {
-    		setContentView(R.layout.loading_light);
+    		light.setVisibility(View.VISIBLE);
+    		dark.setVisibility(View.GONE);
     	} else {
-    		setContentView(R.layout.loading_dark);
+    		light.setVisibility(View.GONE);
+    		dark.setVisibility(View.VISIBLE);
     	}
+    	findViewById(R.id.content_layout).setVisibility(View.GONE);
     	synchronized (ADAPTER_LOCK) {
 	    	if (mSubredditsAdapter != null)
 	    		mSubredditsAdapter.mLoading = true;
@@ -236,7 +241,13 @@ public final class PickSubredditActivity extends ListActivity {
     }
     
     private void disableLoadingScreen() {
-    	resetUI(mSubredditsAdapter);
+    	findViewById(R.id.content_layout).setVisibility(View.VISIBLE);
+    	findViewById(R.id.loading_screen_light).setVisibility(View.GONE);
+    	findViewById(R.id.loading_screen_dark).setVisibility(View.GONE);
+    	synchronized (ADAPTER_LOCK) {
+	    	if (mSubredditsAdapter != null)
+	    		mSubredditsAdapter.mLoading = false;
+    	}
     	getWindow().setFeatureInt(Window.FEATURE_PROGRESS, 10000);
     }
     
@@ -334,6 +345,7 @@ public final class PickSubredditActivity extends ListActivity {
     			mCurrentTask = null;
     		}
     		disableLoadingScreen();
+    		resetUI(mSubredditsAdapter);
 			
     		if (reddits == null || reddits.size() == 0) {
     			// Need to make a copy because Arrays.asList returns List backed by original array

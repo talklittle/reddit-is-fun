@@ -30,46 +30,54 @@
         android:layout_height="fill_parent"
         android:orientation="vertical">
     
-    <RelativeLayout
+    <include android:id="@+id/loading_screen_light" layout="@layout/loading_light" />
+    <include android:id="@+id/loading_screen_dark" layout="@layout/loading_dark" />
+    
+    <RelativeLayout android:id="@+id/content_layout"
     	android:layout_width="fill_parent"
-    	android:layout_height="?android:attr/listPreferredItemHeight"
-    	android:orientation="horizontal"
+    	android:layout_height="fill_parent"
     	>
-    	<Button android:id="@+id/pick_subreddit_button"
-	    	android:layout_width="?android:attr/listPreferredItemHeight"
-	    	android:layout_height="?android:attr/listPreferredItemHeight"
-	    	android:layout_alignParentRight="true"
-	    	android:text="@string/pick_subreddit_button"
-	    	/>
-	    <!-- Disable focus initially so soft keyboard doesn't pop up -->
-	    <EditText android:id="@+id/pick_subreddit_input"
+	    <RelativeLayout
 	    	android:layout_width="fill_parent"
-	    	android:layout_height="fill_parent"
-	    	android:layout_toLeftOf="@id/pick_subreddit_button"
-	    	android:focusable="false"
-	    	/>
-   	</RelativeLayout>
-
-    <ListView android:id="@android:id/list"
-    	android:layout_width="fill_parent"
-	    android:layout_height="fill_parent"
-    />
-
-    <ScrollView android:id="@android:id/empty"
-        android:layout_width="fill_parent"
-        android:layout_height="fill_parent"
-        android:fillViewport="true"
-    >
-        <TextView android:id="@+id/emptyText"
-            android:layout_width="fill_parent"
-            android:layout_height="wrap_content"
-            android:text="@string/noSubreddits"
-            android:textSize="20sp"
-            android:textColor="?android:attr/textColorSecondary"
-            android:paddingLeft="10dip"
-            android:paddingRight="10dip"
-            android:paddingTop="10dip"
-            android:lineSpacingMultiplier="0.92"
-        />
-    </ScrollView>
+	    	android:layout_height="?android:attr/listPreferredItemHeight"
+	    	android:orientation="horizontal"
+	    	>
+	    	<Button android:id="@+id/pick_subreddit_button"
+		    	android:layout_width="?android:attr/listPreferredItemHeight"
+		    	android:layout_height="?android:attr/listPreferredItemHeight"
+		    	android:layout_alignParentRight="true"
+		    	android:text="@string/pick_subreddit_button"
+		    	/>
+		    <!-- Disable focus initially so soft keyboard doesn't pop up -->
+		    <EditText android:id="@+id/pick_subreddit_input"
+		    	android:layout_width="fill_parent"
+		    	android:layout_height="fill_parent"
+		    	android:layout_toLeftOf="@id/pick_subreddit_button"
+		    	android:focusable="false"
+		    	/>
+	   	</RelativeLayout>
+	
+	    <ListView android:id="@android:id/list"
+	    	android:layout_width="fill_parent"
+		    android:layout_height="fill_parent"
+	    />
+	
+	    <ScrollView android:id="@android:id/empty"
+	        android:layout_width="fill_parent"
+	        android:layout_height="fill_parent"
+	        android:fillViewport="true"
+	    >
+	        <TextView android:id="@+id/emptyText"
+	            android:layout_width="fill_parent"
+	            android:layout_height="wrap_content"
+	            android:text="@string/noSubreddits"
+	            android:textSize="20sp"
+	            android:textColor="?android:attr/textColorSecondary"
+	            android:paddingLeft="10dip"
+	            android:paddingRight="10dip"
+	            android:paddingTop="10dip"
+	            android:lineSpacingMultiplier="0.92"
+	        />
+	    </ScrollView>
+    </RelativeLayout>
 </LinearLayout>

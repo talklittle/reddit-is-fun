@@ -448,11 +448,16 @@ public final class ProfileActivity extends ListActivity
     }
     
     private void enableLoadingScreen() {
+    	View light = findViewById(R.id.loading_screen_light);
+    	View dark = findViewById(R.id.loading_screen_dark);
     	if (Util.isLightTheme(mSettings.theme)) {
-    		setContentView(R.layout.loading_light);
+    		light.setVisibility(View.VISIBLE);
+    		dark.setVisibility(View.GONE);
     	} else {
-    		setContentView(R.layout.loading_dark);
+    		light.setVisibility(View.GONE);
+    		dark.setVisibility(View.VISIBLE);
     	}
+    	findViewById(R.id.content_layout).setVisibility(View.GONE);
     	synchronized (MESSAGE_ADAPTER_LOCK) {
 	    	if (mThingsAdapter != null)
 	    		mThingsAdapter.mIsLoading = true;
@@ -461,7 +466,13 @@ public final class ProfileActivity extends ListActivity
     }
     
     private void disableLoadingScreen() {
-    	resetUI(mThingsAdapter);
+    	findViewById(R.id.content_layout).setVisibility(View.VISIBLE);
+    	findViewById(R.id.loading_screen_light).setVisibility(View.GONE);
+    	findViewById(R.id.loading_screen_dark).setVisibility(View.GONE);
+    	synchronized (MESSAGE_ADAPTER_LOCK) {
+	    	if (mThingsAdapter != null)
+	    		mThingsAdapter.mIsLoading = false;
+    	}
     	getWindow().setFeatureInt(Window.FEATURE_PROGRESS, 10000);
     }
 
