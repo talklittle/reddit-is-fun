@@ -297,7 +297,7 @@ public class CommentsListActivity extends ListActivity
     	setRequestedOrientation(mSettings.rotation);
     	if (mSettings.theme != previousTheme) {
     		setTheme(mSettings.theme);
-    		setContentView(R.layout.threads_list_content);
+    		setContentView(R.layout.comments_list_content);
     		setListAdapter(mCommentsAdapter);
     		getListView().setDivider(null);
     		Common.updateListDrawables(this, mSettings.theme);
@@ -1686,7 +1686,7 @@ public class CommentsListActivity extends ListActivity
     	case R.id.light_dark_menu_id:
     		mSettings.setTheme(Util.getInvertedTheme(mSettings.theme));
     		setTheme(mSettings.theme);
-    		setContentView(R.layout.threads_list_content);
+    		setContentView(R.layout.comments_list_content);
     		setListAdapter(mCommentsAdapter);
     		getListView().setDivider(null);
     		Common.updateListDrawables(this, mSettings.theme);

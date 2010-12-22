@@ -236,7 +236,7 @@ public final class ProfileActivity extends ListActivity
     	setRequestedOrientation(mSettings.rotation);
     	if (mSettings.theme != previousTheme) {
     		setTheme(mSettings.theme);
-    		setContentView(R.layout.threads_list_content);
+    		setContentView(R.layout.profile_list_content);
     		setListAdapter(mThingsAdapter);
     		Common.updateListDrawables(this, mSettings.theme);
     	}

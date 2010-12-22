@@ -217,7 +217,7 @@ public final class InboxActivity extends ListActivity
     	setRequestedOrientation(mSettings.rotation);
     	if (mSettings.theme != previousTheme) {
     		setTheme(mSettings.theme);
-    		setContentView(R.layout.threads_list_content);
+    		setContentView(R.layout.inbox_list_content);
     		setListAdapter(mMessagesAdapter);
     		Common.updateListDrawables(this, mSettings.theme);
     	}

@@ -170,4 +170,7 @@ public class BitmapManager {
 		return bmp;
 	}
 
+	public void clearCache() {
+		mCache.clear();
+	}
 }

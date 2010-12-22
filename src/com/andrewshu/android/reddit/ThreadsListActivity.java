@@ -83,7 +83,7 @@ public final class ThreadsListActivity extends ListActivity {
 	
 	private final ObjectMapper mObjectMapper = Common.getObjectMapper();
 	// BitmapManager helps with filling in thumbnails
-	private BitmapManager drawableManager = new BitmapManager();
+	private final BitmapManager drawableManager = new BitmapManager();
 
     /** Custom list adapter that fits our threads data into the list. */
     private ThreadsListAdapter mThreadsAdapter = null;
@@ -753,7 +753,7 @@ public final class ThreadsListActivity extends ListActivity {
     			synchronized (THREAD_ADAPTER_LOCK) {
 		    		for (ThingInfo ti : mThingInfos)
 		        		mThreadsList.add(ti);
-		    		drawableManager = new BitmapManager();  // clear thumbnails
+		    		drawableManager.clearCache();  // clear thumbnails
 		    		mThreadsAdapter.notifyDataSetChanged();
     			}
     			
