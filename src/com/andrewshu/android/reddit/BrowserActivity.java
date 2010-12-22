@@ -42,7 +42,7 @@ public class BrowserActivity extends Activity {
         requestWindowFeature(Window.FEATURE_INDETERMINATE_PROGRESS);
         setContentView(R.layout.browser);
 
-		webview = (WebView) findViewById(R.id.webview);
+		webview = (WebViewFixed) findViewById(R.id.webview);
 		WebSettings settings = webview.getSettings();
 		settings.setBuiltInZoomControls(true);
 		settings.setPluginsEnabled(true);
