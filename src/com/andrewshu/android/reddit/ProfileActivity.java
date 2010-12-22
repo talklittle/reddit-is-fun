@@ -509,11 +509,11 @@ public final class ProfileActivity extends ListActivity
 	    	} else {
 	       		karmaLayoutBorder.setBackgroundResource(R.color.white);
 	    	}
+	    	TextView linkKarma = (TextView) findViewById(R.id.link_karma);
+	    	TextView commentKarma = (TextView) findViewById(R.id.comment_karma);
+	    	linkKarma.setText(mKarma[0] + " link karma");
+	    	commentKarma.setText(mKarma[1] + " comment karma");
     	}
-    	TextView linkKarma = (TextView) findViewById(R.id.link_karma);
-    	TextView commentKarma = (TextView) findViewById(R.id.comment_karma);
-    	linkKarma.setText(mKarma[0] + " link karma");
-    	commentKarma.setText(mKarma[1] + " comment karma");
     }
 
         
