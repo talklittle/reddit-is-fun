@@ -389,6 +389,7 @@ public final class InboxActivity extends ListActivity
     	setTheme(mSettings.theme);
     	setContentView(R.layout.inbox_list_content);
         registerForContextMenu(getListView());
+        getListView().setOnScrollListener(listViewOnScrollListener);
 
         synchronized (MESSAGE_ADAPTER_LOCK) {
 	    	if (messagesAdapter == null) {
@@ -443,6 +444,7 @@ public final class InboxActivity extends ListActivity
 		    	} else {
 		       		nextPreviousBorder.setBackgroundResource(R.color.white);
 		    	}
+		    	nextPrevious.setVisibility(View.VISIBLE);
 	    	}
 			// update the "next 25" and "prev 25" buttons
 	    	final Button nextButton = (Button) findViewById(R.id.next_button);
