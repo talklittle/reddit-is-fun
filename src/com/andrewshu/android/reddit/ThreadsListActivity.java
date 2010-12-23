@@ -131,7 +131,7 @@ public final class ThreadsListActivity extends ListActivity {
         
 		CookieSyncManager.createInstance(getApplicationContext());
 		
-        Common.loadRedditPreferences(getApplicationContext(), mSettings, mClient);
+        mSettings.loadRedditPreferences(getApplicationContext(), mClient);
         setRequestedOrientation(mSettings.rotation);
         setTheme(mSettings.theme);
         requestWindowFeature(Window.FEATURE_PROGRESS);
@@ -193,7 +193,7 @@ public final class ThreadsListActivity extends ListActivity {
     	super.onResume();
 		CookieSyncManager.getInstance().startSync();
     	int previousTheme = mSettings.theme;
-    	Common.loadRedditPreferences(getApplicationContext(), mSettings, mClient);
+    	mSettings.loadRedditPreferences(this, mClient);
     	setRequestedOrientation(mSettings.rotation);
     	if (mSettings.theme != previousTheme) {
     		resetUI(mThreadsAdapter);
@@ -209,7 +209,7 @@ public final class ThreadsListActivity extends ListActivity {
     protected void onPause() {
     	super.onPause();
 		CookieSyncManager.getInstance().stopSync();
-		Common.saveRedditPreferences(getApplicationContext(), mSettings);
+		mSettings.saveRedditPreferences(this);
     }
     
     @Override

@@ -90,7 +90,7 @@ public class SubmitLinkActivity extends TabActivity {
 		
 		CookieSyncManager.createInstance(getApplicationContext());
 		
-		Common.loadRedditPreferences(this, mSettings, mClient);
+		mSettings.loadRedditPreferences(this, mClient);
 		setRequestedOrientation(mSettings.rotation);
 		setTheme(mSettings.theme);
 		
@@ -140,7 +140,7 @@ public class SubmitLinkActivity extends TabActivity {
 	@Override
     protected void onPause() {
     	super.onPause();
-    	Common.saveRedditPreferences(this, mSettings);
+    	mSettings.saveRedditPreferences(this);
 		CookieSyncManager.getInstance().stopSync();
     }
     

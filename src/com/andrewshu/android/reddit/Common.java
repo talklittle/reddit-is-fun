@@ -23,7 +23,6 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.util.Date;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.zip.GZIPInputStream;
@@ -44,7 +43,6 @@ import org.apache.http.conn.scheme.SchemeRegistry;
 import org.apache.http.entity.HttpEntityWrapper;
 import org.apache.http.impl.client.DefaultHttpClient;
 import org.apache.http.impl.conn.tsccm.ThreadSafeClientConnManager;
-import org.apache.http.impl.cookie.BasicClientCookie;
 import org.apache.http.params.BasicHttpParams;
 import org.apache.http.protocol.HttpContext;
 import org.codehaus.jackson.map.ObjectMapper;
@@ -167,131 +165,6 @@ public class Common {
     }
     
 	
-    static void saveRedditPreferences(Context context, RedditSettings rSettings) {
-    	SharedPreferences settings = PreferenceManager.getDefaultSharedPreferences(context);
-    	SharedPreferences.Editor editor = settings.edit();
-    	
-    	// Session
-    	if (rSettings.username != null)
-    		editor.putString("username", rSettings.username);
-    	else
-    		editor.remove("username");
-    	if (rSettings.redditSessionCookie != null) {
-    		editor.putString("reddit_sessionValue",  rSettings.redditSessionCookie.getValue());
-    		editor.putString("reddit_sessionDomain", rSettings.redditSessionCookie.getDomain());
-    		editor.putString("reddit_sessionPath",   rSettings.redditSessionCookie.getPath());
-    		if (rSettings.redditSessionCookie.getExpiryDate() != null)
-    			editor.putLong("reddit_sessionExpiryDate", rSettings.redditSessionCookie.getExpiryDate().getTime());
-    	}
-    	if (rSettings.modhash != null)
-    		editor.putString("modhash", rSettings.modhash.toString());
-    	
-    	// Default subreddit
-    	editor.putString(Constants.PREF_HOMEPAGE, rSettings.homepage.toString());
-    	
-    	// Use external browser instead of BrowserActivity
-    	editor.putBoolean(Constants.PREF_USE_EXTERNAL_BROWSER, rSettings.useExternalBrowser);
-    	
-    	// Show confirmation dialog when backing out of root Activity
-    	editor.putBoolean(Constants.PREF_CONFIRM_QUIT, rSettings.confirmQuit);
-    	
-    	// Whether to always show the next/previous buttons, or only at bottom of list
-    	editor.putBoolean(Constants.PREF_ALWAYS_SHOW_NEXT_PREVIOUS, rSettings.alwaysShowNextPrevious);
-    	
-    	// Comments sort order
-    	editor.putString(Constants.PREF_COMMENTS_SORT_BY_URL, rSettings.commentsSortByUrl);
-    	
-    	// Theme and text size
-    	String[] themeTextSize = Util.getPrefsFromThemeResource(rSettings.theme);
-    	editor.putString(Constants.PREF_THEME, themeTextSize[0]);
-    	editor.putString(Constants.PREF_TEXT_SIZE, themeTextSize[1]);
-    	
-    	// Comment guide lines
-    	editor.putBoolean(Constants.PREF_SHOW_COMMENT_GUIDE_LINES, rSettings.showCommentGuideLines);
-    	
-    	// Rotation
-    	editor.putString(Constants.PREF_ROTATION, RedditSettings.Rotation.toString(rSettings.rotation));
-    	
-    	// Thumbnails
-    	editor.putBoolean(Constants.PREF_LOAD_THUMBNAILS, rSettings.loadThumbnails);
-    	editor.putBoolean(Constants.PREF_LOAD_THUMBNAILS_ONLY_WIFI, rSettings.loadThumbnailsOnlyWifi);
-    	
-    	// Notifications
-    	editor.putString(Constants.PREF_MAIL_NOTIFICATION_STYLE, rSettings.mailNotificationStyle);
-    	editor.putString(Constants.PREF_MAIL_NOTIFICATION_SERVICE, rSettings.mailNotificationService);
-
-    	editor.commit();
-    }
-    
-    static void loadRedditPreferences(Context context, RedditSettings rSettings, DefaultHttpClient client) {
-        // Session
-    	SharedPreferences sessionPrefs = PreferenceManager.getDefaultSharedPreferences(context);
-        rSettings.setUsername(sessionPrefs.getString("username", null));
-        rSettings.setModhash(sessionPrefs.getString("modhash", null));
-        String cookieValue = sessionPrefs.getString("reddit_sessionValue", null);
-        String cookieDomain = sessionPrefs.getString("reddit_sessionDomain", null);
-        String cookiePath = sessionPrefs.getString("reddit_sessionPath", null);
-        long cookieExpiryDate = sessionPrefs.getLong("reddit_sessionExpiryDate", -1);
-        if (cookieValue != null) {
-        	BasicClientCookie redditSessionCookie = new BasicClientCookie("reddit_session", cookieValue);
-        	redditSessionCookie.setDomain(cookieDomain);
-        	redditSessionCookie.setPath(cookiePath);
-        	if (cookieExpiryDate != -1)
-        		redditSessionCookie.setExpiryDate(new Date(cookieExpiryDate));
-        	else
-        		redditSessionCookie.setExpiryDate(null);
-        	rSettings.setRedditSessionCookie(redditSessionCookie);
-        	if (client != null) {
-        		client.getCookieStore().addCookie(redditSessionCookie);
-        		try {
-        			CookieSyncManager.getInstance().sync();
-        		} catch (IllegalStateException ex) {
-        			if (Constants.LOGGING) Log.e(TAG, "CookieSyncManager.getInstance().sync()", ex);
-        		}
-        	}
-        }
-        
-        // Default subreddit
-        String homepage = sessionPrefs.getString(Constants.PREF_HOMEPAGE, Constants.FRONTPAGE_STRING).trim();
-        if (Constants.EMPTY_STRING.equals(homepage))
-        	rSettings.setHomepage(Constants.FRONTPAGE_STRING);
-        else
-        	rSettings.setHomepage(homepage);
-        
-    	// Use external browser instead of BrowserActivity
-        rSettings.setUseExternalBrowser(sessionPrefs.getBoolean(Constants.PREF_USE_EXTERNAL_BROWSER, false));
-        
-    	// Show confirmation dialog when backing out of root Activity
-        rSettings.setConfirmQuit(sessionPrefs.getBoolean(Constants.PREF_CONFIRM_QUIT, true));
-        
-    	// Whether to always show the next/previous buttons, or only at bottom of list
-        rSettings.setAlwaysShowNextPrevious(sessionPrefs.getBoolean(Constants.PREF_ALWAYS_SHOW_NEXT_PREVIOUS, true));
-        
-    	// Comments sort order
-        rSettings.setCommentsSortByUrl(sessionPrefs.getString(Constants.PREF_COMMENTS_SORT_BY_URL, Constants.CommentsSort.SORT_BY_BEST_URL));
-        
-        // Theme and text size
-        rSettings.setTheme(Util.getThemeResourceFromPrefs(
-        		sessionPrefs.getString(Constants.PREF_THEME, Constants.PREF_THEME_LIGHT),
-        		sessionPrefs.getString(Constants.PREF_TEXT_SIZE, Constants.PREF_TEXT_SIZE_MEDIUM)));
-        
-        // Comment guide lines
-        rSettings.setShowCommentGuideLines(sessionPrefs.getBoolean(Constants.PREF_SHOW_COMMENT_GUIDE_LINES, true));
-        
-        // Rotation
-        rSettings.setRotation(RedditSettings.Rotation.valueOf(
-        		sessionPrefs.getString(Constants.PREF_ROTATION, Constants.PREF_ROTATION_UNSPECIFIED)));
-        
-        // Thumbnails
-        rSettings.setLoadThumbnails(sessionPrefs.getBoolean(Constants.PREF_LOAD_THUMBNAILS, true));
-        // Thumbnails on Wifi
-        rSettings.setLoadThumbnailsOnlyWifi(sessionPrefs.getBoolean(Constants.PREF_LOAD_THUMBNAILS_ONLY_WIFI, false));
-        
-        // Notifications
-        rSettings.setMailNotificationStyle(sessionPrefs.getString(Constants.PREF_MAIL_NOTIFICATION_STYLE, Constants.PREF_MAIL_NOTIFICATION_STYLE_DEFAULT));
-        rSettings.setMailNotificationService(sessionPrefs.getString(Constants.PREF_MAIL_NOTIFICATION_SERVICE, Constants.PREF_MAIL_NOTIFICATION_SERVICE_OFF));
-    }
-    
     static void clearCookies(RedditSettings settings, DefaultHttpClient client, Context context) {
         settings.setRedditSessionCookie(null);
 

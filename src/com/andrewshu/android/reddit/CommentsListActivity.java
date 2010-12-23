@@ -175,7 +175,7 @@ public class CommentsListActivity extends ListActivity
         
 		CookieSyncManager.createInstance(getApplicationContext());
 		
-        Common.loadRedditPreferences(this, mSettings, mClient);
+		mSettings.loadRedditPreferences(this, mClient);
         setRequestedOrientation(mSettings.rotation);
         setTheme(mSettings.theme);
         requestWindowFeature(Window.FEATURE_PROGRESS);
@@ -282,7 +282,7 @@ public class CommentsListActivity extends ListActivity
     	super.onResume();
 		CookieSyncManager.getInstance().startSync();
     	int previousTheme = mSettings.theme;
-    	Common.loadRedditPreferences(this, mSettings, mClient);
+    	mSettings.loadRedditPreferences(this, mClient);
     	setRequestedOrientation(mSettings.rotation);
     	if (mSettings.theme != previousTheme) {
     		resetUI(mCommentsAdapter);
@@ -298,7 +298,7 @@ public class CommentsListActivity extends ListActivity
     protected void onPause() {
     	super.onPause();
 		CookieSyncManager.getInstance().stopSync();
-		Common.saveRedditPreferences(this, mSettings);
+		mSettings.saveRedditPreferences(this);
     }
     
     @Override

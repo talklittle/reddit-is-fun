@@ -49,7 +49,7 @@ public class EnvelopeService extends Service {
     @Override
     public void onCreate() {
         mNM = (NotificationManager)getSystemService(NOTIFICATION_SERVICE);
-        Common.loadRedditPreferences(this, mSettings, mClient);
+        mSettings.loadRedditPreferences(this, mClient);
         new PeekEnvelopeServiceTask(this, mClient, mSettings.mailNotificationStyle).execute();
     }
     

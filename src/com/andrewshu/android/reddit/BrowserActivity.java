@@ -35,7 +35,7 @@ public class BrowserActivity extends Activity {
 		
 		CookieSyncManager.createInstance(getApplicationContext());
 		
-        Common.loadRedditPreferences(this, mSettings, null);
+        mSettings.loadRedditPreferences(this, null);
         setRequestedOrientation(mSettings.rotation);
 		requestWindowFeature(Window.FEATURE_PROGRESS);
         requestWindowFeature(Window.FEATURE_INDETERMINATE_PROGRESS);
@@ -109,7 +109,7 @@ public class BrowserActivity extends Activity {
 	public void onResume() {
 		super.onResume();
 		CookieSyncManager.getInstance().startSync();
-    	Common.loadRedditPreferences(this, mSettings, null);
+    	mSettings.loadRedditPreferences(this, null);
     	setRequestedOrientation(mSettings.rotation);
     	int previousTheme = mSettings.theme;
     	if (mSettings.theme != previousTheme) {

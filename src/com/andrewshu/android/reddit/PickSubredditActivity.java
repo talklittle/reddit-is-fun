@@ -113,7 +113,7 @@ public final class PickSubredditActivity extends ListActivity {
         
 		CookieSyncManager.createInstance(getApplicationContext());
 		
-    	Common.loadRedditPreferences(this, mSettings, mClient);
+		mSettings.loadRedditPreferences(this, mClient);
     	setRequestedOrientation(mSettings.rotation);
     	requestWindowFeature(Window.FEATURE_PROGRESS);
     	requestWindowFeature(Window.FEATURE_INDETERMINATE_PROGRESS);
