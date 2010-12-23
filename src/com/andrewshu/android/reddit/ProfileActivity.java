@@ -621,8 +621,13 @@ public final class ProfileActivity extends ListActivity
             	
             	// Read the header to get Content-Length since entity.getContentLength() returns -1
             	Header contentLengthHeader = response.getFirstHeader("Content-Length");
-            	_mContentLength = Long.valueOf(contentLengthHeader.getValue());
-            	if (Constants.LOGGING) Log.d(TAG, "Content length: "+_mContentLength);
+            	if (contentLengthHeader != null) {
+	            	_mContentLength = Long.valueOf(contentLengthHeader.getValue());
+	            	if (Constants.LOGGING) Log.d(TAG, "Content length: "+_mContentLength);
+            	} else {
+            		_mContentLength = -1;
+            		if (Constants.LOGGING) Log.d(TAG, "Content length: UNAVAILABLE");
+            	}
 
             	entity = response.getEntity();
             	in = entity.getContent();
@@ -770,6 +775,8 @@ public final class ProfileActivity extends ListActivity
 			}
     		resetUI(null);
     		enableLoadingScreen();
+    		if (_mContentLength == -1)
+    			getWindow().setFeatureInt(Window.FEATURE_PROGRESS, Window.PROGRESS_INDETERMINATE_ON);
     	}
     	
 		@Override
@@ -781,7 +788,11 @@ public final class ProfileActivity extends ListActivity
     			for (ThingInfo mi : _mThingInfos)
     				mThingsAdapter.add(mi);
     		}
-			disableLoadingScreen();
+    		
+    		if (_mContentLength == -1)
+    			getWindow().setFeatureInt(Window.FEATURE_PROGRESS, Window.PROGRESS_INDETERMINATE_OFF);
+			
+    		disableLoadingScreen();
 			setTitle(String.format(getResources().getString(R.string.user_profile), mUsername));
 			updateNextPreviousButtons();
 			updateKarma();
