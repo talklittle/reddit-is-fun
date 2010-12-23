@@ -1005,26 +1005,20 @@ public class CommentsListActivity extends ListActivity
     }
     
     
-    private class LoginTask extends AsyncTask<Void, Void, String> {
-    	private String mUsername, mPassword, mUserError;
-    	
-    	LoginTask(String username, String password) {
-    		mUsername = username;
-    		mPassword = password;
+    private class MyLoginTask extends LoginTask {
+    	public MyLoginTask(String username, String password) {
+    		super(username, password, mSettings, mClient, getApplicationContext());
     	}
     	
     	@Override
-    	public String doInBackground(Void... v) {
-    		return Common.doLogin(mUsername, mPassword, mSettings, mClient, getApplicationContext());
-        }
-    	
     	protected void onPreExecute() {
     		showDialog(Constants.DIALOG_LOGGING_IN);
     	}
     	
-    	protected void onPostExecute(String errorMessage) {
+    	@Override
+    	protected void onPostExecute(Boolean success) {
     		dismissDialog(Constants.DIALOG_LOGGING_IN);
-    		if (errorMessage == null) {
+    		if (success) {
     			Toast.makeText(CommentsListActivity.this, "Logged in as "+mUsername, Toast.LENGTH_SHORT).show();
     			// Check mail
     			new PeekEnvelopeTask(CommentsListActivity.this, mClient, mSettings.mailNotificationStyle).execute();
@@ -1914,7 +1908,7 @@ public class CommentsListActivity extends ListActivity
 				@Override
 				public void onLoginChosen(String user, String password) {
 					dismissDialog(Constants.DIALOG_LOGIN);
-    				new LoginTask(user, password).execute();
+    				new MyLoginTask(user, password).execute();
 				}
 			};
     		break;

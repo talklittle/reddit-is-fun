@@ -62,17 +62,16 @@ import android.text.style.StyleSpan;
 import android.text.style.URLSpan;
 import android.util.Log;
 import android.view.ContextMenu;
-import android.view.ContextMenu.ContextMenuInfo;
 import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
-import android.view.View.OnClickListener;
 import android.view.ViewGroup;
 import android.view.Window;
+import android.view.ContextMenu.ContextMenuInfo;
+import android.view.View.OnClickListener;
 import android.webkit.CookieSyncManager;
-import android.widget.AdapterView.AdapterContextMenuInfo;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.EditText;
@@ -80,6 +79,7 @@ import android.widget.ImageView;
 import android.widget.ListView;
 import android.widget.TextView;
 import android.widget.Toast;
+import android.widget.AdapterView.AdapterContextMenuInfo;
 
 /**
  * Main Activity class representing a Subreddit, i.e., a ThreadsList.
@@ -652,26 +652,20 @@ public final class InboxActivity extends ListActivity
     }
     
     
-    private class LoginTask extends AsyncTask<Void, Void, String> {
-    	private String mUsername, mPassword, mUserError;
-    	
-    	LoginTask(String username, String password) {
-    		mUsername = username;
-    		mPassword = password;
+    private class MyLoginTask extends LoginTask {
+    	public MyLoginTask(String username, String password) {
+    		super(username, password, mSettings, mClient, getApplicationContext());
     	}
     	
     	@Override
-    	public String doInBackground(Void... v) {
-    		return Common.doLogin(mUsername, mPassword, mSettings, mClient, getApplicationContext());
-        }
-    	
     	protected void onPreExecute() {
     		showDialog(Constants.DIALOG_LOGGING_IN);
     	}
     	
-    	protected void onPostExecute(String errorMessage) {
+    	@Override
+    	protected void onPostExecute(Boolean success) {
     		dismissDialog(Constants.DIALOG_LOGGING_IN);
-    		if (errorMessage == null) {
+    		if (success) {
     			Toast.makeText(InboxActivity.this, "Logged in as "+mUsername, Toast.LENGTH_SHORT).show();
 	    		// Refresh the threads list
     			new DownloadMessagesTask().execute(Constants.DEFAULT_COMMENT_DOWNLOAD_LIMIT);
@@ -1094,7 +1088,7 @@ public final class InboxActivity extends ListActivity
 				@Override
 				public void onLoginChosen(String user, String password) {
 					dismissDialog(Constants.DIALOG_LOGIN);
-		        	new LoginTask(user, password).execute();
+		        	new MyLoginTask(user, password).execute();
 				}
 			};
     		break;

@@ -53,17 +53,16 @@ import android.text.Spanned;
 import android.text.style.URLSpan;
 import android.util.Log;
 import android.view.ContextMenu;
-import android.view.ContextMenu.ContextMenuInfo;
 import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
-import android.view.View.OnClickListener;
 import android.view.ViewGroup;
 import android.view.Window;
+import android.view.ContextMenu.ContextMenuInfo;
+import android.view.View.OnClickListener;
 import android.webkit.CookieSyncManager;
-import android.widget.AdapterView.AdapterContextMenuInfo;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.CompoundButton;
@@ -72,6 +71,7 @@ import android.widget.ImageView;
 import android.widget.ListView;
 import android.widget.TextView;
 import android.widget.Toast;
+import android.widget.AdapterView.AdapterContextMenuInfo;
 
 import com.andrewshu.android.reddit.ThreadsListActivity.ThreadClickDialogOnClickListenerFactory;
 import com.andrewshu.android.reddit.ThreadsListActivity.ThumbnailOnClickListenerFactory;
@@ -781,30 +781,24 @@ public final class ProfileActivity extends ListActivity
     }
     
     
-    private class LoginTask extends AsyncTask<Void, Void, String> {
-    	private String mUsername, mPassword;
-    	
-    	LoginTask(String username, String password) {
-    		mUsername = username;
-    		mPassword = password;
+    private class MyLoginTask extends LoginTask {
+    	public MyLoginTask(String username, String password) {
+    		super(username, password, mSettings, mClient, getApplicationContext());
     	}
     	
     	@Override
-    	public String doInBackground(Void... v) {
-    		return Common.doLogin(mUsername, mPassword, mSettings, mClient, getApplicationContext());
-        }
-    	
     	protected void onPreExecute() {
     		showDialog(Constants.DIALOG_LOGGING_IN);
     	}
     	
-    	protected void onPostExecute(String errorMessage) {
+    	@Override
+    	protected void onPostExecute(Boolean success) {
     		dismissDialog(Constants.DIALOG_LOGGING_IN);
-    		if (errorMessage == null) {
+    		if (success) {
     			Toast.makeText(ProfileActivity.this, "Logged in as "+mUsername, Toast.LENGTH_SHORT).show();
     			showDialog(Constants.DIALOG_COMPOSE);
     		} else {
-            	Common.showErrorToast(errorMessage, Toast.LENGTH_LONG, ProfileActivity.this);
+            	Common.showErrorToast(mUserError, Toast.LENGTH_LONG, ProfileActivity.this);
     		}
     	}
     }
@@ -1036,7 +1030,7 @@ public final class ProfileActivity extends ListActivity
 				@Override
 				public void onLoginChosen(String user, String password) {
 					dismissDialog(Constants.DIALOG_LOGIN);
-		        	new LoginTask(user, password).execute();
+		        	new MyLoginTask(user, password).execute();
 				}
 			};
     		break;

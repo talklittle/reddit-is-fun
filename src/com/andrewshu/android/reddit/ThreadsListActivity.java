@@ -39,7 +39,6 @@ import android.content.Intent;
 import android.content.res.Resources;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
-import android.os.AsyncTask;
 import android.os.Bundle;
 import android.text.SpannableString;
 import android.text.SpannableStringBuilder;
@@ -48,16 +47,16 @@ import android.text.style.ForegroundColorSpan;
 import android.text.style.TextAppearanceSpan;
 import android.util.Log;
 import android.view.ContextMenu;
-import android.view.ContextMenu.ContextMenuInfo;
 import android.view.KeyEvent;
 import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
-import android.view.View.OnClickListener;
 import android.view.ViewGroup;
 import android.view.Window;
+import android.view.ContextMenu.ContextMenuInfo;
+import android.view.View.OnClickListener;
 import android.webkit.CookieSyncManager;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
@@ -753,19 +752,10 @@ public final class ThreadsListActivity extends ListActivity {
     	}
     }
     
-    
-    private class LoginTask extends AsyncTask<Void, Void, String> {
-    	private String mUsername, mPassword;
-    	
-    	LoginTask(String username, String password) {
-    		mUsername = username;
-    		mPassword = password;
+    private class MyLoginTask extends LoginTask {
+    	public MyLoginTask(String username, String password) {
+    		super(username, password, mSettings, mClient, getApplicationContext());
     	}
-    	
-    	@Override
-    	public String doInBackground(Void... v) {
-    		return Common.doLogin(mUsername, mPassword, mSettings, mClient, getApplicationContext());
-        }
     	
     	@Override
     	protected void onPreExecute() {
@@ -773,19 +763,20 @@ public final class ThreadsListActivity extends ListActivity {
     	}
     	
     	@Override
-    	protected void onPostExecute(String errorMessage) {
+    	protected void onPostExecute(Boolean success) {
     		dismissDialog(Constants.DIALOG_LOGGING_IN);
-    		if (errorMessage == null) {
+    		if (success) {
     			Toast.makeText(ThreadsListActivity.this, "Logged in as "+mUsername, Toast.LENGTH_SHORT).show();
     			// Check mail
     			new PeekEnvelopeTask(getApplicationContext(), mClient, mSettings.mailNotificationStyle).execute();
     			// Refresh the threads list
     			new MyDownloadThreadsTask(mSubreddit).execute();
         	} else {
-            	Common.showErrorToast(errorMessage, Toast.LENGTH_LONG, ThreadsListActivity.this);
+            	Common.showErrorToast(mUserError, Toast.LENGTH_LONG, ThreadsListActivity.this);
     		}
     	}
     }
+    
     
     private class MyVoteTask extends VoteTask {
     	
@@ -1112,7 +1103,7 @@ public final class ThreadsListActivity extends ListActivity {
     		dialog = new LoginDialog(this, mSettings, false) {
 				public void onLoginChosen(String user, String password) {
 					dismissDialog(Constants.DIALOG_LOGIN);
-		        	new LoginTask(user, password).execute(); 
+		        	new MyLoginTask(user, password).execute(); 
 				}
 			};
     		break;

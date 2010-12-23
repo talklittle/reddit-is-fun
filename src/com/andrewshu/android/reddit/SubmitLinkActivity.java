@@ -235,18 +235,10 @@ public class SubmitLinkActivity extends TabActivity {
 
 	
 	
-	private class LoginTask extends AsyncTask<Void, Void, String> {
-    	private String mUsername, mPassword;
-    	
-    	LoginTask(String username, String password) {
-    		mUsername = username;
-    		mPassword = password;
+	private class MyLoginTask extends LoginTask {
+    	public MyLoginTask(String username, String password) {
+    		super(username, password, mSettings, mClient, getApplicationContext());
     	}
-    	
-    	@Override
-    	public String doInBackground(Void... v) {
-    		return Common.doLogin(mUsername, mPassword, mSettings, mClient, getApplicationContext());
-        }
     	
     	@Override
     	protected void onPreExecute() {
@@ -254,16 +246,16 @@ public class SubmitLinkActivity extends TabActivity {
     	}
     	
     	@Override
-    	protected void onPostExecute(String errorMessage) {
+    	protected void onPostExecute(Boolean success) {
     		dismissDialog(Constants.DIALOG_LOGGING_IN);
-			if (errorMessage == null) {
+			if (success) {
     			Toast.makeText(SubmitLinkActivity.this, "Logged in as "+mUsername, Toast.LENGTH_SHORT).show();
     			// Check mail
     			new PeekEnvelopeTask(SubmitLinkActivity.this, mClient, mSettings.mailNotificationStyle).execute();
     			// Show the UI and allow user to proceed
     			start();
         	} else {
-            	Common.showErrorToast(errorMessage, Toast.LENGTH_LONG, SubmitLinkActivity.this);
+            	Common.showErrorToast(mUserError, Toast.LENGTH_LONG, SubmitLinkActivity.this);
     			returnStatus(Constants.RESULT_LOGIN_REQUIRED);
         	}
     	}
@@ -532,7 +524,7 @@ public class SubmitLinkActivity extends TabActivity {
 				@Override
 				public void onLoginChosen(String user, String password) {
 					dismissDialog(Constants.DIALOG_LOGIN);
-    				new LoginTask(user, password).execute();
+    				new MyLoginTask(user, password).execute();
 				}
 			};
     		break;
