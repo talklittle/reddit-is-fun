@@ -63,7 +63,6 @@ import android.view.View.OnClickListener;
 import android.view.ViewGroup;
 import android.view.Window;
 import android.webkit.CookieSyncManager;
-import android.widget.AbsListView;
 import android.widget.AdapterView.AdapterContextMenuInfo;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
@@ -117,6 +116,7 @@ public final class ProfileActivity extends ListActivity
     // TODO: String mVoteTargetId so when you rotate, you can find the TargetThingInfo again
     private DownloadProfileTask mCurrentDownloadThingsTask = null;
     private final Object mCurrentDownloadThingsTaskLock = new Object();
+    private View mNextPreviousView = null;
     
     private String mUsername = null;
     
@@ -420,7 +420,16 @@ public final class ProfileActivity extends ListActivity
     	setTheme(mSettings.theme);
     	setContentView(R.layout.profile_list_content);
         registerForContextMenu(getListView());
-        getListView().setOnScrollListener(listViewOnScrollListener);
+
+        if (mSettings.alwaysShowNextPrevious) {
+        	// Set mNextPreviousView to null; we can use findViewById(R.id.next_previous_layout).
+        	mNextPreviousView = null;
+        } else {
+            // If we are not using the persistent navbar, then show as ListView footer instead
+	        LayoutInflater inflater = (LayoutInflater) getSystemService(Context.LAYOUT_INFLATER_SERVICE);
+	        mNextPreviousView = inflater.inflate(R.layout.next_previous_list_item, null);
+	        getListView().addFooterView(mNextPreviousView);
+        }
 
         synchronized (MESSAGE_ADAPTER_LOCK) {
 	    	if (messagesAdapter == null) {
@@ -430,6 +439,7 @@ public final class ProfileActivity extends ListActivity
 	    	} else {
 	    		mThingsAdapter = messagesAdapter;
 	    	}
+	    	
 		    setListAdapter(mThingsAdapter);
 		    mThingsAdapter.mIsLoading = false;
 		    mThingsAdapter.notifyDataSetChanged();  // Just in case
@@ -458,47 +468,8 @@ public final class ProfileActivity extends ListActivity
     }
 
     private void updateNextPreviousButtons() {
-    	View nextPrevious = findViewById(R.id.next_previous_layout);
-    	View nextPreviousBorder = findViewById(R.id.next_previous_border_top);
-    	
-    	if (nextPrevious == null)
-    		return;
-		
-    	boolean shouldShow = (mAfter != null || mBefore != null) &&
-    		(mSettings.alwaysShowNextPrevious || getListView().getLastVisiblePosition() == getListView().getCount() - 1);
-		
-		if (shouldShow && nextPrevious.getVisibility() != View.VISIBLE) {
-	    	if (nextPrevious != null && nextPreviousBorder != null) {
-		    	if (Util.isLightTheme(mSettings.theme)) {
-		       		nextPrevious.setBackgroundResource(R.color.white);
-		       		nextPreviousBorder.setBackgroundResource(R.color.black);
-		    	} else {
-		       		nextPreviousBorder.setBackgroundResource(R.color.white);
-		    	}
-		    	nextPrevious.setVisibility(View.VISIBLE);
-	    	}
-			// update the "next 25" and "prev 25" buttons
-	    	final Button nextButton = (Button) findViewById(R.id.next_button);
-	    	final Button previousButton = (Button) findViewById(R.id.previous_button);
-	    	if (nextButton != null) {
-		    	if (mAfter != null) {
-		    		nextButton.setVisibility(View.VISIBLE);
-		    		nextButton.setOnClickListener(downloadAfterOnClickListener);
-		    	} else {
-		    		nextButton.setVisibility(View.INVISIBLE);
-		    	}
-	    	}
-	    	if (previousButton != null) {
-		    	if (mBefore != null && mCount != Constants.DEFAULT_THREAD_DOWNLOAD_LIMIT) {
-		    		previousButton.setVisibility(View.VISIBLE);
-		    		previousButton.setOnClickListener(downloadBeforeOnClickListener);
-		    	} else {
-		    		previousButton.setVisibility(View.INVISIBLE);
-		    	}
-	    	}
-		} else if (!shouldShow && nextPrevious.getVisibility() == View.VISIBLE) {
-			nextPrevious.setVisibility(View.GONE);
-		}
+    	Common.updateNextPreviousButtons(this, mNextPreviousView, mAfter, mBefore, mCount, mSettings,
+    			downloadAfterOnClickListener, downloadBeforeOnClickListener);
     }
     
     private void updateKarma() {
@@ -1192,19 +1163,6 @@ public final class ProfileActivity extends ListActivity
 	private final OnClickListener downloadBeforeOnClickListener = new OnClickListener() {
 		public void onClick(View v) {
 			new DownloadProfileTask(mUsername, null, mBefore, mCount).execute();
-		}
-	};
-	
-	private final AbsListView.OnScrollListener listViewOnScrollListener = new AbsListView.OnScrollListener() {
-		public void onScroll(AbsListView view, int firstVisibleItem,
-				int visibleItemCount, int totalItemCount) {
-			if (!mSettings.alwaysShowNextPrevious) {
-				updateNextPreviousButtons();
-			}
-		}
-
-		public void onScrollStateChanged(AbsListView view, int scrollState) {
-			// NOOP
 		}
 	};
 	

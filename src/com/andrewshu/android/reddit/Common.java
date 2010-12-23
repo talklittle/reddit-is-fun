@@ -75,7 +75,9 @@ import android.provider.Browser;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
+import android.view.View.OnClickListener;
 import android.webkit.CookieSyncManager;
+import android.widget.Button;
 import android.widget.ListView;
 import android.widget.RemoteViews;
 import android.widget.TextView;
@@ -116,6 +118,67 @@ public class Common {
     		lv.setSelector(android.R.drawable.list_selector_background);
     	}
 	}
+	
+    static void updateNextPreviousButtons(ListActivity act, View nextPreviousView,
+    		String after, String before, int count, RedditSettings settings,
+    		OnClickListener downloadAfterOnClickListener, OnClickListener downloadBeforeOnClickListener) {
+    	boolean shouldShow = after != null || before != null;
+    	Button nextButton = null;
+    	Button previousButton = null;
+    	
+    	// If alwaysShowNextPrevious, use the navbar
+    	if (settings.alwaysShowNextPrevious) {
+        	nextPreviousView = act.findViewById(R.id.next_previous_layout);
+        	View nextPreviousBorder = act.findViewById(R.id.next_previous_border_top);
+        	
+			if (shouldShow && nextPreviousView.getVisibility() != View.VISIBLE) {
+		    	if (nextPreviousView != null && nextPreviousBorder != null) {
+			    	if (Util.isLightTheme(settings.theme)) {
+			    		nextPreviousView.setBackgroundResource(R.color.white);
+			       		nextPreviousBorder.setBackgroundResource(R.color.black);
+			    	} else {
+			       		nextPreviousBorder.setBackgroundResource(R.color.white);
+			    	}
+			    	nextPreviousView.setVisibility(View.VISIBLE);
+		    	}
+				// update the "next 25" and "prev 25" buttons
+		    	nextButton = (Button) act.findViewById(R.id.next_button);
+		    	previousButton = (Button) act.findViewById(R.id.previous_button);
+			} else if (!shouldShow && nextPreviousView.getVisibility() == View.VISIBLE) {
+				nextPreviousView.setVisibility(View.GONE);
+	    	}
+    	}
+    	// Otherwise we are using the ListView footer
+    	else {
+    		if (nextPreviousView == null)
+    			return;
+    		if (shouldShow && nextPreviousView.getVisibility() != View.VISIBLE) {
+	    		nextPreviousView.setVisibility(View.VISIBLE);
+    		} else if (!shouldShow && nextPreviousView.getVisibility() == View.VISIBLE) {
+    			nextPreviousView.setVisibility(View.GONE);
+    		}
+			// update the "next 25" and "prev 25" buttons
+	    	nextButton = (Button) nextPreviousView.findViewById(R.id.next_button);
+	    	previousButton = (Button) nextPreviousView.findViewById(R.id.previous_button);
+    	}
+    	if (nextButton != null) {
+	    	if (after != null) {
+	    		nextButton.setVisibility(View.VISIBLE);
+	    		nextButton.setOnClickListener(downloadAfterOnClickListener);
+	    	} else {
+	    		nextButton.setVisibility(View.INVISIBLE);
+	    	}
+    	}
+    	if (previousButton != null) {
+	    	if (before != null && count != Constants.DEFAULT_THREAD_DOWNLOAD_LIMIT) {
+	    		previousButton.setVisibility(View.VISIBLE);
+	    		previousButton.setOnClickListener(downloadBeforeOnClickListener);
+	    	} else {
+	    		previousButton.setVisibility(View.INVISIBLE);
+	    	}
+    	}
+    }
+    
 	
     static void saveRedditPreferences(Context context, RedditSettings rSettings) {
     	SharedPreferences settings = PreferenceManager.getDefaultSharedPreferences(context);
