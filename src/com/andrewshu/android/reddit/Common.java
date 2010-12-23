@@ -114,6 +114,8 @@ public class Common {
     	// If alwaysShowNextPrevious, use the navbar
     	if (settings.alwaysShowNextPrevious) {
         	nextPreviousView = act.findViewById(R.id.next_previous_layout);
+        	if (nextPreviousView == null)
+        		return;
         	View nextPreviousBorder = act.findViewById(R.id.next_previous_border_top);
         	
 			if (shouldShow && nextPreviousView.getVisibility() != View.VISIBLE) {
