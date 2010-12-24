@@ -70,6 +70,7 @@
     	android:layout_alignParentBottom="true"
     	android:padding="0dp"
     	android:orientation="vertical"
+    	android:visibility="gone"
     	>
     	<View android:id="@+id/next_previous_border_top"
     		android:layout_width="fill_parent"
