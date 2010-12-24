@@ -57,12 +57,8 @@ public class CommentManager {
     	}
     }
 
-    public void createSpannedOnThread(final String bodyHtml, final TextView textView, final ThingInfo thingInfo) {
-    	createSpannedOnThread(bodyHtml, textView, thingInfo, null, null);
-    }
-    
     public void createSpannedOnThread(final String bodyHtml, final TextView textView, final ThingInfo thingInfo,
-    		final ProgressBar indeterminateProgressBar, final Activity progressActivity) {
+    		final ProgressBar indeterminateProgressBar, final CommentsListActivity activity) {
 
     	final Runnable progressBarShow = new Runnable() {
     		public void run() {
@@ -84,18 +80,21 @@ public class CommentManager {
     	final Handler handler = new Handler() {
     		@Override
     		public void handleMessage(Message message) {
-    			if (indeterminateProgressBar != null && progressActivity != null)
-    				progressActivity.runOnUiThread(progressBarHide);
     			textView.setText((CharSequence) message.obj);
     			thingInfo.setSpannedBody((CharSequence) message.obj);
+    			if (indeterminateProgressBar != null && activity != null) {
+    				activity.runOnUiThread(progressBarHide);
+    				if (activity.canJump())
+    					activity.jumpToComment();
+    			}
     		}
     	};
 
     	Thread thread = new Thread() {
     		@Override
     		public void run() {
-    			if (indeterminateProgressBar != null && progressActivity != null)
-    				progressActivity.runOnUiThread(progressBarShow);
+    			if (indeterminateProgressBar != null && activity != null)
+    				activity.runOnUiThread(progressBarShow);
     			CharSequence spanned = createSpanned(bodyHtml);
     			Message message = handler.obtainMessage(1, spanned);
     			handler.sendMessage(message);

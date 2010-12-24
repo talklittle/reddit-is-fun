@@ -64,15 +64,19 @@ import android.text.Spanned;
 import android.text.style.ForegroundColorSpan;
 import android.util.Log;
 import android.view.ContextMenu;
+import android.view.KeyEvent;
 import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
+import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.Window;
 import android.view.ContextMenu.ContextMenuInfo;
 import android.view.View.OnClickListener;
+import android.view.View.OnKeyListener;
+import android.view.View.OnTouchListener;
 import android.webkit.CookieSyncManager;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
@@ -547,11 +551,14 @@ public class CommentsListActivity extends ListActivity
         }
     }
     
+    boolean canJump() {
+    	return mJumpToCommentPosition != 0 || (mJumpToCommentId != null && mCommentsAdapter != null);
+    }
     
     /**
      * Try jumping to mJumpToCommentPosition. failing that, try mJumpToCommentId.
      */
-    private void jumpToComment() {
+    void jumpToComment() {
 	    if (mJumpToCommentPosition != 0) {
 			getListView().setSelectionFromTop(mJumpToCommentPosition, 10);
 			mJumpToCommentPosition = 0;
@@ -567,14 +574,20 @@ public class CommentsListActivity extends ListActivity
 						while (item.getIndent() > 0 && item.getIndent() != desiredIndent)
 							item = mCommentsAdapter.getItem(--targetIndex);
 						getListView().setSelectionFromTop(targetIndex, 10);
-						mJumpToCommentId = null;
+						getListView().setOnTouchListener(stopJumpToCommentOnTouchListener);
+						getListView().setOnKeyListener(stopJumpToCommentOnKeyListener);
 						break;
 					}
 				}
 			}
 		}
     }
-
+    
+    private void stopJumpToComment() {
+    	mJumpToCommentPosition = 0;
+    	mJumpToCommentId = null;
+    }
+    
     /**
      * Resets the output UI list contents, retains session state.
      * @param commentsAdapter A new CommentsListAdapter to use. Pass in null to create a new empty one.
@@ -582,6 +595,7 @@ public class CommentsListActivity extends ListActivity
     public void resetUI(CommentsListAdapter commentsAdapter) {
     	setTheme(mSettings.theme);
     	setContentView(R.layout.comments_list_content);
+        ((CommentsListView) getListView()).setCommentsListActivity(this);
         registerForContextMenu(getListView());
 
         synchronized (COMMENT_ADAPTER_LOCK) {
@@ -2279,8 +2293,13 @@ public class CommentsListActivity extends ListActivity
         	bodyView.setText(item.getSpannedBody());
         } else {
             // Fill in the comment body using a Thread.
-        	commentManager.createSpannedOnThread(item.getBody_html(), bodyView, item,
-        			indeterminateProgress, activity);
+        	if (activity instanceof CommentsListActivity) {
+	        	commentManager.createSpannedOnThread(item.getBody_html(), bodyView, item,
+	        			indeterminateProgress, (CommentsListActivity) activity);
+        	} else {
+        		// NOOP. Assume it was parsed inline when downloaded.
+        		Log.w(TAG, "fillCommentsListItemView: item.getSpannedBody() is null and not CommentsListActivity");
+        	}
         }
         
         setCommentIndent(view, item.getIndent(), settings);
@@ -2371,6 +2390,22 @@ public class CommentsListActivity extends ListActivity
 			return null;
 		}
 	};
+
+	private final OnTouchListener stopJumpToCommentOnTouchListener = new OnTouchListener() {
+		public boolean onTouch(View v, MotionEvent event) {
+			stopJumpToComment();
+			getListView().setOnTouchListener(null);
+			return false;
+		}
+    };
+    private final OnKeyListener stopJumpToCommentOnKeyListener = new OnKeyListener() {
+		public boolean onKey(View arg0, int arg1, KeyEvent arg2) {
+			stopJumpToComment();
+			getListView().setOnKeyListener(null);
+			return false;
+		}
+    };
+    
 
     
     @Override
