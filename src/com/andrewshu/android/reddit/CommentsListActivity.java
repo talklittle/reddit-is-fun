@@ -407,10 +407,10 @@ public class CommentsListActivity extends ListActivity
 	                		String.format(getResources().getString(R.string.thread_time_submitter),
 	                				Util.getTimeAgo(item.getCreated_utc()), item.getAuthor()));
 	                
-	            	if (mOpThingInfo.getSelftext() != null
-	            			&& !Constants.EMPTY_STRING.equals(mOpThingInfo.getSelftext())) {
+	            	if (item.getSelftext() != null
+	            			&& !Constants.EMPTY_STRING.equals(item.getSelftext())) {
 	            		selftextView.setVisibility(View.VISIBLE);
-		                selftextView.setText(mOpThingInfo.getSpannedSelftext());
+		                selftextView.setText(item.getSpannedSelftext());
 	            	} else {
 	            		selftextView.setVisibility(View.GONE);
 	            	}
