@@ -595,7 +595,6 @@ public class CommentsListActivity extends ListActivity
     public void resetUI(CommentsListAdapter commentsAdapter) {
     	setTheme(mSettings.theme);
     	setContentView(R.layout.comments_list_content);
-        ((CommentsListView) getListView()).setCommentsListActivity(this);
         registerForContextMenu(getListView());
 
         synchronized (COMMENT_ADAPTER_LOCK) {
