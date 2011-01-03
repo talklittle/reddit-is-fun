@@ -380,17 +380,15 @@ public class CommentsListActivity extends ListActivity
         
         @Override
         public View getView(int position, View convertView, ViewGroup parent) {
-            View view;
+            View view = convertView;
             
             ThingInfo item = this.getItem(position);
             
             try {
 	            if (position == 0) {
 	            	// The OP
-	            	if (convertView == null) {
+	            	if (view == null) {
 	            		view = mInflater.inflate(R.layout.threads_list_item, null);
-	            	} else {
-	            		view = convertView;
 	            	}
 	            	
 	            	ThreadsListActivity.fillThreadsListItemView(view, item, CommentsListActivity.this,
@@ -407,8 +405,8 @@ public class CommentsListActivity extends ListActivity
 	                		String.format(getResources().getString(R.string.thread_time_submitter),
 	                				Util.getTimeAgo(item.getCreated_utc()), item.getAuthor()));
 	                
-	            	if (item.getSelftext() != null
-	            			&& !Constants.EMPTY_STRING.equals(item.getSelftext())) {
+	            	if (item.getSpannedSelftext() != null
+	            			&& !Constants.EMPTY_STRING.equals(item.getSpannedSelftext())) {
 	            		selftextView.setVisibility(View.VISIBLE);
 		                selftextView.setText(item.getSpannedSelftext());
 	            	} else {
@@ -416,17 +414,13 @@ public class CommentsListActivity extends ListActivity
 	            	}
 	            	
 	            } else if (mHiddenComments.contains(position)) { 
-	            	if (convertView == null) {
+	            	if (view == null) {
 	            		// Doesn't matter which view we inflate since it's gonna be invisible
 	            		view = mInflater.inflate(R.layout.zero_size_layout, null);
-	            	} else {
-	            		view = convertView;
 	            	}
 	            } else if (mHiddenCommentHeads.contains(position)) {
-	            	if (convertView == null) {
+	            	if (view == null) {
 	            		view = mInflater.inflate(R.layout.comments_list_item_hidden, null);
-	            	} else {
-	            		view = convertView;
 	            	}
 	            	TextView votesView = (TextView) view.findViewById(R.id.votes);
 		            TextView submitterView = (TextView) view.findViewById(R.id.submitter);
@@ -449,10 +443,8 @@ public class CommentsListActivity extends ListActivity
 		            
             	} else if (mMorePositions.contains(position)) {
 	            	// "load more comments"
-	            	if (convertView == null) {
+	            	if (view == null) {
 	            		view = mInflater.inflate(R.layout.more_comments_view, null);
-	            	} else {
-	            		view = convertView;
 	            	}
 
 		            // Set colors based on theme
@@ -470,24 +462,21 @@ public class CommentsListActivity extends ListActivity
 	            	
 	            } else {  // Regular comment
 	            	// Here view may be passed in for re-use, or we make a new one.
-		            if (convertView == null) {
+		            if (view == null) {
 		                view = mInflater.inflate(R.layout.comments_list_item, null);
-		            } else {
-		                view = convertView;
 		            }
 		            
 		            fillCommentsListItemView(view, item, CommentsListActivity.this, mSettings, commentManager);
 
 	            }
             } catch (NullPointerException e) {
+            	if (Constants.LOGGING) Log.w(TAG, "NPE in getView()", e);
             	// Probably means that the List is still being built, and OP probably got put in wrong position
-            	if (convertView == null) {
+            	if (view == null) {
             		if (position == 0)
             			view = mInflater.inflate(R.layout.threads_list_item, null);
             		else
             			view = mInflater.inflate(R.layout.comments_list_item, null);
-	            } else {
-	                view = convertView;
 	            }
             }
             return view;
