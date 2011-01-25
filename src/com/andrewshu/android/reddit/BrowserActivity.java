@@ -9,6 +9,7 @@ import android.view.KeyEvent;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
+import android.view.View;
 import android.view.Window;
 import android.webkit.CookieSyncManager;
 import android.webkit.WebChromeClient;
@@ -126,6 +127,8 @@ public class BrowserActivity extends Activity {
 	@Override
 	public void onDestroy() {
 		super.onDestroy();
+		// Must remove the WebView from the view system before destroying.
+		webview.setVisibility(View.GONE);
 		webview.destroy();
 		webview = null;
 	}
