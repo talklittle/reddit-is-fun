@@ -23,6 +23,7 @@ Contributors:
 * jk3us
 * crabpot8
 * andyvincent
+* wac-
 
 Android Market QR Codes
 ----------------
