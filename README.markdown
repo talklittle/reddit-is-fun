@@ -24,6 +24,7 @@ Contributors:
 * crabpot8
 * andyvincent
 * wac-
+* pakesson
 
 Android Market QR Codes
 ----------------
