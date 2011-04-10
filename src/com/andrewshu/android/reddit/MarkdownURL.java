@@ -25,10 +25,12 @@ public class MarkdownURL implements Comparable<MarkdownURL>, Serializable {
 	
 	public int startOffset;
 	public String url;
+	public String anchorText;
 	
-	public MarkdownURL(int startOffset, String url) {
+	public MarkdownURL(int startOffset, String url, String anchorText) {
 		this.startOffset = startOffset;
 		this.url = url;
+		this.anchorText = anchorText;
 	}
 	
 	public int compareTo(MarkdownURL other) {
