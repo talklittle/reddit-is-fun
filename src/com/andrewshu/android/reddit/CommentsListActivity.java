@@ -2186,24 +2186,28 @@ public class CommentsListActivity extends ListActivity
      */
     private void linkToEmbeddedURLs(Button linkButton) {
 		final ArrayList<String> urls = new ArrayList<String>();
+		final ArrayList<String> anchorTexts = new ArrayList<String>();
 		final ArrayList<MarkdownURL> vtUrls = mVoteTargetThing.getUrls();
 		int urlsCount = vtUrls.size();
-		for (int i = 0; i < urlsCount; i++)
+		for (int i = 0; i < urlsCount; i++) {
 			urls.add(vtUrls.get(i).url);
+			anchorTexts.add(vtUrls.get(i).anchorText);
+		}
 		if (urlsCount == 0) {
 			linkButton.setEnabled(false);
         } else {
         	linkButton.setEnabled(true);
         	linkButton.setOnClickListener(new OnClickListener() {
         		public void onClick(View v) {
-        			dismissDialog(Constants.DIALOG_COMMENT_CLICK);
+        			dismissDialog(Constants.DIALOG_COMMENT_CLICK);      
         			
-    	            ArrayAdapter<String> adapter = 
-    	                new ArrayAdapter<String>(CommentsListActivity.this, android.R.layout.select_dialog_item, urls) {
+    	            ArrayAdapter<MarkdownURL> adapter = 
+    	                new ArrayAdapter<MarkdownURL>(CommentsListActivity.this, android.R.layout.select_dialog_item, vtUrls) {
     	                public View getView(int position, View convertView, ViewGroup parent) {
     	                    View v = super.getView(position, convertView, parent);
     	                    try {
-    	                        String url = getItem(position).toString();
+    	                        String url = getItem(position).url;
+    	                        String anchorText = getItem(position).anchorText;
     	                        TextView tv = (TextView) v;
     	                        Drawable d = getPackageManager().getActivityIcon(new Intent(Intent.ACTION_VIEW, Uri.parse(url)));
     	                        if (d != null) {
@@ -2215,7 +2219,7 @@ public class CommentsListActivity extends ListActivity
     	                        if (url.startsWith(telPrefix)) {
     	                            url = PhoneNumberUtils.formatNumber(url.substring(telPrefix.length()));
     	                        }
-    	                        tv.setText(url);
+    	                        if (anchorText !=  null) tv.setText(Html.fromHtml(anchorText + "<br /><small>" + url + "</small>")); else tv.setText(Html.fromHtml(url));
     	                    } catch (android.content.pm.PackageManager.NameNotFoundException ex) {
     	                        ;
     	                    }
