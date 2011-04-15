@@ -282,12 +282,13 @@ public class Constants {
     static final String PREF_ALWAYS_SHOW_NEXT_PREVIOUS = "always_show_next_previous";
     static final String PREF_COMMENTS_SORT_BY_URL = "sort_by_url";
     static final String PREF_THEME = "theme";
-    static final String PREF_THEME_LIGHT = "THEME_LIGHT";
-    static final String PREF_THEME_DARK	 = "THEME_DARK";
+    public static final String PREF_THEME_LIGHT = "THEME_LIGHT";
+    public static final String PREF_THEME_DARK	 = "THEME_DARK";
     static final String PREF_TEXT_SIZE = "text_size";
     static final String PREF_TEXT_SIZE_MEDIUM = "TEXT_SIZE_MEDIUM";
     static final String PREF_TEXT_SIZE_LARGE = "TEXT_SIZE_LARGE";
     static final String PREF_TEXT_SIZE_LARGER = "TEXT_SIZE_LARGER";
+    public static final String PREF_TEXT_SIZE_HUGE = "TEXT_SIZE_HUGE";
     static final String PREF_SHOW_COMMENT_GUIDE_LINES = "show_comment_guide_lines";
     static final String PREF_ROTATION = "rotation";
     static final String PREF_ROTATION_UNSPECIFIED = "ROTATION_UNSPECIFIED";

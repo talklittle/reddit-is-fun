@@ -73,10 +73,25 @@
 		<item name="android:textAppearanceLarge">@style/TextAppearance_Larger.Large</item>
 	</style>
 	
+	<style name="Reddit_Light_Huge" parent="@android:style/Theme.Light">
+		<item name="android:listSelector">@drawable/list_selector_blue</item>
+		<item name="android:cacheColorHint">@color/white</item>
+		<item name="android:textAppearanceSmall">@style/TextAppearance_Huge.Small</item>
+		<item name="android:textAppearanceMedium">@style/TextAppearance_Huge.Medium</item>
+		<item name="android:textAppearanceLarge">@style/TextAppearance_Huge.Large</item>
+	</style>
+	
 	<style name="Reddit_Dark_Larger" parent="@android:style/Theme">
 		<item name="android:textAppearanceSmall">@style/TextAppearance_Larger.Small</item>
 		<item name="android:textAppearanceMedium">@style/TextAppearance_Larger.Medium</item>
 		<item name="android:textAppearanceLarge">@style/TextAppearance_Larger.Large</item>
+		<item name="android:windowBackground">@color/black</item>
+	</style>
+	
+	<style name="Reddit_Dark_Huge" parent="@android:style/Theme">
+		<item name="android:textAppearanceSmall">@style/TextAppearance_Huge.Small</item>
+		<item name="android:textAppearanceMedium">@style/TextAppearance_Huge.Medium</item>
+		<item name="android:textAppearanceLarge">@style/TextAppearance_Huge.Large</item>
 		<item name="android:windowBackground">@color/black</item>
 	</style>
 	
@@ -90,6 +105,7 @@
 	<style name="TextAppearance_Medium.Large" parent="@android:style/TextAppearance.Large">
 		<item name="android:textSize">14sp</item>
 	</style>
+	
 	<style name="TextAppearance_Large.Small" parent="@android:style/TextAppearance.Small">
 		<item name="android:textSize">12sp</item>
 	</style>
@@ -99,6 +115,7 @@
 	<style name="TextAppearance_Large.Large" parent="@android:style/TextAppearance.Large">
 		<item name="android:textSize">14sp</item>
 	</style>
+	
 	<style name="TextAppearance_Larger.Small" parent="@android:style/TextAppearance.Small">
 		<item name="android:textSize">14sp</item>
 	</style>
@@ -107,6 +124,16 @@
 	</style>
 	<style name="TextAppearance_Larger.Large" parent="@android:style/TextAppearance.Large">
 		<item name="android:textSize">16sp</item>
+	</style>
+	
+	<style name="TextAppearance_Huge.Small" parent="@android:style/TextAppearance.Small">
+		<item name="android:textSize">18sp</item>
+	</style>
+	<style name="TextAppearance_Huge.Medium" parent="@android:style/TextAppearance.Medium">
+		<item name="android:textSize">20sp</item>
+	</style>
+	<style name="TextAppearance_Huge.Large" parent="@android:style/TextAppearance.Large">
+		<item name="android:textSize">22sp</item>
 	</style>
 	
 </resources>
