@@ -27,8 +27,8 @@ import org.codehaus.jackson.annotate.JsonAnySetter;
 import android.graphics.drawable.Drawable;
 import android.os.Parcel;
 import android.os.Parcelable;
+import android.text.Html;
 import android.text.SpannableString;
-import android.text.Spanned;
 
 /**
  * Class representing a thread posting in reddit API.
@@ -416,7 +416,7 @@ public class ThingInfo implements Serializable, Parcelable {
 	}
 
 	public void setTitle(String title) {
-		this.title = title;
+		this.title = Html.fromHtml(title).toString();
 	}
 
 	public void setUps(int ups) {
@@ -424,7 +424,7 @@ public class ThingInfo implements Serializable, Parcelable {
 	}
 
 	public void setUrl(String url) {
-		this.url = url;
+		this.url = Html.fromHtml(url).toString();
 	}
 
 	public void setWas_comment(boolean was_comment) {

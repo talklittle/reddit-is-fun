@@ -725,10 +725,6 @@ public final class ProfileActivity extends ListActivity
 	   					_mThingInfos.add(ti);
     				} else if (Constants.THREAD_KIND.equals(tiContainer.getKind())) {
     					ThingInfo ti = tiContainer.getData();
-    					
-    					String unescapedHtmlTitle = Html.fromHtml(ti.getTitle()).toString();
-    					ti.setTitle(unescapedHtmlTitle);
-    					
     					_mThingInfos.add(tiContainer.getData());
     				}
     			}

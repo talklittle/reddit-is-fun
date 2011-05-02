@@ -229,14 +229,6 @@ public abstract class DownloadThreadsTask extends AsyncTask<Void, Long, Boolean>
 				// Only add entries that are threads. kind="t3"
 				if (Constants.THREAD_KIND.equals(tiContainer.getKind())) {
 					ThingInfo ti = tiContainer.getData();
-					
-					// Additional formatting on the threads
-//					String unescapedHtmlTitle = Html.fromHtml(ti.getTitle()
-//							.trim().replaceAll("\r", "").replaceAll("\n ", " ").replaceAll(" \n", " ").replaceAll("\n", " "))
-//							.toString();
-					String unescapedHtmlTitle = Html.fromHtml(ti.getTitle()).toString();
-					ti.setTitle(unescapedHtmlTitle);
-					
 					mThingInfos.add(tiContainer.getData());
 				}
 			}
