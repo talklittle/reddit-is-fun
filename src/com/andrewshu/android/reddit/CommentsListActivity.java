@@ -2219,7 +2219,10 @@ public class CommentsListActivity extends ListActivity
     	                        if (url.startsWith(telPrefix)) {
     	                            url = PhoneNumberUtils.formatNumber(url.substring(telPrefix.length()));
     	                        }
-    	                        if (anchorText !=  null) tv.setText(Html.fromHtml(anchorText + "<br /><small>" + url + "</small>")); else tv.setText(Html.fromHtml(url));
+								if (anchorText != null)
+									tv.setText(Html.fromHtml(anchorText + "<br /><small>" + url + "</small>"));
+								else
+									tv.setText(Html.fromHtml(url));
     	                    } catch (android.content.pm.PackageManager.NameNotFoundException ex) {
     	                        ;
     	                    }
