@@ -27,6 +27,7 @@ Contributors:
 * pakesson
 * macieklen
 * yuri-danilchenko
+* bojan
 
 Android Market QR Codes
 ----------------
