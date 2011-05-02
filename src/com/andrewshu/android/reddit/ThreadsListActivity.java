@@ -47,16 +47,16 @@ import android.text.style.ForegroundColorSpan;
 import android.text.style.TextAppearanceSpan;
 import android.util.Log;
 import android.view.ContextMenu;
+import android.view.ContextMenu.ContextMenuInfo;
 import android.view.KeyEvent;
 import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
+import android.view.View.OnClickListener;
 import android.view.ViewGroup;
 import android.view.Window;
-import android.view.ContextMenu.ContextMenuInfo;
-import android.view.View.OnClickListener;
 import android.webkit.CookieSyncManager;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
@@ -979,7 +979,8 @@ public final class ThreadsListActivity extends ListActivity {
     	
     }
     
-    @Override
+    @SuppressWarnings("unchecked")
+	@Override
     public boolean onPrepareOptionsMenu(Menu menu) {
         // This happens when the user begins to hold down the menu key, so
         // allow them to chord to get a shortcut.
@@ -991,16 +992,35 @@ public final class ThreadsListActivity extends ListActivity {
     	
         // Login/Logout
     	if (mSettings.isLoggedIn()) {
+    		
+    		if(!mSubreddit.equals(Constants.FRONTPAGE_STRING)){
+    			ArrayList<String> mSubredditsList = CacheInfo.getCachedSubredditList(getApplicationContext());	
+    			
+    			if(mSubredditsList != null && Util.subredditInList(mSubredditsList, mSubreddit)){
+	    			menu.findItem(R.id.unsubscribe_menu_id).setVisible(true);
+	    			menu.findItem(R.id.subscribe_menu_id).setVisible(false);
+	    		}
+	    		else{
+	    			menu.findItem(R.id.subscribe_menu_id).setVisible(true);
+	    			menu.findItem(R.id.unsubscribe_menu_id).setVisible(false);
+	    		}
+    		}
+    		
 	        menu.findItem(R.id.login_logout_menu_id).setTitle(
 	        		String.format(getResources().getString(R.string.logout), mSettings.username));
 	        menu.findItem(R.id.inbox_menu_id).setVisible(true);
 	        menu.findItem(R.id.user_profile_menu_id).setVisible(true);
 	        menu.findItem(R.id.user_profile_menu_id).setTitle(
 	        		String.format(getResources().getString(R.string.user_profile), mSettings.username));
+	        
+	        
+	        
     	} else {
             menu.findItem(R.id.login_logout_menu_id).setTitle(getResources().getString(R.string.login));
             menu.findItem(R.id.inbox_menu_id).setVisible(false);
             menu.findItem(R.id.user_profile_menu_id).setVisible(false);
+			menu.findItem(R.id.unsubscribe_menu_id).setVisible(false);
+			menu.findItem(R.id.subscribe_menu_id).setVisible(false);
     	}
     	
     	// Theme: Light/Dark
@@ -1083,7 +1103,14 @@ public final class ThreadsListActivity extends ListActivity {
             Intent prefsIntent = new Intent(getApplicationContext(), RedditPreferencesPage.class);
             startActivity(prefsIntent);
             break;
-
+    	case R.id.subscribe_menu_id:
+    		CacheInfo.invalidateCachedSubreddit(getApplicationContext());
+    		new SubscribeTask(mSubreddit, getApplicationContext(), mSettings).execute();
+    		break;
+    	case R.id.unsubscribe_menu_id:
+    		CacheInfo.invalidateCachedSubreddit(getApplicationContext());
+    		new UnsubscribeTask(mSubreddit, getApplicationContext(), mSettings).execute();
+    		break;    		
     	default:
     		throw new IllegalArgumentException("Unexpected action value "+item.getItemId());
     	}

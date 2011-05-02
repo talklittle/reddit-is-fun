@@ -24,6 +24,7 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -120,8 +121,13 @@ public final class PickSubredditActivity extends ListActivity {
     	
     	resetUI(null);
         
-        // Try to restore mSubredditsList using getLastNonConfigurationInstance()
-        restoreLastNonConfigurationInstance();
+    	mSubredditsList = CacheInfo.getCachedSubredditList(getApplicationContext());
+        
+        if(mSubredditsList == null){
+            // Try to restore mSubredditsList using getLastNonConfigurationInstance()
+            restoreLastNonConfigurationInstance();
+        }
+        
         if (mSubredditsList == null) {
         	new DownloadRedditsTask().execute();
         } else {
@@ -153,9 +159,7 @@ public final class PickSubredditActivity extends ListActivity {
 	private void restoreLastNonConfigurationInstance() {
     	mSubredditsList = (ArrayList<String>) getLastNonConfigurationInstance();
     }
-    
-    
-    
+
     void resetUI(PickSubredditAdapter adapter) {
     	setTheme(mSettings.theme);
     	setContentView(R.layout.pick_subreddit_view);

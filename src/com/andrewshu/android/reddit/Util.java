@@ -21,8 +21,12 @@ package com.andrewshu.android.reddit;
 
 import java.lang.reflect.Method;
 import java.util.ArrayList;
+import java.util.Iterator;
 
 import org.apache.http.HttpResponse;
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
 
 import android.app.Activity;
 import android.net.Uri;
@@ -438,4 +442,31 @@ public class Util {
     	return host != null && host.endsWith(".youtube.com");
     }
     
+    static String getSubredditId(String mSubreddit){
+    	String subreddit_id = null;
+    	JSONObject subredditInfo = 
+    	RestJsonClient.connect("http://www.reddit.com/r/" + mSubreddit + "/.json?count=1");
+    	    	
+    	if(subredditInfo != null){
+    		try {
+    			JSONArray childArray = subredditInfo.getJSONObject("data").getJSONArray("children");
+    			JSONObject object = (JSONObject) childArray.get(0);
+    			
+				subreddit_id = (String) object.getJSONObject("data").getString("subreddit_id");
+			} catch (JSONException e) {
+				e.printStackTrace();
+			}
+    	}
+    	return subreddit_id;
+    }
+    
+    static boolean subredditInList(ArrayList<String> subreddits, String subreddit){
+    	for (Iterator iterator = subreddits.iterator(); iterator.hasNext();) {
+			String string = (String) iterator.next();
+			
+			if(string.equalsIgnoreCase(subreddit))
+				return true;
+		}
+    	return false;
+    }
 }
