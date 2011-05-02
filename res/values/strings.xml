@@ -154,11 +154,13 @@
     	<item>Medium</item>
     	<item>Large</item>
     	<item>Larger</item>
+    	<item>Huge</item>
    	</string-array>
 	<string-array name="pref_text_size_values" translatable="false">
         <item>TEXT_SIZE_MEDIUM</item>
         <item>TEXT_SIZE_LARGE</item>
         <item>TEXT_SIZE_LARGER</item>
+        <item>TEXT_SIZE_HUGE</item>
     </string-array>
     
     <string name="pref_show_comment_guide_lines">Comment guide lines</string>

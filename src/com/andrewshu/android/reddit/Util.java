@@ -176,15 +176,15 @@ public class Util {
 	//      Theme
 	// ===============
 
-	static boolean isLightTheme(int theme) {
-		return theme == R.style.Reddit_Light_Medium || theme == R.style.Reddit_Light_Large || theme == R.style.Reddit_Light_Larger;
+	public static boolean isLightTheme(int theme) {
+		return theme == R.style.Reddit_Light_Medium || theme == R.style.Reddit_Light_Large || theme == R.style.Reddit_Light_Larger || theme == R.style.Reddit_Light_Huge;
 	}
 	
-	static boolean isDarkTheme(int theme) {
-		return theme == R.style.Reddit_Dark_Medium || theme == R.style.Reddit_Dark_Large || theme == R.style.Reddit_Dark_Larger;
+	public static boolean isDarkTheme(int theme) {
+		return theme == R.style.Reddit_Dark_Medium || theme == R.style.Reddit_Dark_Large || theme == R.style.Reddit_Dark_Larger || theme == R.style.Reddit_Dark_Huge;
 	}
 	
-	static int getInvertedTheme(int theme) {
+	public static int getInvertedTheme(int theme) {
 		switch (theme) {
 		case R.style.Reddit_Light_Medium:
 			return R.style.Reddit_Dark_Medium;
@@ -192,18 +192,22 @@ public class Util {
 			return R.style.Reddit_Dark_Large;
 		case R.style.Reddit_Light_Larger:
 			return R.style.Reddit_Dark_Larger;
+		case R.style.Reddit_Light_Huge:
+			return R.style.Reddit_Dark_Huge;
 		case R.style.Reddit_Dark_Medium:
 			return R.style.Reddit_Light_Medium;
 		case R.style.Reddit_Dark_Large:
 			return R.style.Reddit_Light_Large;
 		case R.style.Reddit_Dark_Larger:
 			return R.style.Reddit_Light_Larger;
+		case R.style.Reddit_Dark_Huge:
+			return R.style.Reddit_Light_Huge;
 		default:
 			return R.style.Reddit_Light_Medium;	
 		}
 	}
 	
-	static int getThemeResourceFromPrefs(String themePref, String textSizePref) {
+	public static int getThemeResourceFromPrefs(String themePref, String textSizePref) {
 		if (Constants.PREF_THEME_LIGHT.equals(themePref)) {
 			if (Constants.PREF_TEXT_SIZE_MEDIUM.equals(textSizePref))
 				return R.style.Reddit_Light_Medium;
@@ -211,6 +215,8 @@ public class Util {
 				return R.style.Reddit_Light_Large;
 			else if (Constants.PREF_TEXT_SIZE_LARGER.equals(textSizePref))
 				return R.style.Reddit_Light_Larger;
+			else if (Constants.PREF_TEXT_SIZE_HUGE.equals(textSizePref))
+				return R.style.Reddit_Light_Huge;
 		} else /* if (Constants.PREF_THEME_DARK.equals(themePref)) */ {
 			if (Constants.PREF_TEXT_SIZE_MEDIUM.equals(textSizePref))
 				return R.style.Reddit_Dark_Medium;
@@ -218,6 +224,8 @@ public class Util {
 				return R.style.Reddit_Dark_Large;
 			else if (Constants.PREF_TEXT_SIZE_LARGER.equals(textSizePref))
 				return R.style.Reddit_Dark_Larger;
+			else if (Constants.PREF_TEXT_SIZE_HUGE.equals(textSizePref))
+				return R.style.Reddit_Dark_Huge;
 		}
 		return R.style.Reddit_Light_Medium;
 	}
@@ -225,7 +233,7 @@ public class Util {
 	/**
 	 * Return the theme and textSize String prefs
 	 */
-	static String[] getPrefsFromThemeResource(int theme) {
+	public static String[] getPrefsFromThemeResource(int theme) {
 		switch (theme) {
 		case R.style.Reddit_Light_Medium:
 			return new String[] { Constants.PREF_THEME_LIGHT, Constants.PREF_TEXT_SIZE_MEDIUM };
@@ -233,18 +241,22 @@ public class Util {
 			return new String[] { Constants.PREF_THEME_LIGHT, Constants.PREF_TEXT_SIZE_LARGE };
 		case R.style.Reddit_Light_Larger:
 			return new String[] { Constants.PREF_THEME_LIGHT, Constants.PREF_TEXT_SIZE_LARGER };
+		case R.style.Reddit_Light_Huge:
+			return new String[] { Constants.PREF_THEME_LIGHT, Constants.PREF_TEXT_SIZE_HUGE };
 		case R.style.Reddit_Dark_Medium:
 			return new String[] { Constants.PREF_THEME_DARK, Constants.PREF_TEXT_SIZE_MEDIUM };
 		case R.style.Reddit_Dark_Large:
 			return new String[] { Constants.PREF_THEME_DARK, Constants.PREF_TEXT_SIZE_LARGE };
 		case R.style.Reddit_Dark_Larger:
 			return new String[] { Constants.PREF_THEME_DARK, Constants.PREF_TEXT_SIZE_LARGER };
+		case R.style.Reddit_Dark_Huge:
+			return new String[] { Constants.PREF_THEME_DARK, Constants.PREF_TEXT_SIZE_HUGE };
 		default:
 			return new String[] { Constants.PREF_THEME_LIGHT, Constants.PREF_TEXT_SIZE_MEDIUM };
 		}
 	}
 	
-	static int getTextAppearanceResource(int themeResource, int androidTextAppearanceStyle) {
+	public static int getTextAppearanceResource(int themeResource, int androidTextAppearanceStyle) {
 		switch (themeResource) {
 		case R.style.Reddit_Light_Medium:
 		case R.style.Reddit_Dark_Medium:
@@ -281,6 +293,18 @@ public class Util {
 				return R.style.TextAppearance_Larger_Large;
 			default:
 				return R.style.TextAppearance_Larger_Medium;
+			}
+		case R.style.Reddit_Light_Huge: 
+		case R.style.Reddit_Dark_Huge:
+			switch (androidTextAppearanceStyle) {
+			case android.R.style.TextAppearance_Small:
+				return R.style.TextAppearance_Huge_Small;
+			case android.R.style.TextAppearance_Medium:
+				return R.style.TextAppearance_Huge_Medium;
+			case android.R.style.TextAppearance_Large:
+				return R.style.TextAppearance_Huge_Large;
+			default:
+				return R.style.TextAppearance_Huge_Medium;
 			}
 		default:
 			return R.style.TextAppearance_Medium_Medium;	
