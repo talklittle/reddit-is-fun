@@ -25,6 +25,7 @@ Contributors:
 * andyvincent
 * wac-
 * pakesson
+* macieklen
 
 Android Market QR Codes
 ----------------
