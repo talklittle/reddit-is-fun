@@ -59,9 +59,9 @@ import android.widget.EditText;
 import android.widget.FrameLayout;
 import android.widget.ImageView;
 import android.widget.TabHost;
+import android.widget.TabHost.OnTabChangeListener;
 import android.widget.TextView;
 import android.widget.Toast;
-import android.widget.TabHost.OnTabChangeListener;
 
 public class SubmitLinkActivity extends TabActivity {
 	

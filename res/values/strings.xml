@@ -97,6 +97,8 @@
 	
 	<string name="compose_message">Compose message</string>
 	<string name="dark_theme">Use dark theme</string>
+	<string name="subscribe">+ Frontpage</string>
+	<string name="unsubscribe">- Frontpage</string>
 	<string name="inbox">Inbox</string>
 	<string name="light_theme">Use light theme</string>
 	<string name="login">Login</string>

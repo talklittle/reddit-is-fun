@@ -21,7 +21,9 @@ package com.andrewshu.android.reddit;
 
 import java.lang.reflect.Method;
 import java.util.ArrayList;
+import java.util.Iterator;
 
+import org.apache.http.HttpException;
 import org.apache.http.HttpResponse;
 
 import android.app.Activity;
@@ -462,4 +464,33 @@ public class Util {
     	return host != null && host.endsWith(".youtube.com");
     }
     
+    static boolean listContainsIgnoreCase(ArrayList<String> list, String str){
+    	for (Iterator iterator = list.iterator(); iterator.hasNext();) {
+			String string = (String) iterator.next();
+			
+			if(string.equalsIgnoreCase(str))
+				return true;
+		}
+    	return false;
+    }
+    
+	public static String getResponseErrorMessage(String line) throws Exception{
+    	String error = null;
+		
+		if (line == null || Constants.EMPTY_STRING.equals(line)) {
+			error = "Connection error when subscribing. Try again.";
+    		throw new HttpException("No content returned from subscribe POST");
+    	}
+    	if (line.contains("WRONG_PASSWORD")) {
+    		error = "Wrong password.";
+    		throw new Exception("Wrong password.");
+    	}
+    	if (line.contains("USER_REQUIRED")) {
+    		// The modhash probably expired
+    		throw new Exception("User required. Huh?");
+    	}
+    	
+    	Common.logDLong(TAG, line);
+		return error;
+	}
 }
