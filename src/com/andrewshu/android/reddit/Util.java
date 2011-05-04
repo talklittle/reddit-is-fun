@@ -23,10 +23,8 @@ import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Iterator;
 
+import org.apache.http.HttpException;
 import org.apache.http.HttpResponse;
-import org.json.JSONArray;
-import org.json.JSONException;
-import org.json.JSONObject;
 
 import android.app.Activity;
 import android.net.Uri;
@@ -442,31 +440,33 @@ public class Util {
     	return host != null && host.endsWith(".youtube.com");
     }
     
-    static String getSubredditId(String mSubreddit){
-    	String subreddit_id = null;
-    	JSONObject subredditInfo = 
-    	RestJsonClient.connect("http://www.reddit.com/r/" + mSubreddit + "/.json?count=1");
-    	    	
-    	if(subredditInfo != null){
-    		try {
-    			JSONArray childArray = subredditInfo.getJSONObject("data").getJSONArray("children");
-    			JSONObject object = (JSONObject) childArray.get(0);
-    			
-				subreddit_id = (String) object.getJSONObject("data").getString("subreddit_id");
-			} catch (JSONException e) {
-				e.printStackTrace();
-			}
-    	}
-    	return subreddit_id;
-    }
-    
-    static boolean subredditInList(ArrayList<String> subreddits, String subreddit){
-    	for (Iterator iterator = subreddits.iterator(); iterator.hasNext();) {
+    static boolean listContainsIgnoreCase(ArrayList<String> list, String str){
+    	for (Iterator iterator = list.iterator(); iterator.hasNext();) {
 			String string = (String) iterator.next();
 			
-			if(string.equalsIgnoreCase(subreddit))
+			if(string.equalsIgnoreCase(str))
 				return true;
 		}
     	return false;
     }
+    
+	public static String getResponseErrorMessage(String line) throws Exception{
+    	String error = null;
+		
+		if (line == null || Constants.EMPTY_STRING.equals(line)) {
+			error = "Connection error when subscribing. Try again.";
+    		throw new HttpException("No content returned from subscribe POST");
+    	}
+    	if (line.contains("WRONG_PASSWORD")) {
+    		error = "Wrong password.";
+    		throw new Exception("Wrong password.");
+    	}
+    	if (line.contains("USER_REQUIRED")) {
+    		// The modhash probably expired
+    		throw new Exception("User required. Huh?");
+    	}
+    	
+    	Common.logDLong(TAG, line);
+		return error;
+	}
 }

@@ -45,7 +45,9 @@ import org.apache.http.impl.client.DefaultHttpClient;
 import org.apache.http.impl.conn.tsccm.ThreadSafeClientConnManager;
 import org.apache.http.params.BasicHttpParams;
 import org.apache.http.protocol.HttpContext;
+import org.codehaus.jackson.JsonNode;
 import org.codehaus.jackson.map.ObjectMapper;
+import org.codehaus.jackson.node.ArrayNode;
 
 import android.app.ListActivity;
 import android.app.Notification;
@@ -563,4 +565,16 @@ public class Common {
 				break;
 		}
 	} 
+    
+    static String getSubredditId(String mSubreddit){
+    	String subreddit_id = null;
+    	JsonNode subredditInfo = 
+    	RestJsonClient.connect("http://www.reddit.com/r/" + mSubreddit + "/.json?count=1");
+    	    	
+    	if(subredditInfo != null){
+    		ArrayNode children = (ArrayNode) subredditInfo.path("data").path("children");
+    		subreddit_id = children.get(0).get("data").get("subreddit_id").getTextValue();
+    	}
+    	return subreddit_id;
+    }
 }

@@ -11,12 +11,12 @@ import org.apache.http.client.ClientProtocolException;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.impl.client.DefaultHttpClient;
-import org.json.JSONException;
-import org.json.JSONObject;
+import org.codehaus.jackson.JsonNode;
+import org.codehaus.jackson.map.ObjectMapper;
 
 public class RestJsonClient {
 
-    public static JSONObject connect(String url)
+    public static JsonNode connect(String url)
     {
 
         HttpClient httpclient = new DefaultHttpClient();
@@ -27,8 +27,8 @@ public class RestJsonClient {
         // Execute the request
         HttpResponse response;
 
-        JSONObject json = new JSONObject();
-
+        ObjectMapper json = new ObjectMapper();
+        JsonNode data = null;
         try {
             response = httpclient.execute(httpget);
 
@@ -40,8 +40,9 @@ public class RestJsonClient {
                 InputStream instream = entity.getContent();
                 String result= convertStreamToString(instream);
 
-                json=new JSONObject(result);
-
+                json = new ObjectMapper();
+                data = json.readValue(result, JsonNode.class);
+                
                 instream.close();
             }
 
@@ -51,12 +52,9 @@ public class RestJsonClient {
         } catch (IOException e) {
             // TODO Auto-generated catch block
             e.printStackTrace();
-        } catch (JSONException e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
         }
 
-        return json;
+        return data;
     }
     /**
      *

@@ -996,7 +996,7 @@ public final class ThreadsListActivity extends ListActivity {
     		if(!mSubreddit.equals(Constants.FRONTPAGE_STRING)){
     			ArrayList<String> mSubredditsList = CacheInfo.getCachedSubredditList(getApplicationContext());	
     			
-    			if(mSubredditsList != null && Util.subredditInList(mSubredditsList, mSubreddit)){
+    			if(mSubredditsList != null && Util.listContainsIgnoreCase(mSubredditsList, mSubreddit)){
 	    			menu.findItem(R.id.unsubscribe_menu_id).setVisible(true);
 	    			menu.findItem(R.id.subscribe_menu_id).setVisible(false);
 	    		}

@@ -15,9 +15,6 @@ import org.apache.http.client.methods.HttpPost;
 import org.apache.http.impl.client.DefaultHttpClient;
 import org.apache.http.message.BasicNameValuePair;
 import org.apache.http.protocol.HTTP;
-import org.json.JSONArray;
-import org.json.JSONException;
-import org.json.JSONObject;
 
 import android.content.Context;
 import android.os.AsyncTask;
@@ -72,11 +69,9 @@ public class SubscribeTask extends AsyncTask<Void, Void, Boolean> {
 		// Construct data
 		List<NameValuePair> nvps = new ArrayList<NameValuePair>();
 		nvps.add(new BasicNameValuePair("action", "sub"));
-		nvps.add(new BasicNameValuePair("sr", Util.getSubredditId(mSubreddit)));
+		nvps.add(new BasicNameValuePair("sr", Common.getSubredditId(mSubreddit)));
 		nvps.add(new BasicNameValuePair("r", mSubreddit));
 		nvps.add(new BasicNameValuePair("uh", mSettings.modhash.toString()));
-		nvps.add(new BasicNameValuePair("renderstyle", "html"));
-
 		
 		try {
 			HttpPost request = new HttpPost(mUrl);
@@ -103,21 +98,7 @@ public class SubscribeTask extends AsyncTask<Void, Void, Boolean> {
         	BufferedReader in = new BufferedReader(new InputStreamReader(entity.getContent()));
         	String line = in.readLine();
         	in.close();
-        	if (line == null || Constants.EMPTY_STRING.equals(line)) {
-        		mUserError = "Connection error when subscribing. Try again.";
-        		throw new HttpException("No content returned from subscribe POST");
-        	}
-        	if (line.contains("WRONG_PASSWORD")) {
-        		mUserError = "Wrong password.";
-        		throw new Exception("Wrong password.");
-        	}
-        	if (line.contains("USER_REQUIRED")) {
-        		// The modhash probably expired
-        		throw new Exception("User required. Huh?");
-        	}
-        	
-        	Common.logDLong(TAG, line);
-        	
+        	mUserError = Util.getResponseErrorMessage(line);
         	entity.consumeContent();
         	return true;
         	

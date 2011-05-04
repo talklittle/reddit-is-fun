@@ -121,14 +121,16 @@ public final class PickSubredditActivity extends ListActivity {
     	
     	resetUI(null);
         
-    	mSubredditsList = CacheInfo.getCachedSubredditList(getApplicationContext());
-        
-        if(mSubredditsList == null){
+    	
+    	//mSubredditsList = CacheInfo.getCachedSubredditList(getApplicationContext());
+    	mSubredditsList = cacheSubredditsList(mSubredditsList);
+    	
+        if(mSubredditsList == null || mSubredditsList.isEmpty()){
             // Try to restore mSubredditsList using getLastNonConfigurationInstance()
             restoreLastNonConfigurationInstance();
         }
         
-        if (mSubredditsList == null) {
+        if (mSubredditsList == null || mSubredditsList.isEmpty()) {
         	new DownloadRedditsTask().execute();
         } else {
 	    	// Orientation change. Use prior instance.
@@ -244,12 +246,7 @@ public final class PickSubredditActivity extends ListActivity {
     		HttpEntity entity = null;
             try {
             	
-            	if (Constants.USE_SUBREDDITS_CACHE) {
-            		if (CacheInfo.checkFreshSubredditListCache(getApplicationContext())) {
-            			reddits = CacheInfo.getCachedSubredditList(getApplicationContext());
-            			if (Constants.LOGGING) Log.d(TAG, "cached subreddit list:" + reddits);
-            		}
-            	}
+            	reddits = cacheSubredditsList(reddits);
             	
             	if (reddits == null) {
             		reddits = new ArrayList<String>();
@@ -427,5 +424,15 @@ public final class PickSubredditActivity extends ListActivity {
 		    	// Ignore.
 		    }
         }
+    }
+    
+    protected ArrayList<String> cacheSubredditsList(ArrayList<String> reddits){
+    	if (Constants.USE_SUBREDDITS_CACHE) {
+    		if (CacheInfo.checkFreshSubredditListCache(getApplicationContext())) {
+    			reddits = CacheInfo.getCachedSubredditList(getApplicationContext());
+    			if (Constants.LOGGING) Log.d(TAG, "cached subreddit list:" + reddits);
+    		}
+    	}
+		return reddits;
     }
 }
