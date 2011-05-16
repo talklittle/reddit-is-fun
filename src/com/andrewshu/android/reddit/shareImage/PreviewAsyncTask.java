@@ -11,6 +11,14 @@ import android.os.AsyncTask;
 import android.os.SystemClock;
 import android.widget.Toast;
 
+/**
+ * Given an image, this downsamples that image by a pre-specified factor
+ * (currently 8), and returns either the downsampled image or a default image if
+ * there were errors
+ * 
+ * @author hamiltont
+ * 
+ */
 public class PreviewAsyncTask extends AsyncTask<Uri, Void, Bitmap> {
 	/**
 	 * <p>
@@ -60,18 +68,18 @@ public class PreviewAsyncTask extends AsyncTask<Uri, Void, Bitmap> {
 	private static final int PREVIEW_DOWNSAMPLE_FACTOR = 8;
 
 	private Context context_;
-	private Test test_;
+	private PreviewProgressListener listener_;
 
-	public PreviewAsyncTask(Test t) {
+	public PreviewAsyncTask(Context t, PreviewProgressListener listener) {
 		context_ = t.getApplicationContext();
-		test_ = t;
+		listener_ = listener;
 	}
 
 	@Override
 	protected void onPostExecute(Bitmap result) {
 		super.onPostExecute(result);
 
-		test_.onPostPreview(result);
+		listener_.onPostPreview(result);
 	}
 
 	// TODO replace all null's with a default image
@@ -101,7 +109,6 @@ public class PreviewAsyncTask extends AsyncTask<Uri, Void, Bitmap> {
 		options.inSampleSize = PREVIEW_DOWNSAMPLE_FACTOR;
 		Bitmap bmp = null;
 		try {
-
 			bmp = BitmapFactory.decodeStream(is, null, options);
 
 		} catch (OutOfMemoryError ome) {

@@ -5,7 +5,6 @@ import android.content.Intent;
 import android.graphics.Bitmap;
 import android.net.Uri;
 import android.os.Bundle;
-import android.util.Log;
 import android.view.View;
 import android.widget.ImageView;
 import android.widget.ProgressBar;
@@ -20,7 +19,7 @@ import com.andrewshu.android.reddit.R;
  * @author hamiltont
  *
  */
-public class Test extends Activity implements UploadProgressListener {
+public class Test extends Activity implements UploadProgressListener, PreviewProgressListener {
 	private PreviewAsyncTask previewAsyncTask;
 	private UploadAsyncTask uploadAsyncTask;
 	private ProgressBar uploadProgress_;
@@ -32,7 +31,7 @@ public class Test extends Activity implements UploadProgressListener {
 
 		setContentView(R.layout.imgur_upload);
 
-		previewAsyncTask = new PreviewAsyncTask(this);
+		previewAsyncTask = new PreviewAsyncTask(this, this);
 		uploadAsyncTask = new UploadAsyncTask(this);
 
 		uploadProgress_ = (ProgressBar) findViewById(R.id.imgur_upload_progress);
@@ -40,11 +39,9 @@ public class Test extends Activity implements UploadProgressListener {
 		uploadProgress_.setMax(100);
 		uploadProgress_.setIndeterminate(false);
 
-		Log.i("rf", "Started them both");
 	}
 
 	public void onPostUpload(String url) {
-		Log.i("rf", "Upload returned");
 
 		TextView tv = (TextView) findViewById(R.id.imgur_status);
 		tv.setText(url);
@@ -58,7 +55,6 @@ public class Test extends Activity implements UploadProgressListener {
 	}
 
 	public void onPostPreview(Bitmap previewImage) {
-		Log.i("rf", "Preview returned");
 
 		ProgressBar pb = (ProgressBar) findViewById(R.id.imgur_preview_progress);
 		pb.setEnabled(false);
