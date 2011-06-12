@@ -23,6 +23,8 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.io.UnsupportedEncodingException;
+import java.net.URLEncoder;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.zip.GZIPInputStream;
@@ -80,6 +82,8 @@ public class Common {
 	private static final Pattern REDDIT_LINK = Pattern.compile(Constants.REDDIT_PATH_PATTERN_STRING);
 	private static final Pattern USER_LINK = Pattern.compile(Constants.USER_PATH_PATTERN_STRING);
 	private static final ObjectMapper mObjectMapper = new ObjectMapper();
+
+    private static final String VIEWTEXT_BASE_URL = "http://viewtext.org/article?url=";
 
 	static void showErrorToast(String error, int duration, Context context) {
 		LayoutInflater inflater = (LayoutInflater) context.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
@@ -386,6 +390,30 @@ public class Common {
     	NotificationManager notificationManager = (NotificationManager) context.getSystemService(Context.NOTIFICATION_SERVICE);
 		notificationManager.cancel(Constants.NOTIFICATION_HAVE_MAIL);
     }
+
+    /**
+     *
+     * @param url
+     * @param context
+     * @param requireNewTask set this to true if context is not an Activity
+     * @param bypassParser
+     * @param useExternalBrowser
+     * @param useViewText convert web page w/ viewtext.org
+     */
+    static void launchBrowser(Context context, String url, String threadUrl,
+    		boolean requireNewTask, boolean bypassParser, boolean useExternalBrowser, boolean useViewText) {
+        String viewTextUrl = url;
+        if (useViewText) {
+            try {
+                String encodedUrl = URLEncoder.encode(url, "UTF8");
+                viewTextUrl = VIEWTEXT_BASE_URL + encodedUrl;
+            } catch (UnsupportedEncodingException e) {
+            }
+        }
+
+        // always use external browser for viewtext
+        launchBrowser(context, viewTextUrl, threadUrl, requireNewTask, bypassParser, true);
+    }
     
     /**
      * 
@@ -397,8 +425,8 @@ public class Common {
      */
     static void launchBrowser(Context context, String url, String threadUrl,
     		boolean requireNewTask, boolean bypassParser, boolean useExternalBrowser) {
-    	
-    	Uri uri = Uri.parse(url);
+
+        Uri uri = Uri.parse(url);
     	
     	if (!bypassParser) {
     		if (Util.isRedditUri(uri)) {

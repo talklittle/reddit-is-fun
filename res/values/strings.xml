@@ -108,6 +108,7 @@
 	<string name="op_edit">Edit OP</string>
 	<string name="op_delete">Delete thread</string>
 	<string name="open_browser">Open in browser</string>
+    <string name="open_viewtext">Open with viewtext.org</string>
 	<string name="pick_subreddit">Pick subreddit</string>
 	<string name="refresh">Refresh</string>
 	<string name="share">Share</string>

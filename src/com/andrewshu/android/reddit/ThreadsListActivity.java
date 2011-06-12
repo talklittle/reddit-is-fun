@@ -910,6 +910,9 @@ public final class ThreadsListActivity extends ListActivity {
     	menu.add(0, Constants.VIEW_SUBREDDIT_CONTEXT_ITEM, 0, R.string.view_subreddit);
     	menu.add(0, Constants.SHARE_CONTEXT_ITEM, 0, R.string.share);
     	menu.add(0, Constants.OPEN_IN_BROWSER_CONTEXT_ITEM, 0, R.string.open_browser);
+        if (!_item.isIs_self()) {
+            menu.add(0, Constants.OPEN_IN_VIEWTEXT_CONTEXT_ITEM, 0, R.string.open_viewtext);
+        }
     	
     	if(mSettings.isLoggedIn()){
     		if(!_item.isSaved()){
@@ -951,6 +954,10 @@ public final class ThreadsListActivity extends ListActivity {
 		case Constants.OPEN_IN_BROWSER_CONTEXT_ITEM:
 			Common.launchBrowser(this, _item.getUrl(), Util.createThreadUri(_item).toString(), false, true, true);
 			return true;
+
+        case Constants.OPEN_IN_VIEWTEXT_CONTEXT_ITEM:
+            Common.launchBrowser(this, _item.getUrl(), Util.createThreadUri(_item).toString(), false, true, true, true);
+            return true;
 			
 		case Constants.SAVE_CONTEXT_ITEM:
 			new SaveTask(true, _item, mSettings, getApplicationContext()).execute();
