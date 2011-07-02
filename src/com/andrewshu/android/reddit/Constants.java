@@ -126,6 +126,7 @@ public class Constants {
 	static final int UNHIDE_CONTEXT_ITEM = 1019;
 	static final int VIEW_SUBREDDIT_CONTEXT_ITEM = 1020;
     static final int OPEN_IN_VIEWTEXT_CONTEXT_ITEM = 1021;
+    static final int COPY_LINK_TO_CLIPBOARD_CONTEXT_ITEM = 1022;
 
     
     // Special CSS for webviews to match themes
