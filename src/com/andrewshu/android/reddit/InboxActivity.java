@@ -19,16 +19,16 @@
 
 package com.andrewshu.android.reddit;
 
+import java.beans.PropertyChangeEvent;
+import java.beans.PropertyChangeListener;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
-import org.apache.commons.lang.StringEscapeUtils;
+import org.apache.http.Header;
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpException;
 import org.apache.http.HttpResponse;
@@ -39,10 +39,8 @@ import org.apache.http.client.methods.HttpPost;
 import org.apache.http.impl.client.DefaultHttpClient;
 import org.apache.http.message.BasicNameValuePair;
 import org.apache.http.protocol.HTTP;
-import org.codehaus.jackson.JsonFactory;
 import org.codehaus.jackson.JsonParseException;
-import org.codehaus.jackson.JsonParser;
-import org.codehaus.jackson.JsonToken;
+import org.codehaus.jackson.map.ObjectMapper;
 
 import android.app.Activity;
 import android.app.AlertDialog;
@@ -50,13 +48,12 @@ import android.app.Dialog;
 import android.app.ListActivity;
 import android.app.ProgressDialog;
 import android.content.Context;
-import android.content.DialogInterface;
 import android.content.Intent;
-import android.content.DialogInterface.OnCancelListener;
 import android.graphics.Typeface;
 import android.graphics.drawable.Drawable;
 import android.os.AsyncTask;
 import android.os.Bundle;
+import android.text.Html;
 import android.text.SpannableString;
 import android.text.SpannableStringBuilder;
 import android.text.Spanned;
@@ -64,14 +61,17 @@ import android.text.style.ForegroundColorSpan;
 import android.text.style.StyleSpan;
 import android.text.style.URLSpan;
 import android.util.Log;
-import android.view.KeyEvent;
+import android.view.ContextMenu;
 import android.view.LayoutInflater;
 import android.view.Menu;
+import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.Window;
+import android.view.ContextMenu.ContextMenuInfo;
 import android.view.View.OnClickListener;
-import android.view.View.OnKeyListener;
+import android.webkit.CookieSyncManager;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.EditText;
@@ -79,6 +79,7 @@ import android.widget.ImageView;
 import android.widget.ListView;
 import android.widget.TextView;
 import android.widget.Toast;
+import android.widget.AdapterView.AdapterContextMenuInfo;
 
 /**
  * Main Activity class representing a Subreddit, i.e., a ThreadsList.
@@ -91,20 +92,14 @@ public final class InboxActivity extends ListActivity
 
 	private static final String TAG = "InboxActivity";
 	
-	// Captcha "iden"
-    private final Pattern CAPTCHA_IDEN_PATTERN = Pattern.compile("name=\"iden\" value=\"([^\"]+?)\"");
-    // Group 2: Captcha image absolute path
-    private final Pattern CAPTCHA_IMAGE_PATTERN = Pattern.compile("<img class=\"capimage\"( alt=\".*?\")? src=\"(/captcha/[^\"]+?)\"");
-    	// Group 1: fullname. Group 2: kind. Group 3: id36.
-    private final Pattern NEW_ID_PATTERN = Pattern.compile("\"id\": \"((.+?)_(.+?))\"");
-    // Group 1: whole error. Group 2: the time part
-    private final Pattern RATELIMIT_RETRY_PATTERN = Pattern.compile("(you are trying to submit too fast. try again in (.+?)\\.)");
-
-    private final JsonFactory jsonFactory = new JsonFactory(); 
-    private final Markdown markdown = new Markdown();
+    private final ObjectMapper mObjectMapper = Common.getObjectMapper();
     
     /** Custom list adapter that fits our threads data into the list. */
     private MessagesListAdapter mMessagesAdapter;
+    private ArrayList<ThingInfo> mMessagesList;
+    // Lock used when modifying the mMessagesAdapter
+    private static final Object MESSAGE_ADAPTER_LOCK = new Object();
+    
     
     private final DefaultHttpClient mClient = Common.getGzipHttpClient();
     
@@ -114,13 +109,20 @@ public final class InboxActivity extends ListActivity
     
     // UI State
     private View mVoteTargetView = null;
-    private MessageInfo mVoteTargetMessageInfo = null;
+    private ThingInfo mVoteTargetThingInfo = null;
+    private String mReplyTargetName = null;
     private URLSpan[] mVoteTargetSpans = null;
+    // TODO: String mVoteTargetId so when you rotate, you can find the TargetThingInfo again
     private DownloadMessagesTask mCurrentDownloadMessagesTask = null;
     private final Object mCurrentDownloadMessagesTaskLock = new Object();
+    private View mNextPreviousView = null;
     
     private String mAfter = null;
     private String mBefore = null;
+    private int mCount = 0;
+    private String mLastAfter = null;
+    private String mLastBefore = null;
+    private int mLastCount = 0;
     
     private volatile String mCaptchaIden = null;
 	private volatile String mCaptchaUrl = null;
@@ -141,32 +143,53 @@ public final class InboxActivity extends ListActivity
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         
-        Common.loadRedditPreferences(this, mSettings, mClient);
+		CookieSyncManager.createInstance(getApplicationContext());
+		
+        mSettings.loadRedditPreferences(this, mClient);
         setRequestedOrientation(mSettings.rotation);
         setTheme(mSettings.theme);
+        requestWindowFeature(Window.FEATURE_PROGRESS);
+        requestWindowFeature(Window.FEATURE_INDETERMINATE_PROGRESS);
         
-        setContentView(R.layout.comments_list_content);
-        registerForContextMenu(getListView());
+        setContentView(R.layout.inbox_list_content);
         // The above layout contains a list id "android:list"
         // which ListActivity adopts as its list -- we can
         // access it with getListView().
         
-		if (mSettings.loggedIn) {
-			new DownloadMessagesTask().execute(Constants.DEFAULT_COMMENT_DOWNLOAD_LIMIT);
+		if (mSettings.isLoggedIn()) {
+			if (savedInstanceState != null) {
+	        	mReplyTargetName = savedInstanceState.getString(Constants.REPLY_TARGET_NAME_KEY);
+	        	mAfter = savedInstanceState.getString(Constants.AFTER_KEY);
+		        mBefore = savedInstanceState.getString(Constants.BEFORE_KEY);
+		        mCount = savedInstanceState.getInt(Constants.THREAD_COUNT_KEY);
+		        mLastAfter = savedInstanceState.getString(Constants.LAST_AFTER_KEY);
+		        mLastBefore = savedInstanceState.getString(Constants.LAST_BEFORE_KEY);
+		        mLastCount = savedInstanceState.getInt(Constants.THREAD_LAST_COUNT_KEY);
+			    mVoteTargetThingInfo = savedInstanceState.getParcelable(Constants.VOTE_TARGET_THING_INFO_KEY);
+
+			    restoreLastNonConfigurationInstance();
+	        	if (mMessagesList == null) {
+	        		// Load previous view of threads
+			        if (mLastAfter != null) {
+			        	new DownloadMessagesTask(mLastAfter, null, mLastCount).execute(Constants.DEFAULT_COMMENT_DOWNLOAD_LIMIT);
+			        } else if (mLastBefore != null) {
+			        	new DownloadMessagesTask(null, mLastBefore, mLastCount).execute(Constants.DEFAULT_COMMENT_DOWNLOAD_LIMIT);
+			        } else {
+			        	new DownloadMessagesTask().execute(Constants.DEFAULT_COMMENT_DOWNLOAD_LIMIT);
+			        }
+		        } else {
+			    	// Orientation change. Use prior instance.
+	        		resetUI(new MessagesListAdapter(this, mMessagesList));
+	        	}
+			} else {
+				new DownloadMessagesTask().execute(Constants.DEFAULT_COMMENT_DOWNLOAD_LIMIT);
+			}
 		} else {
 			showDialog(Constants.DIALOG_LOGIN);
 		}
+		setTitle(String.format(getResources().getString(R.string.inbox_title), mSettings.username));
     }
     
-    /**
-     * Hack to explicitly set background color whenever changing ListView.
-     */
-    public void setContentView(int layoutResID) {
-    	super.setContentView(layoutResID);
-    	// HACK: set background color directly for android 2.0
-        if (mSettings.theme == R.style.Reddit_Light)
-        	getListView().setBackgroundResource(R.color.white);
-    }
     
 	private void returnStatus(int status) {
 		Intent i = new Intent();
@@ -177,18 +200,16 @@ public final class InboxActivity extends ListActivity
     @Override
     protected void onResume() {
     	super.onResume();
+		CookieSyncManager.getInstance().startSync();
     	int previousTheme = mSettings.theme;
-    	boolean previousLoggedIn = mSettings.loggedIn;
-    	Common.loadRedditPreferences(this, mSettings, mClient);
+    	boolean previousLoggedIn = mSettings.isLoggedIn();
+    	mSettings.loadRedditPreferences(this, mClient);
     	setRequestedOrientation(mSettings.rotation);
     	if (mSettings.theme != previousTheme) {
-    		setTheme(mSettings.theme);
-    		setContentView(R.layout.threads_list_content);
-    		registerForContextMenu(getListView());
-    		setListAdapter(mMessagesAdapter);
-    		Common.updateListDrawables(this, mSettings.theme);
+    		resetUI(mMessagesAdapter);
     	}
-    	if (mSettings.loggedIn != previousLoggedIn) {
+    	updateNextPreviousButtons();
+    	if (mSettings.isLoggedIn() != previousLoggedIn) {
     		new DownloadMessagesTask().execute(Constants.DEFAULT_COMMENT_DOWNLOAD_LIMIT);
     	}
     }
@@ -196,11 +217,41 @@ public final class InboxActivity extends ListActivity
     @Override
     protected void onPause() {
     	super.onPause();
-    	Common.saveRedditPreferences(this, mSettings);
+		CookieSyncManager.getInstance().stopSync();
+		mSettings.saveRedditPreferences(this);
+    }
+    
+    @Override
+    public Object onRetainNonConfigurationInstance() {
+        // Avoid having to re-download and re-parse the messages list
+    	// when rotating or opening keyboard.
+    	return mMessagesList;
+    }
+    
+    @SuppressWarnings("unchecked")
+	private void restoreLastNonConfigurationInstance() {
+    	mMessagesList = (ArrayList<ThingInfo>) getLastNonConfigurationInstance();
+    }
+
+    
+    
+    /**
+     * Return the ThingInfo based on linear search over the names
+     */
+    private ThingInfo findThingInfoByName(String name) {
+    	if (name == null)
+    		return null;
+    	synchronized(MESSAGE_ADAPTER_LOCK) {
+    		for (int i = 0; i < mMessagesAdapter.getCount(); i++) {
+    			if (mMessagesAdapter.getItem(i).getName().equals(name))
+    				return mMessagesAdapter.getItem(i);
+    		}
+    	}
+    	return null;
     }
     
     
-    private final class MessagesListAdapter extends ArrayAdapter<MessageInfo> {
+    private final class MessagesListAdapter extends ArrayAdapter<ThingInfo> {
     	public boolean mIsLoading = true;
     	
     	private LayoutInflater mInflater;
@@ -211,7 +262,7 @@ public final class InboxActivity extends ListActivity
     		return super.isEmpty();
     	}
     	
-        public MessagesListAdapter(Context context, List<MessageInfo> objects) {
+        public MessagesListAdapter(Context context, List<ThingInfo> objects) {
             super(context, 0, objects);
             mInflater = (LayoutInflater)context.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
         }
@@ -220,7 +271,7 @@ public final class InboxActivity extends ListActivity
         public View getView(int position, View convertView, ViewGroup parent) {
             View view;
             
-            MessageInfo item = this.getItem(position);
+            ThingInfo item = this.getItem(position);
             
             // Here view may be passed in for re-use, or we make a new one.
             if (convertView == null) {
@@ -236,10 +287,10 @@ public final class InboxActivity extends ListActivity
             TextView bodyView = (TextView) view.findViewById(R.id.body);
             
             // Highlight new messages in red
-            if (Constants.TRUE_STRING.equals(item.getNew()))
+            if (item.isNew())
             	fromInfoView.setTextColor(getResources().getColor(R.color.red));
             else
-            	fromInfoView.setTextColor(getResources().getColor(R.color.dark_gray));
+            	fromInfoView.setTextColor(getResources().getColor(R.color.gray_50));
             // Build fromInfoView using Spans. Example (** means bold & different color):
             // from *talklittle_test* sent 20 hours ago
             SpannableStringBuilder builder = new SpannableStringBuilder();
@@ -250,7 +301,7 @@ public final class InboxActivity extends ListActivity
             StyleSpan authorStyleSpan = new StyleSpan(Typeface.BOLD);
             authorSS.setSpan(authorStyleSpan, 0, authorLen, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
             ForegroundColorSpan fcs;
-            if (mSettings.theme == R.style.Reddit_Light)
+            if (Util.isLightTheme(mSettings.theme))
             	fcs = new ForegroundColorSpan(getResources().getColor(R.color.dark_blue));
             else
             	fcs = new ForegroundColorSpan(getResources().getColor(R.color.white));
@@ -258,11 +309,11 @@ public final class InboxActivity extends ListActivity
             builder.append(authorSS);
             // When it was sent
             builder.append(" sent ");
-            builder.append(Util.getTimeAgo(Double.valueOf(item.getCreatedUtc())));
+            builder.append(Util.getTimeAgo(Double.valueOf(item.getCreated_utc())));
             fromInfoView.setText(builder);
             
             subjectView.setText(item.getSubject());
-            bodyView.setText(item.mSSBBody);
+            bodyView.setText(item.getSpannedBody());
     
 	        return view;
         }
@@ -270,32 +321,123 @@ public final class InboxActivity extends ListActivity
 
     
     /**
-     * Called when user clicks an item in the list. Starts an activity to
-     * open the url for that item.
+     * Called when user clicks an item in the list. Mark message read.
+     * If item was already focused, open a dialog.
      */
     @Override
     protected void onListItemClick(ListView l, View v, int position, long id) {
-        MessageInfo item = mMessagesAdapter.getItem(position);
+        ThingInfo item = mMessagesAdapter.getItem(position);
         
-        // Mark the OP post/regular comment as selected
-        mVoteTargetMessageInfo = item;
+        // Mark the message/comment as selected
+        mVoteTargetThingInfo = item;
         mVoteTargetView = v;
+        mReplyTargetName = item.getName();
         
-        if (Constants.TRUE_STRING.equals(item.getWasComment()))
-        	showDialog(Constants.DIALOG_COMMENT_CLICK);
-        else
-        	showDialog(Constants.DIALOG_MESSAGE_CLICK);
+        // If new, mark the message read. Otherwise handle it.
+        if (item.isNew()) {
+        	new ReadMessageTask().execute();
+        } else {
+            openContextMenu(v);
+        }
     }
+    
+    @Override
+    public void onCreateContextMenu(ContextMenu menu, View v, ContextMenuInfo menuInfo) {
+    	super.onCreateContextMenu(menu, v, menuInfo);
+    	AdapterContextMenuInfo info = (AdapterContextMenuInfo) menuInfo;
+    	int rowId = (int) info.id;
+    	ThingInfo item = mMessagesAdapter.getItem(rowId);
+    	
+        // Mark the message/comment as selected
+        mVoteTargetThingInfo = item;
+        mVoteTargetView = v;
+        mReplyTargetName = item.getName();
+
+        if (item.isWas_comment()) {
+        	// TODO: include the context!
+        	menu.add(0, Constants.DIALOG_COMMENT_CLICK, Menu.NONE, "Go to comment");
+    	} else {
+            menu.add(0, Constants.DIALOG_MESSAGE_CLICK, Menu.NONE, "Reply");
+    	}
+    }
+    
+    @Override
+    public boolean onContextItemSelected(MenuItem item) {
+    	switch (item.getItemId()) {
+    	case Constants.DIALOG_COMMENT_CLICK:
+			Intent i = new Intent(getApplicationContext(), CommentsListActivity.class);
+			i.setData(Util.createCommentUri(mVoteTargetThingInfo, 0));
+			i.putExtra(Constants.EXTRA_SUBREDDIT, mVoteTargetThingInfo.getSubreddit());
+			i.putExtra(Constants.EXTRA_TITLE, mVoteTargetThingInfo.getTitle());
+			startActivity(i);
+			return true;
+    	case Constants.DIALOG_MESSAGE_CLICK:
+    		showDialog(Constants.DIALOG_REPLY);
+    		return true;
+		default:
+    		return super.onContextItemSelected(item);	
+    	}
+    }
+    	
+    
 
     /**
      * Resets the output UI list contents, retains session state.
+     * @param messagesAdapter A MessagesListAdapter to use. Pass in null if you want a new empty one created.
      */
-    public void resetUI() {
-        // Reset the list to be empty.
-        List<MessageInfo> items = new ArrayList<MessageInfo>();
-        mMessagesAdapter = new MessagesListAdapter(this, items);
-        setListAdapter(mMessagesAdapter);
+    void resetUI(MessagesListAdapter messagesAdapter) {
+    	setTheme(mSettings.theme);
+    	setContentView(R.layout.inbox_list_content);
+        registerForContextMenu(getListView());
+
+        if (mSettings.alwaysShowNextPrevious) {
+        	// Set mNextPreviousView to null; we can use findViewById(R.id.next_previous_layout).
+        	mNextPreviousView = null;
+        } else {
+            // If we are not using the persistent navbar, then show as ListView footer instead
+	        LayoutInflater inflater = (LayoutInflater) getSystemService(Context.LAYOUT_INFLATER_SERVICE);
+	        mNextPreviousView = inflater.inflate(R.layout.next_previous_list_item, null);
+	        getListView().addFooterView(mNextPreviousView);
+        }
+
+        synchronized (MESSAGE_ADAPTER_LOCK) {
+	    	if (messagesAdapter == null) {
+	            // Reset the list to be empty.
+	    		mMessagesList = new ArrayList<ThingInfo>();
+	    		mMessagesAdapter = new MessagesListAdapter(this, mMessagesList);
+	    	} else {
+	    		mMessagesAdapter = messagesAdapter;
+	    	}
+		    setListAdapter(mMessagesAdapter);
+		    mMessagesAdapter.mIsLoading = false;
+		    mMessagesAdapter.notifyDataSetChanged();  // Just in case
+		}
+    	getListView().setDivider(null);
         Common.updateListDrawables(this, mSettings.theme);
+        updateNextPreviousButtons();
+    }
+    
+    private void enableLoadingScreen() {
+    	if (Util.isLightTheme(mSettings.theme)) {
+    		setContentView(R.layout.loading_light);
+    	} else {
+    		setContentView(R.layout.loading_dark);
+    	}
+    	synchronized (MESSAGE_ADAPTER_LOCK) {
+	    	if (mMessagesAdapter != null)
+	    		mMessagesAdapter.mIsLoading = true;
+    	}
+    	getWindow().setFeatureInt(Window.FEATURE_PROGRESS, 0);
+    }
+    
+    private void disableLoadingScreen() {
+    	resetUI(mMessagesAdapter);
+    	getWindow().setFeatureInt(Window.FEATURE_PROGRESS, 10000);
+    }
+
+    private void updateNextPreviousButtons() {
+    	Common.updateNextPreviousButtons(this, mNextPreviousView, mAfter, mBefore, mCount, mSettings,
+    			downloadAfterOnClickListener, downloadBeforeOnClickListener);
     }
 
         
@@ -304,38 +446,126 @@ public final class InboxActivity extends ListActivity
      * Task takes in a subreddit name string and thread id, downloads its data, parses
      * out the comments, and communicates them back to the UI as they are read.
      */
-    private class DownloadMessagesTask extends AsyncTask<Integer, Integer, Void> {
+    private class DownloadMessagesTask extends AsyncTask<Integer, Long, Void>
+    		implements PropertyChangeListener {
     	
-    	private ArrayList<MessageInfo> mMessageInfos = new ArrayList<MessageInfo>();
+    	private ArrayList<ThingInfo> _mThingInfos = new ArrayList<ThingInfo>();
+    	private long _mContentLength;
+    	
+    	private String mAfter;
+    	private String mBefore;
+    	private int mCount;
+    	private String mLastAfter = null;
+    	private String mLastBefore = null;
+    	private int mLastCount = 0;
+    	
+    	public DownloadMessagesTask() {
+    		this(null, null, Constants.DEFAULT_THREAD_DOWNLOAD_LIMIT);
+    	}
+    	
+    	public DownloadMessagesTask(String after, String before, int count) {
+    		mAfter = after;
+    		mBefore = before;
+    		mCount = count;
+    	}
+    	
+    	protected void saveState() {
+			InboxActivity.this.mLastAfter = mLastAfter;
+			InboxActivity.this.mLastBefore = mLastBefore;
+			InboxActivity.this.mLastCount = mLastCount;
+			InboxActivity.this.mAfter = mAfter;
+			InboxActivity.this.mBefore = mBefore;
+			InboxActivity.this.mCount = mCount;
+    	}
     	
     	// XXX: maxComments is unused for now
     	public Void doInBackground(Integer... maxComments) {
     		HttpEntity entity = null;
-            try {
-            	HttpGet request = new HttpGet("http://www.reddit.com/message/inbox/.json");
+    		boolean isAfter = false;
+    		boolean isBefore = false;
+    		InputStream in = null;
+    		ProgressInputStream pin = null;
+            
+    		try {
+            	String url;
+            	StringBuilder sb = new StringBuilder("http://api.reddit.com/message/inbox/?");
+            	
+            	// "before" always comes back null unless you provide correct "count"
+        		if (mAfter != null) {
+        			// count: 25, 50, ...
+    				sb = sb.append("count=").append(mCount)
+    					.append("&after=").append(mAfter).append("&");
+    				isAfter = true;
+        		}
+        		else if (mBefore != null) {
+        			// count: nothing, 26, 51, ...
+        			sb = sb.append("count=").append(mCount + 1 - Constants.DEFAULT_THREAD_DOWNLOAD_LIMIT)
+        				.append("&before=").append(mBefore).append("&");
+        			isBefore = true;
+        		}
+        		
+        		url = sb.toString();
+        		if (Constants.LOGGING) Log.d(TAG, "url=" + url);
+        		
+        		HttpGet request = new HttpGet(url);
             	HttpResponse response = mClient.execute(request);
+            	
+            	// Read the header to get Content-Length since entity.getContentLength() returns -1
+            	Header contentLengthHeader = response.getFirstHeader("Content-Length");
+            	if (contentLengthHeader != null) {
+            		_mContentLength = Long.valueOf(contentLengthHeader.getValue());
+            		if (Constants.LOGGING) Log.d(TAG, "Content length: "+_mContentLength);
+            	} else {
+            		_mContentLength = -1;
+            		if (Constants.LOGGING) Log.d(TAG, "Content length: UNAVAILABLE");
+            	}
+
             	entity = response.getEntity();
-            	InputStream in = entity.getContent();
+            	in = entity.getContent();
+            	
+            	// setup a special InputStream to report progress
+            	pin = new ProgressInputStream(in, _mContentLength);
+            	pin.addPropertyChangeListener(this);
+            	
+                parseInboxJSON(pin);
                 
-                parseInboxJSON(in);
-                
-                in.close();
-                entity.consumeContent();
-                
-    			// XXX: HACK: http://code.reddit.com/ticket/709
-            	// Marking messages as read is currently broken (even with mark=true)
-            	// For now, just send an extra request to the regular non-JSON inbox...
-    			mClient.execute(new HttpGet("http://www.reddit.com/message/inbox"));
-    			
+                // XXX: HACK: http://code.reddit.com/ticket/709
+                // Marking messages as read is currently broken (even with mark=
+                // For now, just send an extra request to the regular non-JSON i
+                mClient.execute(new HttpGet("http://www.reddit.com/message/inbox"));
+
+            	mLastCount = mCount;
+            	if (isAfter)
+            		mCount += Constants.DEFAULT_THREAD_DOWNLOAD_LIMIT;
+            	else if (isBefore)
+            		mCount -= Constants.DEFAULT_THREAD_DOWNLOAD_LIMIT;
+            	
+                saveState();
+
             } catch (Exception e) {
-            	if (Constants.LOGGING) Log.e(TAG, "failed:" + e.getMessage());
-                if (entity != null) {
-	                try {
-	                	entity.consumeContent();
-	                } catch (IOException e2) {
-	                	// Ignore.
-	                }
-                }
+            	if (Constants.LOGGING) Log.e(TAG, "failed", e);
+        	} finally {
+        		if (pin != null) {
+        			try {
+						pin.close();
+					} catch (IOException e2) {
+						if (Constants.LOGGING) Log.e(TAG, "pin.close()", e2);
+					}
+        		}
+        		if (in != null) {
+        			try {
+						in.close();
+					} catch (IOException e2) {
+						if (Constants.LOGGING) Log.e(TAG, "in.close()", e2);
+					}
+        		}
+        		if (entity != null) {
+        			try {
+        				entity.consumeContent();
+        			} catch (Exception e2) {
+        				if (Constants.LOGGING) Log.e(TAG, "entity.consumeContent()", e2);
+        			}
+        		}
             }
             return null;
 	    }
@@ -343,93 +573,41 @@ public final class InboxActivity extends ListActivity
     	private void parseInboxJSON(InputStream in) throws IOException,
 		    	JsonParseException, IllegalStateException {
 		
-			JsonParser jp = jsonFactory.createJsonParser(in);
-			
-			if (jp.nextToken() == JsonToken.VALUE_NULL)
-				return;
-			
-			// --- Validate initial stuff, skip to the JSON List of threads ---
-			String genericListingError = "Not a subreddit listing";
-		//	if (JsonToken.START_OBJECT != jp.nextToken()) // starts with "{"
-		//		throw new IllegalStateException(genericListingError);
-			jp.nextToken();
-			if (!Constants.JSON_KIND.equals(jp.getCurrentName()))
-				throw new IllegalStateException(genericListingError);
-			jp.nextToken();
-			if (!Constants.JSON_LISTING.equals(jp.getText()))
-				throw new IllegalStateException(genericListingError);
-			jp.nextToken();
-			if (!Constants.JSON_DATA.equals(jp.getCurrentName()))
-				throw new IllegalStateException(genericListingError);
-			jp.nextToken();
-			if (JsonToken.START_OBJECT != jp.getCurrentToken())
-				throw new IllegalStateException(genericListingError);
-			jp.nextToken();
-			// Save the modhash
-			if (!Constants.JSON_MODHASH.equals(jp.getCurrentName()))
-				throw new IllegalStateException(genericListingError);
-			jp.nextToken();
-			if (Constants.EMPTY_STRING.equals(jp.getText()))
-				mSettings.setModhash(null);
-			else
-				mSettings.setModhash(jp.getText());
-			jp.nextToken();
-			if (!Constants.JSON_CHILDREN.equals(jp.getCurrentName()))
-				throw new IllegalStateException(genericListingError);
-			jp.nextToken();
-			if (jp.getCurrentToken() != JsonToken.START_ARRAY)
-				throw new IllegalStateException(genericListingError);
-			
-			// --- Main parsing ---
-//			int progressIndex = 0;
-			while (jp.nextToken() != JsonToken.END_ARRAY) {
-				if (jp.getCurrentToken() != JsonToken.START_OBJECT)
-					throw new IllegalStateException("Unexpected non-JSON-object in the children array");
-			
-				// Process JSON representing one message
-				MessageInfo mi = new MessageInfo();
-				while (jp.nextToken() != JsonToken.END_OBJECT) {
-					String fieldname = jp.getCurrentName();
-					jp.nextToken(); // move to value, or START_OBJECT/START_ARRAY
-				
-					if (Constants.JSON_KIND.equals(fieldname)) {
-						mi.put(Constants.JSON_KIND, jp.getText());
-					} else if (Constants.JSON_DATA.equals(fieldname)) { // contains an object
-						while (jp.nextToken() != JsonToken.END_OBJECT) {
-							String namefield = jp.getCurrentName();
-							jp.nextToken(); // move to value
-							// Should validate each field but I'm lazy
-							if (Constants.JSON_BODY.equals(namefield))
-								// Throw away the last argument (ArrayList<MarkdownURL>)
-								mi.mSSBBody = markdown.markdown(StringEscapeUtils.unescapeHtml(jp.getText().trim()),
-										new SpannableStringBuilder(), new ArrayList<MarkdownURL>());
-							else
-								mi.put(namefield, StringEscapeUtils.unescapeHtml(jp.getText().replaceAll("\r", "")));
-						}
-					} else {
-						throw new IllegalStateException("Unrecognized field '"+fieldname+"'!");
-					}
-				}
-				mMessageInfos.add(mi);
-//				publishProgress(progressIndex++);
-			}
-			// Get the "after"
-			jp.nextToken();
-			if (!Constants.JSON_AFTER.equals(jp.getCurrentName()))
-				throw new IllegalStateException(genericListingError);
-			jp.nextToken();
-			mAfter = jp.getText();
-			if (Constants.NULL_STRING.equals(mAfter))
-				mAfter = null;
-			// Get the "before"
-			jp.nextToken();
-			if (!Constants.JSON_BEFORE.equals(jp.getCurrentName()))
-				throw new IllegalStateException(genericListingError);
-			jp.nextToken();
-			mBefore = jp.getText();
-			if (Constants.NULL_STRING.equals(mBefore))
-				mBefore = null;
-		}
+    		String genericListingError = "Not an inbox listing";
+    		try {
+    			Listing listing = mObjectMapper.readValue(in, Listing.class);
+    			
+    			if (!Constants.JSON_LISTING.equals(listing.getKind()))
+    				throw new IllegalStateException(genericListingError);
+    			// Save the modhash, after, and before
+    			ListingData data = listing.getData();
+    			if (Constants.EMPTY_STRING.equals(data.getModhash()))
+    				mSettings.setModhash(null);
+    			else
+    				mSettings.setModhash(data.getModhash());
+    			
+    			mLastAfter = mAfter;
+    			mLastBefore = mBefore;
+    			mAfter = data.getAfter();
+    			mBefore = data.getBefore();
+    			
+    			// Go through the children and get the ThingInfos
+    			for (ThingListing tiContainer : data.getChildren()) {
+   					ThingInfo ti = tiContainer.getData();
+   					// HTML to Spanned
+   					String unescapedHtmlBody = Html.fromHtml(ti.getBody_html()).toString();
+   					Spanned body = Html.fromHtml(Util.convertHtmlTags(unescapedHtmlBody));
+   					// remove last 2 newline characters
+   					if (body.length() > 2)
+   						ti.setSpannedBody(body.subSequence(0, body.length()-2));
+   					else
+   						ti.setSpannedBody(Constants.EMPTY_STRING);
+   					_mThingInfos.add(ti);
+    			}
+    		} catch (Exception ex) {
+    			if (Constants.LOGGING) Log.e(TAG, "parseInboxJSON", ex);
+    		}
+    	}
 
 		@Override
     	public void onPreExecute() {
@@ -438,9 +616,10 @@ public final class InboxActivity extends ListActivity
 					mCurrentDownloadMessagesTask.cancel(true);
 				mCurrentDownloadMessagesTask = this;
 			}
-    		resetUI();
-    		mMessagesAdapter.mIsLoading = true;
-	    	showDialog(Constants.DIALOG_LOADING_INBOX);
+    		resetUI(null);
+    		enableLoadingScreen();
+    		if (_mContentLength == -1)
+    			getWindow().setFeatureInt(Window.FEATURE_PROGRESS, Window.PROGRESS_INDETERMINATE_ON);
     	}
     	
 		@Override
@@ -448,36 +627,45 @@ public final class InboxActivity extends ListActivity
 			synchronized (mCurrentDownloadMessagesTaskLock) {
 				mCurrentDownloadMessagesTask = null;
 			}
-			for (MessageInfo mi : mMessageInfos)
-        		mMessagesAdapter.add(mi);
-			mMessagesAdapter.mIsLoading = false;
-			mMessagesAdapter.notifyDataSetChanged();
-			dismissDialog(Constants.DIALOG_LOADING_INBOX);
+    		synchronized(MESSAGE_ADAPTER_LOCK) {
+    			for (ThingInfo mi : _mThingInfos)
+    				mMessagesAdapter.add(mi);
+    		}
+    		
+    		if (_mContentLength == -1)
+    			getWindow().setFeatureInt(Window.FEATURE_PROGRESS, Window.PROGRESS_INDETERMINATE_OFF);
+    		
+			disableLoadingScreen();
 			Common.cancelMailNotification(InboxActivity.this.getApplicationContext());
+    	}
+		
+    	@Override
+    	public void onProgressUpdate(Long... progress) {
+    		// 0-9999 is ok, 10000 means it's finished
+    		if (_mContentLength != -1)
+    			getWindow().setFeatureInt(Window.FEATURE_PROGRESS, progress[0].intValue() * 9999 / (int) _mContentLength);
+    	}
+    	
+    	public void propertyChange(PropertyChangeEvent event) {
+    		publishProgress((Long) event.getNewValue());
     	}
     }
     
     
-    private class LoginTask extends AsyncTask<Void, Void, String> {
-    	private CharSequence mUsername, mPassword, mUserError;
-    	
-    	LoginTask(CharSequence username, CharSequence password) {
-    		mUsername = username;
-    		mPassword = password;
+    private class MyLoginTask extends LoginTask {
+    	public MyLoginTask(String username, String password) {
+    		super(username, password, mSettings, mClient, getApplicationContext());
     	}
     	
     	@Override
-    	public String doInBackground(Void... v) {
-    		return Common.doLogin(mUsername, mPassword, mClient, mSettings);
-        }
-    	
     	protected void onPreExecute() {
     		showDialog(Constants.DIALOG_LOGGING_IN);
     	}
     	
-    	protected void onPostExecute(String errorMessage) {
+    	@Override
+    	protected void onPostExecute(Boolean success) {
     		dismissDialog(Constants.DIALOG_LOGGING_IN);
-    		if (errorMessage == null) {
+    		if (success) {
     			Toast.makeText(InboxActivity.this, "Logged in as "+mUsername, Toast.LENGTH_SHORT).show();
 	    		// Refresh the threads list
     			new DownloadMessagesTask().execute(Constants.DEFAULT_COMMENT_DOWNLOAD_LIMIT);
@@ -489,38 +677,143 @@ public final class InboxActivity extends ListActivity
     }
     
     
-    
-    
-    
-    
-    
-    private class MessageReplyTask extends AsyncTask<CharSequence, Void, Boolean> {
-    	private CharSequence _mParentThingId;
-    	MessageInfo _mTargetMessageInfo;
-    	String _mUserError = "Error submitting reply. Please try again.";
+    private class ReadMessageTask extends AsyncTask<Void, Void, Boolean> {
     	
-    	MessageReplyTask(CharSequence parentThingId, MessageInfo targetMessageInfo) {
-    		_mParentThingId = parentThingId;
-    		_mTargetMessageInfo = targetMessageInfo;
+    	private static final String TAG = "ReadMessageTask";
+    	
+    	private String _mUserError = "Error marking messag read.";
+    	private ThingInfo _mTargetThingInfo;
+    	
+    	ReadMessageTask() {
+    		_mTargetThingInfo = mVoteTargetThingInfo;
     	}
     	
     	@Override
-        public Boolean doInBackground(CharSequence... text) {
-        	String userError = "Error replying. Please try again.";
+    	public Boolean doInBackground(Void... v) {
+        	String status = "";
         	HttpEntity entity = null;
         	
-        	String status = "";
-        	if (!mSettings.loggedIn) {
+        	if (!mSettings.isLoggedIn()) {
+        		_mUserError = "You must be logged in to read the message.";
+        		return false;
+        	}
+        	
+        	// Update the modhash if necessary
+        	if (mSettings.modhash == null) {
+        		String modhash = Common.doUpdateModhash(mClient);
+        		if (modhash == null) {
+        			// doUpdateModhash should have given an error about credentials
+        			Common.doLogout(mSettings, mClient, getApplicationContext());
+        			if (Constants.LOGGING) Log.e(TAG, "Read message failed because doUpdateModhash() failed");
+        			return false;
+        		}
+        		mSettings.setModhash(modhash);
+        	}
+        	
+        	try {
+        		// Construct data
+    			List<NameValuePair> nvps = new ArrayList<NameValuePair>();
+    			nvps.add(new BasicNameValuePair("id", _mTargetThingInfo.getName()));
+    			nvps.add(new BasicNameValuePair("uh", mSettings.modhash.toString()));
+    			// Votehash is currently unused by reddit 
+//    				nvps.add(new BasicNameValuePair("vh", "0d4ab0ffd56ad0f66841c15609e9a45aeec6b015"));
+    			
+    			HttpPost httppost = new HttpPost("http://www.reddit.com/api/read_message");
+    	        httppost.setEntity(new UrlEncodedFormEntity(nvps, HTTP.UTF_8));
+    	        
+    	        if (Constants.LOGGING) Log.d(TAG, nvps.toString());
+    	        
+                // Perform the HTTP POST request
+    	    	HttpResponse response = mClient.execute(httppost);
+    	    	status = response.getStatusLine().toString();
+            	if (!status.contains("OK")) {
+            		_mUserError = "HTTP error when marking message read. Try again.";
+            		throw new HttpException(status);
+            	}
+            	
+            	entity = response.getEntity();
+
+            	BufferedReader in = new BufferedReader(new InputStreamReader(entity.getContent()));
+            	String line = in.readLine();
+            	in.close();
+            	if (line == null || Constants.EMPTY_STRING.equals(line)) {
+            		_mUserError = "Connection error when marking message read. Try again.";
+            		throw new HttpException("No content returned from read_message POST");
+            	}
+            	if (line.contains("WRONG_PASSWORD")) {
+            		_mUserError = "Wrong password.";
+            		throw new Exception("Wrong password.");
+            	}
+            	if (line.contains("USER_REQUIRED")) {
+            		// The modhash probably expired
+            		throw new Exception("User required. Huh?");
+            	}
+            	
+            	if (Constants.LOGGING) Common.logDLong(TAG, line);
+            	
+            	return true;
+            	
+        	} catch (Exception e) {
+        		if (Constants.LOGGING) Log.e(TAG, "ReadMessageTask", e);
+        	} finally {
+        		if (entity != null) {
+        			try {
+        				entity.consumeContent();
+        			} catch (Exception e2) {
+        				if (Constants.LOGGING) Log.e(TAG, "entity.consumeContent()", e2);
+        			}
+        		}
+        	}
+        	return false;
+        }
+    	
+    	@Override
+    	public void onPreExecute() {
+    		if (!mSettings.isLoggedIn()) {
+        		Common.showErrorToast("You must be logged in to read message.", Toast.LENGTH_LONG, InboxActivity.this);
+        		cancel(true);
+        		return;
+        	}
+        	_mTargetThingInfo.setNew(false);
+    		mMessagesAdapter.notifyDataSetChanged();
+    	}
+    	
+    	@Override
+    	public void onPostExecute(Boolean success) {
+    		if (!success) {
+    			// Read message failed. Mark new again...
+            	_mTargetThingInfo.setLikes(true);
+        		mMessagesAdapter.notifyDataSetChanged();
+        		
+    			Common.showErrorToast(_mUserError, Toast.LENGTH_LONG, InboxActivity.this);
+    		}
+    	}
+    }
+    
+    
+    private class MessageReplyTask extends AsyncTask<String, Void, Boolean> {
+    	private String _mParentThingId;
+    	String _mUserError = "Error submitting reply. Please try again.";
+    	
+    	MessageReplyTask(String parentThingId) {
+    		_mParentThingId = parentThingId;
+    	}
+    	
+    	@Override
+        public Boolean doInBackground(String... text) {
+        	HttpEntity entity = null;
+        	
+        	if (!mSettings.isLoggedIn()) {
         		Common.showErrorToast("You must be logged in to reply.", Toast.LENGTH_LONG, InboxActivity.this);
         		_mUserError = "Not logged in";
         		return false;
         	}
         	// Update the modhash if necessary
         	if (mSettings.modhash == null) {
-        		CharSequence modhash = Common.doUpdateModhash(mClient);
+        		String modhash = Common.doUpdateModhash(mClient);
         		if (modhash == null) {
         			// doUpdateModhash should have given an error about credentials
-        			Common.doLogout(mSettings, mClient);
+        			Common.doLogout(mSettings, mClient, getApplicationContext());
         			if (Constants.LOGGING) Log.e(TAG, "Reply failed because doUpdateModhash() failed");
         			return false;
         		}
@@ -530,9 +823,9 @@ public final class InboxActivity extends ListActivity
         	try {
         		// Construct data
     			List<NameValuePair> nvps = new ArrayList<NameValuePair>();
-    			nvps.add(new BasicNameValuePair("thing_id", _mParentThingId.toString()));
-    			nvps.add(new BasicNameValuePair("text", text[0].toString()));
-    			nvps.add(new BasicNameValuePair("uh", mSettings.modhash.toString()));
+    			nvps.add(new BasicNameValuePair("thing_id", _mParentThingId));
+    			nvps.add(new BasicNameValuePair("text", text[0]));
+    			nvps.add(new BasicNameValuePair("uh", mSettings.modhash));
     			// Votehash is currently unused by reddit 
 //    				nvps.add(new BasicNameValuePair("vh", "0d4ab0ffd56ad0f66841c15609e9a45aeec6b015"));
     			
@@ -543,61 +836,22 @@ public final class InboxActivity extends ListActivity
     	        
                 // Perform the HTTP POST request
     	    	HttpResponse response = mClient.execute(httppost);
-    	    	status = response.getStatusLine().toString();
-            	if (!status.contains("OK"))
-            		throw new HttpException(status);
-            	
-            	entity = response.getEntity();
+    	    	entity = response.getEntity();
 
-            	BufferedReader in = new BufferedReader(new InputStreamReader(entity.getContent()));
-            	String line = in.readLine();
-            	in.close();
-            	if (line == null || Constants.EMPTY_STRING.equals(line)) {
-            		throw new HttpException("No content returned from reply POST");
-            	}
-            	if (line.contains("WRONG_PASSWORD")) {
-            		throw new Exception("Wrong password");
-            	}
-            	if (line.contains("USER_REQUIRED")) {
-            		// The modhash probably expired
-            		mSettings.setModhash(null);
-            		throw new Exception("User required. Huh?");
-            	}
-            	
-            	if (Constants.LOGGING) Common.logDLong(TAG, line);
-
-            	Matcher idMatcher = NEW_ID_PATTERN.matcher(line);
-            	if (idMatcher.find()) {
-            		// Don't need id since reply isn't posted to inbox
-//            		newFullname = idMatcher.group(1);
-//            		newId = idMatcher.group(3);
-            	} else {
-            		if (line.contains("RATELIMIT")) {
-                		// Try to find the # of minutes using regex
-                    	Matcher rateMatcher = RATELIMIT_RETRY_PATTERN.matcher(line);
-                    	if (rateMatcher.find())
-                    		userError = rateMatcher.group(1);
-                    	else
-                    		userError = "you are trying to submit too fast. try again in a few minutes.";
-                		throw new Exception(userError);
-                	}
-            		if (line.contains("DELETED_LINK")) {
-            			_mUserError = "the link you are commenting on has been deleted";
-            			throw new Exception(_mUserError);
-            		}
-                	throw new Exception("No id returned by reply POST.");
-            	}
+            	// Don't need return value id since reply isn't posted to inbox
+            	Common.checkIDResponse(response, entity);
             	
             	return true;
             	
         	} catch (Exception e) {
-        		if (Constants.LOGGING) Log.e(TAG, e.getMessage());
+        		if (Constants.LOGGING) Log.e(TAG, "MessageReplyTask", e);
+        		_mUserError = e.getMessage();
         	} finally {
         		if (entity != null) {
         			try {
         				entity.consumeContent();
         			} catch (IOException e2) {
-        				if (Constants.LOGGING) Log.e(TAG, e2.getMessage());
+        				if (Constants.LOGGING) Log.e(TAG, "entity.consumeContent()", e2);
         			}
         		}
         	}
@@ -613,7 +867,6 @@ public final class InboxActivity extends ListActivity
     	public void onPostExecute(Boolean success) {
     		dismissDialog(Constants.DIALOG_REPLYING);
     		if (success) {
-    			_mTargetMessageInfo.setReplyDraft("");
     			Toast.makeText(InboxActivity.this, "Reply sent.", Toast.LENGTH_SHORT).show();
     			// TODO: add the reply beneath the original, OR redirect to sent messages page
     		} else {
@@ -622,35 +875,33 @@ public final class InboxActivity extends ListActivity
     	}
     }
     
-    private class MessageComposeTask extends AsyncTask<CharSequence, Void, Boolean> {
+    private class MessageComposeTask extends AsyncTask<String, Void, Boolean> {
     	Dialog _mDialog;  // needed to update CAPTCHA on failure
-    	MessageInfo _mTargetMessageInfo;
+    	ThingInfo _mTargetThingInfo;
     	String _mUserError = "Error composing message. Please try again.";
-    	CharSequence _mCaptcha;
+    	String _mCaptcha;
     	
-    	MessageComposeTask(Dialog dialog, MessageInfo targetMessageInfo, CharSequence captcha) {
+    	MessageComposeTask(Dialog dialog, ThingInfo targetThingInfo, String captcha) {
     		_mDialog = dialog;
-    		_mTargetMessageInfo = targetMessageInfo;
+    		_mTargetThingInfo = targetThingInfo;
     		_mCaptcha = captcha;
     	}
     	
     	@Override
-        public Boolean doInBackground(CharSequence... text) {
-        	String userError = "Error composing message. Please try again.";
+        public Boolean doInBackground(String... text) {
         	HttpEntity entity = null;
         	
-        	String status = "";
-        	if (!mSettings.loggedIn) {
+        	if (!mSettings.isLoggedIn()) {
         		Common.showErrorToast("You must be logged in to compose a message.", Toast.LENGTH_LONG, InboxActivity.this);
         		_mUserError = "Not logged in";
         		return false;
         	}
         	// Update the modhash if necessary
         	if (mSettings.modhash == null) {
-        		CharSequence modhash = Common.doUpdateModhash(mClient);
+        		String modhash = Common.doUpdateModhash(mClient);
         		if (modhash == null) {
         			// doUpdateModhash should have given an error about credentials
-        			Common.doLogout(mSettings, mClient);
+        			Common.doLogout(mSettings, mClient, getApplicationContext());
         			if (Constants.LOGGING) Log.e(TAG, "Message compose failed because doUpdateModhash() failed");
         			return false;
         		}
@@ -661,8 +912,8 @@ public final class InboxActivity extends ListActivity
         		// Construct data
     			List<NameValuePair> nvps = new ArrayList<NameValuePair>();
     			nvps.add(new BasicNameValuePair("text", text[0].toString()));
-    			nvps.add(new BasicNameValuePair("subject", _mTargetMessageInfo.getSubject()));
-    			nvps.add(new BasicNameValuePair("to", _mTargetMessageInfo.getDest()));
+    			nvps.add(new BasicNameValuePair("subject", _mTargetThingInfo.getSubject()));
+    			nvps.add(new BasicNameValuePair("to", _mTargetThingInfo.getDest()));
     			nvps.add(new BasicNameValuePair("uh", mSettings.modhash.toString()));
     			nvps.add(new BasicNameValuePair("thing_id", ""));
     			if (mCaptchaIden != null) {
@@ -677,61 +928,26 @@ public final class InboxActivity extends ListActivity
     	        
                 // Perform the HTTP POST request
     	    	HttpResponse response = mClient.execute(httppost);
-    	    	status = response.getStatusLine().toString();
-            	if (!status.contains("OK"))
-            		throw new HttpException(status);
-            	
             	entity = response.getEntity();
 
-            	BufferedReader in = new BufferedReader(new InputStreamReader(entity.getContent()));
-            	String line = in.readLine();
-            	in.close();
-            	if (line == null || Constants.EMPTY_STRING.equals(line)) {
-            		throw new HttpException("No content returned from compose POST");
-            	}
-            	if (line.contains("WRONG_PASSWORD")) {
-            		throw new Exception("Wrong password");
-            	}
-            	if (line.contains("USER_REQUIRED")) {
-            		// The modhash probably expired
-            		mSettings.setModhash(null);
-            		throw new Exception("User required. Huh?");
-            	}
-            	
-            	if (Constants.LOGGING) Common.logDLong(TAG, line);
+           		// Don't need the return value ID since reply isn't posted to inbox
+            	Common.checkIDResponse(response, entity);
 
-            	Matcher idMatcher = NEW_ID_PATTERN.matcher(line);
-            	if (idMatcher.find()) {
-            		// Don't need id since reply isn't posted to inbox
-//            		newFullname = idMatcher.group(1);
-//            		newId = idMatcher.group(3);
-            	} else {
-            		if (line.contains("RATELIMIT")) {
-                		// Try to find the # of minutes using regex
-                    	Matcher rateMatcher = RATELIMIT_RETRY_PATTERN.matcher(line);
-                    	if (rateMatcher.find())
-                    		userError = rateMatcher.group(1);
-                    	else
-                    		userError = "you are trying to submit too fast. try again in a few minutes.";
-                		throw new Exception(userError);
-                	}
-            		if (line.contains("BAD_CAPTCHA")) {
-            			_mUserError = "Bad CAPTCHA. Try again.";
-            			new DownloadCaptchaTask(_mDialog).execute();
-            			return false;
-            		}
-            	}
-            	
             	return true;
             	
+        	} catch (CaptchaException e) {
+        		if (Constants.LOGGING) Log.e(TAG, "CaptchaException", e);
+        		_mUserError = e.getMessage();
+    			new MyCaptchaDownloadTask(_mDialog).execute();
         	} catch (Exception e) {
-        		if (Constants.LOGGING) Log.e(TAG, e.getMessage());
+        		if (Constants.LOGGING) Log.e(TAG, "MessageComposeTask", e);
+        		_mUserError = e.getMessage();
         	} finally {
         		if (entity != null) {
         			try {
         				entity.consumeContent();
         			} catch (IOException e2) {
-        				if (Constants.LOGGING) Log.e(TAG, e2.getMessage());
+        				if (Constants.LOGGING) Log.e(TAG, "entity.consumeContent()", e2);
         			}
         		}
         	}
@@ -747,7 +963,6 @@ public final class InboxActivity extends ListActivity
     	public void onPostExecute(Boolean success) {
     		dismissDialog(Constants.DIALOG_COMPOSING);
     		if (success) {
-    			_mTargetMessageInfo.setReplyDraft("");
     			Toast.makeText(InboxActivity.this, "Message sent.", Toast.LENGTH_SHORT).show();
     			// TODO: add the reply beneath the original, OR redirect to sent messages page
     		} else {
@@ -756,49 +971,21 @@ public final class InboxActivity extends ListActivity
     	}
     }
     
-    private class CheckCaptchaRequiredTask extends AsyncTask<Void, Void, Boolean> {
-    	private Dialog _mDialog;
-    	public CheckCaptchaRequiredTask(Dialog dialog) {
-    		_mDialog = dialog;
-    	}
+    private class MyCaptchaCheckRequiredTask extends CaptchaCheckRequiredTask {
     	
-		@Override
-		public Boolean doInBackground(Void... voidz) {
-			HttpEntity entity = null;
-			try {
-				HttpGet request = new HttpGet("http://www.reddit.com/message/compose/");
-				HttpResponse response = mClient.execute(request);
-				entity = response.getEntity(); 
-	    		BufferedReader in = new BufferedReader(new InputStreamReader(entity.getContent()));
-            	String line = in.readLine();
-            	in.close();
-
-            	Matcher idenMatcher = CAPTCHA_IDEN_PATTERN.matcher(line);
-            	Matcher urlMatcher = CAPTCHA_IMAGE_PATTERN.matcher(line);
-            	if (idenMatcher.find() && urlMatcher.find()) {
-            		mCaptchaIden = idenMatcher.group(1);
-            		mCaptchaUrl = urlMatcher.group(2);
-            		entity.consumeContent();
-            		return true;
-            	} else {
-            		mCaptchaIden = null;
-            		mCaptchaUrl = null;
-            		entity.consumeContent();
-            		return false;
-            	}
-			} catch (Exception e) {
-				if (entity != null) {
-					try {
-						entity.consumeContent();
-					} catch (Exception e2) {
-						if (Constants.LOGGING) Log.e(TAG, e2.getMessage());
-					}
-				}
-				if (Constants.LOGGING) Log.e(TAG, "Error accessing http://www.reddit.com/message/compose/ to check for CAPTCHA");
-			}
-			return null;
+    	Dialog _mDialog;
+    	
+		public MyCaptchaCheckRequiredTask(Dialog dialog) {
+			super("http://www.reddit.com/message/compose/", mClient);
+			_mDialog = dialog;
 		}
 		
+		@Override
+		protected void saveState() {
+			InboxActivity.this.mCaptchaIden = _mCaptchaIden;
+			InboxActivity.this.mCaptchaUrl = _mCaptchaUrl;
+		}
+
 		@Override
 		public void onPreExecute() {
 			// Hide send button so user can't send until we know whether he needs captcha
@@ -825,7 +1012,7 @@ public final class InboxActivity extends ListActivity
 				captchaImage.setVisibility(View.VISIBLE);
 				captchaEdit.setVisibility(View.VISIBLE);
 				// Launch a task to download captcha and display it
-				new DownloadCaptchaTask(_mDialog).execute();
+				new MyCaptchaDownloadTask(_mDialog).execute();
 			} else {
 				captchaLabel.setVisibility(View.GONE);
 				captchaImage.setVisibility(View.GONE);
@@ -836,28 +1023,15 @@ public final class InboxActivity extends ListActivity
 		}
 	}
 	
-    private class DownloadCaptchaTask extends AsyncTask<Void, Void, Drawable> {
-    	private Dialog _mDialog;
-    	public DownloadCaptchaTask(Dialog dialog) {
+    private class MyCaptchaDownloadTask extends CaptchaDownloadTask {
+    	
+    	Dialog _mDialog;
+    	
+    	public MyCaptchaDownloadTask(Dialog dialog) {
+    		super(mCaptchaUrl, mClient);
     		_mDialog = dialog;
     	}
-		@Override
-		public Drawable doInBackground(Void... voidz) {
-			try {
-				HttpGet request = new HttpGet("http://www.reddit.com/" + mCaptchaUrl);
-				HttpResponse response = mClient.execute(request);
-	    	
-				InputStream in = response.getEntity().getContent();
-				
-				return Drawable.createFromStream(in, "captcha");
-			
-			} catch (Exception e) {
-				Common.showErrorToast("Error downloading captcha.", Toast.LENGTH_LONG, InboxActivity.this);
-			}
-			
-			return null;
-		}
-		
+    	
 		@Override
 		public void onPostExecute(Drawable captcha) {
 			if (captcha == null) {
@@ -870,9 +1044,8 @@ public final class InboxActivity extends ListActivity
 		}
 	}
     
-        
     
-
+    
     /**
      * Populates the menu.
      */
@@ -880,7 +1053,8 @@ public final class InboxActivity extends ListActivity
     public boolean onCreateOptionsMenu(Menu menu) {
         super.onCreateOptionsMenu(menu);
         
-        menu.add(0, Constants.DIALOG_COMPOSE, 0, "Compose Message");
+        MenuInflater inflater = getMenuInflater();
+        inflater.inflate(R.menu.inbox, menu);
         
         return true;
     }
@@ -888,65 +1062,17 @@ public final class InboxActivity extends ListActivity
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
     	
-    	if(item.getItemId() == Constants.DIALOG_COMPOSE) {
-			showDialog(Constants.DIALOG_COMPOSE);
+    	switch (item.getItemId()) {
+    	case R.id.compose_message_menu_id:
+    		showDialog(Constants.DIALOG_COMPOSE);
+    		break;
+    	case R.id.refresh_menu_id:
+			new DownloadMessagesTask().execute(Constants.DEFAULT_COMMENT_DOWNLOAD_LIMIT);
+			break;
     	}
     	
     	return true;
     }
-//
-//    private class CommentsListMenu implements MenuItem.OnMenuItemClickListener {
-//        private int mAction;
-//
-//        CommentsListMenu(int action) {
-//            mAction = action;
-//        }
-//
-//        public boolean onMenuItemClick(MenuItem item) {
-//        	switch (mAction) {
-//        	case Constants.DIALOG_OP:
-//        		mVoteTargetMessageInfo = mMessagesAdapter.getItem(0);
-//        		showDialog(Constants.DIALOG_THING_CLICK);
-//        		break;
-//        	case Constants.DIALOG_REPLY:
-//        		// From the menu, only used for the OP, which is a thread.
-//            	mVoteTargetMessageInfo = mMessagesAdapter.getItem(0);
-//                showDialog(mAction);
-//                break;
-//        	case Constants.DIALOG_LOGIN:
-//        		showDialog(mAction);
-//        		break;
-//        	case Constants.DIALOG_LOGOUT:
-//        		Common.doLogout(mSettings, mClient);
-//        		Toast.makeText(InboxActivity.this, "You have been logged out.", Toast.LENGTH_SHORT).show();
-//        		new DownloadMessagesTask().execute(Constants.DEFAULT_COMMENT_DOWNLOAD_LIMIT);
-//        		break;
-//        	case Constants.DIALOG_REFRESH:
-//        		new DownloadMessagesTask().execute(Constants.DEFAULT_COMMENT_DOWNLOAD_LIMIT);
-//        		break;
-//        	case Constants.DIALOG_OPEN_BROWSER:
-//        		String url = "http://www.reddit.com/message/inbox";
-//        		Common.launchBrowser(url, InboxActivity.this);
-//        		break;
-//        	case Constants.DIALOG_THEME:
-//        		if (mSettings.theme == R.style.Reddit_Light) {
-//        			mSettings.setTheme(R.style.Reddit_Dark);
-//        		} else {
-//        			mSettings.setTheme(R.style.Reddit_Light);
-//        		}
-//        		InboxActivity.this.setTheme(mSettings.theme);
-//        		InboxActivity.this.setContentView(R.layout.comments_list_content);
-//        		registerForContextMenu(getListView());
-//                InboxActivity.this.setListAdapter(mMessagesAdapter);
-//                Common.updateListDrawables(InboxActivity.this, mSettings.theme);
-//        		break;
-//        	default:
-//        		throw new IllegalArgumentException("Unexpected action value "+mAction);
-//        	}
-//        	
-//        	return true;
-//        }
-//    }
     
     @Override
     protected Dialog onCreateDialog(int id) {
@@ -958,89 +1084,15 @@ public final class InboxActivity extends ListActivity
     	
     	switch (id) {
     	case Constants.DIALOG_LOGIN:
-    		dialog = new Dialog(this);
-    		dialog.setContentView(R.layout.login_dialog);
-    		dialog.setTitle("Login to reddit.com");
-    		dialog.setOnCancelListener(new OnCancelListener() {
-    			public void onCancel(DialogInterface d) {
-    				if (!mSettings.loggedIn) {
-	        			returnStatus(Activity.RESULT_CANCELED);
-    				}
-    			}
-    		});
-    		final EditText loginUsernameInput = (EditText) dialog.findViewById(R.id.login_username_input);
-    		final EditText loginPasswordInput = (EditText) dialog.findViewById(R.id.login_password_input);
-    		loginUsernameInput.setOnKeyListener(new OnKeyListener() {
-    			public boolean onKey(View v, int keyCode, KeyEvent event) {
-    		        if ((event.getAction() == KeyEvent.ACTION_DOWN)
-    		        		&& (keyCode == KeyEvent.KEYCODE_ENTER || keyCode == KeyEvent.KEYCODE_TAB)) {
-    		        	loginPasswordInput.requestFocus();
-    		        	return true;
-    		        }
-    		        return false;
-    		    }
-    		});
-    		loginPasswordInput.setOnKeyListener(new OnKeyListener() {
-    			public boolean onKey(View v, int keyCode, KeyEvent event) {
-    		        if ((event.getAction() == KeyEvent.ACTION_DOWN) && (keyCode == KeyEvent.KEYCODE_ENTER)) {
-        				CharSequence user = loginUsernameInput.getText();
-        				CharSequence password = loginPasswordInput.getText();
-        				dismissDialog(Constants.DIALOG_LOGIN);
-    		        	new LoginTask(user, password).execute();
-    		        	return true;
-    		        }
-    		        return false;
-    		    }
-    		});
-    		final Button loginButton = (Button) dialog.findViewById(R.id.login_button);
-    		loginButton.setOnClickListener(new OnClickListener() {
-    			public void onClick(View v) {
-    				CharSequence user = loginUsernameInput.getText();
-    				CharSequence password = loginPasswordInput.getText();
-    				dismissDialog(Constants.DIALOG_LOGIN);
-    				new LoginTask(user, password).execute();
-		        }
-    		});
+    		dialog = new LoginDialog(this, mSettings, true) {
+				@Override
+				public void onLoginChosen(String user, String password) {
+					dismissDialog(Constants.DIALOG_LOGIN);
+		        	new MyLoginTask(user, password).execute();
+				}
+			};
     		break;
     		
-    	case Constants.DIALOG_COMMENT_CLICK:
-    		builder = new AlertDialog.Builder(this);
-    		builder.setMessage("Comment reply")
-    			.setCancelable(false)
-    			.setPositiveButton("Go to thread", new DialogInterface.OnClickListener() {
-    				public void onClick(DialogInterface dialog, int id) {
-    					dialog.dismiss();
-    					Intent i = new Intent(getApplicationContext(), CommentsListActivity.class);
-    					i.putExtra(Constants.EXTRA_COMMENT_CONTEXT, mVoteTargetMessageInfo.getContext());
-    					startActivity(i);
-    				}
-    			})
-    			.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
-    				public void onClick(DialogInterface dialog, int id) {
-    					dialog.cancel();
-    				}
-    			});
-    		dialog = builder.create();
-    		break;
-    		
-		case Constants.DIALOG_MESSAGE_CLICK:
-			builder = new AlertDialog.Builder(this);
-    		builder.setMessage("Private message")
-				.setCancelable(false)
-				.setPositiveButton("Reply", new DialogInterface.OnClickListener() {
-					public void onClick(DialogInterface dialog, int id) {
-						dialog.dismiss();
-						showDialog(Constants.DIALOG_REPLY);
-					}
-				})
-				.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
-					public void onClick(DialogInterface dialog, int id) {
-						dialog.cancel();
-					}
-				});
-    		dialog = builder.create();
-    		break; 
-
     	case Constants.DIALOG_REPLY:
     		dialog = new Dialog(this);
     		dialog.setContentView(R.layout.compose_reply_dialog);
@@ -1049,8 +1101,8 @@ public final class InboxActivity extends ListActivity
     		final Button replyCancelButton = (Button) dialog.findViewById(R.id.reply_cancel_button);
     		replySaveButton.setOnClickListener(new OnClickListener() {
     			public void onClick(View v) {
-    				if(mVoteTargetMessageInfo != null){
-        				new MessageReplyTask(mVoteTargetMessageInfo.getName(), mVoteTargetMessageInfo).execute(replyBody.getText());
+    				if(mReplyTargetName != null){
+        				new MessageReplyTask(mReplyTargetName).execute(replyBody.getText().toString());
         				dismissDialog(Constants.DIALOG_REPLY);
     				}
     				else{
@@ -1060,7 +1112,6 @@ public final class InboxActivity extends ListActivity
     		});
     		replyCancelButton.setOnClickListener(new OnClickListener() {
     			public void onClick(View v) {
-    				mVoteTargetMessageInfo.setReplyDraft(replyBody.getText().toString());
     				dismissDialog(Constants.DIALOG_REPLY);
     			}
     		});
@@ -1078,9 +1129,8 @@ public final class InboxActivity extends ListActivity
     		final Button composeCancelButton = (Button) layout.findViewById(R.id.compose_cancel_button);
     		final EditText composeCaptcha = (EditText) layout.findViewById(R.id.compose_captcha_input);
     		composeSendButton.setOnClickListener(new OnClickListener() {
-				@Override
 				public void onClick(View v) {
-		    		MessageInfo hi = new MessageInfo();
+		    		ThingInfo hi = new ThingInfo();
 		    		// reddit.com performs these sanity checks too.
 		    		if ("".equals(composeDestination.getText().toString().trim())) {
 		    			Toast.makeText(InboxActivity.this, "please enter a username", Toast.LENGTH_LONG).show();
@@ -1098,15 +1148,14 @@ public final class InboxActivity extends ListActivity
 		    			Toast.makeText(InboxActivity.this, "", Toast.LENGTH_LONG).show();
 		    			return;
 		    		}
-		    		hi.put(MessageInfo.DEST, composeDestination.getText().toString().trim());
-		    		hi.put(MessageInfo.SUBJECT, composeSubject.getText().toString().trim());
+		    		hi.setDest(composeDestination.getText().toString().trim());
+		    		hi.setSubject(composeSubject.getText().toString().trim());
 		    		new MessageComposeTask(composeDialog, hi, composeCaptcha.getText().toString().trim())
 		    			.execute(composeText.getText().toString().trim());
 		    		dismissDialog(Constants.DIALOG_COMPOSE);
 				}
     		});
     		composeCancelButton.setOnClickListener(new OnClickListener() {
-				@Override
 				public void onClick(View v) {
 					dismissDialog(Constants.DIALOG_COMPOSE);
 				}
@@ -1117,13 +1166,6 @@ public final class InboxActivity extends ListActivity
     	case Constants.DIALOG_LOGGING_IN:
     		pdialog = new ProgressDialog(this);
     		pdialog.setMessage("Logging in...");
-    		pdialog.setIndeterminate(true);
-    		pdialog.setCancelable(false);
-    		dialog = pdialog;
-    		break;
-    	case Constants.DIALOG_LOADING_INBOX:
-    		pdialog = new ProgressDialog(this);
-    		pdialog.setMessage("Loading messages...");
     		pdialog.setIndeterminate(true);
     		pdialog.setCancelable(false);
     		dialog = pdialog;
@@ -1164,24 +1206,45 @@ public final class InboxActivity extends ListActivity
     		break;
     		
     	case Constants.DIALOG_REPLY:
-    		if (mVoteTargetMessageInfo.getReplyDraft() != null) {
+    		if (mVoteTargetThingInfo != null && mVoteTargetThingInfo.getReplyDraft() != null) {
     			EditText replyBodyView = (EditText) dialog.findViewById(R.id.body); 
-    			replyBodyView.setText(mVoteTargetMessageInfo.getReplyDraft());
+    			replyBodyView.setText(mVoteTargetThingInfo.getReplyDraft());
     		}
     		break;
     		
     	case Constants.DIALOG_COMPOSE:
-    		new CheckCaptchaRequiredTask(dialog).execute();
+    		new MyCaptchaCheckRequiredTask(dialog).execute();
     		break;
-    		
-//    	case Constants.DIALOG_LOADING_INBOX:
-//    		mLoadingCommentsProgress.setMax(mNumVisibleMessages);
-//    		break;
     		
 		default:
 			// No preparation based on app state is required.
 			break;
     	}
+    }
+    
+	private final OnClickListener downloadAfterOnClickListener = new OnClickListener() {
+		public void onClick(View v) {
+			new DownloadMessagesTask(mAfter, null, mCount).execute();
+		}
+	};
+	private final OnClickListener downloadBeforeOnClickListener = new OnClickListener() {
+		public void onClick(View v) {
+			new DownloadMessagesTask(null, mBefore, mCount).execute();
+		}
+	};
+	
+    
+    @Override
+    protected void onSaveInstanceState(Bundle state) {
+    	super.onSaveInstanceState(state);
+    	state.putString(Constants.REPLY_TARGET_NAME_KEY, mReplyTargetName);
+    	state.putString(Constants.AFTER_KEY, mAfter);
+    	state.putString(Constants.BEFORE_KEY, mBefore);
+    	state.putInt(Constants.THREAD_COUNT_KEY, mCount);
+    	state.putString(Constants.LAST_AFTER_KEY, mLastAfter);
+    	state.putString(Constants.LAST_BEFORE_KEY, mLastBefore);
+    	state.putInt(Constants.THREAD_LAST_COUNT_KEY, mLastCount);
+    	state.putParcelable(Constants.VOTE_TARGET_THING_INFO_KEY, mVoteTargetThingInfo);
     }
     
     /**
@@ -1194,7 +1257,6 @@ public final class InboxActivity extends ListActivity
         super.onRestoreInstanceState(state);
         final int[] myDialogs = {
         	Constants.DIALOG_COMMENT_CLICK,
-        	Constants.DIALOG_LOADING_INBOX,
         	Constants.DIALOG_LOGGING_IN,
         	Constants.DIALOG_LOGIN,
         	Constants.DIALOG_MESSAGE_CLICK,

@@ -26,11 +26,14 @@
     
     <color name="white">#ffffffff</color>
     <color name="black">#ff000000</color>
-    <color name="gray">#ffbbbbbb</color>
-    <color name="dark_gray">#ff777777</color>
+    <color name="dark_gray">#ff1f1f1f</color>
+    <color name="gray_25">#ff3f3f3f</color>
+    <color name="gray_50">#ff7f7f7f</color>
+    <color name="gray_75">#ffbfbfbf</color>
+    <color name="light_gray">#ffdfdfdf</color>
+    <color name="light_light_gray">#ffefefef</color>
     <color name="red">#ffff0000</color>
     
-    <color name="light_gray">#ffcccccc</color>
     <color name="pale_blue">#ffcee2ff</color>
     <color name="blue">#ff0000ff</color>
     <color name="dark_blue">#ff000077</color>

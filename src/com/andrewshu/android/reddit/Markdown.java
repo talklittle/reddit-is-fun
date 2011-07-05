@@ -74,6 +74,32 @@ public class Markdown {
 //    static final Pattern autoLinkEmail = Pattern.compile("<([-.\\w]+\\@[-a-z0-9]+(\\.[-a-z0-9]+)*\\.[a-z]+)>");
 	
     /**
+     * @param txt input
+     * @param urls out URLs
+     */
+    public void getURLs(String txt, ArrayList<MarkdownURL> urls) {
+    	if (txt == null) {
+    		txt = "";
+    	}
+        // Standardize line endings:
+        txt.replaceAll("\\r\\n", "\n"); // DOS to Unix
+        txt.replaceAll("\\r", "\n"); // Mac to Unix
+        txt.replaceAll("^[ \\t]+$", "");
+ 
+//        // Make sure $text ends with a couple of newlines:
+//        text.append("\n\n");
+ 
+//        text.detabify();
+        txt.replaceAll("^[ ]+$", "");
+        
+        urls.clear();
+
+        // doAnchors originally called from runBlockGamut -> formParagraphs -> runSpanGamut 
+        txt = doAnchorURLs(txt, urls);
+        txt = doAutoLinkURLs(txt, urls);
+    }
+    
+    /**
 	* Perform the conversion from Markdown to HTML.
 	*
 	* @param txt - input in markdown format
@@ -111,6 +137,94 @@ public class Markdown {
         Collections.sort(urls);
         return ssb;
     }
+    
+    /**
+     * @param txt input text
+     * @param urls Out URLs from anchors
+     * @return updated text with anchors replaced
+     */
+    private String doAnchorURLs(String txt, ArrayList<MarkdownURL> urls) {
+    	// Inline-style links: [link text](url "optional title")
+        AutomatonMatcher am = inlineLinkAutomaton.newMatcher(txt);
+        // The offset into the entire original string 
+        int start = 0;
+        while (am.find()) {
+        	// The offsets from start (offset into orig. string = start + anchorStart)
+        	int anchorStart = am.start();
+        	int anchorEnd = am.end();
+        	Matcher m = inlineLink.matcher(am.group());
+        	if (!m.find())
+        		continue;
+        	String linkText = m.group(2);
+	        String url = m.group(3);
+	        String title = m.group(6);
+	        int linkTextLength = linkText.length();
+	        
+	        if (Constants.LOGGING) Log.d(TAG, "linkText="+linkText + " url="+url + " title="+ title);
+	        
+	        // protect emphasis (* and _) within urls
+//	        url = url.replaceAll("\\*", CHAR_PROTECTOR.encode("*"));
+//	        url = url.replaceAll("_", CHAR_PROTECTOR.encode("_"));
+	        urls.add(new MarkdownURL(start + anchorStart, Util.absolutePathToURL(url), linkText));
+//	        StringBuffer result = new StringBuffer();
+	        // TODO: Show title (if any) alongside url in popup menu
+//	        if (title != null) {
+//	            // protect emphasis (* and _) within urls
+//	            title = title.replaceAll("\\*", CHAR_PROTECTOR.encode("*"));
+//	            title = title.replaceAll("_", CHAR_PROTECTOR.encode("_"));
+//	            title.replaceAll("\"", "&quot;");
+//	            result.append(" title=\"");
+//	            result.append(title);
+//	            result.append("\"");
+//	        }
+	        
+	        // Replace whole anchor thing with just linkText, colored different color
+	        SpannableString ss = new SpannableString(linkText);
+	        ForegroundColorSpan fcs = new ForegroundColorSpan(Constants.MARKDOWN_LINK_COLOR);
+        	ss.setSpan(fcs, 0, linkTextLength, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
+        	txt = new StringBuilder(txt.substring(0, start + anchorStart))
+        		.append(linkText)
+        		.append(txt.substring(start + anchorEnd, txt.length()))
+        		.toString();
+        	// Skip past what we just replaced
+        	am = inlineLinkAutomaton.newMatcher(txt, start + anchorStart + linkTextLength, txt.length());
+        	start += anchorStart + linkTextLength;
+        }
+        return txt;
+    }
+    
+    /**
+     * @param txt input text
+     * @param urls Out URLs from autolinks
+     * @return txt, unchanged
+     */
+    private String doAutoLinkURLs(String txt, ArrayList<MarkdownURL> urls) {
+        // Colorize URLs
+        AutomatonMatcher am = autoLinkUrlAutomaton.newMatcher(txt);
+        while (am.find()) {
+        	urls.add(new MarkdownURL(am.start(), Util.absolutePathToURL(am.group()), null));
+        }
+        // Don't autolink emails for now. Neither does reddit.com
+//        m = autoLinkEmail.matcher(ssb);
+//        int start = 0;
+//        while (m.find(start)) {
+//        	String address = m.group(1);
+//            TextEditor ed = new TextEditor(address);
+//            unEscapeSpecialChars(ed);
+//            String addr = encodeEmail(ed.toString());
+//            String url = encodeEmail("mailto:" + ed.toString());
+//        	
+//        	urls.add(url);
+//        	ssb.replace(m.start(), m.end(), addr);
+//        	ForegroundColorSpan fcs = new ForegroundColorSpan(Constants.MARKDOWN_LINK_COLOR);
+//        	ssb.setSpan(fcs, m.start(), m.end(), Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
+//        	// Skip what we just replaced
+//        	m = autoLinkEmail.matcher(ssb);
+//        	start = m.start() + addr.length();
+//        }
+        return txt;
+    }
+    
 	
 	/** Adapted from MarkdownJ. Convert links, return URL */
     private SpannableStringBuilder doAnchors(SpannableStringBuilder ssb, ArrayList<MarkdownURL> urls) {
@@ -135,7 +249,7 @@ public class Markdown {
 	        // protect emphasis (* and _) within urls
 //	        url = url.replaceAll("\\*", CHAR_PROTECTOR.encode("*"));
 //	        url = url.replaceAll("_", CHAR_PROTECTOR.encode("_"));
-	        urls.add(new MarkdownURL(start + anchorStart, url));
+	        urls.add(new MarkdownURL(start + anchorStart, url, linkText));
 //	        StringBuffer result = new StringBuffer();
 	        // TODO: Show title (if any) alongside url in popup menu
 //	        if (title != null) {
@@ -166,7 +280,7 @@ public class Markdown {
         while (am.find()) {
         	ForegroundColorSpan fcs = new ForegroundColorSpan(Constants.MARKDOWN_LINK_COLOR);
         	ssb.setSpan(fcs, am.start(), am.end(), Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
-	        urls.add(new MarkdownURL(am.start(), am.group()));
+	        urls.add(new MarkdownURL(am.start(), am.group(), null));
         }
         // Don't autolink emails for now. Neither does reddit.com
 //        m = autoLinkEmail.matcher(ssb);

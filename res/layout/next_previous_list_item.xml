@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
- * Copyright 2009 Andrew Shu
+ * Copyright 2010 Andrew Shu
  *
  * This file is part of "reddit is fun".
  *
@@ -18,22 +18,20 @@
  * along with "reddit is fun".  If not, see <http://www.gnu.org/licenses/>.
 -->
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-              android:layout_width="fill_parent"
-              android:layout_height="?android:attr/listPreferredItemHeight"
-              android:orientation="horizontal"
-              >
-             
-	<Button android:id="@+id/previous_button"
-		android:layout_width="fill_parent"
-		android:layout_height="wrap_content"
-		android:layout_weight="1"
-		android:text="@string/previous_threads"
-		/> 
-    <Button android:id="@+id/next_button"
-        android:layout_width="fill_parent"
-		android:layout_height="wrap_content"
-		android:layout_weight="1"
-		android:text="@string/next_threads"
-        />
-    
+	android:layout_width="fill_parent"
+	android:layout_height="wrap_content"
+	android:orientation="horizontal"
+	>
+   	<Button android:id="@+id/previous_button"
+   		android:layout_width="wrap_content"
+   		android:layout_height="wrap_content"
+   		android:layout_weight="1"
+   		android:text="@string/previous_threads"
+   		/>
+   	<Button android:id="@+id/next_button"
+   		android:layout_width="wrap_content"
+   		android:layout_height="wrap_content"
+   		android:layout_weight="1"
+   		android:text="@string/next_threads"
+   		/>
 </LinearLayout>

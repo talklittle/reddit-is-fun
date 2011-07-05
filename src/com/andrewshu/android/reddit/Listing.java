@@ -1,5 +1,5 @@
 /*
- * Copyright 2009 Andrew Shu
+ * Copyright 2010 Andrew Shu
  *
  * This file is part of "reddit is fun".
  *
@@ -16,24 +16,30 @@
  * You should have received a copy of the GNU General Public License
  * along with "reddit is fun".  If not, see <http://www.gnu.org/licenses/>.
  */
-
 package com.andrewshu.android.reddit;
 
-import android.app.ProgressDialog;
-import android.content.Context;
-
-public class AutoResetProgressDialog extends ProgressDialog {
-
-	public AutoResetProgressDialog(Context context) {
-		super(context);
+public class Listing {
+	private String kind;
+	private ListingData data;
+	
+	public Listing() {}
+	
+	public Listing(String stuff) {
+		kind = null;
+		data = null;
 	}
-	public AutoResetProgressDialog(Context context, int theme) {
-		super(context, theme);
+	
+	public void setKind(String kind) {
+		this.kind = kind;
 	}
-
-	@Override
-	public void onStart() {
-		super.onStart();
-		setProgress(0);
+	public String getKind() {
+		return kind;
+	}
+	
+	public void setData(ListingData data) {
+		this.data = data;
+	}
+	public ListingData getData() {
+		return data;
 	}
 }

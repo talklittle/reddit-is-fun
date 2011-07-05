@@ -20,7 +20,6 @@
 package com.andrewshu.android.reddit;
 
 import java.io.BufferedReader;
-import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.List;
@@ -32,7 +31,6 @@ import org.apache.http.HttpException;
 import org.apache.http.HttpResponse;
 import org.apache.http.NameValuePair;
 import org.apache.http.client.entity.UrlEncodedFormEntity;
-import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.impl.client.DefaultHttpClient;
 import org.apache.http.message.BasicNameValuePair;
@@ -44,47 +42,45 @@ import android.app.Activity;
 import android.app.Dialog;
 import android.app.ProgressDialog;
 import android.app.TabActivity;
-import android.content.DialogInterface;
 import android.content.Intent;
-import android.content.DialogInterface.OnCancelListener;
 import android.graphics.drawable.Drawable;
+import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.util.Log;
-import android.view.KeyEvent;
 import android.view.Menu;
+import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.View.OnClickListener;
-import android.view.View.OnKeyListener;
+import android.webkit.CookieSyncManager;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.FrameLayout;
 import android.widget.ImageView;
 import android.widget.TabHost;
+import android.widget.TabHost.OnTabChangeListener;
 import android.widget.TextView;
 import android.widget.Toast;
-import android.widget.TabHost.OnTabChangeListener;
 
 public class SubmitLinkActivity extends TabActivity {
 	
 	private static final String TAG = "SubmitLinkActivity";
 	
-	// Captcha "iden"
-    private final Pattern CAPTCHA_IDEN_PATTERN = Pattern.compile("name=\"iden\" value=\"([^\"]+?)\"");
-    // Group 2: Captcha image absolute path
-    private final Pattern CAPTCHA_IMAGE_PATTERN = Pattern.compile("<img class=\"capimage\"( alt=\".*?\")? src=\"(/captcha/[^\"]+?)\"");
     // Group 1: Subreddit. Group 2: thread id (no t3_ prefix)
-    static final Pattern NEW_THREAD_PATTERN = Pattern.compile("\"http://www.reddit.com/r/(.+?)/comments/(.+?)/.*?/\"");
+    private final Pattern NEW_THREAD_PATTERN = Pattern.compile(Constants.COMMENT_PATH_PATTERN_STRING);
     // Group 1: whole error. Group 2: the time part
-    static final Pattern RATELIMIT_RETRY_PATTERN = Pattern.compile("(you are trying to submit too fast. try again in (.+?)\\.)");
-
+    private final Pattern RATELIMIT_RETRY_PATTERN = Pattern.compile("(you are trying to submit too fast. try again in (.+?)\\.)");
+	// Group 1: Subreddit
+    private final Pattern SUBMIT_PATH_PATTERN = Pattern.compile("/(?:r/([^/]+)/)?submit/?");
+    
 	TabHost mTabHost;
 	
 	private RedditSettings mSettings = new RedditSettings();
 	private final DefaultHttpClient mClient = Common.getGzipHttpClient();
-	
+
 	private String mSubmitUrl;
+	
 	private volatile String mCaptchaIden = null;
 	private volatile String mCaptchaUrl = null;
 	
@@ -92,17 +88,19 @@ public class SubmitLinkActivity extends TabActivity {
 	public void onCreate(Bundle icicle) {
 		super.onCreate(icicle);
 		
-		Common.loadRedditPreferences(this, mSettings, mClient);
+		CookieSyncManager.createInstance(getApplicationContext());
+		
+		mSettings.loadRedditPreferences(this, mClient);
 		setRequestedOrientation(mSettings.rotation);
 		setTheme(mSettings.theme);
 		
 		setContentView(R.layout.submit_link_main);
 
 		final FrameLayout fl = (FrameLayout) findViewById(android.R.id.tabcontent);
-		if (mSettings.theme == R.style.Reddit_Light) {
-			fl.setBackgroundResource(R.color.light_gray);
+		if (Util.isLightTheme(mSettings.theme)) {
+			fl.setBackgroundResource(R.color.gray_75);
 		} else {
-			fl.setBackgroundResource(R.color.android_dark_background);
+			fl.setBackgroundResource(R.color.black);
 		}
 		
 		mTabHost = getTabHost();
@@ -126,13 +124,26 @@ public class SubmitLinkActivity extends TabActivity {
 		});
 		mTabHost.setCurrentTab(0);
 		
-		if (mSettings.loggedIn) {
+		if (mSettings.isLoggedIn()) {
 			start();
 		} else {
 			showDialog(Constants.DIALOG_LOGIN);
 		}
 	}
 	
+	@Override
+	public void onResume() {
+		super.onResume();
+		CookieSyncManager.getInstance().startSync();
+	}
+	
+	@Override
+    protected void onPause() {
+    	super.onPause();
+    	mSettings.saveRedditPreferences(this);
+		CookieSyncManager.getInstance().stopSync();
+    }
+    
 	/**
 	 * Enable the UI after user is logged in.
 	 */
@@ -153,24 +164,30 @@ public class SubmitLinkActivity extends TabActivity {
         		mSubmitUrl = "http://www.reddit.com/submit";
 	        }
         } else {
-	        Bundle extras = getIntent().getExtras();
-	        if (extras != null) {
-	            // Pull current subreddit and thread info from Intent
-	        	String subreddit = extras.getString(ThreadInfo.SUBREDDIT);
-	    		final EditText submitLinkReddit = (EditText) findViewById(R.id.submit_link_reddit);
-	        	final EditText submitTextReddit = (EditText) findViewById(R.id.submit_text_reddit);
-	        	if (Constants.FRONTPAGE_STRING.equals(subreddit)) {
-	        		submitLinkReddit.setText("reddit.com");
-	        		submitTextReddit.setText("reddit.com");
-	        		mSubmitUrl = "http://www.reddit.com/submit";
-	        	} else {
+        	String submitPath = null;
+        	Uri data = getIntent().getData();
+        	if (data != null && Util.isRedditUri(data))
+        		submitPath = data.getPath();
+        	if (submitPath == null)
+    			submitPath = "/submit";
+        	
+        	// the URL to do HTTP POST to
+        	mSubmitUrl = Util.absolutePathToURL(submitPath);
+        	
+        	// Put the subreddit in the text field
+        	final EditText submitLinkReddit = (EditText) findViewById(R.id.submit_link_reddit);
+        	final EditText submitTextReddit = (EditText) findViewById(R.id.submit_text_reddit);
+        	Matcher m = SUBMIT_PATH_PATTERN.matcher(submitPath);
+        	if (m.matches()) {
+        		String subreddit = m.group(1);
+        		if (subreddit == null || Constants.EMPTY_STRING.equals(subreddit)) {
+            		submitLinkReddit.setText("reddit.com");
+            		submitTextReddit.setText("reddit.com");
+        		} else {
 		        	submitLinkReddit.setText(subreddit);
 		        	submitTextReddit.setText(subreddit);
-		        	mSubmitUrl = "http://www.reddit.com/r/"+subreddit+"/submit";
-	        	}
-	        } else {
-	        	mSubmitUrl = "http://www.reddit.com/submit";
-	        }
+		    	}
+        	}
         }
         
         final Button submitLinkButton = (Button) findViewById(R.id.submit_link_button);
@@ -181,8 +198,11 @@ public class SubmitLinkActivity extends TabActivity {
 	        		final EditText submitLinkUrl = (EditText) findViewById(R.id.submit_link_url);
 	        		final EditText submitLinkReddit = (EditText) findViewById(R.id.submit_link_reddit);
 	        		final EditText submitLinkCaptcha = (EditText) findViewById(R.id.submit_link_captcha);
-	        		new SubmitLinkTask(submitLinkTitle.getText(), submitLinkUrl.getText(), submitLinkReddit.getText(),
-	        				Constants.SUBMIT_KIND_LINK, submitLinkCaptcha.getText()).execute();
+	        		new SubmitLinkTask(submitLinkTitle.getText().toString(),
+	        				submitLinkUrl.getText().toString(),
+	        				submitLinkReddit.getText().toString(),
+	        				Constants.SUBMIT_KIND_LINK,
+	        				submitLinkCaptcha.getText().toString()).execute();
         		}
         	}
         });
@@ -194,14 +214,17 @@ public class SubmitLinkActivity extends TabActivity {
 	        		final EditText submitTextText = (EditText) findViewById(R.id.submit_text_text);
 	        		final EditText submitTextReddit = (EditText) findViewById(R.id.submit_text_reddit);
 	        		final EditText submitTextCaptcha = (EditText) findViewById(R.id.submit_text_captcha);
-	        		new SubmitLinkTask(submitTextTitle.getText(), submitTextText.getText(), submitTextReddit.getText(),
-	        				Constants.SUBMIT_KIND_SELF, submitTextCaptcha.getText()).execute();
+	        		new SubmitLinkTask(submitTextTitle.getText().toString(),
+	        				submitTextText.getText().toString(),
+	        				submitTextReddit.getText().toString(),
+	        				Constants.SUBMIT_KIND_SELF,
+	        				submitTextCaptcha.getText().toString()).execute();
         		}
         	}
         });
         
         // Check the CAPTCHA
-        new CheckCaptchaRequiredTask().execute();
+        new MyCaptchaCheckRequiredTask().execute();
 	}
 	
 	private void returnStatus(int status) {
@@ -211,26 +234,11 @@ public class SubmitLinkActivity extends TabActivity {
 	}
 
 	
-	@Override
-    protected void onPause() {
-    	super.onPause();
-    	Common.saveRedditPreferences(this, mSettings);
-    }
-    
-    
 	
-	private class LoginTask extends AsyncTask<Void, Void, String> {
-    	private CharSequence mUsername, mPassword;
-    	
-    	LoginTask(CharSequence username, CharSequence password) {
-    		mUsername = username;
-    		mPassword = password;
+	private class MyLoginTask extends LoginTask {
+    	public MyLoginTask(String username, String password) {
+    		super(username, password, mSettings, mClient, getApplicationContext());
     	}
-    	
-    	@Override
-    	public String doInBackground(Void... v) {
-    		return Common.doLogin(mUsername, mPassword, mClient, mSettings);
-        }
     	
     	@Override
     	protected void onPreExecute() {
@@ -238,16 +246,16 @@ public class SubmitLinkActivity extends TabActivity {
     	}
     	
     	@Override
-    	protected void onPostExecute(String errorMessage) {
+    	protected void onPostExecute(Boolean success) {
     		dismissDialog(Constants.DIALOG_LOGGING_IN);
-			if (errorMessage == null) {
+			if (success) {
     			Toast.makeText(SubmitLinkActivity.this, "Logged in as "+mUsername, Toast.LENGTH_SHORT).show();
     			// Check mail
-    			new Common.PeekEnvelopeTask(SubmitLinkActivity.this, mClient, mSettings.mailNotificationStyle).execute();
+    			new PeekEnvelopeTask(SubmitLinkActivity.this, mClient, mSettings.mailNotificationStyle).execute();
     			// Show the UI and allow user to proceed
     			start();
         	} else {
-            	Common.showErrorToast(errorMessage, Toast.LENGTH_LONG, SubmitLinkActivity.this);
+            	Common.showErrorToast(mUserError, Toast.LENGTH_LONG, SubmitLinkActivity.this);
     			returnStatus(Constants.RESULT_LOGIN_REQUIRED);
         	}
     	}
@@ -255,11 +263,11 @@ public class SubmitLinkActivity extends TabActivity {
     
     
 
-	private class SubmitLinkTask extends AsyncTask<Void, Void, ThreadInfo> {
-    	CharSequence _mTitle, _mUrlOrText, _mSubreddit, _mKind, _mCaptcha;
+	private class SubmitLinkTask extends AsyncTask<Void, Void, ThingInfo> {
+    	String _mTitle, _mUrlOrText, _mSubreddit, _mKind, _mCaptcha;
 		String _mUserError = "Error creating submission. Please try again.";
     	
-    	SubmitLinkTask(CharSequence title, CharSequence urlOrText, CharSequence subreddit, CharSequence kind, CharSequence captcha) {
+    	SubmitLinkTask(String title, String urlOrText, String subreddit, String kind, String captcha) {
     		_mTitle = title;
     		_mUrlOrText = urlOrText;
     		_mSubreddit = subreddit;
@@ -268,22 +276,21 @@ public class SubmitLinkActivity extends TabActivity {
     	}
     	
     	@Override
-        public ThreadInfo doInBackground(Void... voidz) {
-        	ThreadInfo newlyCreatedThread = null;
+        public ThingInfo doInBackground(Void... voidz) {
+        	ThingInfo newlyCreatedThread = null;
         	HttpEntity entity = null;
         	
         	String status = "";
-        	if (!mSettings.loggedIn) {
-        		Common.showErrorToast("You must be logged in to reply.", Toast.LENGTH_LONG, SubmitLinkActivity.this);
+        	if (!mSettings.isLoggedIn()) {
         		_mUserError = "Not logged in";
         		return null;
         	}
         	// Update the modhash if necessary
         	if (mSettings.modhash == null) {
-        		CharSequence modhash = Common.doUpdateModhash(mClient);
+        		String modhash = Common.doUpdateModhash(mClient);
         		if (modhash == null) {
         			// doUpdateModhash should have given an error about credentials
-        			Common.doLogout(mSettings, mClient);
+        			Common.doLogout(mSettings, mClient, getApplicationContext());
         			if (Constants.LOGGING) Log.e(TAG, "Reply failed because doUpdateModhash() failed");
         			return null;
         		}
@@ -369,19 +376,19 @@ public class SubmitLinkActivity extends TabActivity {
                 	}
             		if (line.contains("BAD_CAPTCHA")) {
             			_mUserError = "Bad CAPTCHA. Try again.";
-            			new DownloadCaptchaTask().execute();
+            			new MyCaptchaDownloadTask().execute();
             		}
                 	throw new Exception("No id returned by reply POST.");
             	}
             	
             	entity.consumeContent();
             	
-            	// Getting here means success. Create a new ThreadInfo.
-            	newlyCreatedThread = new ThreadInfo();
+            	// Getting here means success. Create a new ThingInfo.
+            	newlyCreatedThread = new ThingInfo();
             	// We only need to fill in a few fields.
-            	newlyCreatedThread.put(ThreadInfo.ID, newId);
-            	newlyCreatedThread.put(ThreadInfo.SUBREDDIT, newSubreddit);
-            	newlyCreatedThread.put(ThreadInfo.TITLE, _mTitle.toString());
+            	newlyCreatedThread.setId(newId);
+            	newlyCreatedThread.setSubreddit(newSubreddit);
+            	newlyCreatedThread.setTitle(_mTitle.toString());
             	
             	return newlyCreatedThread;
             	
@@ -390,10 +397,10 @@ public class SubmitLinkActivity extends TabActivity {
         			try {
         				entity.consumeContent();
         			} catch (Exception e2) {
-        				if (Constants.LOGGING) Log.e(TAG, e2.getMessage());
+        				if (Constants.LOGGING) Log.e(TAG, "entity.consumeContent()", e2);
         			}
         		}
-        		if (Constants.LOGGING) Log.e(TAG, e.getMessage());
+        		if (Constants.LOGGING) Log.e(TAG, "SubmitLinkTask", e);
         	}
         	return null;
         }
@@ -405,68 +412,34 @@ public class SubmitLinkActivity extends TabActivity {
     	
     	
     	@Override
-    	public void onPostExecute(ThreadInfo newlyCreatedThread) {
+    	public void onPostExecute(ThingInfo newlyCreatedThread) {
     		dismissDialog(Constants.DIALOG_SUBMITTING);
     		if (newlyCreatedThread == null) {
     			Common.showErrorToast(_mUserError, Toast.LENGTH_LONG, SubmitLinkActivity.this);
     		} else {
         		// Success. Return the subreddit and thread id
-    			Intent i = new Intent();
-    			i.putExtra(ThreadInfo.SUBREDDIT, newlyCreatedThread.getSubreddit());
-    			i.putExtra(ThreadInfo.ID, newlyCreatedThread.getId());
-    			i.putExtra(ThreadInfo.TITLE, newlyCreatedThread.getTitle());
-    			setResult(Activity.RESULT_OK, i);
+    			Intent i = new Intent(getApplicationContext(), CommentsListActivity.class);
+    			i.setData(Util.createThreadUri(newlyCreatedThread));
+    			i.putExtra(Constants.EXTRA_SUBREDDIT, newlyCreatedThread.getSubreddit());
+    			i.putExtra(Constants.EXTRA_TITLE, newlyCreatedThread.getTitle());
+    			i.putExtra(Constants.EXTRA_NUM_COMMENTS, 0);
+    			startActivity(i);
     			finish();
     		}
     	}
     }
 	
-	private class CheckCaptchaRequiredTask extends AsyncTask<Void, Void, Boolean> {
-		@Override
-		public Boolean doInBackground(Void... voidz) {
-			HttpEntity entity = null;
-			BufferedReader in = null;
-			try {
-				HttpGet request = new HttpGet(mSubmitUrl);
-				HttpResponse response = mClient.execute(request);
-				entity = response.getEntity(); 
-	    		in = new BufferedReader(new InputStreamReader(entity.getContent()));
-            	
-            	// Some HTML pages, like submit link page, are 2 lines (used to always be 1 long line)
-            	String line;
-            	while ((line = in.readLine()) != null) {
-            		Matcher idenMatcher = CAPTCHA_IDEN_PATTERN.matcher(line);
-                	Matcher urlMatcher = CAPTCHA_IMAGE_PATTERN.matcher(line);
-                	if (idenMatcher.find() && urlMatcher.find()) {
-                		mCaptchaIden = idenMatcher.group(1);
-                		mCaptchaUrl = urlMatcher.group(2);
-                		return true;
-                	}            		
-            	}
-        		mCaptchaIden = null;
-        		mCaptchaUrl = null;
-        		return false;
-			} catch (Exception e) {
-				if (Constants.LOGGING) Log.e(TAG, "Error accessing "+mSubmitUrl+" to check for CAPTCHA");
-				return null;
-			} finally {
-				if (in != null) {
-					try {
-						in.close();
-					} catch (Exception e2) {
-						if (Constants.LOGGING) Log.e(TAG, e2.getMessage());
-					}
-				}
-				if (entity != null) {
-					try {
-						entity.consumeContent();
-					} catch (Exception e2) {
-						if (Constants.LOGGING) Log.e(TAG, e2.getMessage());
-					}
-				}
-			}
+	private class MyCaptchaCheckRequiredTask extends CaptchaCheckRequiredTask {
+		public MyCaptchaCheckRequiredTask() {
+			super(mSubmitUrl, mClient);
 		}
 		
+		@Override
+		protected void saveState() {
+			SubmitLinkActivity.this.mCaptchaIden = _mCaptchaIden;
+			SubmitLinkActivity.this.mCaptchaUrl = _mCaptchaUrl;
+		}
+
 		@Override
 		public void onPreExecute() {
 			// Hide submit buttons so user can't submit until we know whether he needs captcha
@@ -505,7 +478,7 @@ public class SubmitLinkActivity extends TabActivity {
 				textCaptchaImage.setVisibility(View.VISIBLE);
 				textCaptchaEdit.setVisibility(View.VISIBLE);
 				// Launch a task to download captcha and display it
-				new DownloadCaptchaTask().execute();
+				new MyCaptchaDownloadTask().execute();
 			} else {
 				linkCaptchaLabel.setVisibility(View.GONE);
 				linkCaptchaImage.setVisibility(View.GONE);
@@ -521,24 +494,11 @@ public class SubmitLinkActivity extends TabActivity {
 		}
 	}
 	
-	private class DownloadCaptchaTask extends AsyncTask<Void, Void, Drawable> {
-		@Override
-		public Drawable doInBackground(Void... voidz) {
-			try {
-				HttpGet request = new HttpGet("http://www.reddit.com/" + mCaptchaUrl);
-				HttpResponse response = mClient.execute(request);
-	    	
-				InputStream in = response.getEntity().getContent();
-				
-				return Drawable.createFromStream(in, "captcha");
-			
-			} catch (Exception e) {
-				Common.showErrorToast("Error downloading captcha.", Toast.LENGTH_LONG, SubmitLinkActivity.this);
-			}
-			
-			return null;
+	private class MyCaptchaDownloadTask extends CaptchaDownloadTask {
+		public MyCaptchaDownloadTask() {
+			super(mCaptchaUrl, mClient);
 		}
-		
+
 		@Override
 		public void onPostExecute(Drawable captcha) {
 			if (captcha == null) {
@@ -547,10 +507,10 @@ public class SubmitLinkActivity extends TabActivity {
 			}
 			final ImageView linkCaptchaView = (ImageView) findViewById(R.id.submit_link_captcha_image);
 			final ImageView textCaptchaView = (ImageView) findViewById(R.id.submit_text_captcha_image);
-			linkCaptchaView.setVisibility(View.VISIBLE);
 			linkCaptchaView.setImageDrawable(captcha);
-			textCaptchaView.setVisibility(View.VISIBLE);
+			linkCaptchaView.setVisibility(View.VISIBLE);
 			textCaptchaView.setImageDrawable(captcha);
+			textCaptchaView.setVisibility(View.VISIBLE);
 		}
 	}
     
@@ -560,50 +520,13 @@ public class SubmitLinkActivity extends TabActivity {
 		ProgressDialog pdialog;
 		switch (id) {
 		case Constants.DIALOG_LOGIN:
-    		dialog = new Dialog(this);
-    		dialog.setContentView(R.layout.login_dialog);
-    		dialog.setTitle("Login to reddit.com");
-    		// If user presses "back" then quit.
-    		dialog.setOnCancelListener(new OnCancelListener() {
-    			public void onCancel(DialogInterface d) {
-    				if (!mSettings.loggedIn) {
-	        			returnStatus(Activity.RESULT_CANCELED);
-    				}
-    			}
-    		});
-    		final EditText loginUsernameInput = (EditText) dialog.findViewById(R.id.login_username_input);
-    		final EditText loginPasswordInput = (EditText) dialog.findViewById(R.id.login_password_input);
-    		loginUsernameInput.setOnKeyListener(new OnKeyListener() {
-    			public boolean onKey(View v, int keyCode, KeyEvent event) {
-    		        if ((event.getAction() == KeyEvent.ACTION_DOWN)
-    		        		&& (keyCode == KeyEvent.KEYCODE_ENTER || keyCode == KeyEvent.KEYCODE_TAB)) {
-    		        	loginPasswordInput.requestFocus();
-    		        	return true;
-    		        }
-    		        return false;
-    		    }
-    		});
-    		loginPasswordInput.setOnKeyListener(new OnKeyListener() {
-    			public boolean onKey(View v, int keyCode, KeyEvent event) {
-    		        if ((event.getAction() == KeyEvent.ACTION_DOWN) && (keyCode == KeyEvent.KEYCODE_ENTER)) {
-        				CharSequence user = loginUsernameInput.getText();
-        				CharSequence password = loginPasswordInput.getText();
-        				dismissDialog(Constants.DIALOG_LOGIN);
-    		        	new LoginTask(user, password).execute(); 
-    		        	return true;
-    		        }
-    		        return false;
-    		    }
-    		});
-    		final Button loginButton = (Button) dialog.findViewById(R.id.login_button);
-    		loginButton.setOnClickListener(new OnClickListener() {
-    			public void onClick(View v) {
-    				CharSequence user = loginUsernameInput.getText();
-    				CharSequence password = loginPasswordInput.getText();
-    				dismissDialog(Constants.DIALOG_LOGIN);
-    				new LoginTask(user, password).execute();
-    		    }
-    		});
+			dialog = new LoginDialog(this, mSettings, true) {
+				@Override
+				public void onLoginChosen(String user, String password) {
+					dismissDialog(Constants.DIALOG_LOGIN);
+    				new MyLoginTask(user, password).execute();
+				}
+			};
     		break;
 
        	// "Please wait"
@@ -682,14 +605,10 @@ public class SubmitLinkActivity extends TabActivity {
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
         super.onCreateOptionsMenu(menu);
-        
-        menu.add(0, R.id.pick_subreddit_menu_id, 0, "Pick subreddit")
-            .setOnMenuItemClickListener(new SubmitLinkMenu(R.id.pick_subreddit_menu_id));
 
-        menu.add(0, Constants.DIALOG_DOWNLOAD_CAPTCHA, 1, "Update CAPTCHA")
-        	.setOnMenuItemClickListener(new SubmitLinkMenu(Constants.DIALOG_DOWNLOAD_CAPTCHA));
+        MenuInflater inflater = getMenuInflater();
+        inflater.inflate(R.menu.submit_link, menu);
 
-        
         return true;
     }
     
@@ -698,36 +617,29 @@ public class SubmitLinkActivity extends TabActivity {
     	super.onPrepareOptionsMenu(menu);
     	
     	if (mCaptchaUrl == null)
-    		menu.findItem(Constants.DIALOG_DOWNLOAD_CAPTCHA).setVisible(false);
+    		menu.findItem(R.id.update_captcha_menu_id).setVisible(false);
     	else
-    		menu.findItem(Constants.DIALOG_DOWNLOAD_CAPTCHA).setVisible(true);
+    		menu.findItem(R.id.update_captcha_menu_id).setVisible(true);
     	
     	return true;
     }
     
-    private class SubmitLinkMenu implements MenuItem.OnMenuItemClickListener {
-        private int mAction;
-
-        SubmitLinkMenu(int action) {
-            mAction = action;
-        }
-
-        public boolean onMenuItemClick(MenuItem item) {
-        	switch (mAction) {
-        	case R.id.pick_subreddit_menu_id:
-        		Intent pickSubredditIntent = new Intent(getApplicationContext(), PickSubredditActivity.class);
-        		pickSubredditIntent.putExtra(Constants.EXTRA_HIDE_FRONTPAGE_STRING, true);
-        		startActivityForResult(pickSubredditIntent, Constants.ACTIVITY_PICK_SUBREDDIT);
-        		break;
-        	case Constants.DIALOG_DOWNLOAD_CAPTCHA:
-        		new CheckCaptchaRequiredTask().execute();
-        		break;
-        	default:
-        		throw new IllegalArgumentException("Unexpected action value "+mAction);
-        	}
-        	
-        	return true;
-        }
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+    	switch (item.getItemId()) {
+    	case R.id.pick_subreddit_menu_id:
+    		Intent pickSubredditIntent = new Intent(getApplicationContext(), PickSubredditActivity.class);
+    		pickSubredditIntent.putExtra(Constants.EXTRA_HIDE_FRONTPAGE_STRING, true);
+    		startActivityForResult(pickSubredditIntent, Constants.ACTIVITY_PICK_SUBREDDIT);
+    		break;
+    	case R.id.update_captcha_menu_id:
+    		new MyCaptchaCheckRequiredTask().execute();
+    		break;
+    	default:
+    		throw new IllegalArgumentException("Unexpected action value "+item.getItemId());
+    	}
+    	
+    	return true;
     }
     
     @Override
@@ -737,13 +649,20 @@ public class SubmitLinkActivity extends TabActivity {
     	switch(requestCode) {
     	case Constants.ACTIVITY_PICK_SUBREDDIT:
     		if (resultCode == Activity.RESULT_OK) {
-    			Bundle extras = intent.getExtras();
-	    		String newSubreddit = extras.getString(ThreadInfo.SUBREDDIT);
-	    		if (newSubreddit != null && !"".equals(newSubreddit)) {
-	    			final EditText linkSubreddit = (EditText) findViewById(R.id.submit_link_reddit);
+    		    // Group 1: Subreddit.
+    		    final Pattern REDDIT_PATH_PATTERN = Pattern.compile(Constants.REDDIT_PATH_PATTERN_STRING);
+    			Matcher redditContextMatcher = REDDIT_PATH_PATTERN.matcher(intent.getData().getPath());
+    			if (redditContextMatcher.find()) {
+    				String newSubreddit = redditContextMatcher.group(1);
+    				final EditText linkSubreddit = (EditText) findViewById(R.id.submit_link_reddit);
 	    			final EditText textSubreddit = (EditText) findViewById(R.id.submit_text_reddit);
-	    			linkSubreddit.setText(newSubreddit);
-	    			textSubreddit.setText(newSubreddit);
+	    			if (newSubreddit != null) {
+	    				linkSubreddit.setText(newSubreddit);
+		    			textSubreddit.setText(newSubreddit);
+    				} else {
+	    				linkSubreddit.setText("reddit.com");
+		    			textSubreddit.setText("reddit.com");
+    				}
 	    		}
     		}
     		break;

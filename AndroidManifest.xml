@@ -19,19 +19,37 @@
 -->
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
       package="com.andrewshu.android.reddit"
-      android:versionCode="40"
-      android:versionName="0.8.9a">
+      
+      android:versionCode="69"
+      android:versionName="1.1.4"
+      >
     <uses-permission android:name="android.permission.INTERNET" />
     <application android:icon="@drawable/icon" android:label="@string/app_name">
-        <activity android:name=".RedditIsFun"
+        <activity android:name=".ThreadsListActivity"
                   android:label="@string/app_name">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.DEFAULT" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="http" android:host="www.reddit.com" android:pathPattern="/r/.*/" />
+                <data android:scheme="http" android:host="redd.it" android:pathPattern="/" />
+            </intent-filter>
         </activity>
-	    <activity android:name=".CommentsListActivity"></activity>
+	    <activity android:name=".CommentsListActivity">
+	        <intent-filter>
+	            <action android:name="android.intent.action.VIEW" />
+	            <category android:name="android.intent.category.DEFAULT" />
+	            <category android:name="android.intent.category.BROWSABLE" />
+	            <data android:scheme="http" android:host="www.reddit.com" android:pathPattern="/r/.*/comments/.*" />
+	            <data android:scheme="http" android:host="www.reddit.com" android:pathPrefix="/comments/" />
+	            <data android:scheme="http" android:host="www.reddit.com" android:pathPrefix="/tb/" />
+	            <data android:scheme="http" android:host="redd.it" android:pathPattern="/..*" />
+	        </intent-filter>
+	    </activity>
 	    <activity android:name=".PickSubredditActivity"></activity>
 	    <activity android:name=".SubmitLinkActivity">
 	        <intent-filter>
@@ -41,9 +59,19 @@
            	</intent-filter>
 	    </activity>
 	    <activity android:name=".InboxActivity"></activity>
+	    <activity android:name=".ProfileActivity">
+	        <intent-filter>
+	            <action android:name="android.intent.action.VIEW" />
+	            <category android:name="android.intent.category.DEFAULT" />
+	            <category android:name="android.intent.category.BROWSABLE" />
+	            <data android:scheme="http" android:host="www.reddit.com" android:pathPrefix="/user/" />
+	        </intent-filter>
+	    </activity>
 	    <activity android:name=".RedditPreferencesPage"></activity>
+	    <activity android:name=".BrowserActivity" android:configChanges="keyboardHidden|orientation"></activity>
 	    <service android:name=".EnvelopeService" android:label="@string/pref_mail_notification_service"></service>
 	</application>
-    <uses-sdk android:minSdkVersion="3" android:targetSdkVersion="4" />
+    <uses-sdk android:minSdkVersion="4" android:targetSdkVersion="7" />
     <supports-screens />
+<uses-permission android:name="android.permission.ACCESS_NETWORK_STATE"></uses-permission>
 </manifest> 

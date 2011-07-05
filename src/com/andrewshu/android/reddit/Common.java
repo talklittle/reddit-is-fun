@@ -20,14 +20,9 @@
 package com.andrewshu.android.reddit;
 
 import java.io.BufferedReader;
-import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.io.ObjectInputStream;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.zip.GZIPInputStream;
@@ -40,31 +35,20 @@ import org.apache.http.HttpRequest;
 import org.apache.http.HttpRequestInterceptor;
 import org.apache.http.HttpResponse;
 import org.apache.http.HttpResponseInterceptor;
-import org.apache.http.NameValuePair;
-import org.apache.http.client.entity.UrlEncodedFormEntity;
 import org.apache.http.client.methods.HttpGet;
-import org.apache.http.client.methods.HttpPost;
 import org.apache.http.conn.ClientConnectionManager;
 import org.apache.http.conn.scheme.PlainSocketFactory;
 import org.apache.http.conn.scheme.Scheme;
 import org.apache.http.conn.scheme.SchemeRegistry;
-import org.apache.http.cookie.Cookie;
 import org.apache.http.entity.HttpEntityWrapper;
 import org.apache.http.impl.client.DefaultHttpClient;
 import org.apache.http.impl.conn.tsccm.ThreadSafeClientConnManager;
-import org.apache.http.impl.cookie.BasicClientCookie;
-import org.apache.http.message.BasicNameValuePair;
 import org.apache.http.params.BasicHttpParams;
-import org.apache.http.params.HttpConnectionParams;
-import org.apache.http.params.HttpParams;
-import org.apache.http.protocol.HTTP;
 import org.apache.http.protocol.HttpContext;
-import org.codehaus.jackson.JsonFactory;
-import org.codehaus.jackson.JsonParseException;
-import org.codehaus.jackson.JsonParser;
-import org.codehaus.jackson.JsonToken;
+import org.codehaus.jackson.JsonNode;
+import org.codehaus.jackson.map.ObjectMapper;
+import org.codehaus.jackson.node.ArrayNode;
 
-import android.app.Activity;
 import android.app.ListActivity;
 import android.app.Notification;
 import android.app.NotificationManager;
@@ -73,12 +57,14 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.net.Uri;
-import android.os.AsyncTask;
 import android.preference.PreferenceManager;
 import android.provider.Browser;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
+import android.view.View.OnClickListener;
+import android.webkit.CookieSyncManager;
+import android.widget.Button;
 import android.widget.ListView;
 import android.widget.RemoteViews;
 import android.widget.TextView;
@@ -89,14 +75,13 @@ public class Common {
 	private static final String TAG = "Common";
 	
 	private static final DefaultHttpClient mGzipHttpClient = createGzipHttpClient();
-	private static final Pattern REDDIT_LINK = Pattern.compile(
-      "https?://(?:[\\w-]+\\.)?reddit.com" +
-      "(?:/r/([^/.]+))?" +
-      "(?:/comments/([^/.]+)/[^/.]+" +
-          "(?:/([^/.]+))?" +
-      ")?/?");
+	// 1:subreddit 2:threadId 3:commentId
+	private static final Pattern COMMENT_LINK = Pattern.compile(Constants.COMMENT_PATH_PATTERN_STRING);
+	private static final Pattern REDDIT_LINK = Pattern.compile(Constants.REDDIT_PATH_PATTERN_STRING);
+	private static final Pattern USER_LINK = Pattern.compile(Constants.USER_PATH_PATTERN_STRING);
+	private static final ObjectMapper mObjectMapper = new ObjectMapper();
 
-	static void showErrorToast(CharSequence error, int duration, Context context) {
+	static void showErrorToast(String error, int duration, Context context) {
 		LayoutInflater inflater = (LayoutInflater) context.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
 		Toast t = new Toast(context);
 		t.setDuration(duration);
@@ -111,202 +96,99 @@ public class Common {
      * Set the Drawable for the list selector etc. based on the current theme.
      */
 	static void updateListDrawables(ListActivity la, int theme) {
-		final ListView lv = la.getListView();
-		if (theme == R.style.Reddit_Light) {
+		ListView lv = la.getListView();
+		if (Util.isLightTheme(theme)) {
     		lv.setSelector(R.drawable.list_selector_blue);
-    	} else if (theme == R.style.Reddit_Dark) {
+        	// HACK: set background color directly for android 2.0
+        	lv.setBackgroundResource(R.color.white);
+    	} else /* if (Common.isDarkTheme(theme)) */ {
     		lv.setSelector(android.R.drawable.list_selector_background);
     	}
 	}
 	
-    static void saveRedditPreferences(Context context, RedditSettings rSettings) {
-    	SharedPreferences settings = PreferenceManager.getDefaultSharedPreferences(context);
-    	SharedPreferences.Editor editor = settings.edit();
-    	editor.clear();
+    static void updateNextPreviousButtons(ListActivity act, View nextPreviousView,
+    		String after, String before, int count, RedditSettings settings,
+    		OnClickListener downloadAfterOnClickListener, OnClickListener downloadBeforeOnClickListener) {
+    	boolean shouldShow = after != null || before != null;
+    	Button nextButton = null;
+    	Button previousButton = null;
     	
-    	// Session
-    	if (rSettings.loggedIn) {
-	    	if (rSettings.username != null)
-	    		editor.putString("username", rSettings.username.toString());
-	    	if (rSettings.redditSessionCookie != null) {
-	    		editor.putString("reddit_sessionValue",  rSettings.redditSessionCookie.getValue());
-	    		editor.putString("reddit_sessionDomain", rSettings.redditSessionCookie.getDomain());
-	    		editor.putString("reddit_sessionPath",   rSettings.redditSessionCookie.getPath());
-	    		if (rSettings.redditSessionCookie.getExpiryDate() != null)
-	    			editor.putLong("reddit_sessionExpiryDate", rSettings.redditSessionCookie.getExpiryDate().getTime());
+    	// If alwaysShowNextPrevious, use the navbar
+    	if (settings.alwaysShowNextPrevious) {
+        	nextPreviousView = act.findViewById(R.id.next_previous_layout);
+        	if (nextPreviousView == null)
+        		return;
+        	View nextPreviousBorder = act.findViewById(R.id.next_previous_border_top);
+        	
+			if (shouldShow && nextPreviousView.getVisibility() != View.VISIBLE) {
+		    	if (nextPreviousView != null && nextPreviousBorder != null) {
+			    	if (Util.isLightTheme(settings.theme)) {
+			    		nextPreviousView.setBackgroundResource(R.color.white);
+			       		nextPreviousBorder.setBackgroundResource(R.color.black);
+			    	} else {
+			       		nextPreviousBorder.setBackgroundResource(R.color.white);
+			    	}
+			    	nextPreviousView.setVisibility(View.VISIBLE);
+		    	}
+				// update the "next 25" and "prev 25" buttons
+		    	nextButton = (Button) act.findViewById(R.id.next_button);
+		    	previousButton = (Button) act.findViewById(R.id.previous_button);
+			} else if (!shouldShow && nextPreviousView.getVisibility() == View.VISIBLE) {
+				nextPreviousView.setVisibility(View.GONE);
 	    	}
-	    	if (rSettings.modhash != null)
-	    		editor.putString("modhash", rSettings.modhash.toString());
     	}
-    	
-    	// Default subreddit
-    	editor.putString(Constants.PREF_HOMEPAGE, rSettings.homepage.toString());
-    	
-    	// Theme
-    	editor.putString(Constants.PREF_THEME, RedditSettings.Theme.toString(rSettings.theme));
-    	
-    	// Rotation
-    	editor.putString(Constants.PREF_ROTATION, RedditSettings.Rotation.toString(rSettings.rotation));
-    	
-    	// Notifications
-    	editor.putString(Constants.PREF_MAIL_NOTIFICATION_STYLE, rSettings.mailNotificationStyle);
-    	editor.putString(Constants.PREF_MAIL_NOTIFICATION_SERVICE, rSettings.mailNotificationService);
-    
-    	editor.commit();
-    }
-    
-    static void loadRedditPreferences(Context context, RedditSettings rSettings, DefaultHttpClient client) {
-        // Session
-    	SharedPreferences sessionPrefs = PreferenceManager.getDefaultSharedPreferences(context);
-        rSettings.setUsername(sessionPrefs.getString("username", null));
-        rSettings.setModhash(sessionPrefs.getString("modhash", null));
-        String cookieValue = sessionPrefs.getString("reddit_sessionValue", null);
-        String cookieDomain = sessionPrefs.getString("reddit_sessionDomain", null);
-        String cookiePath = sessionPrefs.getString("reddit_sessionPath", null);
-        long cookieExpiryDate = sessionPrefs.getLong("reddit_sessionExpiryDate", -1);
-        if (cookieValue != null) {
-        	BasicClientCookie redditSessionCookie = new BasicClientCookie("reddit_session", cookieValue);
-        	redditSessionCookie.setDomain(cookieDomain);
-        	redditSessionCookie.setPath(cookiePath);
-        	if (cookieExpiryDate != -1)
-        		redditSessionCookie.setExpiryDate(new Date(cookieExpiryDate));
-        	else
-        		redditSessionCookie.setExpiryDate(null);
-        	rSettings.setRedditSessionCookie(redditSessionCookie);
-        	if (client != null)
-        		client.getCookieStore().addCookie(redditSessionCookie);
-        	rSettings.setLoggedIn(true);
-        } else {
-        	rSettings.setLoggedIn(false);
-        }
-        
-        // Default subreddit
-        String homepage = sessionPrefs.getString(Constants.PREF_HOMEPAGE, Constants.FRONTPAGE_STRING).trim();
-        if (Constants.EMPTY_STRING.equals(homepage))
-        	rSettings.setHomepage(Constants.FRONTPAGE_STRING);
-        else
-        	rSettings.setHomepage(homepage);
-        
-        // Theme
-        rSettings.setTheme(RedditSettings.Theme.valueOf(
-        		sessionPrefs.getString(Constants.PREF_THEME, Constants.PREF_THEME_LIGHT)));
-        
-        // Rotation
-        rSettings.setRotation(RedditSettings.Rotation.valueOf(
-        		sessionPrefs.getString(Constants.PREF_ROTATION, Constants.PREF_ROTATION_UNSPECIFIED)));
-        
-        // Notifications
-        rSettings.setMailNotificationStyle(sessionPrefs.getString(Constants.PREF_MAIL_NOTIFICATION_STYLE, Constants.PREF_MAIL_NOTIFICATION_STYLE_DEFAULT));
-        rSettings.setMailNotificationService(sessionPrefs.getString(Constants.PREF_MAIL_NOTIFICATION_SERVICE, Constants.PREF_MAIL_NOTIFICATION_SERVICE_OFF));
-    }
-    
-    /**
-     * On success stores the session cookie and modhash in your RedditSettings.
-     * On failure does not modify RedditSettings. 
-     * Should be called from a background thread.
-     * @return Error message, or null on success
-     */
-    static String doLogin(CharSequence username, CharSequence password, DefaultHttpClient client, RedditSettings settings) {
-		String status = "";
-    	String userError = "Error logging in. Please try again.";
-    	HttpEntity entity = null;
-    	try {
-    		// Construct data
-    		List<NameValuePair> nvps = new ArrayList<NameValuePair>();
-    		nvps.add(new BasicNameValuePair("user", username.toString()));
-    		nvps.add(new BasicNameValuePair("passwd", password.toString()));
-    		nvps.add(new BasicNameValuePair("api_type", "json"));
-    		
-            HttpPost httppost = new HttpPost("http://www.reddit.com/api/login/"+username);
-            httppost.setEntity(new UrlEncodedFormEntity(nvps, HTTP.UTF_8));
-            
-            // Set timeout to 30 seconds for login
-            HttpParams params = httppost.getParams();
-	        HttpConnectionParams.setConnectionTimeout(params, 30000);
-	        HttpConnectionParams.setSoTimeout(params, 30000);
-	        
-            // Perform the HTTP POST request
-        	HttpResponse response = client.execute(httppost);
-        	status = response.getStatusLine().toString();
-        	if (!status.contains("OK")) {
-        		throw new HttpException(status);
-        	}
-        	
-        	entity = response.getEntity();
-        	
-        	BufferedReader in = new BufferedReader(new InputStreamReader(entity.getContent()));
-        	String line = in.readLine();
-        	in.close();
-        	entity.consumeContent();
-        	if (line == null || Constants.EMPTY_STRING.equals(line)) {
-        		throw new HttpException("No content returned from login POST");
-        	}
-        	
-        	if (Constants.LOGGING) Common.logDLong(TAG, line);
-        	
-        	if (client.getCookieStore().getCookies().isEmpty())
-        		throw new HttpException("Failed to login: No cookies");
-        	
-        	final JsonFactory jsonFactory = new JsonFactory();
-        	final JsonParser jp = jsonFactory.createJsonParser(line);
-        	
-        	// Go to the errors
-        	while (jp.nextToken() != JsonToken.FIELD_NAME || !Constants.JSON_ERRORS.equals(jp.getCurrentName()))
-        		;
-        	if (jp.nextToken() != JsonToken.START_ARRAY)
-        		throw new IllegalStateException("Login: expecting errors START_ARRAY");
-        	if (jp.nextToken() != JsonToken.END_ARRAY) {
-	        	if (line.contains("WRONG_PASSWORD")) {
-	        		userError = "Bad password.";
-	        		throw new Exception("Wrong password");
-	        	} else {
-	        		// Could parse for error code and error description but using whole line is easier.
-	        		throw new Exception(line);
-	        	}
-        	}
-
-        	// Getting here means you successfully logged in.
-        	// Congratulations!
-        	// You are a true reddit master!
-        	
-        	// Get modhash
-        	while (jp.nextToken() != JsonToken.FIELD_NAME || !Constants.JSON_MODHASH.equals(jp.getCurrentName()))
-        		;
-        	jp.nextToken();
-        	settings.setModhash(jp.getText());
-
-        	// Could grab cookie from JSON too, but it lacks expiration date and stuff. So grab from HttpClient.
-			List<Cookie> cookies = client.getCookieStore().getCookies();
-        	for (Cookie c : cookies) {
-        		if (c.getName().equals("reddit_session")) {
-        			settings.setRedditSessionCookie(c);
-        			break;
-        		}
-        	}
-        	settings.setUsername(username);
-        	settings.setLoggedIn(true);
-        	
-        	return null;
-
-    	} catch (Exception e) {
-    		if (entity != null) {
-    			try {
-    				entity.consumeContent();
-    			} catch (Exception e2) {
-    				if (Constants.LOGGING) Log.e(TAG, e.getMessage());
-    			}
+    	// Otherwise we are using the ListView footer
+    	else {
+    		if (nextPreviousView == null)
+    			return;
+    		if (shouldShow && nextPreviousView.getVisibility() != View.VISIBLE) {
+	    		nextPreviousView.setVisibility(View.VISIBLE);
+    		} else if (!shouldShow && nextPreviousView.getVisibility() == View.VISIBLE) {
+    			nextPreviousView.setVisibility(View.GONE);
     		}
-    		if (Constants.LOGGING) Log.e(TAG, e.getMessage());
-        }
-    	settings.setLoggedIn(false);
-        return userError;
+			// update the "next 25" and "prev 25" buttons
+	    	nextButton = (Button) nextPreviousView.findViewById(R.id.next_button);
+	    	previousButton = (Button) nextPreviousView.findViewById(R.id.previous_button);
+    	}
+    	if (nextButton != null) {
+	    	if (after != null) {
+	    		nextButton.setVisibility(View.VISIBLE);
+	    		nextButton.setOnClickListener(downloadAfterOnClickListener);
+	    	} else {
+	    		nextButton.setVisibility(View.INVISIBLE);
+	    	}
+    	}
+    	if (previousButton != null) {
+	    	if (before != null && count != Constants.DEFAULT_THREAD_DOWNLOAD_LIMIT) {
+	    		previousButton.setVisibility(View.VISIBLE);
+	    		previousButton.setOnClickListener(downloadBeforeOnClickListener);
+	    	} else {
+	    		previousButton.setVisibility(View.INVISIBLE);
+	    	}
+    	}
+    }
+    
+	
+    static void clearCookies(RedditSettings settings, DefaultHttpClient client, Context context) {
+        settings.setRedditSessionCookie(null);
+
+        client.getCookieStore().clear();
+        CookieSyncManager.getInstance().sync();
+        
+        SharedPreferences sessionPrefs = PreferenceManager.getDefaultSharedPreferences(context);
+    	SharedPreferences.Editor editor = sessionPrefs.edit();
+    	editor.remove("reddit_sessionValue");
+    	editor.remove("reddit_sessionDomain");
+    	editor.remove("reddit_sessionPath");
+    	editor.remove("reddit_sessionExpiryDate");
+        editor.commit();
     }
     
         
-    static void doLogout(RedditSettings settings, DefaultHttpClient client) {
-    	client.getCookieStore().clear();
+    static void doLogout(RedditSettings settings, DefaultHttpClient client, Context context) {
+    	clearCookies(settings, client, context);
+    	CacheInfo.invalidateAllCaches(context);
     	settings.setUsername(null);
-        settings.setLoggedIn(false);
     }
     
     
@@ -368,112 +250,121 @@ public class Common {
     			try {
     				entity.consumeContent();
     			} catch (Exception e2) {
-    				if (Constants.LOGGING) Log.e(TAG, e.getMessage());
+    				if (Constants.LOGGING) Log.e(TAG, "entity.consumeContent()", e);
     			}
     		}
-    		if (Constants.LOGGING) Log.e(TAG, e.getMessage());
+    		if (Constants.LOGGING) Log.e(TAG, "doUpdateModhash()", e);
     		return null;
     	}
     }
     
-    static class PeekEnvelopeTask extends AsyncTask<Void, Void, Integer> {
-    	private Context mContext;
-    	private DefaultHttpClient mClient;
-    	private String mMailNotificationStyle;
-    	private final JsonFactory jsonFactory = new JsonFactory();
+    static String checkResponseErrors(HttpResponse response, HttpEntity entity) {
+    	String status = response.getStatusLine().toString();
+    	String line;
     	
-    	public PeekEnvelopeTask(Context context, DefaultHttpClient client, String mailNotificationStyle) {
-    		mContext = context;
-    		mClient = client;
-    		mMailNotificationStyle = mailNotificationStyle;
-    	}
-    	@Override
-    	public Integer doInBackground(Void... voidz) {
-    		HttpEntity entity = null;
-    		try {
-    			if (Constants.PREF_MAIL_NOTIFICATION_STYLE_OFF.equals(mMailNotificationStyle))
-    	    		return 0;
-    			HttpGet request = new HttpGet("http://www.reddit.com/message/inbox/.json?mark=false");
-	        	HttpResponse response = mClient.execute(request);
-	        	entity = response.getEntity();
-	        	
-	        	InputStream in = entity.getContent();
-	            
-	        	Integer count = processInboxJSON(in);
-	            
-	            in.close();
-	            entity.consumeContent();
-	            
-	            return count;
-	            
-	        } catch (Exception e) {
-	        	if (Constants.LOGGING) Log.e(TAG, "failed:" + e.getMessage());
-	            if (entity != null) {
-	            	try {
-	            		entity.consumeContent();
-	            	} catch (Exception e2) {
-	            		// Ignore.
-	            	}
-	            }
-	        }
-	        return null;
-    	}
-    	@Override
-    	public void onPostExecute(Integer count) {
-    		// null means error. Don't do anything.
-    		if (count == null)
-    			return;
-    		if (count > 0) {
-    			Common.newMailNotification(mContext, mMailNotificationStyle, count);
-    		} else {
-    			Common.cancelMailNotification(mContext);
-    		}
+    	if (!status.contains("OK")) {
+    		return "HTTP error. Status = "+status;
     	}
     	
-    	/**
-    	 * Gets the author, title, body of the first inbox entry.
-    	 */
-    	private Integer processInboxJSON(InputStream in)
-				throws IOException, JsonParseException, IllegalStateException {
-			String genericListingError = "Not a valid listing";
-			Integer count = 0;
-			
-			JsonParser jp = jsonFactory.createJsonParser(in);
-			
-			/* The comments JSON file is a JSON array with 2 elements. First element is a thread JSON object,
-			 * equivalent to the thread object you get from a subreddit .json file.
-			 * Second element is a similar JSON object, but the "children" array is an array of comments
-			 * instead of threads. 
-			 */
-			if (jp.nextToken() != JsonToken.START_OBJECT)
-				throw new IllegalStateException("Non-JSON-object in inbox (not logged in?)");
-			
-			while (!Constants.JSON_CHILDREN.equals(jp.getCurrentName())) {
-				// Don't care
-				jp.nextToken();
-			}
-			jp.nextToken();
-			if (jp.getCurrentToken() != JsonToken.START_ARRAY)
-				throw new IllegalStateException(genericListingError);
-			
-			while (jp.nextToken() != JsonToken.END_ARRAY) {
-				if (JsonToken.FIELD_NAME != jp.getCurrentToken())
-					continue;
-				String namefield = jp.getCurrentName();
-				// Should validate each field but I'm lazy
-				jp.nextToken(); // move to value
-				if (Constants.JSON_NEW.equals(namefield)) {
-					if (Constants.TRUE_STRING.equals(jp.getText()))
-						count++;
-					else
-						// Stop parsing on first old message
-						break;
-				}
-			}
-			// Finished parsing first child
-			return count;
-		}
+    	try {
+    		BufferedReader in = new BufferedReader(new InputStreamReader(entity.getContent()));
+    		line = in.readLine();
+    		if (Constants.LOGGING) Common.logDLong(TAG, line);
+        	in.close();
+    	} catch (IOException e) {
+    		if (Constants.LOGGING) Log.e(TAG, "IOException", e);
+    		return "Error reading retrieved data.";
+    	}
+    	
+    	if (line == null || Constants.EMPTY_STRING.equals(line)) {
+    		return "API returned empty data.";
+    	}
+    	if (line.contains("WRONG_PASSWORD")) {
+    		return "Wrong password.";
+    	}
+    	if (line.contains("USER_REQUIRED")) {
+    		// The modhash probably expired
+    		return "Login expired.";
+    	}
+    	if (line.contains("SUBREDDIT_NOEXIST")) {
+    		return "That subreddit does not exist.";
+    	}
+    	if (line.contains("SUBREDDIT_NOTALLOWED")) {
+    		return "You are not allowed to post to that subreddit.";
+    	}
+    	
+    	return null;
     }
+    
+
+	static String checkIDResponse(HttpResponse response, HttpEntity entity) throws CaptchaException, Exception {
+	    // Group 1: fullname. Group 2: kind. Group 3: id36.
+	    final Pattern NEW_ID_PATTERN = Pattern.compile("\"id\": \"((.+?)_(.+?))\"");
+	    // Group 1: whole error. Group 2: the time part
+	    final Pattern RATELIMIT_RETRY_PATTERN = Pattern.compile("(you are trying to submit too fast. try again in (.+?)\\.)");
+
+	    String status = response.getStatusLine().toString();
+    	String line;
+    	
+    	if (!status.contains("OK")) {
+    		throw new Exception("HTTP error. Status = "+status);
+    	}
+    	
+    	try {
+    		BufferedReader in = new BufferedReader(new InputStreamReader(entity.getContent()));
+    		line = in.readLine();
+    		if (Constants.LOGGING) Common.logDLong(TAG, line);
+        	in.close();
+    	} catch (IOException e) {
+    		if (Constants.LOGGING) Log.e(TAG, "IOException", e);
+    		throw new Exception("Error reading retrieved data.");
+    	}
+    	
+    	if (line == null || Constants.EMPTY_STRING.equals(line)) {
+    		throw new Exception("API returned empty data.");
+    	}
+    	if (line.contains("WRONG_PASSWORD")) {
+    		throw new Exception("Wrong password.");
+    	}
+    	if (line.contains("USER_REQUIRED")) {
+    		// The modhash probably expired
+    		throw new Exception("Login expired.");
+    	}
+    	if (line.contains("SUBREDDIT_NOEXIST")) {
+    		throw new Exception("That subreddit does not exist.");
+    	}
+    	if (line.contains("SUBREDDIT_NOTALLOWED")) {
+    		throw new Exception("You are not allowed to post to that subreddit.");
+    	}
+    	
+    	String newId;
+    	Matcher idMatcher = NEW_ID_PATTERN.matcher(line);
+    	if (idMatcher.find()) {
+    		newId = idMatcher.group(3);
+    	} else {
+    		if (line.contains("RATELIMIT")) {
+        		// Try to find the # of minutes using regex
+            	Matcher rateMatcher = RATELIMIT_RETRY_PATTERN.matcher(line);
+            	if (rateMatcher.find())
+            		throw new Exception(rateMatcher.group(1));
+            	else
+            		throw new Exception("you are trying to submit too fast. try again in a few minutes.");
+        	}
+    		if (line.contains("DELETED_LINK")) {
+    			throw new Exception("the link you are commenting on has been deleted");
+    		}
+    		if (line.contains("BAD_CAPTCHA")) {
+    			throw new CaptchaException("Bad CAPTCHA. Try again.");
+    		}
+        	// No id returned by reply POST.
+    		return null;
+    	}
+    	
+    	// Getting here means success.
+    	return newId;
+	}
+    
+	
     static void newMailNotification(Context context, String mailNotificationStyle, int count) {
     	Intent nIntent = new Intent(context, InboxActivity.class);
 		PendingIntent contentIntent = PendingIntent.getActivity(context, 0, nIntent, 0);
@@ -496,70 +387,103 @@ public class Common {
 		notificationManager.cancel(Constants.NOTIFICATION_HAVE_MAIL);
     }
     
-    static void launchBrowser(CharSequence url, Activity act) {
-      Matcher matcher = REDDIT_LINK.matcher(url);
-      if (matcher.matches()) {
-        if (matcher.group(3) != null) {
-          Intent intent = new Intent(act.getApplicationContext(), CommentsListActivity.class);
-          intent.putExtra(Constants.EXTRA_COMMENT_CONTEXT, url);
-          act.startActivity(intent);
-          return;
-        } else if (matcher.group(2) != null) {
-          Intent intent = new Intent(act.getApplicationContext(), CommentsListActivity.class);
-          intent.putExtra(ThreadInfo.SUBREDDIT, matcher.group(1));
-          intent.putExtra(ThreadInfo.ID, matcher.group(2));
-          intent.putExtra(ThreadInfo.NUM_COMMENTS, Constants.DEFAULT_COMMENT_DOWNLOAD_LIMIT);
-          act.startActivity(intent);
-          return;
-        } else if (matcher.group(1) != null) {
-          Intent intent = new Intent(act.getApplicationContext(), RedditIsFun.class);
-          intent.putExtra(ThreadInfo.SUBREDDIT, matcher.group(1));
-          act.startActivity(intent);
-          return;
-        }
-      }
-      Intent browser = new Intent(Intent.ACTION_VIEW, Uri.parse(url.toString()));
-      browser.putExtra(Browser.EXTRA_APPLICATION_ID, act.getPackageName());
-      act.startActivity(browser);
-    }
-    
-    
-    static boolean isFreshCache(long cacheTime) {
-		long time = System.currentTimeMillis();
-		return time - cacheTime <= Constants.DEFAULT_FRESH_DURATION;
+    /**
+     * 
+     * @param url
+     * @param context
+     * @param requireNewTask set this to true if context is not an Activity
+     * @param bypassParser
+     * @param useExternalBrowser
+     */
+    static void launchBrowser(Context context, String url, String threadUrl,
+    		boolean requireNewTask, boolean bypassParser, boolean useExternalBrowser) {
+    	
+    	Uri uri = Uri.parse(url);
+    	
+    	if (!bypassParser) {
+    		if (Util.isRedditUri(uri)) {
+	    		String path = uri.getPath();
+	    		Matcher matcher = COMMENT_LINK.matcher(path);
+		    	if (matcher.matches()) {
+		    		if (matcher.group(3) != null || matcher.group(2) != null) {
+		    			CacheInfo.invalidateCachedThread(context);
+		    			Intent intent = new Intent(context, CommentsListActivity.class);
+		    			intent.setData(uri);
+		    			intent.putExtra(Constants.EXTRA_NUM_COMMENTS, Constants.DEFAULT_COMMENT_DOWNLOAD_LIMIT);
+		    			if (requireNewTask)
+		    				intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+		    			context.startActivity(intent);
+		    			return;
+		    		}
+		    	}
+		    	matcher = REDDIT_LINK.matcher(path);
+		    	if (matcher.matches()) {
+	    			CacheInfo.invalidateCachedSubreddit(context);
+	    			Intent intent = new Intent(context, ThreadsListActivity.class);
+	    			intent.setData(uri);
+	    			if (requireNewTask)
+	    				intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+	    			context.startActivity(intent);
+	    			return;
+		    	}
+		    	matcher = USER_LINK.matcher(path);
+		    	if (matcher.matches()) {
+		    		Intent intent = new Intent(context, ProfileActivity.class);
+		    		intent.setData(uri);
+	    			if (requireNewTask)
+	    				intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+	    			context.startActivity(intent);
+	    			return;
+		    	}
+	    	} else if (Util.isRedditShortenedUri(uri)) {
+	    		String path = uri.getPath();
+	    		if (path.equals("") || path.equals("/")) {
+	    			CacheInfo.invalidateCachedSubreddit(context);
+	    			Intent intent = new Intent(context, ThreadsListActivity.class);
+	    			intent.setData(uri);
+	    			if (requireNewTask)
+	    				intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+	    			context.startActivity(intent);
+	    			return;
+	    		} else {
+		    		// Assume it points to a thread aka CommentsList
+	    			CacheInfo.invalidateCachedThread(context);
+	    			Intent intent = new Intent(context, CommentsListActivity.class);
+	    			intent.setData(uri);
+	    			intent.putExtra(Constants.EXTRA_NUM_COMMENTS, Constants.DEFAULT_COMMENT_DOWNLOAD_LIMIT);
+	    			if (requireNewTask)
+	    				intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+	    			context.startActivity(intent);
+	    		}
+    			return;
+	    	}
+    	}
+    	uri = Util.optimizeMobileUri(uri);
+    	
+    	// Some URLs should always be opened externally, if BrowserActivity doesn't support their content.
+    	if (Util.isYoutubeUri(uri))
+    		useExternalBrowser = true;
+    	
+    	if (useExternalBrowser) {
+    		Intent browser = new Intent(Intent.ACTION_VIEW, uri);
+    		browser.putExtra(Browser.EXTRA_APPLICATION_ID, context.getPackageName());
+			if (requireNewTask)
+				browser.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+			context.startActivity(browser);
+    	} else {
+	    	Intent browser = new Intent(context, BrowserActivity.class);
+	    	browser.setData(uri);
+	    	if (threadUrl != null)
+	    		browser.putExtra(Constants.EXTRA_THREAD_URL, threadUrl);
+			if (requireNewTask)
+				browser.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+			context.startActivity(browser);
+    	}
 	}
     
-    static void deleteAllCaches(Context context) {
-    	for (String fileName : context.fileList()) {
-    		context.deleteFile(fileName);
-    	}
+    static ObjectMapper getObjectMapper() {
+    	return mObjectMapper;
     }
-    
-    static void deleteCachesOlderThan(Context context, long someTime) {
-    	FileInputStream fis = null;
-    	ObjectInputStream in = null;
-    	
-		try {
-	    	fis = context.openFileInput(Constants.FILENAME_CACHE_TIME);
-			in = new ObjectInputStream(fis);
-			long cacheTime = in.readLong();
-			
-			// If at least one file is new enough, don't delete caches.
-			if (cacheTime >= someTime)
-				return;
-    	} catch (Exception e) {
-    		// Bad or missing time file. Delete cache.
-    	} finally {
-    		try {
-    			in.close();
-    		} catch (Exception ignore) {}
-    		try {
-    			fis.close();
-    		} catch (Exception ignore) {}
-    	}
-    	deleteAllCaches(context);
-    }
-	
     
 	/**
 	 * http://hc.apache.org/httpcomponents-client/examples.html
@@ -635,10 +559,22 @@ public class Common {
 				c = msg.charAt(k + i);
 				sb.append((char) c);
 			}
-			if (Constants.LOGGING) Log.d(tag, "doReply response content: " + sb.toString());
+			if (Constants.LOGGING) Log.d(tag, "multipart log: " + sb.toString());
 			sb = new StringBuilder();
 			if (done)
 				break;
 		}
 	} 
+    
+    static String getSubredditId(String mSubreddit){
+    	String subreddit_id = null;
+    	JsonNode subredditInfo = 
+    	RestJsonClient.connect("http://www.reddit.com/r/" + mSubreddit + "/.json?count=1");
+    	    	
+    	if(subredditInfo != null){
+    		ArrayNode children = (ArrayNode) subredditInfo.path("data").path("children");
+    		subreddit_id = children.get(0).get("data").get("subreddit_id").getTextValue();
+    	}
+    	return subreddit_id;
+    }
 }

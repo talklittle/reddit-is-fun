@@ -19,32 +19,22 @@
 
 package com.andrewshu.android.reddit;
 
-import android.app.AlarmManager;
 import android.app.NotificationManager;
-import android.app.PendingIntent;
 import android.content.Context;
-import android.content.Intent;
+import android.content.SharedPreferences;
 import android.os.Bundle;
-import android.os.SystemClock;
 import android.preference.Preference;
 import android.preference.PreferenceActivity;
+import android.preference.PreferenceManager;
 import android.widget.Toast;
 
 public class RedditPreferencesPage extends PreferenceActivity
         implements Preference.OnPreferenceChangeListener, 
         Preference.OnPreferenceClickListener {
 	
-	private RedditSettings mSettings = new RedditSettings();
-	private PendingIntent mAlarmSender;
-
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        
-        // Create an IntentSender that will launch our service, to be scheduled
-        // with the alarm manager.
-        mAlarmSender = PendingIntent.getService(this, 0, new Intent(getApplicationContext(), EnvelopeService.class), 0);
-
         
         // Load the XML preferences file
         addPreferencesFromResource(R.xml.reddit_preferences);
@@ -60,6 +50,12 @@ public class RedditPreferencesPage extends PreferenceActivity
         e.setSummary(getVisualThemeName(
         		getPreferenceScreen().getSharedPreferences()
                 .getString(Constants.PREF_THEME, null)));
+        
+        e = findPreference(Constants.PREF_TEXT_SIZE);
+        e.setOnPreferenceChangeListener(this);
+        e.setSummary(getVisualTextSizeName(
+        		getPreferenceScreen().getSharedPreferences()
+                .getString(Constants.PREF_TEXT_SIZE, null)));
         
         e = findPreference(Constants.PREF_ROTATION);
         e.setOnPreferenceChangeListener(this);
@@ -78,30 +74,21 @@ public class RedditPreferencesPage extends PreferenceActivity
         e.setSummary(getVisualMailNotificationServiceName(
         		getPreferenceScreen().getSharedPreferences()
         		.getString(Constants.PREF_MAIL_NOTIFICATION_SERVICE, null)));
-        
-//        e = findPreference(BrowserSettings.PREF_TEXT_SIZE);
-//        e.setOnPreferenceChangeListener(this);
-//        e.setSummary(getVisualTextSizeName(
-//                getPreferenceScreen().getSharedPreferences()
-//                .getString(BrowserSettings.PREF_TEXT_SIZE, null)) );
+        // Disable mail notification service preference, if mail notification style is off
+        if (getPreferenceScreen().getSharedPreferences()
+        		.getString(Constants.PREF_MAIL_NOTIFICATION_STYLE, Constants.PREF_MAIL_NOTIFICATION_STYLE_OFF)
+        		.equals(Constants.PREF_MAIL_NOTIFICATION_STYLE_OFF)) {
+        	e.setEnabled(false);
+        }
         
     }
     
     @Override
     protected void onResume() {
     	super.onResume();
-    	Common.loadRedditPreferences(this, mSettings, null);
-    	setRequestedOrientation(mSettings.rotation);
-    }
-
-    @Override
-    protected void onPause() {
-        super.onPause();
-//        // sync the shared preferences back to BrowserSettings
-//        BrowserSettings.getInstance().syncSharedPreferences(
-//                getPreferenceScreen().getSharedPreferences());
-        
-        Common.saveRedditPreferences(this, mSettings);
+    	SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(this);
+    	setRequestedOrientation(RedditSettings.Rotation.valueOf(
+        		prefs.getString(Constants.PREF_ROTATION, Constants.PREF_ROTATION_UNSPECIFIED)));
     }
 
     public boolean onPreferenceChange(Preference pref, Object objValue) {
@@ -113,31 +100,26 @@ public class RedditPreferencesPage extends PreferenceActivity
 //        }
     	if (pref.getKey().equals(Constants.PREF_HOMEPAGE)) {
     		pref.setSummary((String) objValue);
-            mSettings.setHomepage((String) objValue);
             return true;
     	} else if (pref.getKey().equals(Constants.PREF_THEME)) {
             pref.setSummary(getVisualThemeName((String) objValue));
-            mSettings.setTheme(RedditSettings.Theme.valueOf((String) objValue));
+            return true;
+    	} else if (pref.getKey().equals(Constants.PREF_TEXT_SIZE)) {
+            pref.setSummary(getVisualTextSizeName((String) objValue));
             return true;
     	} else if (pref.getKey().equals(Constants.PREF_ROTATION)) {
             pref.setSummary(getVisualRotationName((String) objValue));
-            mSettings.setRotation(RedditSettings.Rotation.valueOf((String) objValue));
             return true;
         } else if (pref.getKey().equals(Constants.PREF_MAIL_NOTIFICATION_STYLE)) {
             pref.setSummary(getVisualMailNotificationStyleName((String) objValue));
-            mSettings.setMailNotificationStyle((String) objValue);
             Preference servicePref = findPreference(Constants.PREF_MAIL_NOTIFICATION_SERVICE);
             if (Constants.PREF_MAIL_NOTIFICATION_STYLE_OFF.equals(objValue)) {
             	// Remove any current notifications
             	NotificationManager notificationManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
         		notificationManager.cancel(Constants.NOTIFICATION_HAVE_MAIL);
         		// Disable the service too
+        		onPreferenceChange(servicePref, Constants.PREF_MAIL_NOTIFICATION_SERVICE_OFF);
         		servicePref.setEnabled(false);
-                AlarmManager am = (AlarmManager)getSystemService(ALARM_SERVICE);
-                am.cancel(mAlarmSender);
-                // Tell the user about what we did.
-                Toast.makeText(this, R.string.mail_notification_unscheduled,
-                        Toast.LENGTH_LONG).show();
             } else {
             	// Enable the service preference
             	if (!servicePref.isEnabled()) {
@@ -152,32 +134,14 @@ public class RedditPreferencesPage extends PreferenceActivity
             return true;
         } else if (pref.getKey().equals(Constants.PREF_MAIL_NOTIFICATION_SERVICE)) {
         	pref.setSummary(getVisualMailNotificationServiceName((String) objValue));
-        	mSettings.setMailNotificationService((String) objValue);
         	if (Constants.PREF_MAIL_NOTIFICATION_SERVICE_OFF.equals(objValue)) {
         		// Cancel the service
-                AlarmManager am = (AlarmManager)getSystemService(ALARM_SERVICE);
-                am.cancel(mAlarmSender);
+                EnvelopeService.resetAlarm(this, 0);
                 // Tell the user about what we did.
-                Toast.makeText(this, R.string.mail_notification_unscheduled,
-                        Toast.LENGTH_LONG).show();
+                Toast.makeText(this, R.string.mail_notification_unscheduled, Toast.LENGTH_LONG).show();
         	} else {
-        		long durationMillis;
-        		if (Constants.PREF_MAIL_NOTIFICATION_SERVICE_5MIN.equals(objValue)) {
-        			durationMillis = 5 * 60 * 1000;
-        		} else if (Constants.PREF_MAIL_NOTIFICATION_SERVICE_30MIN.equals(objValue)) {
-        			durationMillis = 30 * 60 * 1000;
-        		} else if (Constants.PREF_MAIL_NOTIFICATION_SERVICE_1HOUR.equals(objValue)) {
-        			durationMillis = 1 * 3600 * 1000;
-        		} else if (Constants.PREF_MAIL_NOTIFICATION_SERVICE_6HOURS.equals(objValue)) {
-        			durationMillis = 6 * 3600 * 1000;
-        		} else /* if (Constants.PREF_MAIL_NOTIFICATION_SERVICE_1DAY.equals(objValue)) */ {
-        			durationMillis = 24 * 3600 * 1000;
-        		}
-                long firstTime = SystemClock.elapsedRealtime();
                 // Schedule the alarm!
-                AlarmManager am = (AlarmManager)getSystemService(ALARM_SERVICE);
-                am.setRepeating(AlarmManager.ELAPSED_REALTIME_WAKEUP,
-                                firstTime, durationMillis, mAlarmSender);
+                EnvelopeService.resetAlarm(this, Util.getMillisFromMailNotificationPref((String) objValue));
                 // Tell the user about what we did.
                 Toast.makeText(this, "Reddit mail will be checked: " +
                 		getVisualMailNotificationServiceName((String) objValue),
@@ -185,7 +149,6 @@ public class RedditPreferencesPage extends PreferenceActivity
         	}
         	return true;
         }
-        
         return false;
     }
     
@@ -208,6 +171,23 @@ public class RedditPreferencesPage extends PreferenceActivity
                 R.array.pref_theme_choices);
         CharSequence[] enumNames = getResources().getTextArray(
                 R.array.pref_theme_values);
+        // Sanity check
+        if (visualNames.length != enumNames.length) {
+            return "";
+        }
+        for (int i = 0; i < enumNames.length; i++) {
+            if (enumNames[i].equals(enumName)) {
+                return visualNames[i];
+            }
+        }
+        return "";
+    }
+    
+    private CharSequence getVisualTextSizeName(String enumName) {
+        CharSequence[] visualNames = getResources().getTextArray(
+                R.array.pref_text_size_choices);
+        CharSequence[] enumNames = getResources().getTextArray(
+                R.array.pref_text_size_values);
         // Sanity check
         if (visualNames.length != enumNames.length) {
             return "";

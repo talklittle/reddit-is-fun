@@ -20,15 +20,20 @@
 
 <menu xmlns:android="http://schemas.android.com/apk/res/android">
     <group android:id="@+id/MAIN_MENU">
-        <item android:id="@+id/op_menu_id"
-            android:title="@string/op" />
-        <item android:id="@+id/login_logout_menu_id" />
+        <item android:id="@+id/op_subreddit_menu_id"
+	    	android:title="@string/view_subreddit"
+	    	android:icon="@drawable/ic_menu_back" />
+        <item android:id="@+id/login_logout_menu_id"
+        	android:icon="@drawable/ic_menu_login" />
         <item android:id="@+id/refresh_menu_id"
-            android:title="@string/refresh" 
+            android:title="@string/refresh"
+            android:icon="@drawable/ic_menu_refresh"
             android:alphabeticShortcut="r" />
-        <item android:id="@+id/reply_thread_menu_id"
-            android:title="@string/reply_thread" />
+        <item android:id="@+id/op_menu_id"
+            android:title="@string/op"
+            android:icon="@android:drawable/ic_menu_view" />
         <item android:id="@+id/sort_by_menu_id"
+        	android:icon="@android:drawable/ic_menu_sort_by_size"
             android:alphabeticShortcut="s" />
         <item android:id="@+id/op_edit_menu_id"
         	android:title="@string/op_edit" />
@@ -39,10 +44,8 @@
         	android:title="@string/open_browser" />
         <item android:id="@+id/inbox_menu_id"
             android:title="@string/inbox" />
-        <!-- 
         <item android:id="@+id/user_profile_menu_id"
             android:title="@string/user_profile" />
-        -->
         <item android:id="@+id/preferences_menu_id"
             android:title="@string/menu_preferences"
             android:alphabeticShortcut="p" />
@@ -66,10 +69,10 @@
 
     <!-- these items are toggled in and out of @+id/login_logout_menu_id -->
     <item android:id="@+id/login_menu_id"
-        android:title="@string/login" 
+        android:title="@string/login"
         android:visible="false" />
     <item android:id="@+id/logout_menu_id"
-        android:title="@string/logout" 
+        android:title="@string/logout"
         android:visible="false" />
     <!-- these items are toggled in and out of @+id/light_dark_menu_id -->
     <item android:id="@+id/light_menu_id"

@@ -1,5 +1,6 @@
-/*
- * Copyright 2009 Andrew Shu
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+ * Copyright 2010 Andrew Shu
  *
  * This file is part of "reddit is fun".
  *
@@ -15,17 +16,18 @@
  *
  * You should have received a copy of the GNU General Public License
  * along with "reddit is fun".  If not, see <http://www.gnu.org/licenses/>.
- */
+-->
 
-package com.andrewshu.android.reddit;
-
-public class Thing {
-	public ThreadInfo thread = null;
-	public CommentInfo comment = null;
-//	public SubredditInfo subreddit = null;
-	
-	public Thing(ThreadInfo thread, CommentInfo comment) {
-		this.thread = thread;
-		this.comment = comment;
-	}
-}
+<menu xmlns:android="http://schemas.android.com/apk/res/android">
+    <group android:id="@+id/MAIN_MENU">
+        <item android:id="@+id/open_browser_menu_id"
+            android:title="@string/open_browser"
+            android:icon="@drawable/ic_menu_browser"
+            />
+        <item android:id="@+id/view_comments_menu_id"
+            android:title="@string/view_comments"
+            android:icon="@drawable/ic_menu_start_conversation"
+            />
+    </group>
+</menu>
+ 
