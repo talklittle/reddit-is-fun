@@ -395,7 +395,6 @@ public final class ProfileActivity extends ListActivity
 			startActivity(i);
 			return true;
     	case Constants.DIALOG_THREAD_CLICK:
-			dismissDialog(Constants.DIALOG_THREAD_CLICK);
 			// Launch an Intent for CommentsListActivity
 			CacheInfo.invalidateCachedThread(getApplicationContext());
 			i = new Intent(getApplicationContext(), CommentsListActivity.class);
@@ -1005,7 +1004,7 @@ public final class ProfileActivity extends ListActivity
     		}
     		break;
     	case R.id.refresh_menu_id:
-			new DownloadProfileTask(mSettings.username).execute(Constants.DEFAULT_COMMENT_DOWNLOAD_LIMIT);
+			new DownloadProfileTask(mUsername).execute(Constants.DEFAULT_COMMENT_DOWNLOAD_LIMIT);
 			break;
     	}
     	
