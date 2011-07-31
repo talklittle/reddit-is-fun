@@ -187,7 +187,7 @@ public class BrowserActivity extends Activity {
     			break;
     		Common.launchBrowser(this, mUri.toString(), null, false, true, true);
     		break;
-        
+
         case R.id.view_comments_menu_id:
         	if (mThreadUrl == null)
         		break;
