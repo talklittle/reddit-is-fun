@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+ * Copyright 2009 Andrew Shu
+ *
+ * This file is part of "reddit is fun".
+ *
+ * "reddit is fun" is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * "reddit is fun" is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with "reddit is fun".  If not, see <http://www.gnu.org/licenses/>.
+-->
+
+<!-- This enclosing layout is necessary to preserve the margins/padding on the children -->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+	android:orientation="vertical" android:layout_width="fill_parent"
+	android:layout_height="wrap_content">
+
+	<EditText android:layout_marginLeft="5sp"
+		android:layout_marginRight="5sp" android:id="@+id/input_find_box"
+		android:layout_width="fill_parent" android:layout_height="wrap_content"
+		android:inputType="text"
+		android:maxLength="20" android:hint="@string/find_box_hint" />
+
+	<!-- I think the user will pretty much always want to wrap the search. -->
+	<!-- 
+	<CheckBox android:layout_marginLeft="5sp"
+		android:checked="true"
+		android:layout_marginRight="5sp" android:id="@+id/find_wrap_checkbox"
+		android:layout_width="wrap_content" android:layout_height="wrap_content"
+		android:text="@string/find_should_wrap" android:textColor="@android:color/white" />
+	-->
+</LinearLayout>

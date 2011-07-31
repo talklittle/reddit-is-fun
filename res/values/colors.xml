@@ -43,4 +43,5 @@
     <color name="arrow_gray">#ffc0c0c0</color>
     
     <color name="medium_pale_yellow">#ffffff99</color>
+    <color name="translucent_yellow">#80ffff00</color>
 </resources>
