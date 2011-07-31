@@ -19,6 +19,7 @@
 
 package com.andrewshu.android.reddit;
 
+
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 import java.io.IOException;
@@ -53,6 +54,7 @@ import android.app.ProgressDialog;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
+import android.graphics.Color;
 import android.graphics.drawable.Drawable;
 import android.net.Uri;
 import android.os.AsyncTask;
@@ -91,6 +93,7 @@ import android.widget.Toast;
 import android.widget.AdapterView.AdapterContextMenuInfo;
 
 import com.andrewshu.android.reddit.ThreadsListActivity.ThumbnailOnClickListenerFactory;
+
 
 /**
  * Main Activity class representing a Subreddit, i.e., a ThreadsList.
@@ -147,6 +150,10 @@ public class CommentsListActivity extends ListActivity
     private boolean mShouldClearReply = false;
     private AsyncTask<?, ?, ?> mCurrentDownloadCommentsTask = null;
     private final Object mCurrentDownloadCommentsTaskLock = new Object();
+
+    private String last_search_string;
+    private int last_found_position = -1;
+    private int translucent_yellow;
     
     private boolean mCanChord = false;
     
@@ -176,10 +183,13 @@ public class CommentsListActivity extends ListActivity
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+
+        translucent_yellow = getResources().getColor(R.color.translucent_yellow);
         
 		CookieSyncManager.createInstance(getApplicationContext());
 		
 		mSettings.loadRedditPreferences(this, mClient);
+
         setRequestedOrientation(mSettings.rotation);
         setTheme(mSettings.theme);
         requestWindowFeature(Window.FEATURE_PROGRESS);
@@ -464,10 +474,18 @@ public class CommentsListActivity extends ListActivity
 	            	// Here view may be passed in for re-use, or we make a new one.
 		            if (view == null) {
 		                view = mInflater.inflate(R.layout.comments_list_item, null);
+		            } else {
+		                view = convertView;
 		            }
-		            
-		            fillCommentsListItemView(view, item, CommentsListActivity.this, mSettings, commentManager);
 
+					// Sometimes (when in touch mode) the "selection" highlight disappears.
+					// So we make our own persistent highlight. This background color must
+					// be set explicitly on every element, however, or the "cached" list
+					// item views will show up with the color.
+					view.setBackgroundColor(position == last_found_position ? translucent_yellow : Color.TRANSPARENT);
+
+	            
+		            fillCommentsListItemView(view, item, CommentsListActivity.this, mSettings, commentManager);
 	            }
             } catch (NullPointerException e) {
             	if (Constants.LOGGING) Log.w(TAG, "NPE in getView()", e);
@@ -1565,7 +1583,7 @@ public class CommentsListActivity extends ListActivity
         inflater.inflate(R.menu.comments, menu);
         return true;
     }
-        
+
     @Override
     public boolean onPrepareOptionsMenu(Menu menu) {
         // This happens when the user begins to hold down the menu key, so
@@ -1575,7 +1593,9 @@ public class CommentsListActivity extends ListActivity
     	super.onPrepareOptionsMenu(menu);
     	
     	MenuItem src, dest;
-    	
+
+        menu.findItem(R.id.find_next_menu_id).setVisible(last_search_string != null && last_search_string.length() > 0);
+
         // Login/Logout
     	if (mSettings.isLoggedIn()) {
 	        menu.findItem(R.id.login_logout_menu_id).setTitle(
@@ -1662,7 +1682,18 @@ public class CommentsListActivity extends ListActivity
         	} else {
         		showDialog(Constants.DIALOG_LOGIN);
         	}
-    		break;
+            break;
+        case R.id.find_next_menu_id:
+            if (last_search_string != null && last_search_string.length() > 0)
+                findCommentText(last_search_string, true, true);
+            break;
+        case R.id.find_base_id:
+            // This case is needed because the "default" case throws
+            // an error, otherwise precluding anonymous "parent" menu items
+            break;
+        case R.id.find_menu_id:
+            showDialog(Constants.DIALOG_FIND);
+            break;
     	case R.id.refresh_menu_id:
     		CacheInfo.invalidateCachedThread(getApplicationContext());
     		new DownloadCommentsTask().execute(Constants.DEFAULT_COMMENT_DOWNLOAD_LIMIT);
@@ -1895,6 +1926,58 @@ public class CommentsListActivity extends ListActivity
     	getListView().setSelectionFromTop(rowId, 10);
     }
 
+	private void findCommentText(String search_text, boolean wrap, boolean next) {
+		last_search_string = search_text;
+		int current_position = next
+			? (last_found_position + 1) % mCommentsAdapter.getCount()
+			: Math.max(0, getSelectedItemPosition());
+
+		if ( getFoundPosition(current_position, mCommentsAdapter.getCount(), search_text) ) {
+			((ArrayAdapter) getListAdapter()).notifyDataSetChanged();
+			return;
+		}
+
+		if ( wrap ) {
+			Log.d(TAG, "Continuing search from top...");
+			if ( getFoundPosition(0, current_position, search_text) ) {
+				((ArrayAdapter) getListAdapter()).notifyDataSetChanged();
+				return;
+			}
+		}
+
+		((ArrayAdapter) getListAdapter()).notifyDataSetChanged();
+
+		String not_found_msg = getResources().getString(R.string.find_not_found, search_text);
+    	Toast.makeText(CommentsListActivity.this, not_found_msg, Toast.LENGTH_LONG).show();
+	}
+
+	private boolean getFoundPosition(int start_index, int end_index, String search_text) {
+    	for (int i = start_index; i < end_index; i++) {
+    		ThingInfo ci = mCommentsAdapter.getItem(i);
+
+    		if (ci == null) continue;
+
+    		String comment_body = ci.getBody();
+    		if (comment_body == null) continue;
+
+    		if (comment_body.toLowerCase().contains(search_text)) {
+    			final int position = i;
+    			getListView().post(new Runnable() {
+	    			@Override
+	    			public void run() {
+	    				setSelection(position);
+	    				getListView().requestFocus();
+	    			}
+    			});
+
+				last_found_position = i;
+				return true;
+    		}
+    	}
+		last_found_position = -1;
+    	return false;
+	}
+
     @Override
     protected Dialog onCreateDialog(int id) {
     	Dialog dialog;
@@ -2046,7 +2129,27 @@ public class CommentsListActivity extends ListActivity
     		pdialog.setCancelable(false);
     		dialog = pdialog;
     		break;
-    	
+    	case Constants.DIALOG_FIND:
+    		inflater = (LayoutInflater)this.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
+
+    		View content = inflater.inflate(R.layout.dialog_find, null);
+    		final EditText find_box = (EditText) content.findViewById(R.id.input_find_box);
+//    		final CheckBox wrap_box = (CheckBox) content.findViewById(R.id.find_wrap_checkbox);
+
+    		builder = new AlertDialog.Builder(this);
+    		builder.setView(content);
+    		builder.setTitle(R.string.find)
+    		.setPositiveButton(R.string.find, new DialogInterface.OnClickListener() {
+				@Override
+				public void onClick(DialogInterface dialog, int which) {
+					String search_text = find_box.getText().toString().toLowerCase();
+//					findCommentText(search_text, wrap_box.isChecked(), false);
+					findCommentText(search_text, true, false);
+				}
+    		})
+    		.setNegativeButton("Cancel", null);
+    		dialog = builder.create();
+    		break;
     	default:
     		throw new IllegalArgumentException("Unexpected dialog id "+id);
     	}
