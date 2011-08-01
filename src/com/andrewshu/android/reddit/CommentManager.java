@@ -22,7 +22,6 @@ KIND, either express or implied.  See the License for the
 specific language governing permissions and limitations
 under the License.    
 */
-import android.app.Activity;
 import android.os.Handler;
 import android.os.Message;
 import android.text.Html;

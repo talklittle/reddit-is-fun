@@ -979,7 +979,6 @@ public final class ThreadsListActivity extends ListActivity {
     	
     }
     
-    @SuppressWarnings("unchecked")
 	@Override
     public boolean onPrepareOptionsMenu(Menu menu) {
         // This happens when the user begins to hold down the menu key, so

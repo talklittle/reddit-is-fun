@@ -66,20 +66,17 @@ import android.text.Spanned;
 import android.text.style.ForegroundColorSpan;
 import android.util.Log;
 import android.view.ContextMenu;
-import android.view.KeyEvent;
+import android.view.ContextMenu.ContextMenuInfo;
 import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
-import android.view.MotionEvent;
 import android.view.View;
+import android.view.View.OnClickListener;
 import android.view.ViewGroup;
 import android.view.Window;
-import android.view.ContextMenu.ContextMenuInfo;
-import android.view.View.OnClickListener;
-import android.view.View.OnKeyListener;
-import android.view.View.OnTouchListener;
 import android.webkit.CookieSyncManager;
+import android.widget.AdapterView.AdapterContextMenuInfo;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.CheckBox;
@@ -90,7 +87,6 @@ import android.widget.ListView;
 import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.Toast;
-import android.widget.AdapterView.AdapterContextMenuInfo;
 
 import com.andrewshu.android.reddit.ThreadsListActivity.ThumbnailOnClickListenerFactory;
 
@@ -567,32 +563,26 @@ public class CommentsListActivity extends ListActivity
      */
     void jumpToComment() {
 	    if (mJumpToCommentPosition != 0) {
-			getListView().setSelectionFromTop(mJumpToCommentPosition, 10);
+			getListView().setSelection(mJumpToCommentPosition);
 			mJumpToCommentPosition = 0;
 	    } else if (mJumpToCommentId != null && mCommentsAdapter != null) {
 			synchronized (COMMENT_ADAPTER_LOCK) {
 				for (int k = 0; k < mCommentsAdapter.getCount(); k++) {
 					ThingInfo item = mCommentsAdapter.getItem(k);
-					if (mJumpToCommentId.equals(item.getId())) {
+					if (item.getId().equals(mJumpToCommentId)) {
 						// jump to comment with correct amount of context
 						int targetIndex = k;
 						int desiredIndent = item.getIndent() - mJumpToCommentContext;
 						item = mCommentsAdapter.getItem(targetIndex);
 						while (item.getIndent() > 0 && item.getIndent() != desiredIndent)
 							item = mCommentsAdapter.getItem(--targetIndex);
-						getListView().setSelectionFromTop(targetIndex, 10);
-						getListView().setOnTouchListener(stopJumpToCommentOnTouchListener);
-						getListView().setOnKeyListener(stopJumpToCommentOnKeyListener);
+						getListView().setSelection(targetIndex);
+						mJumpToCommentId = null;
 						break;
 					}
 				}
 			}
 		}
-    }
-    
-    private void stopJumpToComment() {
-    	mJumpToCommentPosition = 0;
-    	mJumpToCommentId = null;
     }
     
     /**
@@ -1844,7 +1834,7 @@ public class CommentsListActivity extends ListActivity
 	    		for (parentRowId = rowId - 1; parentRowId >= 0; parentRowId--)
 	    			if (mCommentsAdapter.getItem(parentRowId).getIndent() < myIndent)
 	    				break;
-	    		getListView().setSelectionFromTop(parentRowId, 10);
+	    		getListView().setSelection(parentRowId);
     		}
     		return true;
     		
@@ -1896,7 +1886,7 @@ public class CommentsListActivity extends ListActivity
 	    	}
 	    	mCommentsAdapter.notifyDataSetChanged();
     	}
-    	getListView().setSelectionFromTop(rowId, 10);
+    	getListView().setSelection(rowId);
     }
     
     private void showComment(int rowId) {
@@ -1923,7 +1913,7 @@ public class CommentsListActivity extends ListActivity
 	    	}
 	    	mCommentsAdapter.notifyDataSetChanged();
     	}
-    	getListView().setSelectionFromTop(rowId, 10);
+    	getListView().setSelection(rowId);
     }
 
 	private void findCommentText(String search_text, boolean wrap, boolean next) {
@@ -1933,19 +1923,19 @@ public class CommentsListActivity extends ListActivity
 			: Math.max(0, getSelectedItemPosition());
 
 		if ( getFoundPosition(current_position, mCommentsAdapter.getCount(), search_text) ) {
-			((ArrayAdapter) getListAdapter()).notifyDataSetChanged();
+			mCommentsAdapter.notifyDataSetChanged();
 			return;
 		}
 
 		if ( wrap ) {
 			Log.d(TAG, "Continuing search from top...");
 			if ( getFoundPosition(0, current_position, search_text) ) {
-				((ArrayAdapter) getListAdapter()).notifyDataSetChanged();
+				mCommentsAdapter.notifyDataSetChanged();
 				return;
 			}
 		}
 
-		((ArrayAdapter) getListAdapter()).notifyDataSetChanged();
+		mCommentsAdapter.notifyDataSetChanged();
 
 		String not_found_msg = getResources().getString(R.string.find_not_found, search_text);
     	Toast.makeText(CommentsListActivity.this, not_found_msg, Toast.LENGTH_LONG).show();
@@ -2487,21 +2477,6 @@ public class CommentsListActivity extends ListActivity
 		}
 	};
 
-	private final OnTouchListener stopJumpToCommentOnTouchListener = new OnTouchListener() {
-		public boolean onTouch(View v, MotionEvent event) {
-			stopJumpToComment();
-			getListView().setOnTouchListener(null);
-			return false;
-		}
-    };
-    private final OnKeyListener stopJumpToCommentOnKeyListener = new OnKeyListener() {
-		public boolean onKey(View arg0, int arg1, KeyEvent arg2) {
-			stopJumpToComment();
-			getListView().setOnKeyListener(null);
-			return false;
-		}
-    };
-    
 
     
     @Override
