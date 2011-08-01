@@ -171,15 +171,6 @@
 		        android:textAppearance="?android:attr/textAppearanceMedium"
 		    />
 		    
-	        <ProgressBar android:id="@+id/indeterminate_progress"
-		        android:layout_width="wrap_content"
-		        android:layout_height="wrap_content"
-		        android:layout_below="@id/submitter"
-		        android:layout_alignLeft="@id/submitter"
-		        android:layout_marginRight="5dip"
-		        android:visibility="gone"
-		    />
-		    
 	    </RelativeLayout>
 	    
     </LinearLayout>

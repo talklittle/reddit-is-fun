@@ -53,16 +53,17 @@ import android.text.Spanned;
 import android.text.style.URLSpan;
 import android.util.Log;
 import android.view.ContextMenu;
+import android.view.ContextMenu.ContextMenuInfo;
 import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
+import android.view.View.OnClickListener;
 import android.view.ViewGroup;
 import android.view.Window;
-import android.view.ContextMenu.ContextMenuInfo;
-import android.view.View.OnClickListener;
 import android.webkit.CookieSyncManager;
+import android.widget.AdapterView.AdapterContextMenuInfo;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.CompoundButton;
@@ -71,7 +72,6 @@ import android.widget.ImageView;
 import android.widget.ListView;
 import android.widget.TextView;
 import android.widget.Toast;
-import android.widget.AdapterView.AdapterContextMenuInfo;
 
 import com.andrewshu.android.reddit.ThreadsListActivity.ThreadClickDialogOnClickListenerFactory;
 import com.andrewshu.android.reddit.ThreadsListActivity.ThumbnailOnClickListenerFactory;
@@ -93,7 +93,6 @@ public final class ProfileActivity extends ListActivity
 	static final Pattern KARMA_PATTERN = Pattern.compile(">(\\d[^<]*)<.{2,20}link karma.+>(\\d[^<]*)<.{2,20}comment karma");
 	
     private final ObjectMapper mObjectMapper = Common.getObjectMapper();
-    private final CommentManager mCommentManager = new CommentManager();
     private BitmapManager mBitmapManager = new BitmapManager();
     
     /** Custom list adapter that fits our threads data into the list. */
@@ -335,7 +334,7 @@ public final class ProfileActivity extends ListActivity
 	                view = convertView;
 	            }
 	            
-            	CommentsListActivity.fillCommentsListItemView(view, item, ProfileActivity.this, mSettings, mCommentManager);
+            	CommentsListActivity.fillCommentsListItemView(view, item, mSettings);
             	view.setPadding(15, 5, 0, 5);
             }
             

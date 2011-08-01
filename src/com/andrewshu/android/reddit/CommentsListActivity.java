@@ -26,6 +26,8 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.regex.Matcher;
@@ -84,7 +86,6 @@ import android.widget.CompoundButton;
 import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.ListView;
-import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -108,7 +109,6 @@ public class CommentsListActivity extends ListActivity
 
     private final ObjectMapper mObjectMapper = Common.getObjectMapper();
     private final BitmapManager drawableManager = new BitmapManager();
-    private final CommentManager commentManager = new CommentManager();
     private final Markdown markdown = new Markdown();
     
     /** Custom list adapter that fits our threads data into the list. */
@@ -480,8 +480,7 @@ public class CommentsListActivity extends ListActivity
 					// item views will show up with the color.
 					view.setBackgroundColor(position == last_found_position ? translucent_yellow : Color.TRANSPARENT);
 
-	            
-		            fillCommentsListItemView(view, item, CommentsListActivity.this, mSettings, commentManager);
+		            fillCommentsListItemView(view, item, mSettings);
 	            }
             } catch (NullPointerException e) {
             	if (Constants.LOGGING) Log.w(TAG, "NPE in getView()", e);
@@ -613,24 +612,6 @@ public class CommentsListActivity extends ListActivity
         mHiddenCommentHeads.clear();
     }
     
-    private void enableLoadingScreen() {
-    	if (Util.isLightTheme(mSettings.theme)) {
-    		setContentView(R.layout.loading_light);
-    	} else {
-    		setContentView(R.layout.loading_dark);
-    	}
-    	synchronized (COMMENT_ADAPTER_LOCK) {
-	    	if (mCommentsAdapter != null)
-	    		mCommentsAdapter.mIsLoading = true;
-    	}
-    	getWindow().setFeatureInt(Window.FEATURE_PROGRESS, 0);
-    }
-    
-    private void disableLoadingScreen() {
-    	resetUI(mCommentsAdapter);
-    	getWindow().setFeatureInt(Window.FEATURE_PROGRESS, 10000);
-    }
-
     /**
      * Mark the OP submitter comments
      */
@@ -671,14 +652,14 @@ public class CommentsListActivity extends ListActivity
     	
     	private static final String TAG = "CommentsListActivity.DownloadCommentsTask";
     	
-    	// _mPositionOffset != 0 means that you're doing "load more comments"
     	private int _mPositionOffset;
     	private int _mIndentation;
     	private int _mListIndex = 0;
     	private String _mMoreChildrenId;
     	// Temporary storage for new "load more comments" found in the JSON
     	private HashSet<Integer> _mNewMorePositions = new HashSet<Integer>();
-    	private ArrayList<ThingInfo> _mNewThingInfos = new ArrayList<ThingInfo>();
+    	// deferred insert list, in case I want to insert the comments after parsing a group of them
+    	private ArrayList<ThingInfo> _mDeferredInsertList = new ArrayList<ThingInfo>();
     	// Progress bar
     	private long _mContentLength = 0;
     	
@@ -770,38 +751,20 @@ public class CommentsListActivity extends ListActivity
             	ProgressInputStream pin = new ProgressInputStream(in, _mContentLength);
             	pin.addPropertyChangeListener(this);
             	
+            	// if loading entire thread including OP, do some cleanup first
+            	cleanupBeforeLoadingThread();
+            	
             	parseCommentsJSON(pin);
             	if (Constants.LOGGING) Log.d(TAG, "parseCommentsJSON completed");
+            	
+            	if (!_mDeferredInsertList.isEmpty()) {
+            		replaceCommentsAtPosition(_mDeferredInsertList, _mPositionOffset);
+            		_mDeferredInsertList.clear();
+            	}
                 
             	pin.close();
                 in.close();
                 
-                // Fill in the list adapter
-                synchronized (COMMENT_ADAPTER_LOCK) {
-                	// Insert the new comments
-                	if (_mPositionOffset == 0) {
-                		// insert comments after OP
-                		mCommentsList.addAll(_mNewThingInfos);
-                		mMorePositions.clear();
-                	} else {
-                		int numNewComments = _mNewThingInfos.size();
-                		int numRemoved = 0;
-    					// First remove the "load more comments" entry
-    					if (mMorePositions.remove(_mPositionOffset)) {
-    						mCommentsList.remove(_mPositionOffset);
-    						numRemoved++;
-    					}
-                		// Update existing positions in the "more" positions set.
-    					for (int i = _mPositionOffset + 1; i < mCommentsList.size() + numRemoved; i++) {
-    						if (mMorePositions.remove(i))
-    							_mNewMorePositions.add(i + numNewComments - numRemoved);
-    					}
-    					// insert comments at _mPositionOffset
-                		mCommentsList.addAll(_mPositionOffset, _mNewThingInfos);
-                	}
-                	// Merge the new "load more comments" positions
-		    		mMorePositions.addAll(_mNewMorePositions);
-		    	}
                 // label the OP's comments with [S]
                 markSubmitterComments();
 				
@@ -820,6 +783,68 @@ public class CommentsListActivity extends ListActivity
             }
             return false;
 	    }
+    	
+    	private void cleanupBeforeLoadingThread() {
+    		synchronized (COMMENT_ADAPTER_LOCK) {
+    			mMorePositions.clear();
+    		}
+    	}
+    	
+    	private void appendComment(ThingInfo comment) {
+    		appendComments(Collections.singleton(comment));
+    	}
+    	
+    	private void appendComments(Collection<ThingInfo> comments) {
+            // Fill in the list adapter
+            synchronized (COMMENT_ADAPTER_LOCK) {
+        		// insert comments at the end
+        		mCommentsList.addAll(comments);
+        		mMorePositions.clear();
+        		
+             	// Merge the new "load more comments" positions
+ 	    		mMorePositions.addAll(_mNewMorePositions);
+ 	    		
+ 				// after inserting, notify adapter
+ 				notifyAdapterDataSetChanged();
+	    	}
+    	}
+    	
+    	private void replaceCommentsAtPosition(Collection<ThingInfo> comments, int position) {
+            synchronized (COMMENT_ADAPTER_LOCK) {
+         		int numNewComments = comments.size();
+         		int numRemoved = 0;
+				// First remove the "load more comments" entry
+				if (mMorePositions.remove(position)) {
+					mCommentsList.remove(position);
+					numRemoved++;
+				}
+         		// Update existing positions in the "more" positions set.
+				for (int i = position + 1; i < mCommentsList.size() + numRemoved; i++) {
+					if (mMorePositions.remove(i))
+						_mNewMorePositions.add(i + numNewComments - numRemoved);
+				}
+         		mCommentsList.addAll(position, comments);
+            }
+    	}
+    	
+    	/**
+    	 * to be called from within a synchronized block on COMMENT_ADAPTER_LOCK
+    	 */
+    	private void notifyAdapterDataSetChanged() {
+    		runOnUiThread(new Runnable() {
+    			@Override
+    			public void run() {
+    				mCommentsAdapter.notifyDataSetChanged();
+    			}
+    		});
+    	}
+    	
+    	/**
+    	 * tell if inserting entire thread, versus loading "more comments"
+    	 */
+    	private boolean isInsertingEntireThread() {
+    		return _mPositionOffset == 0;
+    	}
     	
     	private void parseCommentsJSON(InputStream in)
 				throws IOException, JsonParseException, IllegalStateException {
@@ -848,7 +873,7 @@ public class CommentsListActivity extends ListActivity
 					throw new IllegalStateException(genericListingError);
 
 				// For comments OP, should be only one
-				if (_mPositionOffset == 0) {
+				if (isInsertingEntireThread()) {
 					mOpThingInfo = threadThingListing.getData();
 					mOpThingInfo.setIndent(0);
 					synchronized (COMMENT_ADAPTER_LOCK) {
@@ -895,10 +920,17 @@ public class CommentsListActivity extends ListActivity
     	void insertNestedComment(ThingListing commentThingListing, int indentLevel) {
     		ThingInfo ci = commentThingListing.getData();
     		ci.setIndent(_mIndentation + indentLevel);
+    		
+    		// parse the comment body html
+        	CharSequence spanned = createSpanned(ci.getBody_html());
+        	ci.setSpannedBody(spanned);
 
     		// Insert the comment
     		_mListIndex++;
-	    	_mNewThingInfos.add(ci);
+    		if (isInsertingEntireThread())
+    			appendComment(ci);
+    		else
+    			_mDeferredInsertList.add(ci);
     		
     		// handle "more" entry
     		if (Constants.MORE_KIND.equals(commentThingListing.getKind())) {
@@ -933,6 +965,28 @@ public class CommentsListActivity extends ListActivity
 			}
     	}
     	
+    	/**
+    	 * @param bodyHtml escaped HTML (like in reddit Thing's body_html)
+    	 */
+        private CharSequence createSpanned(String bodyHtml) {
+        	try {
+        		// get unescaped HTML
+        		bodyHtml = Html.fromHtml(bodyHtml).toString();
+        		// fromHtml doesn't support all HTML tags. convert <code> and <pre>
+        		bodyHtml = Util.convertHtmlTags(bodyHtml);
+        		
+        		Spanned body = Html.fromHtml(bodyHtml);
+        		// remove last 2 newline characters
+        		if (body.length() > 2)
+        			return body.subSequence(0, body.length()-2);
+        		else
+        			return Constants.EMPTY_STRING;
+        	} catch (Exception e) {
+        		if (Constants.LOGGING) Log.e(TAG, "createSpanned failed", e);
+        		return null;
+        	}
+        }
+        
     	public void onPreExecute() {
     		if (mThreadId == null) {
     			if (Constants.LOGGING) Log.e(TAG, "mSettings.threadId == null");
@@ -949,13 +1003,13 @@ public class CommentsListActivity extends ListActivity
     		
     		// Initialize mCommentsList and mCommentsAdapter
     		synchronized (COMMENT_ADAPTER_LOCK) {
-	    		if (_mPositionOffset == 0)
+	    		if (isInsertingEntireThread())
 	    			resetUI(null);
     		}
 
-    		// Do loading screen when loading new thread; otherwise when "loading more comments" don't show it
-    		if (_mPositionOffset == 0)
-    			enableLoadingScreen();
+//    		// Do loading screen when loading new thread; otherwise when "loading more comments" don't show it
+//    		if (_mPositionOffset == 0)
+//    			enableLoadingScreen();
     		
     		if (_mContentLength == -1)
     			getWindow().setFeatureInt(Window.FEATURE_PROGRESS, Window.PROGRESS_INDETERMINATE_ON);
@@ -969,16 +1023,11 @@ public class CommentsListActivity extends ListActivity
     			mCurrentDownloadCommentsTask = null;
     		}
     		
-    		// if loading new thread, disable loading screen. otherwise "load more comments" so just stop the progress bar
-    		if (_mPositionOffset == 0)
-    			disableLoadingScreen();
+    		// stop the progress bar
+    		if (_mContentLength == -1)
+    			getWindow().setFeatureInt(Window.FEATURE_PROGRESS, Window.PROGRESS_INDETERMINATE_OFF);
     		else
-    		{
-	    		if (_mContentLength == -1)
-	    			getWindow().setFeatureInt(Window.FEATURE_PROGRESS, Window.PROGRESS_INDETERMINATE_OFF);
-	    		else
-	    			getWindow().setFeatureInt(Window.FEATURE_PROGRESS, 10000);
-    		}
+    			getWindow().setFeatureInt(Window.FEATURE_PROGRESS, 10000);
     		
     		if (success) {
     			// We should clear any replies the user was composing.
@@ -2350,13 +2399,12 @@ public class CommentsListActivity extends ListActivity
     }
     
     static void fillCommentsListItemView(View view, ThingInfo item,
-    		Activity activity, RedditSettings settings, CommentManager commentManager) {
+    		RedditSettings settings) {
         // Set the values of the Views for the CommentsListItem
         
         TextView votesView = (TextView) view.findViewById(R.id.votes);
         TextView submitterView = (TextView) view.findViewById(R.id.submitter);
         TextView bodyView = (TextView) view.findViewById(R.id.body);
-        ProgressBar indeterminateProgress = (ProgressBar) view.findViewById(R.id.indeterminate_progress);
         
         TextView submissionTimeView = (TextView) view.findViewById(R.id.submissionTime);
         ImageView voteUpView = (ImageView) view.findViewById(R.id.vote_up_image);
@@ -2375,18 +2423,7 @@ public class CommentsListActivity extends ListActivity
         	submitterView.setText(item.getAuthor());
         submissionTimeView.setText(Util.getTimeAgo(item.getCreated_utc()));
         
-        if (item.getSpannedBody() != null) {
-        	bodyView.setText(item.getSpannedBody());
-        } else {
-            // Fill in the comment body using a Thread.
-        	if (activity instanceof CommentsListActivity) {
-	        	commentManager.createSpannedOnThread(item.getBody_html(), bodyView, item,
-	        			indeterminateProgress, (CommentsListActivity) activity);
-        	} else {
-        		// NOOP. Assume it was parsed inline when downloaded.
-        		Log.w(TAG, "fillCommentsListItemView: item.getSpannedBody() is null and not CommentsListActivity");
-        	}
-        }
+    	bodyView.setText(item.getSpannedBody());
         
         setCommentIndent(view, item.getIndent(), settings);
         
