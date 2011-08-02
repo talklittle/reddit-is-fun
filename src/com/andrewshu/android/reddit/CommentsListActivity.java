@@ -27,7 +27,6 @@ import java.io.InputStream;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.regex.Matcher;
@@ -145,7 +144,7 @@ public class CommentsListActivity extends ListActivity
     private String mDeleteTargetKind = null;
     private boolean mShouldClearReply = false;
     private AsyncTask<?, ?, ?> mCurrentDownloadCommentsTask = null;
-    private final Object mCurrentDownloadCommentsTaskLock = new Object();
+    private static final Object mCurrentDownloadCommentsTaskLock = new Object();
 
     private String last_search_string;
     private int last_found_position = -1;
@@ -464,7 +463,6 @@ public class CommentsListActivity extends ListActivity
 //		            }
 
 	            	setCommentIndent(view, item.getIndent(), mSettings);
-	            	// TODO: Show number of replies, if possible
 	            	
 	            } else {  // Regular comment
 	            	// Here view may be passed in for re-use, or we make a new one.
@@ -652,24 +650,19 @@ public class CommentsListActivity extends ListActivity
     	
     	private static final String TAG = "CommentsListActivity.DownloadCommentsTask";
     	
-    	private int _mPositionOffset;
-    	private int _mIndentation;
-    	private int _mListIndex = 0;
-    	private String _mMoreChildrenId;
-    	// Temporary storage for new "load more comments" found in the JSON
-    	private HashSet<Integer> _mNewMorePositions = new HashSet<Integer>();
+    	// offset of the first comment being loaded; 0 if it includes OP
+    	private int _mPositionOffset = 0;
+    	private int _mIndentation = 0;
+    	private String _mMoreChildrenId = "";
     	// deferred insert list, in case I want to insert the comments after parsing a group of them
     	private ArrayList<ThingInfo> _mDeferredInsertList = new ArrayList<ThingInfo>();
     	// Progress bar
     	private long _mContentLength = 0;
     	
     	/**
-    	 * Constructor to do normal comments page
+    	 * Default constructor to do normal comments page
     	 */
     	public DownloadCommentsTask() {
-    		_mMoreChildrenId = "";
-    		_mPositionOffset = 0;
-    		_mIndentation = 0;
     	}
     	
     	/**
@@ -791,40 +784,41 @@ public class CommentsListActivity extends ListActivity
     	}
     	
     	private void appendComment(ThingInfo comment) {
-    		appendComments(Collections.singleton(comment));
-    	}
-    	
-    	private void appendComments(Collection<ThingInfo> comments) {
-            // Fill in the list adapter
-            synchronized (COMMENT_ADAPTER_LOCK) {
-        		// insert comments at the end
-        		mCommentsList.addAll(comments);
-        		mMorePositions.clear();
-        		
-             	// Merge the new "load more comments" positions
- 	    		mMorePositions.addAll(_mNewMorePositions);
- 	    		
- 				// after inserting, notify adapter
- 				notifyAdapterDataSetChanged();
-	    	}
+    		synchronized (COMMENT_ADAPTER_LOCK) {
+	    		mCommentsList.add(comment);
+    		}
+    		notifyAdapterDataSetChanged();
     	}
     	
     	private void replaceCommentsAtPosition(Collection<ThingInfo> comments, int position) {
             synchronized (COMMENT_ADAPTER_LOCK) {
          		int numNewComments = comments.size();
-         		int numRemoved = 0;
+         		HashSet<Integer> newMorePositions = new HashSet<Integer>();
+         		
 				// First remove the "load more comments" entry
-				if (mMorePositions.remove(position)) {
-					mCommentsList.remove(position);
-					numRemoved++;
-				}
+				mMorePositions.remove(position);
          		// Update existing positions in the "more" positions set.
-				for (int i = position + 1; i < mCommentsList.size() + numRemoved; i++) {
+				for (int i = position + 1; i < mCommentsList.size(); i++) {
 					if (mMorePositions.remove(i))
-						_mNewMorePositions.add(i + numNewComments - numRemoved);
+						newMorePositions.add(i + numNewComments - 1);
 				}
-         		mCommentsList.addAll(position, comments);
+             	// Merge the new "load more comments" positions
+ 	    		mMorePositions.addAll(newMorePositions);
+
+				mCommentsList.remove(position);
+ 	    		mCommentsList.addAll(position, comments);
             }
+    		notifyAdapterDataSetChanged();
+    	}
+    	
+    	private void addMoreCommentsPosition(int position) {
+			synchronized (COMMENT_ADAPTER_LOCK) {
+				mMorePositions.add(position);
+			}
+    	}
+    	
+    	private void deferCommentLoad(ThingInfo comment) {
+    		_mDeferredInsertList.add(comment);
     	}
     	
     	/**
@@ -846,9 +840,10 @@ public class CommentsListActivity extends ListActivity
     		return _mPositionOffset == 0;
     	}
     	
-    	private void parseCommentsJSON(InputStream in)
-				throws IOException, JsonParseException, IllegalStateException {
-			
+    	private void parseCommentsJSON(
+    			InputStream in
+		) throws IOException, JsonParseException {
+    		int insertedCommentIndex;
 			String genericListingError = "Not a comments listing";
 			try {
 				Listing[] listings = mObjectMapper.readValue(in, Listing[].class);
@@ -856,8 +851,7 @@ public class CommentsListActivity extends ListActivity
 				// listings[0] is a thread Listing for the OP.
 				// process same as a thread listing more or less
 				
-				if (!Constants.JSON_LISTING.equals(listings[0].getKind()))
-					throw new IllegalStateException(genericListingError);
+				Util.assertState(Constants.JSON_LISTING.equals(listings[0].getKind()), genericListingError);
 				
 				// Save modhash, ignore "after" and "before" which are meaningless in this context (and probably null)
 				ListingData threadListingData = listings[0].getData();
@@ -869,74 +863,81 @@ public class CommentsListActivity extends ListActivity
 				if (Constants.LOGGING) Log.d(TAG, "Successfully got OP listing[0]: modhash "+mSettings.modhash);
 				
 				ThingListing threadThingListing = threadListingData.getChildren()[0];
-				if (!Constants.THREAD_KIND.equals(threadThingListing.getKind()))
-					throw new IllegalStateException(genericListingError);
+				Util.assertState(Constants.THREAD_KIND.equals(threadThingListing.getKind()), genericListingError);
 
-				// For comments OP, should be only one
 				if (isInsertingEntireThread()) {
-					mOpThingInfo = threadThingListing.getData();
-					mOpThingInfo.setIndent(0);
-					synchronized (COMMENT_ADAPTER_LOCK) {
-						mCommentsList.add(0, mOpThingInfo);
-					}
+					parseOP(threadThingListing.getData());
+					insertedCommentIndex = 0;
 				}
-				// Pull other data from the OP
-				if (mOpThingInfo.isIs_self() && mOpThingInfo.getSelftext_html() != null) {
-					// HTML to Spanned
-					String unescapedHtmlSelftext = Html.fromHtml(mOpThingInfo.getSelftext_html()).toString();
-					Spanned selftext = Html.fromHtml(Util.convertHtmlTags(unescapedHtmlSelftext));
-					
-		    		// remove last 2 newline characters
-					if (selftext.length() > 2)
-						mOpThingInfo.setSpannedSelftext(selftext.subSequence(0, selftext.length()-2));
-					else
-						mOpThingInfo.setSpannedSelftext(Constants.EMPTY_STRING);
-
-					// Get URLs from markdown
-					markdown.getURLs(mOpThingInfo.getSelftext(), mOpThingInfo.getUrls());
+				else {
+					// nothing was inserted yet. when we enter the insertion loop below, we will start with (-1 + 1)
+					insertedCommentIndex = -1;
 				}
-				// We might not have a title if we've intercepted a plain link to a thread.
-    			mThreadTitle = mOpThingInfo.getTitle();
-				mSubreddit = mOpThingInfo.getSubreddit();
-				mThreadId = mOpThingInfo.getId();
 				
 				// listings[1] is a comment Listing for the comments
 				// Go through the children and get the ThingInfos
-				
 				ListingData commentListingData = listings[1].getData();
 				for (ThingListing commentThingListing : commentListingData.getChildren()) {
 					// insert the comment and its replies, prefix traversal order
-					insertNestedComment(commentThingListing, 0);
+					insertedCommentIndex = insertNestedComment(commentThingListing, 0, insertedCommentIndex + 1);
 				}
 			} catch (Exception ex) {
 				if (Constants.LOGGING) Log.e(TAG, "parseCommentsJSON", ex);
 			}
 		}
     	
+    	private void parseOP(ThingInfo data) {
+			mOpThingInfo = data;
+			mOpThingInfo.setIndent(0);
+			synchronized (COMMENT_ADAPTER_LOCK) {
+				mCommentsList.add(0, mOpThingInfo);
+			}
+
+			if (mOpThingInfo.isIs_self() && mOpThingInfo.getSelftext_html() != null) {
+				// HTML to Spanned
+				String unescapedHtmlSelftext = Html.fromHtml(mOpThingInfo.getSelftext_html()).toString();
+				Spanned selftext = Html.fromHtml(Util.convertHtmlTags(unescapedHtmlSelftext));
+				
+	    		// remove last 2 newline characters
+				if (selftext.length() > 2)
+					mOpThingInfo.setSpannedSelftext(selftext.subSequence(0, selftext.length()-2));
+				else
+					mOpThingInfo.setSpannedSelftext(Constants.EMPTY_STRING);
+
+				// Get URLs from markdown
+				markdown.getURLs(mOpThingInfo.getSelftext(), mOpThingInfo.getUrls());
+			}
+			// We might not have a title if we've intercepted a plain link to a thread.
+			mThreadTitle = mOpThingInfo.getTitle();
+			mSubreddit = mOpThingInfo.getSubreddit();
+			mThreadId = mOpThingInfo.getId();
+    	}
+    	
     	/**
     	 * Recursive method to insert comment tree into the mCommentsList,
     	 * with proper list order and indentation
     	 */
-    	void insertNestedComment(ThingListing commentThingListing, int indentLevel) {
+    	int insertNestedComment(ThingListing commentThingListing, int indentLevel, int insertedCommentIndex) {
     		ThingInfo ci = commentThingListing.getData();
     		ci.setIndent(_mIndentation + indentLevel);
     		
     		// parse the comment body html
-        	CharSequence spanned = createSpanned(ci.getBody_html());
-        	ci.setSpannedBody(spanned);
+    		if (ci.getBody_html() != null) {
+	        	CharSequence spanned = createSpanned(ci.getBody_html());
+	        	ci.setSpannedBody(spanned);
+    		}
 
     		// Insert the comment
-    		_mListIndex++;
     		if (isInsertingEntireThread())
-    			appendComment(ci);
+				appendComment(ci);
     		else
-    			_mDeferredInsertList.add(ci);
+    			deferCommentLoad(ci);
     		
     		// handle "more" entry
     		if (Constants.MORE_KIND.equals(commentThingListing.getKind())) {
-    			_mNewMorePositions.add(_mPositionOffset + _mListIndex);
-    			if (Constants.LOGGING) Log.v(TAG, "new more position at " + (_mPositionOffset + _mListIndex));
-		    	return;
+    			addMoreCommentsPosition(_mPositionOffset + insertedCommentIndex);
+    			if (Constants.LOGGING) Log.v(TAG, "new more position at " + (_mPositionOffset + insertedCommentIndex));
+		    	return insertedCommentIndex;
     		}
     		
     		// Regular comment
@@ -944,7 +945,7 @@ public class CommentsListActivity extends ListActivity
     		// Skip things that are not comments, which shouldn't happen
 			if (!Constants.COMMENT_KIND.equals(commentThingListing.getKind())) {
 				if (Constants.LOGGING) Log.e(TAG, "comment whose kind is \""+commentThingListing.getKind()+"\" (expected "+Constants.COMMENT_KIND+")");
-				return;
+				return insertedCommentIndex;
 			}
 			
 			// Get URLs from markdown
@@ -953,16 +954,18 @@ public class CommentsListActivity extends ListActivity
 			// handle the replies
 			Listing repliesListing = ci.getReplies();
 			if (repliesListing == null)
-				return;
+				return insertedCommentIndex;
 			ListingData repliesListingData = repliesListing.getData();
 			if (repliesListingData == null)
-				return;
+				return insertedCommentIndex;
 			ThingListing[] replyThingListings = repliesListingData.getChildren();
 			if (replyThingListings == null)
-				return;
+				return insertedCommentIndex;
+			
 			for (ThingListing replyThingListing : replyThingListings) {
-				insertNestedComment(replyThingListing, indentLevel + 1);
+				insertedCommentIndex = insertNestedComment(replyThingListing, indentLevel + 1, insertedCommentIndex + 1);
 			}
+			return insertedCommentIndex;
     	}
     	
     	/**
@@ -1007,6 +1010,7 @@ public class CommentsListActivity extends ListActivity
 	    			resetUI(null);
     		}
 
+    		// FIXME
 //    		// Do loading screen when loading new thread; otherwise when "loading more comments" don't show it
 //    		if (_mPositionOffset == 0)
 //    			enableLoadingScreen();

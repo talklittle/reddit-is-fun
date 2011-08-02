@@ -35,6 +35,11 @@ public class Util {
 	
 	private static final String TAG = "Util";
 	
+	public static void assertState(boolean state, String message) {
+		if (!state)
+			throw new IllegalStateException(message);
+	}
+	
 	public static ArrayList<String> extractUris(URLSpan[] spans) {
         int size = spans.length;
         ArrayList<String> accumulator = new ArrayList<String>();
@@ -465,7 +470,7 @@ public class Util {
     }
     
     static boolean listContainsIgnoreCase(ArrayList<String> list, String str){
-    	for (Iterator iterator = list.iterator(); iterator.hasNext();) {
+    	for (Iterator<String> iterator = list.iterator(); iterator.hasNext();) {
 			String string = (String) iterator.next();
 			
 			if(string.equalsIgnoreCase(str))
