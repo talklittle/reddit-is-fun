@@ -127,7 +127,6 @@ public class CommentsListActivity extends ListActivity
     private String mJumpToCommentId = null;
     private int mJumpToCommentContext = 0;
     private int mJumpToCommentPosition = 0;
-    private HashSet<Integer> mMorePositions = new HashSet<Integer>();
     private ThingInfo mOpThingInfo = null;
     private String mThreadTitle = null;
 	
@@ -215,7 +214,6 @@ public class CommentsListActivity extends ListActivity
 		    	// Orientation change. Use prior instance.
 		    	mOpThingInfo = retainer.opThingInfo;
 			    mCommentsList = retainer.commentsList;
-			    mMorePositions = retainer.morePositions;
 			    mHiddenCommentHeads = retainer.hiddenCommentHeads;
 			    resetUI(new CommentsListAdapter(this, mCommentsList));
 		    }
@@ -315,7 +313,7 @@ public class CommentsListActivity extends ListActivity
         // Avoid having to re-download and re-parse the comments list
     	// when rotating or opening keyboard.
     	if (mOpThingInfo != null && mCommentsList != null)
-    		return new CommentsRetainer(mOpThingInfo, mCommentsList, mMorePositions, mHiddenCommentHeads);
+    		return new CommentsRetainer(mOpThingInfo, mCommentsList, mHiddenCommentHeads);
     	else
     		return null;
     }
@@ -323,28 +321,27 @@ public class CommentsListActivity extends ListActivity
     class CommentsRetainer {
     	public ArrayList<ThingInfo> commentsList;
     	public ThingInfo opThingInfo;
-    	public HashSet<Integer> morePositions;
     	public HashSet<Integer> hiddenCommentHeads;
     	
-    	public CommentsRetainer(ThingInfo op, ArrayList<ThingInfo> comments,
-    			HashSet<Integer> morePositions, HashSet<Integer> hiddenCommentHeads) {
-    		opThingInfo = op;
-    		commentsList = comments;
-    		this.morePositions = morePositions;
+    	public CommentsRetainer(ThingInfo op, ArrayList<ThingInfo> comments, HashSet<Integer> hiddenCommentHeads) {
+    		this.opThingInfo = op;
+    		this.commentsList = comments;
     		this.hiddenCommentHeads = hiddenCommentHeads;
     	}
     }
     
     
-    
+    private boolean isLoadMoreCommentsPosition(int position) {
+    	return mCommentsAdapter != null && mCommentsAdapter.getItemViewType(position) == CommentsListAdapter.MORE_ITEM_VIEW_TYPE;
+    }
     
     private final class CommentsListAdapter extends ArrayAdapter<ThingInfo> {
-    	static final int OP_ITEM_VIEW_TYPE = 0;
-    	static final int COMMENT_ITEM_VIEW_TYPE = 1;
-    	static final int MORE_ITEM_VIEW_TYPE = 2;
-    	static final int HIDDEN_ITEM_HEAD_VIEW_TYPE = 3;
+    	public static final int OP_ITEM_VIEW_TYPE = 0;
+    	public static final int COMMENT_ITEM_VIEW_TYPE = 1;
+    	public static final int MORE_ITEM_VIEW_TYPE = 2;
+    	public static final int HIDDEN_ITEM_HEAD_VIEW_TYPE = 3;
     	// The number of view types
-    	static final int VIEW_TYPE_COUNT = 4;
+    	public static final int VIEW_TYPE_COUNT = 4;
     	
     	public boolean mIsLoading = true;
     	
@@ -364,10 +361,15 @@ public class CommentsListActivity extends ListActivity
                 // We don't want the separator view to be recycled.
                 return IGNORE_ITEM_VIEW_TYPE;
             }
+        	
+        	// TODO figure out how to use ThingInfo.isHidden() here and for mHiddenComments
             if (mHiddenCommentHeads.contains(position))
             	return HIDDEN_ITEM_HEAD_VIEW_TYPE;
-            if (mMorePositions.contains(position))
+            
+            ThingInfo item = getItem(position);
+            if (item.isLoadMoreCommentsPlaceholder())
             	return MORE_ITEM_VIEW_TYPE;
+            
             return COMMENT_ITEM_VIEW_TYPE;
         }
         
@@ -446,7 +448,7 @@ public class CommentsListActivity extends ListActivity
 		            
 		            setCommentIndent(view, item.getIndent(), mSettings);
 		            
-            	} else if (mMorePositions.contains(position)) {
+            	} else if (isLoadMoreCommentsPosition(position)) {
 	            	// "load more comments"
 	            	if (view == null) {
 	            		view = mInflater.inflate(R.layout.more_comments_view, null);
@@ -540,7 +542,7 @@ public class CommentsListActivity extends ListActivity
         mVoteTargetThing = item;
         mReplyTargetName = mVoteTargetThing.getName();
 		
-        if (mMorePositions.contains(position)) {
+        if (isLoadMoreCommentsPosition(position)) {
         	mJumpToCommentPosition = position;
         	// Use this constructor to tell it to load more comments inline
         	new DownloadCommentsTask(item.getId(), position, item.getIndent()).execute(Constants.DEFAULT_COMMENT_DOWNLOAD_LIMIT);
@@ -744,9 +746,6 @@ public class CommentsListActivity extends ListActivity
             	ProgressInputStream pin = new ProgressInputStream(in, _mContentLength);
             	pin.addPropertyChangeListener(this);
             	
-            	// if loading entire thread including OP, do some cleanup first
-            	cleanupBeforeLoadingThread();
-            	
             	parseCommentsJSON(pin);
             	if (Constants.LOGGING) Log.d(TAG, "parseCommentsJSON completed");
             	
@@ -777,60 +776,33 @@ public class CommentsListActivity extends ListActivity
             return false;
 	    }
     	
-    	private void cleanupBeforeLoadingThread() {
-    		synchronized (COMMENT_ADAPTER_LOCK) {
-    			mMorePositions.clear();
-    		}
+    	private void appendComment(final ThingInfo comment) {
+    		runOnUiThread(new Runnable() {
+    			@Override
+    			public void run() {
+    	    		synchronized (COMMENT_ADAPTER_LOCK) {
+    	    			mCommentsList.add(comment);
+    	    		}
+    				mCommentsAdapter.notifyDataSetChanged();
+    			}
+    		});
     	}
     	
-    	private void appendComment(ThingInfo comment) {
-    		synchronized (COMMENT_ADAPTER_LOCK) {
-	    		mCommentsList.add(comment);
-    		}
-    		notifyAdapterDataSetChanged();
-    	}
-    	
-    	private void replaceCommentsAtPosition(Collection<ThingInfo> comments, int position) {
-            synchronized (COMMENT_ADAPTER_LOCK) {
-         		int numNewComments = comments.size();
-         		HashSet<Integer> newMorePositions = new HashSet<Integer>();
-         		
-				// First remove the "load more comments" entry
-				mMorePositions.remove(position);
-         		// Update existing positions in the "more" positions set.
-				for (int i = position + 1; i < mCommentsList.size(); i++) {
-					if (mMorePositions.remove(i))
-						newMorePositions.add(i + numNewComments - 1);
-				}
-             	// Merge the new "load more comments" positions
- 	    		mMorePositions.addAll(newMorePositions);
-
-				mCommentsList.remove(position);
- 	    		mCommentsList.addAll(position, comments);
-            }
-    		notifyAdapterDataSetChanged();
-    	}
-    	
-    	private void addMoreCommentsPosition(int position) {
-			synchronized (COMMENT_ADAPTER_LOCK) {
-				mMorePositions.add(position);
-			}
+    	private void replaceCommentsAtPosition(final Collection<ThingInfo> comments, final int position) {
+    		runOnUiThread(new Runnable() {
+    			@Override
+    			public void run() {
+    	    		synchronized (COMMENT_ADAPTER_LOCK) {
+    					mCommentsList.remove(position);
+    	 	    		mCommentsList.addAll(position, comments);
+    	    		}
+    				mCommentsAdapter.notifyDataSetChanged();
+    			}
+    		});
     	}
     	
     	private void deferCommentLoad(ThingInfo comment) {
     		_mDeferredInsertList.add(comment);
-    	}
-    	
-    	/**
-    	 * to be called from within a synchronized block on COMMENT_ADAPTER_LOCK
-    	 */
-    	private void notifyAdapterDataSetChanged() {
-    		runOnUiThread(new Runnable() {
-    			@Override
-    			public void run() {
-    				mCommentsAdapter.notifyDataSetChanged();
-    			}
-    		});
     	}
     	
     	/**
@@ -935,7 +907,7 @@ public class CommentsListActivity extends ListActivity
     		
     		// handle "more" entry
     		if (Constants.MORE_KIND.equals(commentThingListing.getKind())) {
-    			addMoreCommentsPosition(_mPositionOffset + insertedCommentIndex);
+    			ci.setLoadMoreCommentsPlaceholder(true);
     			if (Constants.LOGGING) Log.v(TAG, "new more position at " + (_mPositionOffset + insertedCommentIndex));
 		    	return insertedCommentIndex;
     		}
@@ -1814,7 +1786,7 @@ public class CommentsListActivity extends ListActivity
     		menu.add(0, Constants.DIALOG_VIEW_PROFILE, Menu.NONE,
     				String.format(getResources().getString(R.string.user_profile), item.getAuthor()));
     		
-    	} else if (mMorePositions.contains(rowId)) {
+    	} else if (isLoadMoreCommentsPosition(rowId)) {
     		menu.add(0, Constants.DIALOG_GOTO_PARENT, Menu.NONE, "Go to parent");
     	} else if (mHiddenCommentHeads.contains(rowId)) {
     		menu.add(0, Constants.DIALOG_SHOW_COMMENT, Menu.NONE, "Show comment");

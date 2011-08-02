@@ -37,7 +37,7 @@ import android.text.SpannableString;
  *
  */
 public class ThingInfo implements Serializable, Parcelable {
-	static final long serialVersionUID = 39;
+	static final long serialVersionUID = 40;
 	
 	// thread: t
 	// comment: c
@@ -89,6 +89,7 @@ public class ThingInfo implements Serializable, Parcelable {
 	
 	private int mIndent = 0;
 	private String mReplyDraft = null;
+	private boolean mIsLoadMoreCommentsPlaceholder = false;
 
 	public ThingInfo() {
 		super();
@@ -149,7 +150,7 @@ public class ThingInfo implements Serializable, Parcelable {
 	public String getLink_id() {
 		return link_id;
 	}
-
+	
 	public String getName() {
 		return name;
 	}
@@ -266,6 +267,10 @@ public class ThingInfo implements Serializable, Parcelable {
 	public boolean isWas_comment() {
 		return was_comment;
 	}
+	
+	public boolean isLoadMoreCommentsPlaceholder() {
+		return mIsLoadMoreCommentsPlaceholder;
+	}
 
 	public void setAuthor(String author) {
 		this.author = author;
@@ -333,6 +338,10 @@ public class ThingInfo implements Serializable, Parcelable {
 
 	public void setLink_id(String link_id) {
 		this.link_id = link_id;
+	}
+	
+	public void setLoadMoreCommentsPlaceholder(boolean loadMoreCommentsPlaceholder) {
+		mIsLoadMoreCommentsPlaceholder = loadMoreCommentsPlaceholder;
 	}
 
 	public void setName(String name) {
@@ -467,7 +476,7 @@ public class ThingInfo implements Serializable, Parcelable {
 		out.writeValue(url);
 		out.writeValue(likes);
 
-		boolean booleans[] = new boolean[7];
+		boolean booleans[] = new boolean[8];
 		booleans[0] = clicked;
 		booleans[1] = hidden;
 		booleans[2] = is_self;
@@ -475,6 +484,7 @@ public class ThingInfo implements Serializable, Parcelable {
 		booleans[4] = over_18;
 		booleans[5] = saved;
 		booleans[6] = was_comment;
+		booleans[7] = mIsLoadMoreCommentsPlaceholder;
 		out.writeBooleanArray(booleans);
 	}
 
@@ -507,7 +517,7 @@ public class ThingInfo implements Serializable, Parcelable {
 		url = (String) in.readValue(null);
 		likes = (Boolean) in.readValue(null);
 
-		boolean booleans[] = new boolean[7];
+		boolean booleans[] = new boolean[8];
 		in.readBooleanArray(booleans);
 		clicked = booleans[0];
 		hidden = booleans[1];
@@ -516,6 +526,7 @@ public class ThingInfo implements Serializable, Parcelable {
 		over_18 = booleans[4];
 		saved = booleans[5];
 		was_comment = booleans[6];
+		mIsLoadMoreCommentsPlaceholder = booleans[7];
 	}
 
 	public static final Parcelable.Creator<ThingInfo> CREATOR
