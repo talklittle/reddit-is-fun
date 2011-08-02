@@ -476,6 +476,7 @@ public final class ProfileActivity extends ListActivity
     	View karmaLayout = findViewById(R.id.karma_layout);
     	View karmaLayoutBorder = findViewById(R.id.karma_border_bottom);
     	if (karmaLayout != null && karmaLayoutBorder != null) {
+    		karmaLayout.setVisibility(View.VISIBLE);
 	    	if (Util.isLightTheme(mSettings.theme)) {
 	       		karmaLayout.setBackgroundResource(R.color.white);
 	       		karmaLayoutBorder.setBackgroundResource(R.color.black);
