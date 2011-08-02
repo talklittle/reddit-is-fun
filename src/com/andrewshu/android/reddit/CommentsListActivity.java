@@ -812,6 +812,15 @@ public class CommentsListActivity extends ListActivity
     		return _mPositionOffset == 0;
     	}
     	
+    	private void disableLoadingScreenKeepProgress() {
+    		runOnUiThread(new Runnable() {
+    			@Override
+    			public void run() {
+    	    		resetUI(mCommentsAdapter);
+    			}
+    		});
+    	}
+    	
     	private void parseCommentsJSON(
     			InputStream in
 		) throws IOException, JsonParseException {
@@ -845,6 +854,9 @@ public class CommentsListActivity extends ListActivity
 					// nothing was inserted yet. when we enter the insertion loop below, we will start with (-1 + 1)
 					insertedCommentIndex = -1;
 				}
+				
+				// at this point we've started displaying comments, so disable the loading screen
+				disableLoadingScreenKeepProgress();
 				
 				// listings[1] is a comment Listing for the comments
 				// Go through the children and get the ThingInfos
@@ -982,10 +994,9 @@ public class CommentsListActivity extends ListActivity
 	    			resetUI(null);
     		}
 
-    		// FIXME
-//    		// Do loading screen when loading new thread; otherwise when "loading more comments" don't show it
-//    		if (_mPositionOffset == 0)
-//    			enableLoadingScreen();
+    		// Do loading screen when loading new thread; otherwise when "loading more comments" don't show it
+    		if (isInsertingEntireThread())
+    			enableLoadingScreen();
     		
     		if (_mContentLength == -1)
     			getWindow().setFeatureInt(Window.FEATURE_PROGRESS, Window.PROGRESS_INDETERMINATE_ON);
@@ -999,7 +1010,6 @@ public class CommentsListActivity extends ListActivity
     			mCurrentDownloadCommentsTask = null;
     		}
     		
-    		// stop the progress bar
     		if (_mContentLength == -1)
     			getWindow().setFeatureInt(Window.FEATURE_PROGRESS, Window.PROGRESS_INDETERMINATE_OFF);
     		else
@@ -1035,6 +1045,19 @@ public class CommentsListActivity extends ListActivity
     	public void propertyChange(PropertyChangeEvent event) {
     		publishProgress((Long) event.getNewValue());
     	}
+    }
+    
+    private void enableLoadingScreen() {
+    	if (Util.isLightTheme(mSettings.theme)) {
+    		setContentView(R.layout.loading_light);
+    	} else {
+    		setContentView(R.layout.loading_dark);
+    	}
+    	synchronized (COMMENT_ADAPTER_LOCK) {
+	    	if (mCommentsAdapter != null)
+	    		mCommentsAdapter.mIsLoading = true;
+    	}
+    	getWindow().setFeatureInt(Window.FEATURE_PROGRESS, 0);
     }
     
     
