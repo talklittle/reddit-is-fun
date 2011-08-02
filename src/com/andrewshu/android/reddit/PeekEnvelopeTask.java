@@ -96,8 +96,10 @@ public class PeekEnvelopeTask extends AsyncTask<Void, Void, Integer> {
 		 * Second element is a similar JSON object, but the "children" array is an array of comments
 		 * instead of threads. 
 		 */
-		if (jp.nextToken() != JsonToken.START_OBJECT)
-			throw new IllegalStateException("Non-JSON-object in inbox (not logged in?)");
+		if (jp.nextToken() != JsonToken.START_OBJECT) {
+			Log.w(TAG, "Non-JSON-object in inbox (not logged in?)");
+			return 0;
+		}
 		
 		while (!Constants.JSON_CHILDREN.equals(jp.getCurrentName())) {
 			// Don't care
