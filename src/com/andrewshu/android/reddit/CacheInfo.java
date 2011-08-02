@@ -161,6 +161,7 @@ public class CacheInfo implements Serializable {
     	}
     }
     
+    @SuppressWarnings("unused")
     static void invalidateAllCaches(Context context) {
     	if (!Constants.USE_COMMENTS_CACHE && !Constants.USE_THREADS_CACHE && !Constants.USE_SUBREDDITS_CACHE)
     		return;
@@ -179,6 +180,7 @@ public class CacheInfo implements Serializable {
     	}
     }
     
+    @SuppressWarnings("unused")
     static void invalidateCachedSubreddit(Context context) {
     	if (!Constants.USE_THREADS_CACHE)
     		return;
@@ -207,6 +209,7 @@ public class CacheInfo implements Serializable {
     	}
     }
     
+    @SuppressWarnings("unused")
     static void invalidateCachedThread(Context context) {
     	if (!Constants.USE_COMMENTS_CACHE)
     		return;
@@ -235,6 +238,7 @@ public class CacheInfo implements Serializable {
     	}
     }
     
+    @SuppressWarnings("unused")
     static void setCachedSubredditUrl(Context context, String subredditUrl) throws IOException {
     	if (!Constants.USE_THREADS_CACHE)
     		return;
@@ -259,6 +263,7 @@ public class CacheInfo implements Serializable {
 		}
     }
 
+    @SuppressWarnings("unused")
     static void setCachedThreadUrl(Context context, String threadUrl) throws IOException {
     	if (!Constants.USE_COMMENTS_CACHE)
     		return;
