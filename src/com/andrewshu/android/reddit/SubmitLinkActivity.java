@@ -180,7 +180,7 @@ public class SubmitLinkActivity extends TabActivity {
         	Matcher m = SUBMIT_PATH_PATTERN.matcher(submitPath);
         	if (m.matches()) {
         		String subreddit = m.group(1);
-        		if (subreddit == null || Constants.EMPTY_STRING.equals(subreddit)) {
+        		if (Util.isEmpty(subreddit)) {
             		submitLinkReddit.setText("reddit.com");
             		submitTextReddit.setText("reddit.com");
         		} else {
@@ -337,7 +337,7 @@ public class SubmitLinkActivity extends TabActivity {
             	BufferedReader in = new BufferedReader(new InputStreamReader(entity.getContent()));
             	String line = in.readLine();
             	in.close();
-            	if (line == null || Constants.EMPTY_STRING.equals(line)) {
+            	if (Util.isEmpty(line)) {
             		throw new HttpException("No content returned from reply POST");
             	}
             	if (line.contains("WRONG_PASSWORD")) {
@@ -573,15 +573,15 @@ public class SubmitLinkActivity extends TabActivity {
 		final EditText titleText = (EditText) findViewById(R.id.submit_link_title);
 		final EditText urlText = (EditText) findViewById(R.id.submit_link_url);
 		final EditText redditText = (EditText) findViewById(R.id.submit_link_reddit);
-		if (Constants.EMPTY_STRING.equals(titleText.getText())) {
+		if (Util.isEmpty(titleText.getText())) {
 			Common.showErrorToast("Please provide a title.", Toast.LENGTH_LONG, this);
 			return false;
 		}
-		if (Constants.EMPTY_STRING.equals(urlText.getText())) {
+		if (Util.isEmpty(urlText.getText())) {
 			Common.showErrorToast("Please provide a URL.", Toast.LENGTH_LONG, this);
 			return false;
 		}
-		if (Constants.EMPTY_STRING.equals(redditText.getText())) {
+		if (Util.isEmpty(redditText.getText())) {
 			Common.showErrorToast("Please provide a subreddit.", Toast.LENGTH_LONG, this);
 			return false;
 		}
@@ -590,11 +590,11 @@ public class SubmitLinkActivity extends TabActivity {
 	private boolean validateTextForm() {
 		final EditText titleText = (EditText) findViewById(R.id.submit_text_title);
 		final EditText redditText = (EditText) findViewById(R.id.submit_text_reddit);
-		if (Constants.EMPTY_STRING.equals(titleText.getText())) {
+		if (Util.isEmpty(titleText.getText())) {
 			Common.showErrorToast("Please provide a title.", Toast.LENGTH_LONG, this);
 			return false;
 		}
-		if (Constants.EMPTY_STRING.equals(redditText.getText())) {
+		if (Util.isEmpty(redditText.getText())) {
 			Common.showErrorToast("Please provide a subreddit.", Toast.LENGTH_LONG, this);
 			return false;
 		}

@@ -222,7 +222,7 @@ public class Common {
         	String line = String.valueOf(buffer);
         	entity.consumeContent();
         	
-        	if (line == null || Constants.EMPTY_STRING.equals(line)) {
+        	if (Util.isEmpty(line)) {
         		throw new HttpException("No content returned from doUpdateModhash GET to "+Constants.MODHASH_URL);
         	}
         	if (line.contains("USER_REQUIRED")) {
@@ -232,7 +232,7 @@ public class Common {
         	Matcher modhashMatcher = MODHASH_PATTERN.matcher(line);
         	if (modhashMatcher.find()) {
         		modhash = modhashMatcher.group(1);
-        		if (Constants.EMPTY_STRING.equals(modhash)) {
+        		if (Util.isEmpty(modhash)) {
         			// Means user is not actually logged in.
         			return null;
         		}
@@ -276,7 +276,7 @@ public class Common {
     		return "Error reading retrieved data.";
     	}
     	
-    	if (line == null || Constants.EMPTY_STRING.equals(line)) {
+    	if (Util.isEmpty(line)) {
     		return "API returned empty data.";
     	}
     	if (line.contains("WRONG_PASSWORD")) {
@@ -320,7 +320,7 @@ public class Common {
     		throw new Exception("Error reading retrieved data.");
     	}
     	
-    	if (line == null || Constants.EMPTY_STRING.equals(line)) {
+    	if (Util.isEmpty(line)) {
     		throw new Exception("API returned empty data.");
     	}
     	if (line.contains("WRONG_PASSWORD")) {

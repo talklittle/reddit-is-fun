@@ -106,7 +106,7 @@ public class HideTask extends AsyncTask<Void, Void, Boolean> {
         	BufferedReader in = new BufferedReader(new InputStreamReader(entity.getContent()));
         	String line = in.readLine();
         	in.close();
-        	if (line == null || Constants.EMPTY_STRING.equals(line)) {
+        	if (Util.isEmpty(line)) {
         		mUserError = "Connection error when hiding thread. Try again.";
         		throw new HttpException("No content returned from hide POST");
         	}

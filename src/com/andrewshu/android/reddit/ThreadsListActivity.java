@@ -111,7 +111,7 @@ public final class ThreadsListActivity extends ListActivity {
     private String mLastBefore = null;
     private volatile int mLastCount = 0;
     private String mSortByUrl = Constants.ThreadsSort.SORT_BY_HOT_URL;
-    private String mSortByUrlExtra = Constants.EMPTY_STRING;
+    private String mSortByUrlExtra = "";
     private String mJumpToThreadId = null;
     // End navigation variables
     
@@ -444,7 +444,7 @@ public final class ThreadsListActivity extends ListActivity {
             	}
             	
             	// Fill in the thumbnail using a Thread. Note that thumbnail URL can be absolute path.
-            	if (item.getThumbnail() != null && !Constants.EMPTY_STRING.equals(item.getThumbnail())) {
+            	if (!Util.isEmpty(item.getThumbnail())) {
             		bitmapManager.fetchBitmapOnThread(Util.absolutePathToURL(item.getThumbnail()),
             				thumbnailView, indeterminateProgressBar, activity);
             	} else {
@@ -1282,7 +1282,7 @@ public final class ThreadsListActivity extends ListActivity {
 			String itemString = Constants.ThreadsSort.SORT_BY_CHOICES[item];
 			if (Constants.ThreadsSort.SORT_BY_HOT.equals(itemString)) {
 				mSortByUrl = Constants.ThreadsSort.SORT_BY_HOT_URL;
-				mSortByUrlExtra = Constants.EMPTY_STRING;
+				mSortByUrlExtra = "";
 				new MyDownloadThreadsTask(mSubreddit).execute();
 			} else if (Constants.ThreadsSort.SORT_BY_NEW.equals(itemString)) {
 				showDialog(Constants.DIALOG_SORT_BY_NEW);

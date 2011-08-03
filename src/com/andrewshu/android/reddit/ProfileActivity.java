@@ -699,7 +699,7 @@ public final class ProfileActivity extends ListActivity
     				throw new IllegalStateException(genericListingError);
     			// Save the modhash, after, and before
     			ListingData data = listing.getData();
-    			if (Constants.EMPTY_STRING.equals(data.getModhash()))
+    			if (Util.isEmpty(data.getModhash()))
     				mSettings.setModhash(null);
     			else
     				mSettings.setModhash(data.getModhash());
@@ -720,7 +720,7 @@ public final class ProfileActivity extends ListActivity
 	   					if (body.length() > 2)
 	   						ti.setSpannedBody(body.subSequence(0, body.length()-2));
 	   					else
-	   						ti.setSpannedBody(Constants.EMPTY_STRING);
+	   						ti.setSpannedBody("");
 	   					_mThingInfos.add(ti);
     				} else if (Constants.THREAD_KIND.equals(tiContainer.getKind())) {
     					ThingInfo ti = tiContainer.getData();

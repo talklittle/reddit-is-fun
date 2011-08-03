@@ -62,16 +62,17 @@ import android.text.style.StyleSpan;
 import android.text.style.URLSpan;
 import android.util.Log;
 import android.view.ContextMenu;
+import android.view.ContextMenu.ContextMenuInfo;
 import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
+import android.view.View.OnClickListener;
 import android.view.ViewGroup;
 import android.view.Window;
-import android.view.ContextMenu.ContextMenuInfo;
-import android.view.View.OnClickListener;
 import android.webkit.CookieSyncManager;
+import android.widget.AdapterView.AdapterContextMenuInfo;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.EditText;
@@ -79,7 +80,6 @@ import android.widget.ImageView;
 import android.widget.ListView;
 import android.widget.TextView;
 import android.widget.Toast;
-import android.widget.AdapterView.AdapterContextMenuInfo;
 
 /**
  * Main Activity class representing a Subreddit, i.e., a ThreadsList.
@@ -581,7 +581,7 @@ public final class InboxActivity extends ListActivity
     				throw new IllegalStateException(genericListingError);
     			// Save the modhash, after, and before
     			ListingData data = listing.getData();
-    			if (Constants.EMPTY_STRING.equals(data.getModhash()))
+    			if (Util.isEmpty(data.getModhash()))
     				mSettings.setModhash(null);
     			else
     				mSettings.setModhash(data.getModhash());
@@ -601,7 +601,7 @@ public final class InboxActivity extends ListActivity
    					if (body.length() > 2)
    						ti.setSpannedBody(body.subSequence(0, body.length()-2));
    					else
-   						ti.setSpannedBody(Constants.EMPTY_STRING);
+   						ti.setSpannedBody("");
    					_mThingInfos.add(ti);
     			}
     		} catch (Exception ex) {
@@ -736,7 +736,7 @@ public final class InboxActivity extends ListActivity
             	BufferedReader in = new BufferedReader(new InputStreamReader(entity.getContent()));
             	String line = in.readLine();
             	in.close();
-            	if (line == null || Constants.EMPTY_STRING.equals(line)) {
+            	if (Util.isEmpty(line)) {
             		_mUserError = "Connection error when marking message read. Try again.";
             		throw new HttpException("No content returned from read_message POST");
             	}

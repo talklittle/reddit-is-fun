@@ -89,7 +89,7 @@ public class LoginTask extends AsyncTask<Void, Void, Boolean> {
         	String line = in.readLine();
         	in.close();
         	entity.consumeContent();
-        	if (line == null || Constants.EMPTY_STRING.equals(line)) {
+        	if (Util.isEmpty(line)) {
         		throw new HttpException("No content returned from login POST");
         	}
         	

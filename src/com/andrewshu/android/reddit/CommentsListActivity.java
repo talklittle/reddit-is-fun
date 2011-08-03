@@ -412,8 +412,7 @@ public class CommentsListActivity extends ListActivity
 	                		String.format(getResources().getString(R.string.thread_time_submitter),
 	                				Util.getTimeAgo(item.getCreated_utc()), item.getAuthor()));
 	                
-	            	if (item.getSpannedSelftext() != null
-	            			&& !Constants.EMPTY_STRING.equals(item.getSpannedSelftext())) {
+	            	if (!Util.isEmpty(item.getSpannedSelftext())) {
 	            		selftextView.setVisibility(View.VISIBLE);
 		                selftextView.setText(item.getSpannedSelftext());
 	            	} else {
@@ -836,7 +835,7 @@ public class CommentsListActivity extends ListActivity
 				
 				// Save modhash, ignore "after" and "before" which are meaningless in this context (and probably null)
 				ListingData threadListingData = listings[0].getData();
-				if (Constants.EMPTY_STRING.equals(threadListingData.getModhash()))
+				if (Util.isEmpty(threadListingData.getModhash()))
 					mSettings.setModhash(null);
 				else
 					mSettings.setModhash(threadListingData.getModhash());
@@ -886,7 +885,7 @@ public class CommentsListActivity extends ListActivity
 				if (selftext.length() > 2)
 					mOpThingInfo.setSpannedSelftext(selftext.subSequence(0, selftext.length()-2));
 				else
-					mOpThingInfo.setSpannedSelftext(Constants.EMPTY_STRING);
+					mOpThingInfo.setSpannedSelftext("");
 
 				// Get URLs from markdown
 				markdown.getURLs(mOpThingInfo.getSelftext(), mOpThingInfo.getUrls());
@@ -967,7 +966,7 @@ public class CommentsListActivity extends ListActivity
         		if (body.length() > 2)
         			return body.subSequence(0, body.length()-2);
         		else
-        			return Constants.EMPTY_STRING;
+        			return "";
         	} catch (Exception e) {
         		if (Constants.LOGGING) Log.e(TAG, "createSpanned failed", e);
         		return null;
@@ -988,15 +987,14 @@ public class CommentsListActivity extends ListActivity
 	    		mCurrentDownloadCommentsTask = this;
     		}
     		
-    		// Initialize mCommentsList and mCommentsAdapter
-    		synchronized (COMMENT_ADAPTER_LOCK) {
-	    		if (isInsertingEntireThread())
-	    			resetUI(null);
-    		}
-
-    		// Do loading screen when loading new thread; otherwise when "loading more comments" don't show it
-    		if (isInsertingEntireThread())
+    		if (isInsertingEntireThread()) {
+        		// Initialize mCommentsList and mCommentsAdapter
+        		synchronized (COMMENT_ADAPTER_LOCK) {
+        			resetUI(null);
+        		}
+        		// Do loading screen when loading new thread; otherwise when "loading more comments" don't show it
     			enableLoadingScreen();
+    		}
     		
     		if (_mContentLength == -1)
     			getWindow().setFeatureInt(Window.FEATURE_PROGRESS, Window.PROGRESS_INDETERMINATE_ON);

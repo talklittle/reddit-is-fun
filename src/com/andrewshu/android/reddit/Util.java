@@ -40,6 +40,20 @@ public class Util {
 			throw new IllegalStateException(message);
 	}
 	
+    public static boolean listContainsIgnoreCase(ArrayList<String> list, String str){
+    	for (Iterator<String> iterator = list.iterator(); iterator.hasNext();) {
+			String string = (String) iterator.next();
+			
+			if(string.equalsIgnoreCase(str))
+				return true;
+		}
+    	return false;
+    }
+    
+    public static boolean isEmpty(CharSequence s) {
+    	return s == null || "".equals(s);
+    }
+    
 	public static ArrayList<String> extractUris(URLSpan[] spans) {
         int size = spans.length;
         ArrayList<String> accumulator = new ArrayList<String>();
@@ -179,6 +193,26 @@ public class Util {
 		return response.getStatusLine().getStatusCode() == 200;
 	}
 	
+	public static String getResponseErrorMessage(String line) throws Exception{
+    	String error = null;
+		
+		if (Util.isEmpty(line)) {
+			error = "Connection error when subscribing. Try again.";
+    		throw new HttpException("No content returned from subscribe POST");
+    	}
+    	if (line.contains("WRONG_PASSWORD")) {
+    		error = "Wrong password.";
+    		throw new Exception("Wrong password.");
+    	}
+    	if (line.contains("USER_REQUIRED")) {
+    		// The modhash probably expired
+    		throw new Exception("User required. Huh?");
+    	}
+    	
+    	Common.logDLong(TAG, line);
+		return error;
+	}
+
 	// ===============
 	//      Theme
 	// ===============
@@ -469,33 +503,4 @@ public class Util {
     	return host != null && host.endsWith(".youtube.com");
     }
     
-    static boolean listContainsIgnoreCase(ArrayList<String> list, String str){
-    	for (Iterator<String> iterator = list.iterator(); iterator.hasNext();) {
-			String string = (String) iterator.next();
-			
-			if(string.equalsIgnoreCase(str))
-				return true;
-		}
-    	return false;
-    }
-    
-	public static String getResponseErrorMessage(String line) throws Exception{
-    	String error = null;
-		
-		if (line == null || Constants.EMPTY_STRING.equals(line)) {
-			error = "Connection error when subscribing. Try again.";
-    		throw new HttpException("No content returned from subscribe POST");
-    	}
-    	if (line.contains("WRONG_PASSWORD")) {
-    		error = "Wrong password.";
-    		throw new Exception("Wrong password.");
-    	}
-    	if (line.contains("USER_REQUIRED")) {
-    		// The modhash probably expired
-    		throw new Exception("User required. Huh?");
-    	}
-    	
-    	Common.logDLong(TAG, line);
-		return error;
-	}
 }

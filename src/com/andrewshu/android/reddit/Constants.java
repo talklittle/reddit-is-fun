@@ -139,7 +139,6 @@ public class Constants {
     static final int[] STATE_NONE = new int[0];
     
     // Strings
-    static final String EMPTY_STRING = "";
     static final String NO_STRING = "no";
     
     static final String FRONTPAGE_STRING = "reddit front page";

@@ -108,7 +108,7 @@ public class SaveTask extends AsyncTask<Void, Void, Boolean> {
         	BufferedReader in = new BufferedReader(new InputStreamReader(entity.getContent()));
         	String line = in.readLine();
         	in.close();
-        	if (line == null || Constants.EMPTY_STRING.equals(line)) {
+        	if (Util.isEmpty(line)) {
         		mUserError = "Connection error when voting. Try again.";
         		throw new HttpException("No content returned from save POST");
         	}

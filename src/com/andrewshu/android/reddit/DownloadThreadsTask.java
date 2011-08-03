@@ -34,7 +34,7 @@ public abstract class DownloadThreadsTask extends AsyncTask<Void, Long, Boolean>
 	
 	protected String mSubreddit;
 	protected String mSortByUrl = Constants.ThreadsSort.SORT_BY_HOT_URL;
-	protected String mSortByUrlExtra = Constants.EMPTY_STRING;
+	protected String mSortByUrlExtra = "";
 	protected String mAfter;
 	protected String mBefore;
 	protected int mCount;
@@ -214,7 +214,7 @@ public abstract class DownloadThreadsTask extends AsyncTask<Void, Long, Boolean>
 				throw new IllegalStateException(genericListingError);
 			// Save the modhash, after, and before
 			ListingData data = listing.getData();
-			if (Constants.EMPTY_STRING.equals(data.getModhash()))
+			if (Util.isEmpty(data.getModhash()))
 				mModhash = null;
 			else
 				mModhash = data.getModhash();
