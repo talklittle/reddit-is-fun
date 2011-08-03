@@ -631,7 +631,7 @@ public class CommentsListActivity extends ListActivity
     	
     	private String _mJumpToCommentId = "";
     	private int _mJumpToCommentContext = 0;
-    	private boolean _mIsFoundJumpTargetComment = false;
+    	private Integer _mJumpTargetIndex = null;
     	
     	/**
     	 * Default constructor to do normal comments page
@@ -942,25 +942,19 @@ public class CommentsListActivity extends ListActivity
     	}
     	
     	private boolean isShouldDoSlowProcessing() {
-    		return !isHasJumpTarget() || _mIsFoundJumpTargetComment;
+    		// ok to do slow processing inline if we are not jumping, or if we have already found the jump target
+    		return !isHasJumpTarget() || _mJumpTargetIndex != null;
     	}
     	
     	private void processJumpTarget(ThingInfo comment, int commentIndex) {
-			_mIsFoundJumpTargetComment = true;
-			final int jumpTargetIndex = (commentIndex - _mJumpToCommentContext) > 0 ? (commentIndex - _mJumpToCommentContext) : 0;
+			_mJumpTargetIndex = (commentIndex - _mJumpToCommentContext) > 0 ? (commentIndex - _mJumpToCommentContext) : 0;
 			// load the comments that are the context of the target comment
 			synchronized (COMMENT_ADAPTER_LOCK) {
-				for (int i = jumpTargetIndex; i < commentIndex && i > 0; i++) {
+				for (int i = _mJumpTargetIndex; i < commentIndex && i > 0; i++) {
 					ThingInfo contextComment = mCommentsList.get(i);
 					processCommentSlowSteps(contextComment);
 				}
 			}
-			runOnUiThread(new Runnable() {
-				@Override
-				public void run() {
-					getListView().setSelection(jumpTargetIndex);
-				}
-			});
     	}
     	
     	private void processCommentSlowSteps(ThingInfo comment) {
@@ -985,6 +979,8 @@ public class CommentsListActivity extends ListActivity
         		}
         		_mDeferredProcessingList.clear();
         	}
+        	
+        	mCommentsAdapter.notifyDataSetChanged();
     	}
     	
     	/**
@@ -1052,11 +1048,15 @@ public class CommentsListActivity extends ListActivity
     		if (success) {
     			// We should clear any replies the user was composing.
     			mShouldClearReply = true;
-    			// We modified mCommentsList, which backs mCommentsAdapter, so mCommentsAdapter has changed too.
-    			mCommentsAdapter.notifyDataSetChanged();
+    			
+    			resetUI(mCommentsAdapter);
+    			
     			// Set title in android titlebar
     			if (mThreadTitle != null)
     				setTitle(mThreadTitle + " : " + mSubreddit);
+    			
+    			if (_mJumpTargetIndex != null)
+    				getListView().setSelection(_mJumpTargetIndex);
     		} else {
     			if (!isCancelled())
     				Common.showErrorToast("Error downloading comments. Please try again.", Toast.LENGTH_LONG, CommentsListActivity.this);
