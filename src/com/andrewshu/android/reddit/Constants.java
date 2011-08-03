@@ -152,9 +152,6 @@ public class Constants {
     static final String DELETE_TARGET_KIND_KEY = "delete_target_kind";
     static final String EDIT_TARGET_BODY_KEY = "edit_target_body";
     static final String ID_KEY = "id";
-    static final String JUMP_TO_COMMENT_ID_KEY = "jump_to_comment_id";
-    static final String JUMP_TO_COMMENT_CONTEXT_KEY = "jump_to_comment_context";
-    static final String JUMP_TO_COMMENT_POSITION_KEY = "jump_to_comment_position";
     static final String JUMP_TO_THREAD_ID_KEY = "jump_to_thread_id";
     static final String KARMA_KEY = "karma";
     static final String LAST_AFTER_KEY = "last_after";
