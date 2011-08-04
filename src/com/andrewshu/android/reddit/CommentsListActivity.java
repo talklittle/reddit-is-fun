@@ -630,7 +630,8 @@ public class CommentsListActivity extends ListActivity
     	private long _mContentLength = 0;
     	
     	private String _mJumpToCommentId = "";
-    	private int _mJumpToCommentContext = 0;
+    	private ThingInfo[] _mJumpToCommentContext = new ThingInfo[0];
+    	private int _mJumpToCommentContextIndex = 0;  // keep track of insertion index, act like circular array overwriting
     	private boolean _mIsFoundJumpTargetComment = false;
     	
     	/**
@@ -654,7 +655,7 @@ public class CommentsListActivity extends ListActivity
     	
     	public DownloadCommentsTask prepareLoadAndJumpToComment(String commentId, int context) {
     		_mJumpToCommentId = commentId;
-    		_mJumpToCommentContext = context;
+    		_mJumpToCommentContext = new ThingInfo[context];
     		return this;
     	}
        
@@ -670,8 +671,8 @@ public class CommentsListActivity extends ListActivity
 	        		.append(mThreadId)
 	        		.append("/z/").append(_mMoreChildrenId).append("/?")
 	        		.append(mSettings.commentsSortByUrl).append("&");
-	        	if (_mJumpToCommentContext != 0)
-	        		sb.append("context=").append(_mJumpToCommentContext).append("&");
+	        	if (_mJumpToCommentContext.length != 0)
+	        		sb.append("context=").append(_mJumpToCommentContext.length).append("&");
 	        	
 	        	String url = sb.toString();
 	        	
@@ -757,7 +758,7 @@ public class CommentsListActivity extends ListActivity
     	    		synchronized (COMMENT_ADAPTER_LOCK) {
     	    			mCommentsList.add(comment);
     	    		}
-    				mCommentsAdapter.notifyDataSetChanged();
+	    			mCommentsAdapter.notifyDataSetChanged();
     			}
     		});
     	}
@@ -891,8 +892,12 @@ public class CommentsListActivity extends ListActivity
     		ThingInfo ci = commentThingListing.getData();
     		ci.setIndent(_mIndentation + indentLevel);
     		
-    		if (isHasJumpTarget() && _mJumpToCommentId.equals(ci.getId()))
-    			processJumpTarget(ci, insertedCommentIndex);
+    		if (isHasJumpTarget()) {
+    			if (_mJumpToCommentId.equals(ci.getId()))
+    				processJumpTarget(ci, insertedCommentIndex);
+    			else if (!_mIsFoundJumpTargetComment)
+    				addJumpTargetContext(ci);
+    		}
 
     		if (isShouldDoSlowProcessing())
 	    		processCommentSlowSteps(ci);
@@ -947,13 +952,14 @@ public class CommentsListActivity extends ListActivity
     	
     	private void processJumpTarget(ThingInfo comment, int commentIndex) {
 			_mIsFoundJumpTargetComment = true;
-			final int jumpTargetIndex = (commentIndex - _mJumpToCommentContext) > 0 ? (commentIndex - _mJumpToCommentContext) : 0;
+			int numContext = _mJumpToCommentContext.length;
+			final int jumpTargetIndex = (commentIndex - numContext) > 0 ? (commentIndex - numContext) : 0;
+			
 			// load the comments that are the context of the target comment
-			synchronized (COMMENT_ADAPTER_LOCK) {
-				for (int i = jumpTargetIndex; i < commentIndex && i > 0; i++) {
-					ThingInfo contextComment = mCommentsList.get(i);
-					processCommentSlowSteps(contextComment);
-				}
+			for (ThingInfo contextComment : _mJumpToCommentContext) {
+				if (contextComment == null)
+					break;
+				processCommentSlowSteps(contextComment);
 			}
 			runOnUiThread(new Runnable() {
 				@Override
@@ -961,6 +967,11 @@ public class CommentsListActivity extends ListActivity
 					getListView().setSelection(jumpTargetIndex);
 				}
 			});
+    	}
+    	
+    	private void addJumpTargetContext(ThingInfo comment) {
+    		_mJumpToCommentContext[_mJumpToCommentContextIndex] = comment;
+    		_mJumpToCommentContextIndex = (_mJumpToCommentContextIndex + 1) % _mJumpToCommentContext.length;
     	}
     	
     	private void processCommentSlowSteps(ThingInfo comment) {
@@ -979,8 +990,15 @@ public class CommentsListActivity extends ListActivity
             
         	if (!_mDeferredProcessingList.isEmpty()) {
         		synchronized (COMMENT_ADAPTER_LOCK) {
-	        		for (int commentIndex : _mDeferredProcessingList) {
+	        		for (final int commentIndex : _mDeferredProcessingList) {
 	        			processCommentSlowSteps(mCommentsList.get(commentIndex));
+	        			runOnUiThread(new Runnable() {
+	        				@Override
+	        				public void run() {
+	    	        			if (isPositionVisible(commentIndex))
+	    	        				refreshCommentBodyTextView(commentIndex);
+	        				}
+	        			});
 	        		}
         		}
         		_mDeferredProcessingList.clear();
@@ -1052,8 +1070,9 @@ public class CommentsListActivity extends ListActivity
     		if (success) {
     			// We should clear any replies the user was composing.
     			mShouldClearReply = true;
-    			// We modified mCommentsList, which backs mCommentsAdapter, so mCommentsAdapter has changed too.
-    			mCommentsAdapter.notifyDataSetChanged();
+
+    			refreshVisibleComments();
+    			
     			// Set title in android titlebar
     			if (mThreadTitle != null)
     				setTitle(mThreadTitle + " : " + mSubreddit);
@@ -1091,6 +1110,30 @@ public class CommentsListActivity extends ListActivity
     	}
     	getWindow().setFeatureInt(Window.FEATURE_PROGRESS, 0);
     }
+    
+    /**
+     * Refresh the body TextView of visible comments. Call from UI Thread.
+     */
+    private void refreshVisibleComments() {
+		int firstPosition = getListView().getFirstVisiblePosition();
+		int lastPosition = getListView().getLastVisiblePosition();
+		for (int i = firstPosition; i <= lastPosition; i++)
+			refreshCommentBodyTextView(i);
+	}
+
+    private void refreshCommentBodyTextView(int commentIndex) {
+		View v = getListView().getChildAt(commentIndex);
+		View bodyTextView = v.findViewById(R.id.body);
+		synchronized (COMMENT_ADAPTER_LOCK) {
+			if (bodyTextView != null)
+				((TextView) bodyTextView).setText(mCommentsAdapter.getItem(commentIndex).getSpannedBody());
+		}
+    }
+
+	private boolean isPositionVisible(int position) {
+		return position <= getListView().getLastVisiblePosition() && position >= getListView().getFirstVisiblePosition();
+	}
+	
     
     
     private class MyLoginTask extends LoginTask {
