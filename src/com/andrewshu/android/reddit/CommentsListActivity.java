@@ -964,6 +964,7 @@ public class CommentsListActivity extends ListActivity
 			runOnUiThread(new Runnable() {
 				@Override
 				public void run() {
+					refreshVisibleComments();
 					getListView().setSelection(jumpTargetIndex);
 				}
 			});
@@ -992,17 +993,21 @@ public class CommentsListActivity extends ListActivity
         		synchronized (COMMENT_ADAPTER_LOCK) {
 	        		for (final int commentIndex : _mDeferredProcessingList) {
 	        			processCommentSlowSteps(mCommentsList.get(commentIndex));
-	        			runOnUiThread(new Runnable() {
-	        				@Override
-	        				public void run() {
-	    	        			if (isPositionVisible(commentIndex))
-	    	        				refreshCommentBodyTextView(commentIndex);
-	        				}
-	        			});
+	        			refreshCommentIfVisible(commentIndex);
 	        		}
         		}
         		_mDeferredProcessingList.clear();
         	}
+    	}
+    	
+    	private void refreshCommentIfVisible(final int commentIndex) {
+			runOnUiThread(new Runnable() {
+				@Override
+				public void run() {
+        			if (isPositionVisible(commentIndex))
+        				refreshCommentBodyTextView(commentIndex);
+				}
+			});
     	}
     	
     	/**
