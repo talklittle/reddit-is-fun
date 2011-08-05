@@ -2059,7 +2059,7 @@ public class CommentsListActivity extends ListActivity
 	    		ci.setHiddenCommentDescendant(false);
 	    		
 	    		// skip nested hidden comments (e.g. you collapsed child first, then root. now expanding root, but don't expand child) 
-	    		if (ci.isHiddenCommentHead() && ci.isHiddenCommentDescendant())
+	    		if (ci.isHiddenCommentHead())
 	    			skipIndentAbove = ci.getIndent();
 	    		else
 		    		skipIndentAbove = -1;
