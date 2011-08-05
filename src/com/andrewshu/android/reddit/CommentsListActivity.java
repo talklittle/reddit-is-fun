@@ -624,7 +624,7 @@ public class CommentsListActivity extends ListActivity
     	private String _mMoreChildrenId = "";
 
     	private LinkedList<ThingInfo> _mDeferredInsertList = new LinkedList<ThingInfo>();
-    	private LinkedList<Integer> _mDeferredProcessingList = new LinkedList<Integer>();
+    	private LinkedList<DeferredCommentProcessing> _mDeferredProcessingList = new LinkedList<DeferredCommentProcessing>();
     	
     	// Progress bar
     	private long _mContentLength = 0;
@@ -634,6 +634,15 @@ public class CommentsListActivity extends ListActivity
     	private int _mJumpToCommentContextIndex = 0;  // keep track of insertion index, act like circular array overwriting
     	private boolean _mIsFoundJumpTargetComment = false;
     	
+    	private class DeferredCommentProcessing {
+    		public int commentIndex;
+    		public ThingInfo comment;
+    		public DeferredCommentProcessing(ThingInfo comment, int commentIndex) {
+    			this.comment = comment;
+    			this.commentIndex = commentIndex;
+    		}
+    	}
+       
     	/**
     	 * Default constructor to do normal comments page
     	 */
@@ -658,7 +667,7 @@ public class CommentsListActivity extends ListActivity
     		_mJumpToCommentContext = new ThingInfo[context];
     		return this;
     	}
-       
+    	
     	// XXX: maxComments is unused for now
     	public Boolean doInBackground(Integer... maxComments) {
     		HttpEntity entity = null;
@@ -786,8 +795,8 @@ public class CommentsListActivity extends ListActivity
     	/**
     	 * defer the slow processing step of a comment, in case we want to prioritize processing of comments over others.
     	 */
-    	private void deferCommentProcessing(int commentIndex) {
-    		_mDeferredProcessingList.add(commentIndex);
+    	private void deferCommentProcessing(ThingInfo comment, int commentIndex) {
+    		_mDeferredProcessingList.add(new DeferredCommentProcessing(comment, commentIndex));
     	}
     	
     	/**
@@ -860,9 +869,14 @@ public class CommentsListActivity extends ListActivity
     	private void parseOP(ThingInfo data) {
 			mOpThingInfo = data;
 			mOpThingInfo.setIndent(0);
-			synchronized (COMMENT_ADAPTER_LOCK) {
-				mCommentsList.add(0, mOpThingInfo);
-			}
+			runOnUiThread(new Runnable() {
+				@Override
+				public void run() {
+					synchronized (COMMENT_ADAPTER_LOCK) {
+						mCommentsList.add(0, mOpThingInfo);
+					}
+				}
+			});
 
 			if (mOpThingInfo.isIs_self() && mOpThingInfo.getSelftext_html() != null) {
 				// HTML to Spanned
@@ -902,7 +916,7 @@ public class CommentsListActivity extends ListActivity
     		if (isShouldDoSlowProcessing())
 	    		processCommentSlowSteps(ci);
     		else
-    			deferCommentProcessing(insertedCommentIndex);
+    			deferCommentProcessing(ci, insertedCommentIndex);
 
     		// Insert the comment
     		if (isInsertingEntireThread())
@@ -986,17 +1000,13 @@ public class CommentsListActivity extends ListActivity
     	private void processDeferredComments() {
         	if (!_mDeferredInsertList.isEmpty()) {
         		replaceCommentsAtPosition(_mDeferredInsertList, _mPositionOffset);
-        		_mDeferredInsertList.clear();
         	}
             
         	if (!_mDeferredProcessingList.isEmpty()) {
-        		synchronized (COMMENT_ADAPTER_LOCK) {
-	        		for (final int commentIndex : _mDeferredProcessingList) {
-	        			processCommentSlowSteps(mCommentsList.get(commentIndex));
-	        			refreshCommentIfVisible(commentIndex);
-	        		}
+        		for (final DeferredCommentProcessing deferredCommentProcessing : _mDeferredProcessingList) {
+        			processCommentSlowSteps(deferredCommentProcessing.comment);
+        			refreshCommentIfVisible(deferredCommentProcessing.commentIndex);
         		}
-        		_mDeferredProcessingList.clear();
         	}
     	}
     	
@@ -1032,6 +1042,15 @@ public class CommentsListActivity extends ListActivity
         	}
         }
         
+        /**
+         * cleanup deferred in onPostExecute(), otherwise you clear it too soon and end up with race condition vs. UI thread
+         */
+        private void cleanupDeferred() {
+        	_mDeferredInsertList.clear();
+        	_mDeferredProcessingList.clear();
+        }
+        
+        @Override
     	public void onPreExecute() {
     		if (mThreadId == null) {
     			if (Constants.LOGGING) Log.e(TAG, "mSettings.threadId == null");
@@ -1062,7 +1081,9 @@ public class CommentsListActivity extends ListActivity
 	    		setTitle(mThreadTitle + " : " + mSubreddit);
     	}
     	
+    	@Override
     	public void onPostExecute(Boolean success) {
+    		cleanupDeferred();
     		synchronized (mCurrentDownloadCommentsTaskLock) {
     			mCurrentDownloadCommentsTask = null;
     		}
@@ -1098,6 +1119,7 @@ public class CommentsListActivity extends ListActivity
     		}
     	}
     	
+    	@Override
     	public void propertyChange(PropertyChangeEvent event) {
     		publishProgress((Long) event.getNewValue());
     	}
@@ -1128,10 +1150,13 @@ public class CommentsListActivity extends ListActivity
 
     private void refreshCommentBodyTextView(int commentIndex) {
 		View v = getListView().getChildAt(commentIndex);
-		View bodyTextView = v.findViewById(R.id.body);
-		synchronized (COMMENT_ADAPTER_LOCK) {
-			if (bodyTextView != null)
-				((TextView) bodyTextView).setText(mCommentsAdapter.getItem(commentIndex).getSpannedBody());
+		if (v != null) {
+			View bodyTextView = v.findViewById(R.id.body);
+			if (bodyTextView != null) {
+				synchronized (COMMENT_ADAPTER_LOCK) {
+						((TextView) bodyTextView).setText(mCommentsAdapter.getItem(commentIndex).getSpannedBody());
+				}
+			}
 		}
     }
 
