@@ -353,13 +353,6 @@ public class DownloadCommentsTask extends AsyncTask<Integer, Long, Boolean>
 		ThingInfo ci = commentThingListing.getData();
 		ci.setIndent(mIndentation + indentLevel);
 		
-		if (isHasJumpTarget()) {
-			if (mJumpToCommentId.equals(ci.getId()))
-				processJumpTarget(ci, insertedCommentIndex);
-			else if (!mIsFoundJumpTargetComment)
-				addJumpTargetContext(ci);
-		}
-
 		if (isShouldDoSlowProcessing())
     		processCommentSlowSteps(ci);
 		else
@@ -371,6 +364,13 @@ public class DownloadCommentsTask extends AsyncTask<Integer, Long, Boolean>
 		else
 			deferCommentInsertion(ci);
 		
+		if (isHasJumpTarget()) {
+			if (mJumpToCommentId.equals(ci.getId()))
+				processJumpTarget(ci, insertedCommentIndex);
+			else if (!mIsFoundJumpTargetComment)
+				addJumpTargetContext(ci);
+		}
+
 		// handle "more" entry
 		if (Constants.MORE_KIND.equals(commentThingListing.getKind())) {
 			ci.setLoadMoreCommentsPlaceholder(true);
@@ -453,14 +453,19 @@ public class DownloadCommentsTask extends AsyncTask<Integer, Long, Boolean>
 		}
     }
 
-	boolean isPositionVisible(int position) {
+	/**
+	 * Call from UI Thread
+	 */
+    boolean isPositionVisible(int position) {
 		return position <= mActivity.getListView().getLastVisiblePosition() &&
 				position >= mActivity.getListView().getFirstVisiblePosition();
 	}
 	
 	private void addJumpTargetContext(ThingInfo comment) {
-		mJumpToCommentContext[mJumpToCommentContextIndex] = comment;
-		mJumpToCommentContextIndex = (mJumpToCommentContextIndex + 1) % mJumpToCommentContext.length;
+		if (mJumpToCommentContext.length > 0) {
+			mJumpToCommentContext[mJumpToCommentContextIndex] = comment;
+			mJumpToCommentContextIndex = (mJumpToCommentContextIndex + 1) % mJumpToCommentContext.length;
+		}
 	}
 	
 	private void processCommentSlowSteps(ThingInfo comment) {
