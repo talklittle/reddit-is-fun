@@ -20,32 +20,22 @@
 package com.andrewshu.android.reddit;
 
 
-import java.beans.PropertyChangeEvent;
-import java.beans.PropertyChangeListener;
-import java.io.IOException;
-import java.io.InputStream;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
-import java.util.Collection;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import org.apache.http.Header;
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpResponse;
 import org.apache.http.NameValuePair;
 import org.apache.http.client.entity.UrlEncodedFormEntity;
-import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.impl.client.DefaultHttpClient;
 import org.apache.http.message.BasicNameValuePair;
 import org.apache.http.params.HttpConnectionParams;
 import org.apache.http.params.HttpParams;
 import org.apache.http.protocol.HTTP;
-import org.codehaus.jackson.JsonParseException;
-import org.codehaus.jackson.map.ObjectMapper;
 
 import android.app.Activity;
 import android.app.AlertDialog;
@@ -106,15 +96,13 @@ public class CommentsListActivity extends ListActivity
     private final Pattern COMMENT_PATH_PATTERN = Pattern.compile(Constants.COMMENT_PATH_PATTERN_STRING);
     private final Pattern COMMENT_CONTEXT_PATTERN = Pattern.compile("context=(\\d+)");
 
-    private final ObjectMapper mObjectMapper = Common.getObjectMapper();
     private final BitmapManager drawableManager = new BitmapManager();
-    private final Markdown markdown = new Markdown();
     
     /** Custom list adapter that fits our threads data into the list. */
-    private CommentsListAdapter mCommentsAdapter = null;
-    private ArrayList<ThingInfo> mCommentsList = null;
+    CommentsListAdapter mCommentsAdapter = null;
+    ArrayList<ThingInfo> mCommentsList = null;
     // Lock used when modifying the mCommentsAdapter
-    private static final Object COMMENT_ADAPTER_LOCK = new Object();
+    static final Object COMMENT_ADAPTER_LOCK = new Object();
     
     private final DefaultHttpClient mClient = Common.getGzipHttpClient();
     
@@ -124,7 +112,6 @@ public class CommentsListActivity extends ListActivity
     
     private String mSubreddit = null;
     private String mThreadId = null;
-    private ThingInfo mOpThingInfo = null;
     private String mThreadTitle = null;
 	
     // UI State
@@ -134,8 +121,6 @@ public class CommentsListActivity extends ListActivity
     private String mEditTargetBody = null;
     private String mDeleteTargetKind = null;
     private boolean mShouldClearReply = false;
-    private AsyncTask<?, ?, ?> mCurrentDownloadCommentsTask = null;
-    private static final Object mCurrentDownloadCommentsTaskLock = new Object();
 
     private String last_search_string;
     private int last_found_position = -1;
@@ -166,6 +151,7 @@ public class CommentsListActivity extends ListActivity
      * 
      * @see Activity#onCreate
      */
+    @SuppressWarnings("unchecked")
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -196,13 +182,11 @@ public class CommentsListActivity extends ListActivity
         	    setTitle(mThreadTitle + " : " + mSubreddit);
         	}
         	
-		    CommentsRetainer retainer = (CommentsRetainer) getLastNonConfigurationInstance();
-        	if (retainer == null) {
-		    	new DownloadCommentsTask().execute(Constants.DEFAULT_COMMENT_DOWNLOAD_LIMIT);
+		    mCommentsList = (ArrayList<ThingInfo>) getLastNonConfigurationInstance();
+        	if (mCommentsList == null) {
+        		getNewDownloadCommentsTask().execute(Constants.DEFAULT_COMMENT_DOWNLOAD_LIMIT);
 		    } else {
 		    	// Orientation change. Use prior instance.
-		    	mOpThingInfo = retainer.opThingInfo;
-			    mCommentsList = retainer.commentsList;
 			    resetUI(new CommentsListAdapter(this, mCommentsList));
 		    }
     	}
@@ -271,11 +255,11 @@ public class CommentsListActivity extends ListActivity
         	}
         	
         	if (!Util.isEmpty(jumpToCommentId)) {
-        		new DownloadCommentsTask().prepareLoadAndJumpToComment(jumpToCommentId, jumpToCommentContext)
+        		getNewDownloadCommentsTask().prepareLoadAndJumpToComment(jumpToCommentId, jumpToCommentContext)
         				.execute(Constants.DEFAULT_COMMENT_DOWNLOAD_LIMIT);
         	}
         	else {
-        		new DownloadCommentsTask().execute(Constants.DEFAULT_COMMENT_DOWNLOAD_LIMIT);
+        		getNewDownloadCommentsTask().execute(Constants.DEFAULT_COMMENT_DOWNLOAD_LIMIT);
         	}
         }
     }
@@ -303,22 +287,17 @@ public class CommentsListActivity extends ListActivity
     
     @Override
     public Object onRetainNonConfigurationInstance() {
-        // Avoid having to re-download and re-parse the comments list
-    	// when rotating or opening keyboard.
-    	if (mOpThingInfo != null && mCommentsList != null)
-    		return new CommentsRetainer(mOpThingInfo, mCommentsList);
-    	else
-    		return null;
+    	return mCommentsList;
     }
     
-    class CommentsRetainer {
-    	public ArrayList<ThingInfo> commentsList;
-    	public ThingInfo opThingInfo;
-    	
-    	public CommentsRetainer(ThingInfo op, ArrayList<ThingInfo> comments) {
-    		this.opThingInfo = op;
-    		this.commentsList = comments;
-    	}
+    private DownloadCommentsTask getNewDownloadCommentsTask() {
+    	return new DownloadCommentsTask(
+				this,
+				mSubreddit,
+				mThreadId,
+				mSettings,
+				mClient
+		);
     }
     
     private boolean isHiddenCommentHeadPosition(int position) {
@@ -333,7 +312,7 @@ public class CommentsListActivity extends ListActivity
     	return mCommentsAdapter != null && mCommentsAdapter.getItemViewType(position) == CommentsListAdapter.MORE_ITEM_VIEW_TYPE;
     }
     
-    private final class CommentsListAdapter extends ArrayAdapter<ThingInfo> {
+    final class CommentsListAdapter extends ArrayAdapter<ThingInfo> {
     	public static final int OP_ITEM_VIEW_TYPE = 0;
     	public static final int COMMENT_ITEM_VIEW_TYPE = 1;
     	public static final int MORE_ITEM_VIEW_TYPE = 2;
@@ -437,7 +416,7 @@ public class CommentsListActivity extends ListActivity
 		            	// so the ListView might try to display the View before "ups" in JSON has been parsed.
 		            	if (Constants.LOGGING) Log.e(TAG, "getView, hidden comment heads", e);
 		            }
-		            if (mOpThingInfo != null && item.getAuthor().equalsIgnoreCase(mOpThingInfo.getAuthor()))
+		            if (getOpThingInfo() != null && item.getAuthor().equalsIgnoreCase(getOpThingInfo().getAuthor()))
 		            	submitterView.setText(item.getAuthor() + " [S]");
 		            else
 		            	submitterView.setText(item.getAuthor());
@@ -492,7 +471,21 @@ public class CommentsListActivity extends ListActivity
             return view;
         }
     } // End of CommentsListAdapter
+    
+    public ThingInfo getOpThingInfo() {
+    	if (mCommentsList != null)
+    		return mCommentsList.get(0);
+    	return null;
+    }
 
+    public void setThreadTitle(String threadTitle) {
+    	this.mThreadTitle = threadTitle;
+    }
+    
+    public void setShouldClearReply(boolean shouldClearReply) {
+    	this.mShouldClearReply = shouldClearReply;
+    }
+    
     public static void setCommentIndent(View commentListItemView, int indentLevel, RedditSettings settings) {
         View[] indentViews = new View[] {
         	commentListItemView.findViewById(R.id.left_indent1),
@@ -541,7 +534,7 @@ public class CommentsListActivity extends ListActivity
 		
         if (isLoadMoreCommentsPosition(position)) {
         	// Use this constructor to tell it to load more comments inline
-        	new DownloadCommentsTask().prepareLoadMoreComments(item.getId(), position, item.getIndent())
+        	getNewDownloadCommentsTask().prepareLoadMoreComments(item.getId(), position, item.getIndent())
         			.execute(Constants.DEFAULT_COMMENT_DOWNLOAD_LIMIT);
         } else {
         	if (!"[deleted]".equals(item.getAuthor()))
@@ -553,7 +546,7 @@ public class CommentsListActivity extends ListActivity
      * Resets the output UI list contents, retains session state.
      * @param commentsAdapter A new CommentsListAdapter to use. Pass in null to create a new empty one.
      */
-    public void resetUI(CommentsListAdapter commentsAdapter) {
+    void resetUI(CommentsListAdapter commentsAdapter) {
     	int firstVisiblePosition = getListView().getFirstVisiblePosition();
     	
     	setTheme(mSettings.theme);
@@ -581,11 +574,11 @@ public class CommentsListActivity extends ListActivity
     /**
      * Mark the OP submitter comments
      */
-    private void markSubmitterComments() {
-    	if (mOpThingInfo == null || mCommentsAdapter == null)
+    void markSubmitterComments() {
+    	if (getOpThingInfo() == null || mCommentsAdapter == null)
     		return;
     	
-		SpannableString authorSS = new SpannableString(mOpThingInfo.getAuthor() + " [S]");
+		SpannableString authorSS = new SpannableString(getOpThingInfo().getAuthor() + " [S]");
         ForegroundColorSpan fcs;
         if (Util.isLightTheme(mSettings.theme))
         	fcs = new ForegroundColorSpan(getResources().getColor(R.color.blue));
@@ -597,535 +590,13 @@ public class CommentsListActivity extends ListActivity
     		for (int i = 0; i < mCommentsAdapter.getCount(); i++) {
     			ThingInfo ci = mCommentsAdapter.getItem(i);
     			// if it's the OP, mark his name
-    			if (mOpThingInfo.getAuthor().equalsIgnoreCase(ci.getAuthor()))
+    			if (getOpThingInfo().getAuthor().equalsIgnoreCase(ci.getAuthor()))
     	            ci.setSSAuthor(authorSS);
     		}
     	}
     }
     
-    /**
-     * Task takes in a subreddit name string and thread id, downloads its data, parses
-     * out the comments, and communicates them back to the UI as they are read.
-     * 
-     * Requires the following navigation variables to be set:
-     * mSettings.subreddit
-     * mSettings.threadId
-     * mMoreChildrenId (can be "")
-     * mSortByUrl
-     */
-    class DownloadCommentsTask extends AsyncTask<Integer, Long, Boolean>
-    		implements PropertyChangeListener {
-    	
-    	private static final String TAG = "CommentsListActivity.DownloadCommentsTask";
-    	
-    	// offset of the first comment being loaded; 0 if it includes OP
-    	private int _mPositionOffset = 0;
-    	private int _mIndentation = 0;
-    	private String _mMoreChildrenId = "";
-
-    	private LinkedList<ThingInfo> _mDeferredInsertList = new LinkedList<ThingInfo>();
-    	private LinkedList<DeferredCommentProcessing> _mDeferredProcessingList = new LinkedList<DeferredCommentProcessing>();
-    	
-    	// Progress bar
-    	private long _mContentLength = 0;
-    	
-    	private String _mJumpToCommentId = "";
-    	private ThingInfo[] _mJumpToCommentContext = new ThingInfo[0];
-    	private int _mJumpToCommentContextIndex = 0;  // keep track of insertion index, act like circular array overwriting
-    	private boolean _mIsFoundJumpTargetComment = false;
-    	
-    	private class DeferredCommentProcessing {
-    		public int commentIndex;
-    		public ThingInfo comment;
-    		public DeferredCommentProcessing(ThingInfo comment, int commentIndex) {
-    			this.comment = comment;
-    			this.commentIndex = commentIndex;
-    		}
-    	}
-       
-    	/**
-    	 * Default constructor to do normal comments page
-    	 */
-    	public DownloadCommentsTask() {
-    	}
-    	
-    	/**
-    	 * "load more comments" starting at this position
-    	 * @param moreChildrenId The reddit thing-id of the "more" children comment
-    	 * @param morePosition Position in local list to insert
-    	 * @param indentation The indentation level of the child.
-    	 */
-    	public DownloadCommentsTask prepareLoadMoreComments(String moreChildrenId, int morePosition, int indentation) {
-    		_mMoreChildrenId = moreChildrenId;
-    		_mPositionOffset = morePosition;
-    		_mIndentation = indentation;
-    		return this;
-    	}
-    	
-    	public DownloadCommentsTask prepareLoadAndJumpToComment(String commentId, int context) {
-    		_mJumpToCommentId = commentId;
-    		_mJumpToCommentContext = new ThingInfo[context];
-    		return this;
-    	}
-    	
-    	// XXX: maxComments is unused for now
-    	public Boolean doInBackground(Integer... maxComments) {
-    		HttpEntity entity = null;
-            try {
-            	StringBuilder sb = new StringBuilder("http://api.reddit.com");
-        		if (mSubreddit != null) {
-        			sb.append("/r/").append(mSubreddit.trim());
-        		}
-        		sb.append("/comments/")
-	        		.append(mThreadId)
-	        		.append("/z/").append(_mMoreChildrenId).append("/?")
-	        		.append(mSettings.commentsSortByUrl).append("&");
-	        	if (_mJumpToCommentContext.length != 0)
-	        		sb.append("context=").append(_mJumpToCommentContext.length).append("&");
-	        	
-	        	String url = sb.toString();
-	        	
-	        	InputStream in = null;
-	    		boolean currentlyUsingCache = false;
-	    		
-	        	if (Constants.USE_COMMENTS_CACHE) {
-	    			try {
-		    			if (CacheInfo.checkFreshThreadCache(getApplicationContext())
-		    					&& url.equals(CacheInfo.getCachedThreadUrl(getApplicationContext()))) {
-		    				in = openFileInput(Constants.FILENAME_THREAD_CACHE);
-		    				_mContentLength = getFileStreamPath(Constants.FILENAME_THREAD_CACHE).length();
-		    				currentlyUsingCache = true;
-		    				if (Constants.LOGGING) Log.d(TAG, "Using cached thread JSON, length=" + _mContentLength);
-		    			}
-	    			} catch (Exception cacheEx) {
-	    				if (Constants.LOGGING) Log.w(TAG, "skip cache", cacheEx);
-	    			}
-	    		}
-	    		
-	    		// If we couldn't use the cache, then do HTTP request
-	        	if (!currentlyUsingCache) {
-			    	HttpGet request = new HttpGet(url);
-	                HttpResponse response = mClient.execute(request);
-	            	
-	                // Read the header to get Content-Length since entity.getContentLength() returns -1
-	            	Header contentLengthHeader = response.getFirstHeader("Content-Length");
-	            	if (contentLengthHeader != null) {
-	            		_mContentLength = Long.valueOf(contentLengthHeader.getValue());
-		            	if (Constants.LOGGING) Log.d(TAG, "Content length: "+_mContentLength);
-	            	}
-	            	else {
-	            		_mContentLength = -1; 
-		            	if (Constants.LOGGING) Log.d(TAG, "Content length: UNAVAILABLE");
-	            	}
-	
-	            	entity = response.getEntity();
-	            	in = entity.getContent();
-	            	
-	            	if (Constants.USE_COMMENTS_CACHE) {
-	                	in = CacheInfo.writeThenRead(getApplicationContext(), in, Constants.FILENAME_THREAD_CACHE);
-	                	try {
-	                		CacheInfo.setCachedThreadUrl(getApplicationContext(), url);
-	                	} catch (IOException e) {
-	                		if (Constants.LOGGING) Log.e(TAG, "error on setCachedThreadId", e);
-	                	}
-	            	}
-	        	}
-                
-            	// setup a special InputStream to report progress
-            	ProgressInputStream pin = new ProgressInputStream(in, _mContentLength);
-            	pin.addPropertyChangeListener(this);
-            	
-            	parseCommentsJSON(pin);
-            	if (Constants.LOGGING) Log.d(TAG, "parseCommentsJSON completed");
-            	
-            	pin.close();
-                in.close();
-                
-                // label the OP's comments with [S]
-                markSubmitterComments();
-				
-                return true;
-                
-            } catch (Exception e) {
-            	if (Constants.LOGGING) Log.e(TAG, "DownloadCommentsTask", e);
-            } finally {
-        		if (entity != null) {
-        			try {
-        				entity.consumeContent();
-        			} catch (Exception e2) {
-        				if (Constants.LOGGING) Log.e(TAG, "entity.consumeContent()", e2);
-        			}
-        		}
-            }
-            return false;
-	    }
-    	
-    	private void appendComment(final ThingInfo comment) {
-    		runOnUiThread(new Runnable() {
-    			@Override
-    			public void run() {
-    	    		synchronized (COMMENT_ADAPTER_LOCK) {
-    	    			mCommentsList.add(comment);
-    	    		}
-	    			mCommentsAdapter.notifyDataSetChanged();
-    			}
-    		});
-    	}
-    	
-    	private void replaceCommentsAtPosition(final Collection<ThingInfo> comments, final int position) {
-    		runOnUiThread(new Runnable() {
-    			@Override
-    			public void run() {
-    	    		synchronized (COMMENT_ADAPTER_LOCK) {
-    					mCommentsList.remove(position);
-    	 	    		mCommentsList.addAll(position, comments);
-    	    		}
-    				mCommentsAdapter.notifyDataSetChanged();
-    			}
-    		});
-    	}
-    	
-    	/**
-    	 * defer insertion of comment, in case we want to insert a group of comments at the same time for convenience.
-    	 */
-    	private void deferCommentInsertion(ThingInfo comment) {
-    		_mDeferredInsertList.add(comment);
-    	}
-    	
-    	/**
-    	 * defer the slow processing step of a comment, in case we want to prioritize processing of comments over others.
-    	 */
-    	private void deferCommentProcessing(ThingInfo comment, int commentIndex) {
-    		_mDeferredProcessingList.add(new DeferredCommentProcessing(comment, commentIndex));
-    	}
-    	
-    	/**
-    	 * tell if inserting entire thread, versus loading "more comments"
-    	 */
-    	private boolean isInsertingEntireThread() {
-    		return _mPositionOffset == 0;
-    	}
-    	
-    	private void disableLoadingScreenKeepProgress() {
-    		runOnUiThread(new Runnable() {
-    			@Override
-    			public void run() {
-    	    		resetUI(mCommentsAdapter);
-    			}
-    		});
-    	}
-    	
-    	private void parseCommentsJSON(
-    			InputStream in
-		) throws IOException, JsonParseException {
-    		int insertedCommentIndex;
-			String genericListingError = "Not a comments listing";
-			try {
-				Listing[] listings = mObjectMapper.readValue(in, Listing[].class);
-
-				// listings[0] is a thread Listing for the OP.
-				// process same as a thread listing more or less
-				
-				Util.assertState(Constants.JSON_LISTING.equals(listings[0].getKind()), genericListingError);
-				
-				// Save modhash, ignore "after" and "before" which are meaningless in this context (and probably null)
-				ListingData threadListingData = listings[0].getData();
-				if (Util.isEmpty(threadListingData.getModhash()))
-					mSettings.setModhash(null);
-				else
-					mSettings.setModhash(threadListingData.getModhash());
-				
-				if (Constants.LOGGING) Log.d(TAG, "Successfully got OP listing[0]: modhash "+mSettings.modhash);
-				
-				ThingListing threadThingListing = threadListingData.getChildren()[0];
-				Util.assertState(Constants.THREAD_KIND.equals(threadThingListing.getKind()), genericListingError);
-
-				if (isInsertingEntireThread()) {
-					parseOP(threadThingListing.getData());
-					insertedCommentIndex = 0;  // we just inserted the OP into position 0
-				}
-				else {
-					insertedCommentIndex = _mPositionOffset - 1;  // -1 because we +1 for the first comment
-				}
-				
-				// at this point we've started displaying comments, so disable the loading screen
-				disableLoadingScreenKeepProgress();
-				
-				// listings[1] is a comment Listing for the comments
-				// Go through the children and get the ThingInfos
-				ListingData commentListingData = listings[1].getData();
-				for (ThingListing commentThingListing : commentListingData.getChildren()) {
-					// insert the comment and its replies, prefix traversal order
-					insertedCommentIndex = insertNestedComment(commentThingListing, 0, insertedCommentIndex + 1);
-				}
-				
-				processDeferredComments();
-				
-			} catch (Exception ex) {
-				if (Constants.LOGGING) Log.e(TAG, "parseCommentsJSON", ex);
-			}
-		}
-    	
-    	private void parseOP(ThingInfo data) {
-			mOpThingInfo = data;
-			mOpThingInfo.setIndent(0);
-			runOnUiThread(new Runnable() {
-				@Override
-				public void run() {
-					synchronized (COMMENT_ADAPTER_LOCK) {
-						mCommentsList.add(0, mOpThingInfo);
-					}
-				}
-			});
-
-			if (mOpThingInfo.isIs_self() && mOpThingInfo.getSelftext_html() != null) {
-				// HTML to Spanned
-				String unescapedHtmlSelftext = Html.fromHtml(mOpThingInfo.getSelftext_html()).toString();
-				Spanned selftext = Html.fromHtml(Util.convertHtmlTags(unescapedHtmlSelftext));
-				
-	    		// remove last 2 newline characters
-				if (selftext.length() > 2)
-					mOpThingInfo.setSpannedSelftext(selftext.subSequence(0, selftext.length()-2));
-				else
-					mOpThingInfo.setSpannedSelftext("");
-
-				// Get URLs from markdown
-				markdown.getURLs(mOpThingInfo.getSelftext(), mOpThingInfo.getUrls());
-			}
-			// We might not have a title if we've intercepted a plain link to a thread.
-			mThreadTitle = mOpThingInfo.getTitle();
-			mSubreddit = mOpThingInfo.getSubreddit();
-			mThreadId = mOpThingInfo.getId();
-    	}
-    	
-    	/**
-    	 * Recursive method to insert comment tree into the mCommentsList,
-    	 * with proper list order and indentation
-    	 */
-    	int insertNestedComment(ThingListing commentThingListing, int indentLevel, int insertedCommentIndex) {
-    		ThingInfo ci = commentThingListing.getData();
-    		ci.setIndent(_mIndentation + indentLevel);
-    		
-    		if (isHasJumpTarget()) {
-    			if (_mJumpToCommentId.equals(ci.getId()))
-    				processJumpTarget(ci, insertedCommentIndex);
-    			else if (!_mIsFoundJumpTargetComment)
-    				addJumpTargetContext(ci);
-    		}
-
-    		if (isShouldDoSlowProcessing())
-	    		processCommentSlowSteps(ci);
-    		else
-    			deferCommentProcessing(ci, insertedCommentIndex);
-
-    		// Insert the comment
-    		if (isInsertingEntireThread())
-				appendComment(ci);
-    		else
-    			deferCommentInsertion(ci);
-    		
-    		// handle "more" entry
-    		if (Constants.MORE_KIND.equals(commentThingListing.getKind())) {
-    			ci.setLoadMoreCommentsPlaceholder(true);
-    			if (Constants.LOGGING) Log.v(TAG, "new more position at " + (insertedCommentIndex));
-		    	return insertedCommentIndex;
-    		}
-    		
-    		// Regular comment
-    		
-    		// Skip things that are not comments, which shouldn't happen
-			if (!Constants.COMMENT_KIND.equals(commentThingListing.getKind())) {
-				if (Constants.LOGGING) Log.e(TAG, "comment whose kind is \""+commentThingListing.getKind()+"\" (expected "+Constants.COMMENT_KIND+")");
-				return insertedCommentIndex;
-			}
-			
-			// handle the replies
-			Listing repliesListing = ci.getReplies();
-			if (repliesListing == null)
-				return insertedCommentIndex;
-			ListingData repliesListingData = repliesListing.getData();
-			if (repliesListingData == null)
-				return insertedCommentIndex;
-			ThingListing[] replyThingListings = repliesListingData.getChildren();
-			if (replyThingListings == null)
-				return insertedCommentIndex;
-			
-			for (ThingListing replyThingListing : replyThingListings) {
-				insertedCommentIndex = insertNestedComment(replyThingListing, indentLevel + 1, insertedCommentIndex + 1);
-			}
-			return insertedCommentIndex;
-    	}
-    	
-    	private boolean isHasJumpTarget() {
-    		return ! Util.isEmpty(_mJumpToCommentId);
-    	}
-    	
-    	private boolean isShouldDoSlowProcessing() {
-    		return !isHasJumpTarget() || _mIsFoundJumpTargetComment;
-    	}
-    	
-    	private void processJumpTarget(ThingInfo comment, int commentIndex) {
-			_mIsFoundJumpTargetComment = true;
-			int numContext = _mJumpToCommentContext.length;
-			final int jumpTargetIndex = (commentIndex - numContext) > 0 ? (commentIndex - numContext) : 0;
-			
-			// load the comments that are the context of the target comment
-			for (ThingInfo contextComment : _mJumpToCommentContext) {
-				if (contextComment == null)
-					break;
-				processCommentSlowSteps(contextComment);
-			}
-			runOnUiThread(new Runnable() {
-				@Override
-				public void run() {
-					refreshVisibleComments();
-					getListView().setSelection(jumpTargetIndex);
-				}
-			});
-    	}
-    	
-    	private void addJumpTargetContext(ThingInfo comment) {
-    		_mJumpToCommentContext[_mJumpToCommentContextIndex] = comment;
-    		_mJumpToCommentContextIndex = (_mJumpToCommentContextIndex + 1) % _mJumpToCommentContext.length;
-    	}
-    	
-    	private void processCommentSlowSteps(ThingInfo comment) {
-    		if (comment.getBody_html() != null) {
-	        	CharSequence spanned = createSpanned(comment.getBody_html());
-	        	comment.setSpannedBody(spanned);
-    		}
-    		markdown.getURLs(comment.getBody(), comment.getUrls());
-    	}
-    	
-    	private void processDeferredComments() {
-        	if (!_mDeferredInsertList.isEmpty()) {
-        		replaceCommentsAtPosition(_mDeferredInsertList, _mPositionOffset);
-        	}
-            
-        	if (!_mDeferredProcessingList.isEmpty()) {
-        		for (final DeferredCommentProcessing deferredCommentProcessing : _mDeferredProcessingList) {
-        			processCommentSlowSteps(deferredCommentProcessing.comment);
-        			refreshCommentIfVisible(deferredCommentProcessing.commentIndex);
-        		}
-        	}
-    	}
-    	
-    	private void refreshCommentIfVisible(final int commentIndex) {
-			runOnUiThread(new Runnable() {
-				@Override
-				public void run() {
-        			if (isPositionVisible(commentIndex))
-        				refreshCommentBodyTextView(commentIndex);
-				}
-			});
-    	}
-    	
-    	/**
-    	 * @param bodyHtml escaped HTML (like in reddit Thing's body_html)
-    	 */
-        private CharSequence createSpanned(String bodyHtml) {
-        	try {
-        		// get unescaped HTML
-        		bodyHtml = Html.fromHtml(bodyHtml).toString();
-        		// fromHtml doesn't support all HTML tags. convert <code> and <pre>
-        		bodyHtml = Util.convertHtmlTags(bodyHtml);
-        		
-        		Spanned body = Html.fromHtml(bodyHtml);
-        		// remove last 2 newline characters
-        		if (body.length() > 2)
-        			return body.subSequence(0, body.length()-2);
-        		else
-        			return "";
-        	} catch (Exception e) {
-        		if (Constants.LOGGING) Log.e(TAG, "createSpanned failed", e);
-        		return null;
-        	}
-        }
-        
-        /**
-         * cleanup deferred in onPostExecute(), otherwise you clear it too soon and end up with race condition vs. UI thread
-         */
-        private void cleanupDeferred() {
-        	_mDeferredInsertList.clear();
-        	_mDeferredProcessingList.clear();
-        }
-        
-        @Override
-    	public void onPreExecute() {
-    		if (mThreadId == null) {
-    			if (Constants.LOGGING) Log.e(TAG, "mSettings.threadId == null");
-	    		this.cancel(true);
-	    		return;
-    		}
-    		synchronized (mCurrentDownloadCommentsTaskLock) {
-	    		if (mCurrentDownloadCommentsTask != null) {
-	    			this.cancel(true);
-	    			return;
-	    		}
-	    		mCurrentDownloadCommentsTask = this;
-    		}
-    		
-    		if (isInsertingEntireThread()) {
-        		// Initialize mCommentsList and mCommentsAdapter
-        		synchronized (COMMENT_ADAPTER_LOCK) {
-        			resetUI(null);
-        		}
-        		// Do loading screen when loading new thread; otherwise when "loading more comments" don't show it
-    			enableLoadingScreen();
-    		}
-    		
-    		if (_mContentLength == -1)
-    			getWindow().setFeatureInt(Window.FEATURE_PROGRESS, Window.PROGRESS_INDETERMINATE_ON);
-
-    		if (mThreadTitle != null)
-	    		setTitle(mThreadTitle + " : " + mSubreddit);
-    	}
-    	
-    	@Override
-    	public void onPostExecute(Boolean success) {
-    		cleanupDeferred();
-    		synchronized (mCurrentDownloadCommentsTaskLock) {
-    			mCurrentDownloadCommentsTask = null;
-    		}
-    		
-    		if (_mContentLength == -1)
-    			getWindow().setFeatureInt(Window.FEATURE_PROGRESS, Window.PROGRESS_INDETERMINATE_OFF);
-    		else
-    			getWindow().setFeatureInt(Window.FEATURE_PROGRESS, 10000);
-    		
-    		if (success) {
-    			// We should clear any replies the user was composing.
-    			mShouldClearReply = true;
-
-    			refreshVisibleComments();
-    			
-    			// Set title in android titlebar
-    			if (mThreadTitle != null)
-    				setTitle(mThreadTitle + " : " + mSubreddit);
-    		} else {
-    			if (!isCancelled())
-    				Common.showErrorToast("Error downloading comments. Please try again.", Toast.LENGTH_LONG, CommentsListActivity.this);
-    		}
-    	}
-    	
-    	@Override
-    	public void onProgressUpdate(Long... progress) {
-    		// 0-9999 is ok, 10000 means it's finished
-    		if (_mContentLength == -1) {
-    			getWindow().setFeatureInt(Window.FEATURE_PROGRESS, Window.PROGRESS_INDETERMINATE_ON);
-    		}
-    		else {
-    			getWindow().setFeatureInt(Window.FEATURE_PROGRESS, progress[0].intValue() * 9999 / (int) _mContentLength);
-    		}
-    	}
-    	
-    	@Override
-    	public void propertyChange(PropertyChangeEvent event) {
-    		publishProgress((Long) event.getNewValue());
-    	}
-    }
-    
-    private void enableLoadingScreen() {
+    void enableLoadingScreen() {
     	if (Util.isLightTheme(mSettings.theme)) {
     		setContentView(R.layout.loading_light);
     	} else {
@@ -1138,32 +609,6 @@ public class CommentsListActivity extends ListActivity
     	getWindow().setFeatureInt(Window.FEATURE_PROGRESS, 0);
     }
     
-    /**
-     * Refresh the body TextView of visible comments. Call from UI Thread.
-     */
-    private void refreshVisibleComments() {
-		int firstPosition = getListView().getFirstVisiblePosition();
-		int lastPosition = getListView().getLastVisiblePosition();
-		for (int i = firstPosition; i <= lastPosition; i++)
-			refreshCommentBodyTextView(i);
-	}
-
-    private void refreshCommentBodyTextView(int commentIndex) {
-		View v = getListView().getChildAt(commentIndex);
-		if (v != null) {
-			View bodyTextView = v.findViewById(R.id.body);
-			if (bodyTextView != null) {
-				synchronized (COMMENT_ADAPTER_LOCK) {
-						((TextView) bodyTextView).setText(mCommentsAdapter.getItem(commentIndex).getSpannedBody());
-				}
-			}
-		}
-    }
-
-	private boolean isPositionVisible(int position) {
-		return position <= getListView().getLastVisiblePosition() && position >= getListView().getFirstVisiblePosition();
-	}
-	
     
     
     private class MyLoginTask extends LoginTask {
@@ -1184,7 +629,7 @@ public class CommentsListActivity extends ListActivity
     			// Check mail
     			new PeekEnvelopeTask(CommentsListActivity.this, mClient, mSettings.mailNotificationStyle).execute();
 	    		// Refresh the comments list
-    			new DownloadCommentsTask().execute(Constants.DEFAULT_COMMENT_DOWNLOAD_LIMIT);
+    			getNewDownloadCommentsTask().execute(Constants.DEFAULT_COMMENT_DOWNLOAD_LIMIT);
     		} else {
             	Common.showErrorToast(mUserError, Toast.LENGTH_LONG, CommentsListActivity.this);
     		}
@@ -1277,7 +722,7 @@ public class CommentsListActivity extends ListActivity
     		} else {
     			// Refresh
     			CacheInfo.invalidateCachedThread(getApplicationContext());
-    			new DownloadCommentsTask().execute(Constants.DEFAULT_COMMENT_DOWNLOAD_LIMIT);
+    			getNewDownloadCommentsTask().execute(Constants.DEFAULT_COMMENT_DOWNLOAD_LIMIT);
     		}
     	}
     }
@@ -1361,7 +806,7 @@ public class CommentsListActivity extends ListActivity
     		} else {
     			// Refresh
     			CacheInfo.invalidateCachedThread(getApplicationContext());
-    			new DownloadCommentsTask().execute(Constants.DEFAULT_COMMENT_DOWNLOAD_LIMIT);
+    			getNewDownloadCommentsTask().execute(Constants.DEFAULT_COMMENT_DOWNLOAD_LIMIT);
     		}
     	}
     }
@@ -1455,7 +900,7 @@ public class CommentsListActivity extends ListActivity
     				return;
     			} else {
     				Toast.makeText(CommentsListActivity.this, "Deleted comment.", Toast.LENGTH_SHORT).show();
-    				new DownloadCommentsTask().execute(Constants.DEFAULT_COMMENT_DOWNLOAD_LIMIT);
+    				getNewDownloadCommentsTask().execute(Constants.DEFAULT_COMMENT_DOWNLOAD_LIMIT);
     			}
     		} else {
     			Common.showErrorToast(_mUserError, Toast.LENGTH_LONG, CommentsListActivity.this);
@@ -1752,9 +1197,9 @@ public class CommentsListActivity extends ListActivity
     	}
     	
     	// Edit and delete
-    	if (mOpThingInfo != null) {
-	    	if (mSettings.username != null && mSettings.username.equalsIgnoreCase(mOpThingInfo.getAuthor())) {
-				if (mOpThingInfo.getSelftext_html() != null)
+    	if (getOpThingInfo() != null) {
+	    	if (mSettings.username != null && mSettings.username.equalsIgnoreCase(getOpThingInfo().getAuthor())) {
+				if (getOpThingInfo().getSelftext_html() != null)
 					menu.findItem(R.id.op_edit_menu_id).setVisible(true);
 				else
 					menu.findItem(R.id.op_edit_menu_id).setVisible(false);
@@ -1801,10 +1246,10 @@ public class CommentsListActivity extends ListActivity
         
         switch (item.getItemId()) {
         case R.id.op_menu_id:
-        	if (mOpThingInfo == null)
+        	if (getOpThingInfo() == null)
         		break;
-    		mVoteTargetThing = mOpThingInfo;
-        	mReplyTargetName = mOpThingInfo.getName();
+    		mVoteTargetThing = getOpThingInfo();
+        	mReplyTargetName = getOpThingInfo().getName();
     		showDialog(Constants.DIALOG_COMMENT_CLICK);
     		break;
     	case R.id.op_subreddit_menu_id:
@@ -1819,7 +1264,7 @@ public class CommentsListActivity extends ListActivity
         	if (mSettings.isLoggedIn()) {
         		Common.doLogout(mSettings, mClient, getApplicationContext());
         		Toast.makeText(this, "You have been logged out.", Toast.LENGTH_SHORT).show();
-        		new DownloadCommentsTask().execute(Constants.DEFAULT_COMMENT_DOWNLOAD_LIMIT);
+        		getNewDownloadCommentsTask().execute(Constants.DEFAULT_COMMENT_DOWNLOAD_LIMIT);
         	} else {
         		showDialog(Constants.DIALOG_LOGIN);
         	}
@@ -1837,7 +1282,7 @@ public class CommentsListActivity extends ListActivity
             break;
     	case R.id.refresh_menu_id:
     		CacheInfo.invalidateCachedThread(getApplicationContext());
-    		new DownloadCommentsTask().execute(Constants.DEFAULT_COMMENT_DOWNLOAD_LIMIT);
+    		getNewDownloadCommentsTask().execute(Constants.DEFAULT_COMMENT_DOWNLOAD_LIMIT);
     		break;
     	case R.id.sort_by_menu_id:
     		showDialog(Constants.DIALOG_SORT_BY);
@@ -1848,13 +1293,13 @@ public class CommentsListActivity extends ListActivity
     		Common.launchBrowser(this, url, url, false, true, true);
     		break;
     	case R.id.op_delete_menu_id:
-    		mReplyTargetName = mOpThingInfo.getName();
+    		mReplyTargetName = getOpThingInfo().getName();
     		mDeleteTargetKind = Constants.THREAD_KIND;
     		showDialog(Constants.DIALOG_DELETE);
     		break;
     	case R.id.op_edit_menu_id:
-    		mReplyTargetName = mOpThingInfo.getName();
-    		mEditTargetBody = mOpThingInfo.getSelftext();
+    		mReplyTargetName = getOpThingInfo().getName();
+    		mEditTargetBody = getOpThingInfo().getSelftext();
     		showDialog(Constants.DIALOG_EDIT);
     		break;
     	case R.id.light_dark_menu_id:
@@ -1898,12 +1343,12 @@ public class CommentsListActivity extends ListActivity
     	if (rowId == 0) {
     		menu.add(0, Constants.SHARE_CONTEXT_ITEM, Menu.NONE, "Share");
 
-    		if(mOpThingInfo.isSaved()){
+    		if(getOpThingInfo().isSaved()){
     			menu.add(0, Constants.UNSAVE_CONTEXT_ITEM, Menu.NONE, "Unsave");
     		} else {
     			menu.add(0, Constants.SAVE_CONTEXT_ITEM, Menu.NONE, "Save");
     		}
-    		if(mOpThingInfo.isHidden()){
+    		if(getOpThingInfo().isHidden()){
     			menu.add(0, Constants.UNHIDE_CONTEXT_ITEM, Menu.NONE, "Unhide");
     		} else {
     			menu.add(0, Constants.HIDE_CONTEXT_ITEM, Menu.NONE, "Hide");
@@ -1940,19 +1385,19 @@ public class CommentsListActivity extends ListActivity
     	
     	switch (item.getItemId()) {
     	case Constants.SAVE_CONTEXT_ITEM:
-    		new SaveTask(true, mOpThingInfo, mSettings, this).execute();
+    		new SaveTask(true, getOpThingInfo(), mSettings, this).execute();
     		return true;
     		
     	case Constants.UNSAVE_CONTEXT_ITEM:
-    		new SaveTask(false, mOpThingInfo, mSettings, this).execute();
+    		new SaveTask(false, getOpThingInfo(), mSettings, this).execute();
     		return true;
     		
     	case Constants.HIDE_CONTEXT_ITEM:
-    		new HideTask(true, mOpThingInfo, mSettings, this).execute();
+    		new HideTask(true, getOpThingInfo(), mSettings, this).execute();
     		return true;
     		
     	case Constants.UNHIDE_CONTEXT_ITEM:
-    		new HideTask(false, mOpThingInfo, mSettings, this).execute();
+    		new HideTask(false, getOpThingInfo(), mSettings, this).execute();
     		return true;
     		
     	case Constants.SHARE_CONTEXT_ITEM:
@@ -1960,7 +1405,7 @@ public class CommentsListActivity extends ListActivity
 			intent.setAction(Intent.ACTION_SEND);
 			intent.setType("text/plain");
 
-			intent.putExtra(Intent.EXTRA_TEXT, mOpThingInfo.getUrl());
+			intent.putExtra(Intent.EXTRA_TEXT, getOpThingInfo().getUrl());
 			
 			try {
 				startActivity(Intent.createChooser(intent, "Share Link"));
@@ -2323,29 +1768,29 @@ public class CommentsListActivity extends ListActivity
     		final TextView submissionStuffView = (TextView) dialog.findViewById(R.id.submissionTime_submitter_subreddit);
     		final Button linkButton = (Button) dialog.findViewById(R.id.thread_link_button);
 			
-    		if (mVoteTargetThing == mOpThingInfo) {
+    		if (mVoteTargetThing == getOpThingInfo()) {
 				likes = mVoteTargetThing.getLikes();
     			titleView.setVisibility(View.VISIBLE);
-    			titleView.setText(mOpThingInfo.getTitle());
+    			titleView.setText(getOpThingInfo().getTitle());
     			urlView.setVisibility(View.VISIBLE);
-    			urlView.setText(mOpThingInfo.getUrl());
+    			urlView.setText(getOpThingInfo().getUrl());
     			submissionStuffView.setVisibility(View.VISIBLE);
-        		sb = new StringBuilder(Util.getTimeAgo(mOpThingInfo.getCreated_utc()))
-	    			.append(" by ").append(mOpThingInfo.getAuthor());
+        		sb = new StringBuilder(Util.getTimeAgo(getOpThingInfo().getCreated_utc()))
+	    			.append(" by ").append(getOpThingInfo().getAuthor());
         		submissionStuffView.setText(sb);
     			// For self posts, you're already there!
-    			if (mOpThingInfo.getDomain().toLowerCase().startsWith("self.")) {
+    			if (getOpThingInfo().getDomain().toLowerCase().startsWith("self.")) {
     				linkButton.setText(R.string.comment_links_button);
     				linkToEmbeddedURLs(linkButton);
     			} else {
-    				final String url = mOpThingInfo.getUrl();
+    				final String url = getOpThingInfo().getUrl();
     				linkButton.setText(R.string.thread_link_button);
 	    			linkButton.setOnClickListener(new OnClickListener() {
 	    				public void onClick(View v) {
 	    					dismissDialog(Constants.DIALOG_COMMENT_CLICK);
 	    					// Launch Intent to goto the URL
 	    					Common.launchBrowser(CommentsListActivity.this, url,
-	    							Util.createThreadUri(mOpThingInfo).toString(),
+	    							Util.createThreadUri(getOpThingInfo()).toString(),
 	    							false, false, mSettings.useExternalBrowser);
 	    				}
 	    			});
@@ -2480,7 +1925,7 @@ public class CommentsListActivity extends ListActivity
     	                public final void onClick(DialogInterface dialog, int which) {
     	                    if (which >= 0) {
     	                        Common.launchBrowser(CommentsListActivity.this, urls.get(which),
-    	                        		Util.createThreadUri(mOpThingInfo).toString(),
+    	                        		Util.createThreadUri(getOpThingInfo()).toString(),
     	                        		false, false, mSettings.useExternalBrowser);
     	                    }
     	                }
@@ -2607,7 +2052,7 @@ public class CommentsListActivity extends ListActivity
 		public void onClick(DialogInterface dialog, int item) {
 			dialog.dismiss();
 			mSettings.setCommentsSortByUrl(Constants.CommentsSort.SORT_BY_URL_CHOICES[item]);
-			new DownloadCommentsTask().execute(Constants.DEFAULT_COMMENT_DOWNLOAD_LIMIT);
+			getNewDownloadCommentsTask().execute(Constants.DEFAULT_COMMENT_DOWNLOAD_LIMIT);
 		}
 	};
 	
