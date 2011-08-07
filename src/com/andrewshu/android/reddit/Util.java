@@ -40,6 +40,17 @@ public class Util {
 			throw new IllegalStateException(message);
 	}
 	
+	public static void assertEquals(Object expected, Object actual, String message) {
+		if (expected == null) {
+			if (actual != null) {
+				throw new IllegalStateException("assertEquals failed: expected null, actual " + actual + "; " + message);
+			}
+		}
+		else if (!expected.equals(actual)) {
+			throw new IllegalStateException("assertEquals failed: expected " + expected + ", actual " + actual + "; " + message);
+		}
+	}
+	
     public static boolean listContainsIgnoreCase(ArrayList<String> list, String str){
     	for (Iterator<String> iterator = list.iterator(); iterator.hasNext();) {
 			String string = (String) iterator.next();

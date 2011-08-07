@@ -269,7 +269,7 @@ public class DownloadCommentsTask extends AsyncTask<Integer, Long, Boolean>
 			// listings[0] is a thread Listing for the OP.
 			// process same as a thread listing more or less
 			
-			Util.assertState(Constants.JSON_LISTING.equals(listings[0].getKind()), genericListingError);
+			Util.assertEquals(Constants.JSON_LISTING, listings[0].getKind(), genericListingError);
 			
 			// Save modhash, ignore "after" and "before" which are meaningless in this context (and probably null)
 			ListingData threadListingData = listings[0].getData();
@@ -281,7 +281,7 @@ public class DownloadCommentsTask extends AsyncTask<Integer, Long, Boolean>
 			if (Constants.LOGGING) Log.d(TAG, "Successfully got OP listing[0]: modhash "+mSettings.modhash);
 			
 			ThingListing threadThingListing = threadListingData.getChildren()[0];
-			Util.assertState(Constants.THREAD_KIND.equals(threadThingListing.getKind()), genericListingError);
+			Util.assertEquals(Constants.THREAD_KIND, threadThingListing.getKind(), genericListingError);
 
 			if (isInsertingEntireThread()) {
 				parseOP(threadThingListing.getData());

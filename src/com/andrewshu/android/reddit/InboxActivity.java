@@ -576,9 +576,8 @@ public final class InboxActivity extends ListActivity
     		String genericListingError = "Not an inbox listing";
     		try {
     			Listing listing = mObjectMapper.readValue(in, Listing.class);
+    			Util.assertEquals(Constants.JSON_LISTING, listing.getKind(), genericListingError);
     			
-    			if (!Constants.JSON_LISTING.equals(listing.getKind()))
-    				throw new IllegalStateException(genericListingError);
     			// Save the modhash, after, and before
     			ListingData data = listing.getData();
     			if (Util.isEmpty(data.getModhash()))
