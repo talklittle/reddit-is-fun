@@ -6,6 +6,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.Collection;
 import java.util.LinkedList;
+import java.util.Stack;
 
 import org.apache.http.Header;
 import org.apache.http.HttpEntity;
@@ -67,7 +68,8 @@ public class DownloadCommentsTask extends AsyncTask<Integer, Long, Boolean>
 	private String mJumpToCommentId = "";
 	private ThingInfo[] mJumpToCommentContext = new ThingInfo[0];
 	private int mJumpToCommentContextIndex = 0;  // keep track of insertion index, act like circular array overwriting
-	private boolean mIsFoundJumpTargetComment = false;
+	private int mJumpToCommentFoundIndex = -1;
+	private boolean mJumpTargetHasMadeItToFirstPosition = false;
 	
 	private class DeferredCommentProcessing {
 		public int commentIndex;
@@ -187,9 +189,6 @@ public class DownloadCommentsTask extends AsyncTask<Integer, Long, Boolean>
         	pin.close();
             in.close();
             
-            // label the OP's comments with [S]
-            mActivity.markSubmitterComments();
-			
             return true;
             
         } catch (Exception e) {
@@ -242,7 +241,7 @@ public class DownloadCommentsTask extends AsyncTask<Integer, Long, Boolean>
 	 * defer the slow processing step of a comment, in case we want to prioritize processing of comments over others.
 	 */
 	private void deferCommentProcessing(ThingInfo comment, int commentIndex) {
-		mDeferredProcessingList.add(new DeferredCommentProcessing(comment, commentIndex));
+		mDeferredProcessingList.addFirst(new DeferredCommentProcessing(comment, commentIndex));
 	}
 	
 	/**
@@ -367,8 +366,10 @@ public class DownloadCommentsTask extends AsyncTask<Integer, Long, Boolean>
 		if (isHasJumpTarget()) {
 			if (mJumpToCommentId.equals(ci.getId()))
 				processJumpTarget(ci, insertedCommentIndex);
-			else if (!mIsFoundJumpTargetComment)
+			else if (!isFoundJumpTargetComment())
 				addJumpTargetContext(ci);
+			else if (!mJumpTargetHasMadeItToFirstPosition)
+				moveJumpTargetTowardFirstPosition();
 		}
 
 		// handle "more" entry
@@ -407,16 +408,21 @@ public class DownloadCommentsTask extends AsyncTask<Integer, Long, Boolean>
 		return ! Util.isEmpty(mJumpToCommentId);
 	}
 	
+	private boolean isFoundJumpTargetComment() {
+		return mJumpToCommentFoundIndex != -1;
+	}
+	
 	private boolean isShouldDoSlowProcessing() {
-		return !isHasJumpTarget() || mIsFoundJumpTargetComment;
+		return !isHasJumpTarget() || isFoundJumpTargetComment();
 	}
 	
 	private void processJumpTarget(ThingInfo comment, int commentIndex) {
-		mIsFoundJumpTargetComment = true;
+		mJumpToCommentFoundIndex = commentIndex;
 		int numContext = mJumpToCommentContext.length;
-		final int jumpTargetIndex = (commentIndex - numContext) > 0 ? (commentIndex - numContext) : 0;
+		final int selectionIndex = (commentIndex - numContext) > 0 ? (commentIndex - numContext) : 0;
 		
-		// load the comments that are the context of the target comment
+		// load the jump target, plus the comments that are the context of the jump target
+		processCommentSlowSteps(comment);
 		for (ThingInfo contextComment : mJumpToCommentContext) {
 			if (contextComment == null)
 				break;
@@ -425,8 +431,19 @@ public class DownloadCommentsTask extends AsyncTask<Integer, Long, Boolean>
 		mActivity.runOnUiThread(new Runnable() {
 			@Override
 			public void run() {
-				refreshVisibleComments();
-				mActivity.getListView().setSelection(jumpTargetIndex);
+				refreshVisibleCommentsUI();
+				mActivity.getListView().setSelection(selectionIndex);
+			}
+		});
+	}
+	
+	private void moveJumpTargetTowardFirstPosition() {
+		mActivity.runOnUiThread(new Runnable() {
+			@Override
+			public void run() {
+				mActivity.getListView().setSelection(mJumpToCommentFoundIndex);
+				if (mActivity.getListView().getFirstVisiblePosition() == mJumpToCommentFoundIndex)
+					mJumpTargetHasMadeItToFirstPosition = true;
 			}
 		});
 	}
@@ -434,20 +451,38 @@ public class DownloadCommentsTask extends AsyncTask<Integer, Long, Boolean>
     /**
      * Refresh the body TextView of visible comments. Call from UI Thread.
      */
-    void refreshVisibleComments() {
+    private void refreshVisibleCommentsUI() {
 		int firstPosition = mActivity.getListView().getFirstVisiblePosition();
 		int lastPosition = mActivity.getListView().getLastVisiblePosition();
-		for (int i = firstPosition; i <= lastPosition; i++)
-			refreshCommentBodyTextView(i);
+		for (int i = firstPosition; i <= lastPosition; i++) {
+			refreshCommentBodyTextViewUI(i);
+			refreshCommentSubmitterUI(i);
+		}
 	}
-
-    private void refreshCommentBodyTextView(int commentIndex) {
+    
+    private void refreshCommentBodyTextViewUI(int commentIndex) {
 		View v = mActivity.getListView().getChildAt(commentIndex);
 		if (v != null) {
 			View bodyTextView = v.findViewById(R.id.body);
 			if (bodyTextView != null) {
 				synchronized (CommentsListActivity.COMMENT_ADAPTER_LOCK) {
-						((TextView) bodyTextView).setText(mActivity.mCommentsAdapter.getItem(commentIndex).getSpannedBody());
+					((TextView) bodyTextView).setText(mActivity.mCommentsAdapter.getItem(commentIndex).getSpannedBody());
+				}
+			}
+		}
+    }
+
+    private void refreshCommentSubmitterUI(int commentIndex) {
+		View v = mActivity.getListView().getChildAt(commentIndex);
+		if (v != null) {
+			View submitterTextView = v.findViewById(R.id.submitter);
+			if (submitterTextView != null) {
+				synchronized (CommentsListActivity.COMMENT_ADAPTER_LOCK) {
+					ThingInfo comment = mActivity.mCommentsAdapter.getItem(commentIndex);
+					if (comment.getSSAuthor() != null)
+						((TextView) submitterTextView).setText(comment.getSSAuthor());
+					else
+						((TextView) submitterTextView).setText(comment.getAuthor());
 				}
 			}
 		}
@@ -456,7 +491,7 @@ public class DownloadCommentsTask extends AsyncTask<Integer, Long, Boolean>
 	/**
 	 * Call from UI Thread
 	 */
-    boolean isPositionVisible(int position) {
+    boolean isPositionVisibleUI(int position) {
 		return position <= mActivity.getListView().getLastVisiblePosition() &&
 				position >= mActivity.getListView().getFirstVisiblePosition();
 	}
@@ -482,19 +517,51 @@ public class DownloadCommentsTask extends AsyncTask<Integer, Long, Boolean>
     	}
         
     	if (!mDeferredProcessingList.isEmpty()) {
-    		for (final DeferredCommentProcessing deferredCommentProcessing : mDeferredProcessingList) {
+    		for (DeferredCommentProcessing deferredCommentProcessing : mDeferredProcessingList) {
     			processCommentSlowSteps(deferredCommentProcessing.comment);
-    			refreshCommentIfVisible(deferredCommentProcessing.commentIndex);
+    			refreshDeferredCommentIfVisible(deferredCommentProcessing.commentIndex);
     		}
     	}
 	}
 	
-	private void refreshCommentIfVisible(final int commentIndex) {
+	private void refreshDeferredCommentIfVisible(final int commentIndex) {
+		final Stack<Boolean> isJumpTargetInitiallyVisibleStack = new Stack<Boolean>();
+		
 		mActivity.runOnUiThread(new Runnable() {
 			@Override
 			public void run() {
-    			if (isPositionVisible(commentIndex))
-    				refreshCommentBodyTextView(commentIndex);
+				synchronized (isJumpTargetInitiallyVisibleStack) {
+					isJumpTargetInitiallyVisibleStack.push(isPositionVisibleUI(mJumpToCommentFoundIndex));
+
+	    			if (isPositionVisibleUI(commentIndex))
+	    				refreshCommentBodyTextViewUI(commentIndex);
+    				
+					isJumpTargetInitiallyVisibleStack.notify();
+				}
+			}
+		});
+		
+		// HACK: for the issue when you jump to a comment that is far down on the screen,
+		// near the end of the comment list -- so it will never reach the first position on screen --
+		// and then start loading deferred comments above the target comment.
+		// one of the deferred comments is really long, so it pushes the jump target off the screen.
+
+		while (isJumpTargetInitiallyVisibleStack.isEmpty()) {
+			try {
+				synchronized (isJumpTargetInitiallyVisibleStack) {
+					isJumpTargetInitiallyVisibleStack.wait();
+				}
+			} catch (InterruptedException ignore) {}
+		}
+		
+		final boolean isJumpTargetInitiallyVisible = isJumpTargetInitiallyVisibleStack.pop();
+		
+		mActivity.runOnUiThread(new Runnable() {
+			@Override
+			public void run() {
+        		if (isJumpTargetInitiallyVisible && !isPositionVisibleUI(mJumpToCommentFoundIndex)) {
+        			mActivity.getListView().setSelection(mJumpToCommentFoundIndex);
+        		}
 			}
 		});
 	}
@@ -563,6 +630,10 @@ public class DownloadCommentsTask extends AsyncTask<Integer, Long, Boolean>
 	@Override
 	public void onPostExecute(Boolean success) {
 		cleanupDeferred();
+
+        // label the OP's comments with [S]
+        mActivity.markSubmitterComments();
+		
 		synchronized (mCurrentDownloadCommentsTaskLock) {
 			mCurrentDownloadCommentsTask = null;
 		}
@@ -576,7 +647,7 @@ public class DownloadCommentsTask extends AsyncTask<Integer, Long, Boolean>
 			// We should clear any replies the user was composing.
 			mActivity.setShouldClearReply(true);
 
-			refreshVisibleComments();
+			refreshVisibleCommentsUI();
 			
 			// Set title in android titlebar
 			if (mThreadTitle != null)
