@@ -165,6 +165,7 @@ public class Constants {
     static final String THREAD_TITLE_KEY = "thread_title";
     static final String USERNAME_KEY = "username";
     static final String VOTE_TARGET_THING_INFO_KEY = "vote_target_thing_info";
+    static final String WHICH_INBOX_KEY = "which_inbox";
     
     static final String SUBMIT_KIND_LINK = "link";
     static final String SUBMIT_KIND_SELF = "self";

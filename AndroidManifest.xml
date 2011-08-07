@@ -59,6 +59,7 @@
            	</intent-filter>
 	    </activity>
 	    <activity android:name=".InboxActivity"></activity>
+	    <activity android:name=".InboxListActivity"></activity>
 	    <activity android:name=".ProfileActivity">
 	        <intent-filter>
 	            <action android:name="android.intent.action.VIEW" />
