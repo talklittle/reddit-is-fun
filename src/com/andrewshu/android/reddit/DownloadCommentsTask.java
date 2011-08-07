@@ -6,7 +6,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.Collection;
 import java.util.LinkedList;
-import java.util.Stack;
 
 import org.apache.http.Header;
 import org.apache.http.HttpEntity;
@@ -69,7 +68,6 @@ public class DownloadCommentsTask extends AsyncTask<Integer, Long, Boolean>
 	private ThingInfo[] mJumpToCommentContext = new ThingInfo[0];
 	private int mJumpToCommentContextIndex = 0;  // keep track of insertion index, act like circular array overwriting
 	private int mJumpToCommentFoundIndex = -1;
-	private boolean mJumpTargetHasMadeItToFirstPosition = false;
 	
 	private class DeferredCommentProcessing {
 		public int commentIndex;
@@ -368,8 +366,6 @@ public class DownloadCommentsTask extends AsyncTask<Integer, Long, Boolean>
 				processJumpTarget(ci, insertedCommentIndex);
 			else if (!isFoundJumpTargetComment())
 				addJumpTargetContext(ci);
-			else if (!mJumpTargetHasMadeItToFirstPosition)
-				scrollJumpTargetTowardFirstPosition();
 		}
 
 		// handle "more" entry
@@ -433,17 +429,6 @@ public class DownloadCommentsTask extends AsyncTask<Integer, Long, Boolean>
 			public void run() {
 				refreshVisibleCommentsUI();
 				mActivity.getListView().setSelection(selectionIndex);
-			}
-		});
-	}
-	
-	private void scrollJumpTargetTowardFirstPosition() {
-		mActivity.runOnUiThread(new Runnable() {
-			@Override
-			public void run() {
-				mActivity.getListView().setSelection(mJumpToCommentFoundIndex);
-				if (mActivity.getListView().getFirstVisiblePosition() == mJumpToCommentFoundIndex)
-					mJumpTargetHasMadeItToFirstPosition = true;
 			}
 		});
 	}
@@ -528,43 +513,13 @@ public class DownloadCommentsTask extends AsyncTask<Integer, Long, Boolean>
 	}
 	
 	private void refreshDeferredCommentIfVisible(final int commentIndex) {
-		final Stack<Boolean> isJumpTargetInitiallyVisibleStack = new Stack<Boolean>();
-		
 		mActivity.runOnUiThread(new Runnable() {
 			@Override
 			public void run() {
-				synchronized (isJumpTargetInitiallyVisibleStack) {
-					isJumpTargetInitiallyVisibleStack.push(isPositionVisibleUI(mJumpToCommentFoundIndex));
-
-	    			if (isPositionVisibleUI(commentIndex))
-	    				refreshCommentUI(commentIndex);
-    				
-					isJumpTargetInitiallyVisibleStack.notify();
-				}
-			}
-		});
-		
-		// HACK: for the issue when you jump to a comment that is far down on the screen,
-		// near the end of the comment list -- so it will never reach the first position on screen --
-		// and then start loading deferred comments above the target comment.
-		// one of the deferred comments is really long, so it pushes the jump target off the screen.
-
-		while (isJumpTargetInitiallyVisibleStack.isEmpty()) {
-			try {
-				synchronized (isJumpTargetInitiallyVisibleStack) {
-					isJumpTargetInitiallyVisibleStack.wait();
-				}
-			} catch (InterruptedException ignore) {}
-		}
-		
-		final boolean isJumpTargetInitiallyVisible = isJumpTargetInitiallyVisibleStack.pop();
-		
-		mActivity.runOnUiThread(new Runnable() {
-			@Override
-			public void run() {
-        		if (isJumpTargetInitiallyVisible && !isPositionVisibleUI(mJumpToCommentFoundIndex)) {
-        			mActivity.getListView().setSelection(mJumpToCommentFoundIndex);
-        		}
+    			if (isPositionVisibleUI(commentIndex)) {
+    				refreshCommentUI(commentIndex);
+    				mActivity.getListView().setSelection(mJumpToCommentFoundIndex);
+    			}
 			}
 		});
 	}
@@ -650,6 +605,7 @@ public class DownloadCommentsTask extends AsyncTask<Integer, Long, Boolean>
 			// We should clear any replies the user was composing.
 			mActivity.setShouldClearReply(true);
 
+			mActivity.mCommentsAdapter.notifyDataSetChanged();
 			refreshVisibleCommentsUI();
 			
 			// Set title in android titlebar
