@@ -369,7 +369,7 @@ public class DownloadCommentsTask extends AsyncTask<Integer, Long, Boolean>
 			else if (!isFoundJumpTargetComment())
 				addJumpTargetContext(ci);
 			else if (!mJumpTargetHasMadeItToFirstPosition)
-				moveJumpTargetTowardFirstPosition();
+				scrollJumpTargetTowardFirstPosition();
 		}
 
 		// handle "more" entry
@@ -437,7 +437,7 @@ public class DownloadCommentsTask extends AsyncTask<Integer, Long, Boolean>
 		});
 	}
 	
-	private void moveJumpTargetTowardFirstPosition() {
+	private void scrollJumpTargetTowardFirstPosition() {
 		mActivity.runOnUiThread(new Runnable() {
 			@Override
 			public void run() {
@@ -454,11 +454,14 @@ public class DownloadCommentsTask extends AsyncTask<Integer, Long, Boolean>
     private void refreshVisibleCommentsUI() {
 		int firstPosition = mActivity.getListView().getFirstVisiblePosition();
 		int lastPosition = mActivity.getListView().getLastVisiblePosition();
-		for (int i = firstPosition; i <= lastPosition; i++) {
-			refreshCommentBodyTextViewUI(i);
-			refreshCommentSubmitterUI(i);
-		}
+		for (int i = firstPosition; i <= lastPosition; i++)
+			refreshCommentUI(i);
 	}
+    
+    private void refreshCommentUI(int commentIndex) {
+		refreshCommentBodyTextViewUI(commentIndex);
+		refreshCommentSubmitterUI(commentIndex);
+    }
     
     private void refreshCommentBodyTextViewUI(int commentIndex) {
 		View v = mActivity.getListView().getChildAt(commentIndex);
@@ -466,7 +469,7 @@ public class DownloadCommentsTask extends AsyncTask<Integer, Long, Boolean>
 			View bodyTextView = v.findViewById(R.id.body);
 			if (bodyTextView != null) {
 				synchronized (CommentsListActivity.COMMENT_ADAPTER_LOCK) {
-					((TextView) bodyTextView).setText(mActivity.mCommentsAdapter.getItem(commentIndex).getSpannedBody());
+					((TextView) bodyTextView).setText(mActivity.mCommentsList.get(commentIndex).getSpannedBody());
 				}
 			}
 		}
@@ -478,7 +481,7 @@ public class DownloadCommentsTask extends AsyncTask<Integer, Long, Boolean>
 			View submitterTextView = v.findViewById(R.id.submitter);
 			if (submitterTextView != null) {
 				synchronized (CommentsListActivity.COMMENT_ADAPTER_LOCK) {
-					ThingInfo comment = mActivity.mCommentsAdapter.getItem(commentIndex);
+					ThingInfo comment = mActivity.mCommentsList.get(commentIndex);
 					if (comment.getSSAuthor() != null)
 						((TextView) submitterTextView).setText(comment.getSSAuthor());
 					else
@@ -534,7 +537,7 @@ public class DownloadCommentsTask extends AsyncTask<Integer, Long, Boolean>
 					isJumpTargetInitiallyVisibleStack.push(isPositionVisibleUI(mJumpToCommentFoundIndex));
 
 	    			if (isPositionVisibleUI(commentIndex))
-	    				refreshCommentBodyTextViewUI(commentIndex);
+	    				refreshCommentUI(commentIndex);
     				
 					isJumpTargetInitiallyVisibleStack.notify();
 				}

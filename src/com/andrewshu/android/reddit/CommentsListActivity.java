@@ -124,7 +124,6 @@ public class CommentsListActivity extends ListActivity
 
     private String last_search_string;
     private int last_found_position = -1;
-    private int translucent_yellow;
     
     private boolean mCanChord = false;
     
@@ -156,8 +155,6 @@ public class CommentsListActivity extends ListActivity
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
-        translucent_yellow = getResources().getColor(R.color.translucent_yellow);
-        
 		CookieSyncManager.createInstance(getApplicationContext());
 		
 		mSettings.loadRedditPreferences(this, mClient);
@@ -454,7 +451,10 @@ public class CommentsListActivity extends ListActivity
 					// So we make our own persistent highlight. This background color must
 					// be set explicitly on every element, however, or the "cached" list
 					// item views will show up with the color.
-					view.setBackgroundColor(position == last_found_position ? translucent_yellow : Color.TRANSPARENT);
+					if (position == last_found_position)
+						view.setBackgroundResource(R.color.translucent_yellow);
+					else
+						view.setBackgroundColor(Color.TRANSPARENT);
 
 		            fillCommentsListItemView(view, item, mSettings);
 	            }
@@ -1947,8 +1947,7 @@ public class CommentsListActivity extends ListActivity
         }
     }
     
-    static void fillCommentsListItemView(View view, ThingInfo item,
-    		RedditSettings settings) {
+    static void fillCommentsListItemView(View view, ThingInfo item, RedditSettings settings) {
         // Set the values of the Views for the CommentsListItem
         
         TextView votesView = (TextView) view.findViewById(R.id.votes);
