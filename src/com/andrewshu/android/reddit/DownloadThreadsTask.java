@@ -15,7 +15,6 @@ import org.codehaus.jackson.map.ObjectMapper;
 
 import android.content.Context;
 import android.os.AsyncTask;
-import android.text.Html;
 import android.util.Log;
 
 /**
@@ -229,7 +228,7 @@ public abstract class DownloadThreadsTask extends AsyncTask<Void, Long, Boolean>
 				// Only add entries that are threads. kind="t3"
 				if (Constants.THREAD_KIND.equals(tiContainer.getKind())) {
 					ThingInfo ti = tiContainer.getData();
-					mThingInfos.add(tiContainer.getData());
+					mThingInfos.add(ti);
 				}
 			}
 		} catch (Exception ex) {
