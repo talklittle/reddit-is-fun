@@ -25,7 +25,7 @@
       >
     <uses-permission android:name="android.permission.INTERNET" />
     <application android:icon="@drawable/icon" android:label="@string/app_name">
-        <activity android:name=".ThreadsListActivity"
+        <activity android:name=".threads.ThreadsListActivity"
                   android:label="@string/app_name">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
@@ -50,7 +50,7 @@
 	            <data android:scheme="http" android:host="redd.it" android:pathPattern="/..*" />
 	        </intent-filter>
 	    </activity>
-	    <activity android:name=".PickSubredditActivity"></activity>
+	    <activity android:name=".reddits.PickSubredditActivity"></activity>
 	    <activity android:name=".SubmitLinkActivity">
 	        <intent-filter>
             	<action android:name="android.intent.action.SEND" />
@@ -58,8 +58,8 @@
             	<data android:mimeType="text/plain" />
            	</intent-filter>
 	    </activity>
-	    <activity android:name=".InboxActivity"></activity>
-	    <activity android:name=".InboxListActivity"></activity>
+	    <activity android:name=".mail.InboxActivity"></activity>
+	    <activity android:name=".mail.InboxListActivity"></activity>
 	    <activity android:name=".ProfileActivity">
 	        <intent-filter>
 	            <action android:name="android.intent.action.VIEW" />
@@ -69,8 +69,8 @@
 	        </intent-filter>
 	    </activity>
 	    <activity android:name=".RedditPreferencesPage"></activity>
-	    <activity android:name=".BrowserActivity" android:configChanges="keyboardHidden|orientation"></activity>
-	    <service android:name=".EnvelopeService" android:label="@string/pref_mail_notification_service"></service>
+	    <activity android:name=".browser.BrowserActivity" android:configChanges="keyboardHidden|orientation"></activity>
+	    <service android:name=".mail.EnvelopeService" android:label="@string/pref_mail_notification_service"></service>
 	</application>
     <uses-sdk android:minSdkVersion="4" android:targetSdkVersion="7" />
     <supports-screens />

@@ -4,7 +4,7 @@
     android:layout_height="fill_parent"
     >
 
-    <com.andrewshu.android.reddit.WebViewFixed 
+    <com.andrewshu.android.reddit.browser.WebViewFixed 
         android:id="@+id/webview"
         android:layout_width="fill_parent"
         android:layout_height="fill_parent"
