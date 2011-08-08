@@ -1568,7 +1568,7 @@ public class CommentsListActivity extends ListActivity
 
     @Override
     protected Dialog onCreateDialog(int id) {
-    	Dialog dialog;
+    	final Dialog dialog;
     	ProgressDialog pdialog;
     	AlertDialog.Builder builder;
     	LayoutInflater inflater;
@@ -1597,18 +1597,31 @@ public class CommentsListActivity extends ListActivity
     		final EditText replyBody = (EditText) dialog.findViewById(R.id.body);
     		final Button replySaveButton = (Button) dialog.findViewById(R.id.reply_save_button);
     		final Button replyCancelButton = (Button) dialog.findViewById(R.id.reply_cancel_button);
+    		
 			replySaveButton.setOnClickListener(new OnClickListener() {
-    			public void onClick(View v) {
+    			@Override
+				public void onClick(View v) {
     				if (mReplyTargetName != null) {
 	    				new CommentReplyTask(mReplyTargetName).execute(replyBody.getText().toString());
-	    				dismissDialog(Constants.DIALOG_REPLY);
+	    				dialog.dismiss();
     				}
     				else {
     					Common.showErrorToast("Error replying. Please try again.", Toast.LENGTH_SHORT, CommentsListActivity.this);
     				}
     			}
     		});
-    		replyCancelButton.setOnClickListener(replyCancelOnClickListener);
+    		replyCancelButton.setOnClickListener(new OnClickListener() {
+    			@Override
+    			public void onClick(View v) {
+    				mVoteTargetThing.setReplyDraft(replyBody.getText().toString());
+    				dialog.cancel();
+    			}
+    		});
+    		dialog.setOnCancelListener(new DialogInterface.OnCancelListener() {
+				public void onCancel(DialogInterface dialog) {
+					replyBody.setText("");
+				}
+    		});
     	}
     		break;
     		
@@ -1619,13 +1632,14 @@ public class CommentsListActivity extends ListActivity
     		final EditText replyBody = (EditText) dialog.findViewById(R.id.body);
     		final Button replySaveButton = (Button) dialog.findViewById(R.id.reply_save_button);
     		final Button replyCancelButton = (Button) dialog.findViewById(R.id.reply_cancel_button);
-		
+
 			replyBody.setText(mEditTargetBody);
+			
 			replySaveButton.setOnClickListener(new OnClickListener() {
     			public void onClick(View v) {
     				if (mReplyTargetName != null) {
 	    				new EditTask(mReplyTargetName).execute(replyBody.getText().toString());
-	    				dismissDialog(Constants.DIALOG_EDIT);
+	    				dialog.dismiss();
     				}
     				else {
     					Common.showErrorToast("Error editing. Please try again.", Toast.LENGTH_SHORT, CommentsListActivity.this);
@@ -1634,8 +1648,13 @@ public class CommentsListActivity extends ListActivity
     		});
 			replyCancelButton.setOnClickListener(new OnClickListener() {
     			public void onClick(View v) {
-    				dismissDialog(Constants.DIALOG_EDIT);
+    				dialog.cancel();
     			}
+    		});
+    		dialog.setOnCancelListener(new DialogInterface.OnCancelListener() {
+				public void onCancel(DialogInterface dialog) {
+					replyBody.setText("");
+				}
     		});
 		}
     		break;
@@ -1853,14 +1872,22 @@ public class CommentsListActivity extends ListActivity
     		break;
     		
     	case Constants.DIALOG_REPLY:
-    		if (mVoteTargetThing != null && mVoteTargetThing.getReplyDraft() != null) {
-    			EditText replyBodyView = (EditText) dialog.findViewById(R.id.body);
-    			replyBodyView.setText(mVoteTargetThing.getReplyDraft());
-    		} else if (mVoteTargetThing != null && mShouldClearReply) {
-    			EditText replyBodyView = (EditText) dialog.findViewById(R.id.body);
-    			replyBodyView.setText("");
-    			mShouldClearReply = false;
+    		if (mVoteTargetThing != null) {
+        		if (mVoteTargetThing.getReplyDraft() != null && !mShouldClearReply) {
+        			EditText replyBodyView = (EditText) dialog.findViewById(R.id.body);
+        			replyBodyView.setText(mVoteTargetThing.getReplyDraft());
+        		}
+        		else {
+        			EditText replyBodyView = (EditText) dialog.findViewById(R.id.body);
+        			replyBodyView.setText("");
+        			mShouldClearReply = false;
+        		}
     		}
+    		break;
+    		
+    	case Constants.DIALOG_EDIT:
+    		EditText replyBodyView = (EditText) dialog.findViewById(R.id.body);
+			replyBodyView.setText(mEditTargetBody);
     		break;
     		
 		default:
@@ -2032,11 +2059,6 @@ public class CommentsListActivity extends ListActivity
 		public void onClick(View v) {
 			dismissDialog(Constants.DIALOG_COMMENT_CLICK);
 			showDialog(Constants.DIALOG_REPLY);
-		}
-	};
-    private final OnClickListener replyCancelOnClickListener = new OnClickListener() {
-		public void onClick(View v) {
-			dismissDialog(Constants.DIALOG_REPLY);
 		}
 	};
 	
