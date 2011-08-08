@@ -426,9 +426,8 @@ public class DownloadCommentsTask extends AsyncTask<Integer, Long, Boolean>
 	}
 	
 	private void processJumpTarget(ThingInfo comment, int commentIndex) {
-		mJumpToCommentFoundIndex = commentIndex;
 		int numContext = mJumpToCommentContext.length;
-		final int selectionIndex = (commentIndex - numContext) > 0 ? (commentIndex - numContext) : 0;
+		mJumpToCommentFoundIndex = (commentIndex - numContext) > 0 ? (commentIndex - numContext) : 0;
 		
 		// load the jump target, plus the comments that are the context of the jump target
 		processCommentSlowSteps(comment);
@@ -441,7 +440,7 @@ public class DownloadCommentsTask extends AsyncTask<Integer, Long, Boolean>
 			@Override
 			public void run() {
 				refreshVisibleCommentsUI();
-				mActivity.getListView().setSelection(selectionIndex);
+				mActivity.getListView().setSelection(mJumpToCommentFoundIndex);
 			}
 		});
 	}
