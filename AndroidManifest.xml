@@ -39,7 +39,7 @@
                 <data android:scheme="http" android:host="redd.it" android:pathPattern="/" />
             </intent-filter>
         </activity>
-	    <activity android:name=".CommentsListActivity">
+	    <activity android:name=".comments.CommentsListActivity">
 	        <intent-filter>
 	            <action android:name="android.intent.action.VIEW" />
 	            <category android:name="android.intent.category.DEFAULT" />
@@ -51,7 +51,7 @@
 	        </intent-filter>
 	    </activity>
 	    <activity android:name=".reddits.PickSubredditActivity"></activity>
-	    <activity android:name=".SubmitLinkActivity">
+	    <activity android:name=".submit.SubmitLinkActivity">
 	        <intent-filter>
             	<action android:name="android.intent.action.SEND" />
             	<category android:name="android.intent.category.DEFAULT" />
@@ -60,7 +60,7 @@
 	    </activity>
 	    <activity android:name=".mail.InboxActivity"></activity>
 	    <activity android:name=".mail.InboxListActivity"></activity>
-	    <activity android:name=".ProfileActivity">
+	    <activity android:name=".profile.ProfileActivity">
 	        <intent-filter>
 	            <action android:name="android.intent.action.VIEW" />
 	            <category android:name="android.intent.category.DEFAULT" />
@@ -68,7 +68,7 @@
 	            <data android:scheme="http" android:host="www.reddit.com" android:pathPrefix="/user/" />
 	        </intent-filter>
 	    </activity>
-	    <activity android:name=".RedditPreferencesPage"></activity>
+	    <activity android:name=".settings.RedditPreferencesPage"></activity>
 	    <activity android:name=".browser.BrowserActivity" android:configChanges="keyboardHidden|orientation"></activity>
 	    <service android:name=".mail.EnvelopeService" android:label="@string/pref_mail_notification_service"></service>
 	</application>
