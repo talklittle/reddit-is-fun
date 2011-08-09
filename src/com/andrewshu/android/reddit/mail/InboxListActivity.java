@@ -89,7 +89,9 @@ import com.andrewshu.android.reddit.comments.CommentsListActivity;
 import com.andrewshu.android.reddit.common.Common;
 import com.andrewshu.android.reddit.common.Constants;
 import com.andrewshu.android.reddit.common.ProgressInputStream;
-import com.andrewshu.android.reddit.common.Util;
+import com.andrewshu.android.reddit.common.util.Assert;
+import com.andrewshu.android.reddit.common.util.StringUtils;
+import com.andrewshu.android.reddit.common.util.Util;
 import com.andrewshu.android.reddit.login.LoginDialog;
 import com.andrewshu.android.reddit.login.LoginTask;
 import com.andrewshu.android.reddit.settings.RedditSettings;
@@ -607,11 +609,11 @@ public final class InboxListActivity extends ListActivity
     		String genericListingError = "Not an inbox listing";
     		try {
     			Listing listing = mObjectMapper.readValue(in, Listing.class);
-    			Util.assertEquals(Constants.JSON_LISTING, listing.getKind(), genericListingError);
+    			Assert.assertEquals(Constants.JSON_LISTING, listing.getKind(), genericListingError);
     			
     			// Save the modhash, after, and before
     			ListingData data = listing.getData();
-    			if (Util.isEmpty(data.getModhash()))
+    			if (StringUtils.isEmpty(data.getModhash()))
     				mSettings.setModhash(null);
     			else
     				mSettings.setModhash(data.getModhash());
@@ -766,7 +768,7 @@ public final class InboxListActivity extends ListActivity
             	BufferedReader in = new BufferedReader(new InputStreamReader(entity.getContent()));
             	String line = in.readLine();
             	in.close();
-            	if (Util.isEmpty(line)) {
+            	if (StringUtils.isEmpty(line)) {
             		_mUserError = "Connection error when marking message read. Try again.";
             		throw new HttpException("No content returned from read_message POST");
             	}

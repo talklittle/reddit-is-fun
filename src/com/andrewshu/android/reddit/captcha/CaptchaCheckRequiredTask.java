@@ -12,7 +12,7 @@ import org.apache.http.client.methods.HttpGet;
 import org.apache.http.impl.client.DefaultHttpClient;
 
 import com.andrewshu.android.reddit.common.Constants;
-import com.andrewshu.android.reddit.common.Util;
+import com.andrewshu.android.reddit.common.util.Util;
 
 import android.os.AsyncTask;
 import android.util.Log;

@@ -81,8 +81,9 @@ import com.andrewshu.android.reddit.common.CacheInfo;
 import com.andrewshu.android.reddit.common.Common;
 import com.andrewshu.android.reddit.common.Constants;
 import com.andrewshu.android.reddit.common.ProgressInputStream;
-import com.andrewshu.android.reddit.common.Util;
 import com.andrewshu.android.reddit.common.tasks.VoteTask;
+import com.andrewshu.android.reddit.common.util.StringUtils;
+import com.andrewshu.android.reddit.common.util.Util;
 import com.andrewshu.android.reddit.login.LoginDialog;
 import com.andrewshu.android.reddit.login.LoginTask;
 import com.andrewshu.android.reddit.mail.MessageComposeTask;
@@ -719,7 +720,7 @@ public final class ProfileActivity extends ListActivity
     				throw new IllegalStateException(genericListingError);
     			// Save the modhash, after, and before
     			ListingData data = listing.getData();
-    			if (Util.isEmpty(data.getModhash()))
+    			if (StringUtils.isEmpty(data.getModhash()))
     				mSettings.setModhash(null);
     			else
     				mSettings.setModhash(data.getModhash());

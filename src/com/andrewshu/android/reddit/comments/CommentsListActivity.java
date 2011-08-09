@@ -82,9 +82,10 @@ import com.andrewshu.android.reddit.R;
 import com.andrewshu.android.reddit.common.CacheInfo;
 import com.andrewshu.android.reddit.common.Common;
 import com.andrewshu.android.reddit.common.Constants;
-import com.andrewshu.android.reddit.common.Util;
 import com.andrewshu.android.reddit.common.tasks.HideTask;
 import com.andrewshu.android.reddit.common.tasks.SaveTask;
+import com.andrewshu.android.reddit.common.util.StringUtils;
+import com.andrewshu.android.reddit.common.util.Util;
 import com.andrewshu.android.reddit.login.LoginDialog;
 import com.andrewshu.android.reddit.login.LoginTask;
 import com.andrewshu.android.reddit.mail.InboxActivity;
@@ -269,7 +270,7 @@ public class CommentsListActivity extends ListActivity
         		// TODO: use extras.getInt(Constants.EXTRA_NUM_COMMENTS) somehow
         	}
         	
-        	if (!Util.isEmpty(jumpToCommentId)) {
+        	if (!StringUtils.isEmpty(jumpToCommentId)) {
         		getNewDownloadCommentsTask().prepareLoadAndJumpToComment(jumpToCommentId, jumpToCommentContext)
         				.execute(Constants.DEFAULT_COMMENT_DOWNLOAD_LIMIT);
         	}
@@ -404,7 +405,7 @@ public class CommentsListActivity extends ListActivity
 	                		String.format(getResources().getString(R.string.thread_time_submitter),
 	                				Util.getTimeAgo(item.getCreated_utc()), item.getAuthor()));
 	                
-	            	if (!Util.isEmpty(item.getSpannedSelftext())) {
+	            	if (!StringUtils.isEmpty(item.getSpannedSelftext())) {
 	            		selftextView.setVisibility(View.VISIBLE);
 		                selftextView.setText(item.getSpannedSelftext());
 	            	} else {

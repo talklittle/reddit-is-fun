@@ -61,7 +61,8 @@ import com.andrewshu.android.reddit.R;
 import com.andrewshu.android.reddit.common.CacheInfo;
 import com.andrewshu.android.reddit.common.Common;
 import com.andrewshu.android.reddit.common.Constants;
-import com.andrewshu.android.reddit.common.Util;
+import com.andrewshu.android.reddit.common.util.CollectionUtils;
+import com.andrewshu.android.reddit.common.util.Util;
 import com.andrewshu.android.reddit.settings.RedditSettings;
 
 public final class PickSubredditActivity extends ListActivity {
@@ -127,20 +128,17 @@ public final class PickSubredditActivity extends ListActivity {
     	
     	resetUI(null);
         
-    	
-    	//mSubredditsList = CacheInfo.getCachedSubredditList(getApplicationContext());
     	mSubredditsList = cacheSubredditsList(mSubredditsList);
     	
-        if(mSubredditsList == null || mSubredditsList.isEmpty()){
-            // Try to restore mSubredditsList using getLastNonConfigurationInstance()
+        if (CollectionUtils.isEmpty(mSubredditsList))
             restoreLastNonConfigurationInstance();
-        }
         
-        if (mSubredditsList == null || mSubredditsList.isEmpty()) {
+        if (CollectionUtils.isEmpty(mSubredditsList)) {
         	new DownloadRedditsTask().execute();
-        } else {
-	    	// Orientation change. Use prior instance.
-        	resetUI(new PickSubredditAdapter(this, mSubredditsList));
+        }
+        else {
+	        addFrontpageUnlessSuppressed();
+	        resetUI(new PickSubredditAdapter(this, mSubredditsList));
         }
     }
     
@@ -335,17 +333,21 @@ public final class PickSubredditActivity extends ListActivity {
     		} else {
     			mSubredditsList = reddits;
     		}
-    	    // Insert front page into subreddits list, unless suppressed by Intent extras
-    		Bundle extras = getIntent().getExtras();
-    	    if (extras != null) {
-	        	boolean shouldHideFrontpage = extras.getBoolean(Constants.EXTRA_HIDE_FRONTPAGE_STRING, false);
-	        	if (!shouldHideFrontpage)
-	        		mSubredditsList.add(0, Constants.FRONTPAGE_STRING);
-	        } else {
-	        	mSubredditsList.add(0, Constants.FRONTPAGE_STRING);
-	        }
+    		addFrontpageUnlessSuppressed();
 	        resetUI(new PickSubredditAdapter(PickSubredditActivity.this, mSubredditsList));
     	}
+    }
+    
+    private void addFrontpageUnlessSuppressed() {
+	    // Insert front page into subreddits list, unless suppressed by Intent extras
+		Bundle extras = getIntent().getExtras();
+	    if (extras != null) {
+        	boolean shouldHideFrontpage = extras.getBoolean(Constants.EXTRA_HIDE_FRONTPAGE_STRING, false);
+        	if (!shouldHideFrontpage)
+        		mSubredditsList.add(0, Constants.FRONTPAGE_STRING);
+        } else {
+        	mSubredditsList.add(0, Constants.FRONTPAGE_STRING);
+        }
     }
 
     private final class PickSubredditAdapter extends ArrayAdapter<String> {

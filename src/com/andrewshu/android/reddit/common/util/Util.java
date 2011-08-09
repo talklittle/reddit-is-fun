@@ -17,11 +17,10 @@
  * along with "reddit is fun".  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.andrewshu.android.reddit.common;
+package com.andrewshu.android.reddit.common.util;
 
 import java.lang.reflect.Method;
 import java.util.ArrayList;
-import java.util.Iterator;
 
 import org.apache.http.HttpException;
 import org.apache.http.HttpResponse;
@@ -32,42 +31,14 @@ import android.text.style.URLSpan;
 import android.util.Log;
 
 import com.andrewshu.android.reddit.R;
+import com.andrewshu.android.reddit.common.Common;
+import com.andrewshu.android.reddit.common.Constants;
 import com.andrewshu.android.reddit.things.ThingInfo;
 
 public class Util {
 	
 	private static final String TAG = "Util";
 	
-	public static void assertState(boolean state, String message) {
-		if (!state)
-			throw new IllegalStateException(message);
-	}
-	
-	public static void assertEquals(Object expected, Object actual, String message) {
-		if (expected == null) {
-			if (actual != null) {
-				throw new IllegalStateException("assertEquals failed: expected null, actual " + actual + "; " + message);
-			}
-		}
-		else if (!expected.equals(actual)) {
-			throw new IllegalStateException("assertEquals failed: expected " + expected + ", actual " + actual + "; " + message);
-		}
-	}
-	
-    public static boolean listContainsIgnoreCase(ArrayList<String> list, String str){
-    	for (Iterator<String> iterator = list.iterator(); iterator.hasNext();) {
-			String string = (String) iterator.next();
-			
-			if(string.equalsIgnoreCase(str))
-				return true;
-		}
-    	return false;
-    }
-    
-    public static boolean isEmpty(CharSequence s) {
-    	return s == null || "".equals(s);
-    }
-    
 	public static ArrayList<String> extractUris(URLSpan[] spans) {
         int size = spans.length;
         ArrayList<String> accumulator = new ArrayList<String>();
@@ -210,7 +181,7 @@ public class Util {
 	public static String getResponseErrorMessage(String line) throws Exception{
     	String error = null;
 		
-		if (Util.isEmpty(line)) {
+		if (StringUtils.isEmpty(line)) {
 			error = "Connection error when subscribing. Try again.";
     		throw new HttpException("No content returned from subscribe POST");
     	}
@@ -487,7 +458,7 @@ public class Util {
      * 
      * @return original uri if no mobile version of uri is known
      */
-    static Uri optimizeMobileUri(Uri uri) {
+    public static Uri optimizeMobileUri(Uri uri) {
     	if (isWikipediaUri(uri)) {
     		uri = createMobileWikpediaUri(uri);
     	}
@@ -511,7 +482,7 @@ public class Util {
     	return Uri.parse(uriString.replace(".wikipedia.org/", ".m.wikipedia.org/"));
     }
     
-    static boolean isYoutubeUri(Uri uri) {
+    public static boolean isYoutubeUri(Uri uri) {
     	if (uri == null) return false;
     	String host = uri.getHost();
     	return host != null && host.endsWith(".youtube.com");

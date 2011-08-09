@@ -24,7 +24,7 @@ import org.codehaus.jackson.JsonToken;
 import com.andrewshu.android.reddit.common.CacheInfo;
 import com.andrewshu.android.reddit.common.Common;
 import com.andrewshu.android.reddit.common.Constants;
-import com.andrewshu.android.reddit.common.Util;
+import com.andrewshu.android.reddit.common.util.StringUtils;
 import com.andrewshu.android.reddit.settings.RedditSettings;
 
 import android.content.Context;
@@ -95,7 +95,7 @@ public class LoginTask extends AsyncTask<Void, Void, Boolean> {
         	String line = in.readLine();
         	in.close();
         	entity.consumeContent();
-        	if (Util.isEmpty(line)) {
+        	if (StringUtils.isEmpty(line)) {
         		throw new HttpException("No content returned from login POST");
         	}
         	

@@ -24,7 +24,7 @@ import android.widget.Toast;
 import com.andrewshu.android.reddit.common.CacheInfo;
 import com.andrewshu.android.reddit.common.Common;
 import com.andrewshu.android.reddit.common.Constants;
-import com.andrewshu.android.reddit.common.Util;
+import com.andrewshu.android.reddit.common.util.Util;
 import com.andrewshu.android.reddit.settings.RedditSettings;
 
 public class SubscribeTask extends AsyncTask<Void, Void, Boolean> {

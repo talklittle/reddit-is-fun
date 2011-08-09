@@ -33,7 +33,8 @@ import android.webkit.CookieSyncManager;
 
 import com.andrewshu.android.reddit.R;
 import com.andrewshu.android.reddit.common.Constants;
-import com.andrewshu.android.reddit.common.Util;
+import com.andrewshu.android.reddit.common.util.StringUtils;
+import com.andrewshu.android.reddit.common.util.Util;
 
 /**
  * Common settings
@@ -192,7 +193,7 @@ public class RedditSettings {
         
         // Default subreddit
         String homepage = sessionPrefs.getString(Constants.PREF_HOMEPAGE, Constants.FRONTPAGE_STRING).trim();
-        if (Util.isEmpty(homepage))
+        if (StringUtils.isEmpty(homepage))
         	this.setHomepage(Constants.FRONTPAGE_STRING);
         else
         	this.setHomepage(homepage);

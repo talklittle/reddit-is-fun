@@ -69,7 +69,8 @@ import com.andrewshu.android.reddit.captcha.CaptchaDownloadTask;
 import com.andrewshu.android.reddit.comments.CommentsListActivity;
 import com.andrewshu.android.reddit.common.Common;
 import com.andrewshu.android.reddit.common.Constants;
-import com.andrewshu.android.reddit.common.Util;
+import com.andrewshu.android.reddit.common.util.StringUtils;
+import com.andrewshu.android.reddit.common.util.Util;
 import com.andrewshu.android.reddit.login.LoginDialog;
 import com.andrewshu.android.reddit.login.LoginTask;
 import com.andrewshu.android.reddit.mail.PeekEnvelopeTask;
@@ -194,7 +195,7 @@ public class SubmitLinkActivity extends TabActivity {
         	Matcher m = SUBMIT_PATH_PATTERN.matcher(submitPath);
         	if (m.matches()) {
         		String subreddit = m.group(1);
-        		if (Util.isEmpty(subreddit)) {
+        		if (StringUtils.isEmpty(subreddit)) {
             		submitLinkReddit.setText("reddit.com");
             		submitTextReddit.setText("reddit.com");
         		} else {
@@ -351,7 +352,7 @@ public class SubmitLinkActivity extends TabActivity {
             	BufferedReader in = new BufferedReader(new InputStreamReader(entity.getContent()));
             	String line = in.readLine();
             	in.close();
-            	if (Util.isEmpty(line)) {
+            	if (StringUtils.isEmpty(line)) {
             		throw new HttpException("No content returned from reply POST");
             	}
             	if (line.contains("WRONG_PASSWORD")) {
@@ -587,15 +588,15 @@ public class SubmitLinkActivity extends TabActivity {
 		final EditText titleText = (EditText) findViewById(R.id.submit_link_title);
 		final EditText urlText = (EditText) findViewById(R.id.submit_link_url);
 		final EditText redditText = (EditText) findViewById(R.id.submit_link_reddit);
-		if (Util.isEmpty(titleText.getText())) {
+		if (StringUtils.isEmpty(titleText.getText())) {
 			Common.showErrorToast("Please provide a title.", Toast.LENGTH_LONG, this);
 			return false;
 		}
-		if (Util.isEmpty(urlText.getText())) {
+		if (StringUtils.isEmpty(urlText.getText())) {
 			Common.showErrorToast("Please provide a URL.", Toast.LENGTH_LONG, this);
 			return false;
 		}
-		if (Util.isEmpty(redditText.getText())) {
+		if (StringUtils.isEmpty(redditText.getText())) {
 			Common.showErrorToast("Please provide a subreddit.", Toast.LENGTH_LONG, this);
 			return false;
 		}
@@ -604,11 +605,11 @@ public class SubmitLinkActivity extends TabActivity {
 	private boolean validateTextForm() {
 		final EditText titleText = (EditText) findViewById(R.id.submit_text_title);
 		final EditText redditText = (EditText) findViewById(R.id.submit_text_reddit);
-		if (Util.isEmpty(titleText.getText())) {
+		if (StringUtils.isEmpty(titleText.getText())) {
 			Common.showErrorToast("Please provide a title.", Toast.LENGTH_LONG, this);
 			return false;
 		}
-		if (Util.isEmpty(redditText.getText())) {
+		if (StringUtils.isEmpty(redditText.getText())) {
 			Common.showErrorToast("Please provide a subreddit.", Toast.LENGTH_LONG, this);
 			return false;
 		}

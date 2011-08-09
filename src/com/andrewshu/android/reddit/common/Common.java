@@ -74,6 +74,8 @@ import com.andrewshu.android.reddit.R;
 import com.andrewshu.android.reddit.browser.BrowserActivity;
 import com.andrewshu.android.reddit.captcha.CaptchaException;
 import com.andrewshu.android.reddit.comments.CommentsListActivity;
+import com.andrewshu.android.reddit.common.util.StringUtils;
+import com.andrewshu.android.reddit.common.util.Util;
 import com.andrewshu.android.reddit.mail.InboxActivity;
 import com.andrewshu.android.reddit.profile.ProfileActivity;
 import com.andrewshu.android.reddit.settings.RedditSettings;
@@ -231,7 +233,7 @@ public class Common {
         	String line = String.valueOf(buffer);
         	entity.consumeContent();
         	
-        	if (Util.isEmpty(line)) {
+        	if (StringUtils.isEmpty(line)) {
         		throw new HttpException("No content returned from doUpdateModhash GET to "+Constants.MODHASH_URL);
         	}
         	if (line.contains("USER_REQUIRED")) {
@@ -241,7 +243,7 @@ public class Common {
         	Matcher modhashMatcher = MODHASH_PATTERN.matcher(line);
         	if (modhashMatcher.find()) {
         		modhash = modhashMatcher.group(1);
-        		if (Util.isEmpty(modhash)) {
+        		if (StringUtils.isEmpty(modhash)) {
         			// Means user is not actually logged in.
         			return null;
         		}
@@ -285,7 +287,7 @@ public class Common {
     		return "Error reading retrieved data.";
     	}
     	
-    	if (Util.isEmpty(line)) {
+    	if (StringUtils.isEmpty(line)) {
     		return "API returned empty data.";
     	}
     	if (line.contains("WRONG_PASSWORD")) {
@@ -329,7 +331,7 @@ public class Common {
     		throw new Exception("Error reading retrieved data.");
     	}
     	
-    	if (Util.isEmpty(line)) {
+    	if (StringUtils.isEmpty(line)) {
     		throw new Exception("API returned empty data.");
     	}
     	if (line.contains("WRONG_PASSWORD")) {

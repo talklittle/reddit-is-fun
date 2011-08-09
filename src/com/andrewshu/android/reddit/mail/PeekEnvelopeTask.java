@@ -14,7 +14,7 @@ import org.codehaus.jackson.JsonToken;
 
 import com.andrewshu.android.reddit.common.Common;
 import com.andrewshu.android.reddit.common.Constants;
-import com.andrewshu.android.reddit.common.Util;
+import com.andrewshu.android.reddit.common.util.Util;
 
 import android.content.Context;
 import android.content.SharedPreferences;

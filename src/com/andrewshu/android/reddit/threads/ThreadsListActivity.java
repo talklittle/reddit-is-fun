@@ -74,10 +74,11 @@ import com.andrewshu.android.reddit.comments.CommentsListActivity;
 import com.andrewshu.android.reddit.common.CacheInfo;
 import com.andrewshu.android.reddit.common.Common;
 import com.andrewshu.android.reddit.common.Constants;
-import com.andrewshu.android.reddit.common.Util;
 import com.andrewshu.android.reddit.common.tasks.HideTask;
 import com.andrewshu.android.reddit.common.tasks.SaveTask;
 import com.andrewshu.android.reddit.common.tasks.VoteTask;
+import com.andrewshu.android.reddit.common.util.StringUtils;
+import com.andrewshu.android.reddit.common.util.Util;
 import com.andrewshu.android.reddit.login.LoginDialog;
 import com.andrewshu.android.reddit.login.LoginTask;
 import com.andrewshu.android.reddit.mail.InboxActivity;
@@ -466,7 +467,7 @@ public final class ThreadsListActivity extends ListActivity {
             	}
             	
             	// Fill in the thumbnail using a Thread. Note that thumbnail URL can be absolute path.
-            	if (!Util.isEmpty(item.getThumbnail())) {
+            	if (!StringUtils.isEmpty(item.getThumbnail())) {
             		bitmapManager.fetchBitmapOnThread(Util.absolutePathToURL(item.getThumbnail()),
             				thumbnailView, indeterminateProgressBar, activity);
             	} else {
@@ -1017,7 +1018,7 @@ public final class ThreadsListActivity extends ListActivity {
     		if(!mSubreddit.equals(Constants.FRONTPAGE_STRING)){
     			ArrayList<String> mSubredditsList = CacheInfo.getCachedSubredditList(getApplicationContext());	
     			
-    			if(mSubredditsList != null && Util.listContainsIgnoreCase(mSubredditsList, mSubreddit)){
+    			if(mSubredditsList != null && StringUtils.listContainsIgnoreCase(mSubredditsList, mSubreddit)){
 	    			menu.findItem(R.id.unsubscribe_menu_id).setVisible(true);
 	    			menu.findItem(R.id.subscribe_menu_id).setVisible(false);
 	    		}

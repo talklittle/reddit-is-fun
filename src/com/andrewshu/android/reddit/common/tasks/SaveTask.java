@@ -17,7 +17,7 @@ import org.apache.http.protocol.HTTP;
 
 import com.andrewshu.android.reddit.common.Common;
 import com.andrewshu.android.reddit.common.Constants;
-import com.andrewshu.android.reddit.common.Util;
+import com.andrewshu.android.reddit.common.util.StringUtils;
 import com.andrewshu.android.reddit.settings.RedditSettings;
 import com.andrewshu.android.reddit.things.ThingInfo;
 
@@ -114,7 +114,7 @@ public class SaveTask extends AsyncTask<Void, Void, Boolean> {
         	BufferedReader in = new BufferedReader(new InputStreamReader(entity.getContent()));
         	String line = in.readLine();
         	in.close();
-        	if (Util.isEmpty(line)) {
+        	if (StringUtils.isEmpty(line)) {
         		mUserError = "Connection error when voting. Try again.";
         		throw new HttpException("No content returned from save POST");
         	}

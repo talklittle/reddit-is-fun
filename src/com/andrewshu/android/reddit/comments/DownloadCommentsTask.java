@@ -29,7 +29,9 @@ import com.andrewshu.android.reddit.common.CacheInfo;
 import com.andrewshu.android.reddit.common.Common;
 import com.andrewshu.android.reddit.common.Constants;
 import com.andrewshu.android.reddit.common.ProgressInputStream;
-import com.andrewshu.android.reddit.common.Util;
+import com.andrewshu.android.reddit.common.util.Assert;
+import com.andrewshu.android.reddit.common.util.StringUtils;
+import com.andrewshu.android.reddit.common.util.Util;
 import com.andrewshu.android.reddit.markdown.Markdown;
 import com.andrewshu.android.reddit.settings.RedditSettings;
 import com.andrewshu.android.reddit.things.Listing;
@@ -282,11 +284,11 @@ public class DownloadCommentsTask extends AsyncTask<Integer, Long, Boolean>
 			// listings[0] is a thread Listing for the OP.
 			// process same as a thread listing more or less
 			
-			Util.assertEquals(Constants.JSON_LISTING, listings[0].getKind(), genericListingError);
+			Assert.assertEquals(Constants.JSON_LISTING, listings[0].getKind(), genericListingError);
 			
 			// Save modhash, ignore "after" and "before" which are meaningless in this context (and probably null)
 			ListingData threadListingData = listings[0].getData();
-			if (Util.isEmpty(threadListingData.getModhash()))
+			if (StringUtils.isEmpty(threadListingData.getModhash()))
 				mSettings.setModhash(null);
 			else
 				mSettings.setModhash(threadListingData.getModhash());
@@ -294,7 +296,7 @@ public class DownloadCommentsTask extends AsyncTask<Integer, Long, Boolean>
 			if (Constants.LOGGING) Log.d(TAG, "Successfully got OP listing[0]: modhash "+mSettings.getModhash());
 			
 			ThingListing threadThingListing = threadListingData.getChildren()[0];
-			Util.assertEquals(Constants.THREAD_KIND, threadThingListing.getKind(), genericListingError);
+			Assert.assertEquals(Constants.THREAD_KIND, threadThingListing.getKind(), genericListingError);
 
 			if (isInsertingEntireThread()) {
 				parseOP(threadThingListing.getData());
@@ -414,7 +416,7 @@ public class DownloadCommentsTask extends AsyncTask<Integer, Long, Boolean>
 	}
 	
 	private boolean isHasJumpTarget() {
-		return ! Util.isEmpty(mJumpToCommentId);
+		return ! StringUtils.isEmpty(mJumpToCommentId);
 	}
 	
 	private boolean isFoundJumpTargetComment() {

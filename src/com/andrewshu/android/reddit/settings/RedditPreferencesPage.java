@@ -30,7 +30,7 @@ import android.widget.Toast;
 
 import com.andrewshu.android.reddit.R;
 import com.andrewshu.android.reddit.common.Constants;
-import com.andrewshu.android.reddit.common.Util;
+import com.andrewshu.android.reddit.common.util.Util;
 import com.andrewshu.android.reddit.mail.EnvelopeService;
 
 public class RedditPreferencesPage extends PreferenceActivity
