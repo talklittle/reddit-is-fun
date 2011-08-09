@@ -1489,7 +1489,6 @@ public class CommentsListActivity extends ListActivity
     }
     
     private void hideComment(int rowId) {
-    	int firstVisible = getListView().getFirstVisiblePosition();
     	synchronized (COMMENT_ADAPTER_LOCK) {
     		ThingInfo headComment = mCommentsAdapter.getItem(rowId);
 	    	int myIndent = headComment.getIndent();
@@ -1504,11 +1503,9 @@ public class CommentsListActivity extends ListActivity
 	    	}
 	    	mCommentsAdapter.notifyDataSetChanged();
     	}
-    	getListView().setSelection(firstVisible);
     }
     
     private void showComment(int rowId) {
-    	int firstVisible = getListView().getFirstVisiblePosition();
     	synchronized (COMMENT_ADAPTER_LOCK) {
     		ThingInfo headComment = mCommentsAdapter.getItem(rowId);
     		headComment.setHiddenCommentHead(false);
@@ -1532,7 +1529,6 @@ public class CommentsListActivity extends ListActivity
 	    	}
 	    	mCommentsAdapter.notifyDataSetChanged();
     	}
-    	getListView().setSelection(firstVisible);
     }
 
 	private void findCommentText(String search_text, boolean wrap, boolean next) {
