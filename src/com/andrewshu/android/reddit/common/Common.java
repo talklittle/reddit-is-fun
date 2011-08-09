@@ -512,12 +512,12 @@ public class Common {
 		DefaultHttpClient httpclient = new DefaultHttpClient(cm, params);
         httpclient.addRequestInterceptor(new HttpRequestInterceptor() {
             public void process(
-                    final HttpRequest request, 
-                    final HttpContext context) throws HttpException, IOException {
-                if (!request.containsHeader("Accept-Encoding")) {
+                    final HttpRequest request,
+                    final HttpContext context
+            ) throws HttpException, IOException {
+                request.setHeader("User-Agent", Constants.USER_AGENT_STRING);
+                if (!request.containsHeader("Accept-Encoding"))
                     request.addHeader("Accept-Encoding", "gzip");
-                    request.setHeader("User-Agent", Constants.USER_AGENT_STRING);
-                }
             }
         });
         httpclient.addResponseInterceptor(new HttpResponseInterceptor() {
