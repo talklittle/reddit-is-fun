@@ -39,6 +39,8 @@ public class Constants {
 		FILENAME_SUBREDDIT_CACHE, FILENAME_THREAD_CACHE, FILENAME_CACHE_INFO
 	};
 	
+    public static final String USER_AGENT_STRING = "reddit is fun (Android)";
+	
 	// 1:subreddit 2:threadId 3:commentId
 	// The following commented-out one is good, but tough to get right, e.g.,
 	// http://www.reddit.com/eorhm vs. http://www.reddit.com/prefs, mobile, store, etc.

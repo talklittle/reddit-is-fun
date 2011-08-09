@@ -516,6 +516,7 @@ public class Common {
                     final HttpContext context) throws HttpException, IOException {
                 if (!request.containsHeader("Accept-Encoding")) {
                     request.addHeader("Accept-Encoding", "gzip");
+                    request.setHeader("User-Agent", Constants.USER_AGENT_STRING);
                 }
             }
         });
