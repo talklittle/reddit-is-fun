@@ -84,6 +84,7 @@ import com.andrewshu.android.reddit.common.Common;
 import com.andrewshu.android.reddit.common.Constants;
 import com.andrewshu.android.reddit.common.tasks.HideTask;
 import com.andrewshu.android.reddit.common.tasks.SaveTask;
+import com.andrewshu.android.reddit.common.util.CollectionUtils;
 import com.andrewshu.android.reddit.common.util.StringUtils;
 import com.andrewshu.android.reddit.common.util.Util;
 import com.andrewshu.android.reddit.login.LoginDialog;
@@ -492,7 +493,7 @@ public class CommentsListActivity extends ListActivity
     } // End of CommentsListAdapter
     
     public ThingInfo getOpThingInfo() {
-    	if (mCommentsList != null)
+    	if (!CollectionUtils.isEmpty(mCommentsList))
     		return mCommentsList.get(0);
     	return null;
     }
