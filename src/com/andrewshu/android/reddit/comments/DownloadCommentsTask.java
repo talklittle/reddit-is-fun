@@ -4,7 +4,9 @@ import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.AbstractCollection;
 import java.util.Collection;
+import java.util.Iterator;
 import java.util.LinkedList;
 
 import org.apache.http.Header;
@@ -508,7 +510,7 @@ public class DownloadCommentsTask extends AsyncTask<Integer, Long, Boolean>
 	private void processCommentSlowSteps(ThingInfo comment) {
 		if (comment.getBody_html() != null) {
         	//get title and put in body since images aren't shown
-		String useMeForSpan = comment.getBody_html();
+			String useMeForSpan = comment.getBody_html();
         	if(useMeForSpan.contains("title=")) {
 			String[] splitHTML = useMeForSpan.split("title="); 
 			for (int i =0; i<splitHTML.length;i++){
@@ -520,11 +522,21 @@ public class DownloadCommentsTask extends AsyncTask<Integer, Long, Boolean>
 			}
 			useMeForSpan=join(splitHTML,"title=");
         	}
-		CharSequence spanned = createSpanned(useMeForSpan);
+			CharSequence spanned = createSpanned(useMeForSpan);
         	comment.setSpannedBody(spanned);
 		}
 		markdown.getURLs(comment.getBody(), comment.getUrls());
 	}
+	
+	public static String join(String[] strings, String separator) {
+	    StringBuffer sb = new StringBuffer();
+	    for (int i=0; i < strings.length; i++) {
+	        if (i != 0) sb.append(separator);
+	  	    sb.append(strings[i]);
+	  	}
+	  	return sb.toString();
+	}
+
 	
 	private void processDeferredComments() {
     	if (!mDeferredInsertList.isEmpty()) {
