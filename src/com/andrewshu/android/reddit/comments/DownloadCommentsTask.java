@@ -513,12 +513,10 @@ public class DownloadCommentsTask extends AsyncTask<Integer, Long, Boolean>
 			String useMeForSpan = comment.getBody_html();
         	if(useMeForSpan.contains("title=")) {
 			String[] splitHTML = useMeForSpan.split("title="); 
-			for (int i =0; i<splitHTML.length;i++){
-				if(i>0){
-					String[] tags=splitHTML[i].split("&gt;");
-					tags[2]="["+splitHTML[i].split("\"")[1]+"]"+tags[2];
-					splitHTML[i]=join(tags,"&gt;");
-				}
+			for (int i =1; i<splitHTML.length;i++){
+				String[] tags=splitHTML[i].split("&gt;");
+				tags[2]="["+splitHTML[i].split("\"")[1]+"]"+tags[2];
+				splitHTML[i]=join(tags,"&gt;");
 			}
 			useMeForSpan=join(splitHTML,"title=");
         	}
