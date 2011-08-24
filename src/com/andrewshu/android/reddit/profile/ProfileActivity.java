@@ -585,9 +585,9 @@ public final class ProfileActivity extends ListActivity
     				mKarma = getKarma();
     			
             	String url;
-        		StringBuilder sb = new StringBuilder("http://api.reddit.com/user/")
+        		StringBuilder sb = new StringBuilder(Constants.REDDIT_BASE_URL + "/user/")
         			.append(mUsername.trim())
-        			.append("/?").append(mSortByUrl).append("&")
+        			.append("/.json?").append(mSortByUrl).append("&")
         			.append(mSortByUrlExtra).append("&");
         		
     			// "before" always comes back null unless you provide correct "count"

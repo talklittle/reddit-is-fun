@@ -42,7 +42,7 @@ public class PeekEnvelopeTask extends AsyncTask<Void, Void, Integer> {
 		try {
 			if (Constants.PREF_MAIL_NOTIFICATION_STYLE_OFF.equals(mMailNotificationStyle))
 	    		return 0;
-			HttpGet request = new HttpGet("http://api.reddit.com/message/inbox/?mark=false");
+			HttpGet request = new HttpGet(Constants.REDDIT_BASE_URL + "/message/inbox/.json?mark=false");
         	HttpResponse response = mClient.execute(request);
         	entity = response.getEntity();
         	

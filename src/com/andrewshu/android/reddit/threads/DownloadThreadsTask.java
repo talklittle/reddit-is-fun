@@ -93,12 +93,12 @@ public abstract class DownloadThreadsTask extends AsyncTask<Void, Long, Boolean>
     		// Picking a new subreddit will erase the saved URL, getting rid of after= and before=.
     		// subreddit.length != 0 means you are going Next or Prev, which creates new URL.
 			if (Constants.FRONTPAGE_STRING.equals(mSubreddit)) {
-    			sb = new StringBuilder("http://api.reddit.com/").append(mSortByUrl)
-    				.append("?").append(mSortByUrlExtra).append("&");
+    			sb = new StringBuilder(Constants.REDDIT_BASE_URL + "/").append(mSortByUrl)
+    				.append(".json?").append(mSortByUrlExtra).append("&");
     		} else {
-    			sb = new StringBuilder("http://api.reddit.com/r/")
+    			sb = new StringBuilder(Constants.REDDIT_BASE_URL + "/r/")
         			.append(mSubreddit.toString().trim())
-        			.append("/").append(mSortByUrl).append("?")
+        			.append("/").append(mSortByUrl).append(".json?")
         			.append(mSortByUrlExtra).append("&");
     		}
 			// "before" always comes back null unless you provide correct "count"

@@ -133,13 +133,13 @@ public class DownloadCommentsTask extends AsyncTask<Integer, Long, Boolean>
 	public Boolean doInBackground(Integer... maxComments) {
 		HttpEntity entity = null;
         try {
-        	StringBuilder sb = new StringBuilder("http://api.reddit.com");
+        	StringBuilder sb = new StringBuilder(Constants.REDDIT_BASE_URL);
     		if (mSubreddit != null) {
     			sb.append("/r/").append(mSubreddit.trim());
     		}
     		sb.append("/comments/")
         		.append(mThreadId)
-        		.append("/z/").append(mMoreChildrenId).append("/?")
+        		.append("/z/").append(mMoreChildrenId).append("/.json?")
         		.append(mSettings.getCommentsSortByUrl()).append("&");
         	if (mJumpToCommentContext.length != 0)
         		sb.append("context=").append(mJumpToCommentContext.length).append("&");

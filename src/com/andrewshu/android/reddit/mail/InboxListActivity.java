@@ -519,9 +519,9 @@ public final class InboxListActivity extends ListActivity
             
     		try {
             	String url;
-            	StringBuilder sb = new StringBuilder("http://api.reddit.com/message/")
+            	StringBuilder sb = new StringBuilder(Constants.REDDIT_BASE_URL + "/message/")
             			.append(mWhichInbox)
-            			.append("/?");
+            			.append("/.json?");
             	
             	// "before" always comes back null unless you provide correct "count"
         		if (mAfter != null) {
