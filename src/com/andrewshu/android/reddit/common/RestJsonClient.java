@@ -26,7 +26,7 @@ public class RestJsonClient {
         // Execute the request
         HttpResponse response;
 
-        ObjectMapper json = new ObjectMapper();
+        ObjectMapper json = Common.getObjectMapper();
         JsonNode data = null;
         try {
             response = httpclient.execute(httpget);
@@ -37,10 +37,8 @@ public class RestJsonClient {
 
                 // A Simple JSON Response Read
                 InputStream instream = entity.getContent();
-                String result= convertStreamToString(instream);
 
-                json = new ObjectMapper();
-                data = json.readValue(result, JsonNode.class);
+                data = json.readValue(instream, JsonNode.class);
                 
                 instream.close();
             }
