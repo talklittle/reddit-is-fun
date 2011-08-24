@@ -10,7 +10,6 @@ import org.apache.http.HttpResponse;
 import org.apache.http.client.ClientProtocolException;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.HttpGet;
-import org.apache.http.impl.client.DefaultHttpClient;
 import org.codehaus.jackson.JsonNode;
 import org.codehaus.jackson.map.ObjectMapper;
 
@@ -19,7 +18,7 @@ public class RestJsonClient {
     public static JsonNode connect(String url)
     {
 
-        HttpClient httpclient = new DefaultHttpClient();
+        HttpClient httpclient = Common.getGzipHttpClient();
 
         // Prepare a request object
         HttpGet httpget = new HttpGet(url); 
