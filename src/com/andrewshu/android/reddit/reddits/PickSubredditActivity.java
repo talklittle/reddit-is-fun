@@ -255,7 +255,7 @@ public final class PickSubredditActivity extends ListActivity {
             	if (reddits == null) {
             		reddits = new ArrayList<String>();
             		
-	            	HttpGet request = new HttpGet("http://www.reddit.com/reddits");
+	            	HttpGet request = new HttpGet(Constants.REDDIT_BASE_URL + "/reddits");
 	            	// Set timeout to 15 seconds
 	                HttpParams params = request.getParams();
 	    	        HttpConnectionParams.setConnectionTimeout(params, 15000);

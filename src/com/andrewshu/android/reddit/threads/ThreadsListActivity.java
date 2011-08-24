@@ -1104,9 +1104,9 @@ public final class ThreadsListActivity extends ListActivity {
     	case R.id.open_browser_menu_id:
     		String url;
     		if (mSubreddit.equals(Constants.FRONTPAGE_STRING))
-    			url = "http://www.reddit.com";
+    			url = Constants.REDDIT_BASE_URL;
     		else
-        		url = new StringBuilder("http://www.reddit.com/r/").append(mSubreddit).toString();
+        		url = new StringBuilder(Constants.REDDIT_BASE_URL + "/r/").append(mSubreddit).toString();
     		Common.launchBrowser(this, url, null, false, true, true);
     		break;
         case R.id.light_dark_menu_id:

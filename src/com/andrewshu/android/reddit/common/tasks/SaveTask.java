@@ -41,9 +41,9 @@ public class SaveTask extends AsyncTask<Void, Void, Boolean> {
 	public SaveTask(boolean mSave, ThingInfo mVoteTargetThreadInfo, 
 								RedditSettings mSettings, Context mContext){
 		if(mSave){
-			this.mUrl = "http://www.reddit.com/api/save";
+			this.mUrl = Constants.REDDIT_BASE_URL + "/api/save";
 		} else {
-			this.mUrl = "http://www.reddit.com/api/unsave";
+			this.mUrl = Constants.REDDIT_BASE_URL + "/api/unsave";
 		}
 		
 		this.mSave = mSave;

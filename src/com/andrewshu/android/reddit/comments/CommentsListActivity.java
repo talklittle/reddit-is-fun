@@ -698,7 +698,7 @@ public class CommentsListActivity extends ListActivity
     			// Votehash is currently unused by reddit 
 //    				nvps.add(new BasicNameValuePair("vh", "0d4ab0ffd56ad0f66841c15609e9a45aeec6b015"));
     			
-    			HttpPost httppost = new HttpPost("http://www.reddit.com/api/comment");
+    			HttpPost httppost = new HttpPost(Constants.REDDIT_BASE_URL + "/api/comment");
     	        httppost.setEntity(new UrlEncodedFormEntity(nvps, HTTP.UTF_8));
     	        
     	        HttpParams params = httppost.getParams();
@@ -783,7 +783,7 @@ public class CommentsListActivity extends ListActivity
     			nvps.add(new BasicNameValuePair("r", mSubreddit.toString()));
     			nvps.add(new BasicNameValuePair("uh", mSettings.getModhash().toString()));
     			
-    			HttpPost httppost = new HttpPost("http://www.reddit.com/api/editusertext");
+    			HttpPost httppost = new HttpPost(Constants.REDDIT_BASE_URL + "/api/editusertext");
     	        httppost.setEntity(new UrlEncodedFormEntity(nvps, HTTP.UTF_8));
     	        
     	        HttpParams params = httppost.getParams();
@@ -869,7 +869,7 @@ public class CommentsListActivity extends ListActivity
     			nvps.add(new BasicNameValuePair("r", mSubreddit.toString()));
     			nvps.add(new BasicNameValuePair("uh", mSettings.getModhash().toString()));
     			
-    			HttpPost httppost = new HttpPost("http://www.reddit.com/api/del");
+    			HttpPost httppost = new HttpPost(Constants.REDDIT_BASE_URL + "/api/del");
     	        httppost.setEntity(new UrlEncodedFormEntity(nvps, HTTP.UTF_8));
     	        
     	        HttpParams params = httppost.getParams();
@@ -979,7 +979,7 @@ public class CommentsListActivity extends ListActivity
     			// Votehash is currently unused by reddit 
 //    				nvps.add(new BasicNameValuePair("vh", "0d4ab0ffd56ad0f66841c15609e9a45aeec6b015"));
     			
-    			HttpPost httppost = new HttpPost("http://www.reddit.com/api/vote");
+    			HttpPost httppost = new HttpPost(Constants.REDDIT_BASE_URL + "/api/vote");
     	        httppost.setEntity(new UrlEncodedFormEntity(nvps, HTTP.UTF_8));
     	        
     	        if (Constants.LOGGING) Log.d(TAG, nvps.toString());
@@ -1131,7 +1131,7 @@ public class CommentsListActivity extends ListActivity
     			// Votehash is currently unused by reddit 
 //    				nvps.add(new BasicNameValuePair("vh", "0d4ab0ffd56ad0f66841c15609e9a45aeec6b015"));
     			
-    			HttpPost httppost = new HttpPost("http://www.reddit.com/api/report");
+    			HttpPost httppost = new HttpPost(Constants.REDDIT_BASE_URL + "/api/report");
     	        httppost.setEntity(new UrlEncodedFormEntity(nvps, HTTP.UTF_8));
     	        
     	        if (Constants.LOGGING) Log.d(TAG, nvps.toString());
@@ -1308,7 +1308,7 @@ public class CommentsListActivity extends ListActivity
     		showDialog(Constants.DIALOG_SORT_BY);
     		break;
     	case R.id.open_browser_menu_id:
-    		String url = new StringBuilder("http://www.reddit.com/r/")
+    		String url = new StringBuilder(Constants.REDDIT_BASE_URL + "/r/")
 				.append(mSubreddit).append("/comments/").append(mThreadId).toString();
     		Common.launchBrowser(this, url, url, false, true, true);
     		break;

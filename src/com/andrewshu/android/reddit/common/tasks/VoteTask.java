@@ -72,7 +72,7 @@ public class VoteTask extends AsyncTask<Void, Void, Boolean> {
 			// Votehash is currently unused by reddit 
 //				nvps.add(new BasicNameValuePair("vh", "0d4ab0ffd56ad0f66841c15609e9a45aeec6b015"));
 			
-			HttpPost httppost = new HttpPost("http://www.reddit.com/api/vote");
+			HttpPost httppost = new HttpPost(Constants.REDDIT_BASE_URL + "/api/vote");
 	        httppost.setEntity(new UrlEncodedFormEntity(nvps, HTTP.UTF_8));
 	        
 	        if (Constants.LOGGING) Log.d(TAG, nvps.toString());

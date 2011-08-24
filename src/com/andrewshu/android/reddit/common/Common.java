@@ -581,7 +581,7 @@ public class Common {
     public static String getSubredditId(String mSubreddit){
     	String subreddit_id = null;
     	JsonNode subredditInfo = 
-    	RestJsonClient.connect("http://www.reddit.com/r/" + mSubreddit + "/.json?count=1");
+    	RestJsonClient.connect(Constants.REDDIT_BASE_URL + "/r/" + mSubreddit + "/.json?count=1");
     	    	
     	if(subredditInfo != null){
     		ArrayNode children = (ArrayNode) subredditInfo.path("data").path("children");

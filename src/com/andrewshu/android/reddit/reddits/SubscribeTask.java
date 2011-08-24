@@ -42,7 +42,7 @@ public class SubscribeTask extends AsyncTask<Void, Void, Boolean> {
 	
 	public SubscribeTask(String mSubreddit, Context context, RedditSettings mSettings) {
 		// TODO Auto-generated constructor stub
-		this.mUrl = "http://www.reddit.com/api/subscribe";
+		this.mUrl = Constants.REDDIT_BASE_URL + "/api/subscribe";
 		this.mContext = context;
 		this.mSettings = mSettings;
 		this.mSubreddit = mSubreddit;

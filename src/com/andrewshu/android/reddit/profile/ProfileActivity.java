@@ -667,7 +667,7 @@ public final class ProfileActivity extends ListActivity
     	
     	private String[] getKarma() throws IOException {
         	String url;
-    		StringBuilder sb = new StringBuilder("http://www.reddit.com/user/")
+    		StringBuilder sb = new StringBuilder(Constants.REDDIT_BASE_URL + "/user/")
     			.append(mUsername.trim());
     		
     		url = sb.toString();
@@ -930,7 +930,7 @@ public final class ProfileActivity extends ListActivity
     	Dialog _mDialog;
     	
 		public MyCaptchaCheckRequiredTask(Dialog dialog) {
-			super("http://www.reddit.com/message/compose/", mClient);
+			super(Constants.REDDIT_BASE_URL + "/message/compose/", mClient);
 			_mDialog = dialog;
 		}
 		

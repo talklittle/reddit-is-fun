@@ -30,7 +30,7 @@ public abstract class CaptchaDownloadTask extends AsyncTask<Void, Void, Drawable
 	@Override
 	public Drawable doInBackground(Void... voidz) {
 		try {
-			HttpGet request = new HttpGet("http://www.reddit.com/" + _mCaptchaUrl);
+			HttpGet request = new HttpGet(Constants.REDDIT_BASE_URL + "/" + _mCaptchaUrl);
 			HttpResponse response = _mClient.execute(request);
     	
 			InputStream in = response.getEntity().getContent();
