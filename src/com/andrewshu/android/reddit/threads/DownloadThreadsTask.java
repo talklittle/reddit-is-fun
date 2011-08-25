@@ -8,8 +8,8 @@ import java.util.ArrayList;
 import org.apache.http.Header;
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpResponse;
+import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.HttpGet;
-import org.apache.http.impl.client.DefaultHttpClient;
 import org.codehaus.jackson.JsonParseException;
 import org.codehaus.jackson.map.ObjectMapper;
 
@@ -37,7 +37,7 @@ public abstract class DownloadThreadsTask extends AsyncTask<Void, Long, Boolean>
 	static final String TAG = "DownloadThreadsTask";
 
 	protected Context mContext;
-	protected final DefaultHttpClient mClient;
+	protected final HttpClient mClient;
 	private ObjectMapper mOm;
 	
 	protected String mSubreddit;
@@ -58,13 +58,13 @@ public abstract class DownloadThreadsTask extends AsyncTask<Void, Long, Boolean>
 	protected ArrayList<ThingInfo> mThingInfos = new ArrayList<ThingInfo>();
 	protected String mModhash = null;
 	
-	public DownloadThreadsTask(Context context, DefaultHttpClient client, ObjectMapper om,
+	public DownloadThreadsTask(Context context, HttpClient client, ObjectMapper om,
 			String sortByUrl, String sortByUrlExtra,
 			String subreddit) {
 		this(context, client, om, sortByUrl, sortByUrlExtra, subreddit, null, null, Constants.DEFAULT_THREAD_DOWNLOAD_LIMIT);
 	}
 	
-	public DownloadThreadsTask(Context context, DefaultHttpClient client, ObjectMapper om,
+	public DownloadThreadsTask(Context context, HttpClient client, ObjectMapper om,
 			String sortByUrl, String sortByUrlExtra,
 			String subreddit, String after, String before, int count) {
 		mContext = context;

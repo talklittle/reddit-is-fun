@@ -19,7 +19,7 @@
 
 package com.andrewshu.android.reddit.mail;
 
-import org.apache.http.impl.client.DefaultHttpClient;
+import org.apache.http.client.HttpClient;
 
 import com.andrewshu.android.reddit.common.Common;
 import com.andrewshu.android.reddit.settings.RedditSettings;
@@ -47,7 +47,7 @@ import android.os.SystemClock;
 public class EnvelopeService extends Service {
     NotificationManager mNM;
     private RedditSettings mSettings = new RedditSettings();
-    private DefaultHttpClient mClient = Common.getGzipHttpClient();
+    private HttpClient mClient = Common.getGzipHttpClient();
 
     @Override
     public void onCreate() {
@@ -57,7 +57,7 @@ public class EnvelopeService extends Service {
     }
     
     private class PeekEnvelopeServiceTask extends PeekEnvelopeTask {
-    	public PeekEnvelopeServiceTask(Context context, DefaultHttpClient client, String mailNotificationStyle) {
+    	public PeekEnvelopeServiceTask(Context context, HttpClient client, String mailNotificationStyle) {
     		super(context, client, mailNotificationStyle);
     	}
     	@Override

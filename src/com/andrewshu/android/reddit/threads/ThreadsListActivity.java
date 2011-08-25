@@ -25,7 +25,7 @@ import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import org.apache.http.impl.client.DefaultHttpClient;
+import org.apache.http.client.HttpClient;
 import org.codehaus.jackson.map.ObjectMapper;
 
 import android.app.Activity;
@@ -112,7 +112,7 @@ public final class ThreadsListActivity extends ListActivity {
     private ArrayList<ThingInfo> mThreadsList = null;
     private static final Object THREAD_ADAPTER_LOCK = new Object();
 
-    private final DefaultHttpClient mClient = Common.getGzipHttpClient();
+    private final HttpClient mClient = Common.getGzipHttpClient();
 	
    
     private final RedditSettings mSettings = new RedditSettings();

@@ -35,6 +35,8 @@ import org.apache.http.HttpRequest;
 import org.apache.http.HttpRequestInterceptor;
 import org.apache.http.HttpResponse;
 import org.apache.http.HttpResponseInterceptor;
+import org.apache.http.client.CookieStore;
+import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.conn.ClientConnectionManager;
 import org.apache.http.conn.scheme.PlainSocketFactory;
@@ -86,6 +88,7 @@ public class Common {
 	private static final String TAG = "Common";
 	
 	private static final DefaultHttpClient mGzipHttpClient = createGzipHttpClient();
+	private static final CookieStore mCookieStore = mGzipHttpClient.getCookieStore();
 	// 1:subreddit 2:threadId 3:commentId
 	private static final Pattern COMMENT_LINK = Pattern.compile(Constants.COMMENT_PATH_PATTERN_STRING);
 	private static final Pattern REDDIT_LINK = Pattern.compile(Constants.REDDIT_PATH_PATTERN_STRING);
@@ -180,10 +183,10 @@ public class Common {
     }
     
 	
-    static void clearCookies(RedditSettings settings, DefaultHttpClient client, Context context) {
+    static void clearCookies(RedditSettings settings, HttpClient client, Context context) {
         settings.setRedditSessionCookie(null);
 
-        client.getCookieStore().clear();
+        Common.getCookieStore().clear();
         CookieSyncManager.getInstance().sync();
         
         SharedPreferences sessionPrefs = PreferenceManager.getDefaultSharedPreferences(context);
@@ -196,7 +199,7 @@ public class Common {
     }
     
         
-    public static void doLogout(RedditSettings settings, DefaultHttpClient client, Context context) {
+    public static void doLogout(RedditSettings settings, HttpClient client, Context context) {
     	clearCookies(settings, client, context);
     	CacheInfo.invalidateAllCaches(context);
     	settings.setUsername(null);
@@ -209,7 +212,7 @@ public class Common {
      * @param client
      * @return
      */
-    public static String doUpdateModhash(DefaultHttpClient client) {
+    public static String doUpdateModhash(HttpClient client) {
         final Pattern MODHASH_PATTERN = Pattern.compile("modhash: '(.*?)'");
     	String modhash;
     	HttpEntity entity = null;
@@ -500,8 +503,12 @@ public class Common {
 	 * http://hc.apache.org/httpcomponents-client/examples.html
 	 * @return a Gzip-enabled DefaultHttpClient
 	 */
-	public static DefaultHttpClient getGzipHttpClient() {
+	public static HttpClient getGzipHttpClient() {
 		return mGzipHttpClient;
+	}
+	
+	public static CookieStore getCookieStore() {
+		return mCookieStore;
 	}
 	
 	private static DefaultHttpClient createGzipHttpClient() {

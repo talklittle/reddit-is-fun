@@ -7,9 +7,9 @@ import java.util.List;
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpResponse;
 import org.apache.http.NameValuePair;
+import org.apache.http.client.HttpClient;
 import org.apache.http.client.entity.UrlEncodedFormEntity;
 import org.apache.http.client.methods.HttpPost;
-import org.apache.http.impl.client.DefaultHttpClient;
 import org.apache.http.message.BasicNameValuePair;
 import org.apache.http.protocol.HTTP;
 
@@ -36,11 +36,11 @@ public abstract class MessageComposeTask extends AsyncTask<String, Void, Boolean
 	String _mCaptchaIden;
 	
 	RedditSettings _mSettings;
-	DefaultHttpClient _mClient;
+	HttpClient _mClient;
 	Context _mContext;
 	
 	protected MessageComposeTask(Dialog dialog, ThingInfo targetThingInfo, String captcha, String captchaIden,
-			RedditSettings settings, DefaultHttpClient client, Context context) {
+			RedditSettings settings, HttpClient client, Context context) {
 		_mDialog = dialog;
 		_mTargetThingInfo = targetThingInfo;
 		_mCaptcha = captcha;

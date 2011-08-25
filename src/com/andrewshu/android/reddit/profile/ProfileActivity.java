@@ -33,8 +33,8 @@ import java.util.regex.Pattern;
 import org.apache.http.Header;
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpResponse;
+import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.HttpGet;
-import org.apache.http.impl.client.DefaultHttpClient;
 import org.codehaus.jackson.JsonParseException;
 import org.codehaus.jackson.map.ObjectMapper;
 
@@ -123,7 +123,7 @@ public final class ProfileActivity extends ListActivity
     private static final Object MESSAGE_ADAPTER_LOCK = new Object();
     
     
-    private final DefaultHttpClient mClient = Common.getGzipHttpClient();
+    private final HttpClient mClient = Common.getGzipHttpClient();
     
     
     // Common settings are stored here

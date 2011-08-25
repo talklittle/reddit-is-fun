@@ -6,9 +6,9 @@ import java.util.List;
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpResponse;
 import org.apache.http.NameValuePair;
+import org.apache.http.client.HttpClient;
 import org.apache.http.client.entity.UrlEncodedFormEntity;
 import org.apache.http.client.methods.HttpPost;
-import org.apache.http.impl.client.DefaultHttpClient;
 import org.apache.http.message.BasicNameValuePair;
 import org.apache.http.protocol.HTTP;
 
@@ -28,11 +28,11 @@ public class VoteTask extends AsyncTask<Void, Void, Boolean> {
 	protected String _mUserError = "Error voting.";
 	
 	protected RedditSettings _mSettings;
-	protected DefaultHttpClient _mClient;
+	protected HttpClient _mClient;
 	protected Context _mContext;
 	
 	public VoteTask(String thingFullname, int direction, String subreddit,
-			Context context, RedditSettings settings, DefaultHttpClient client) {
+			Context context, RedditSettings settings, HttpClient client) {
 		_mClient = client;
 		_mSettings = settings;
 		_mContext = context;

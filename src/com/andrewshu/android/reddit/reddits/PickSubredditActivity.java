@@ -30,8 +30,8 @@ import java.util.regex.Pattern;
 
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpResponse;
+import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.HttpGet;
-import org.apache.http.impl.client.DefaultHttpClient;
 import org.apache.http.params.HttpConnectionParams;
 import org.apache.http.params.HttpParams;
 
@@ -75,7 +75,7 @@ public final class PickSubredditActivity extends ListActivity {
     private final Pattern MY_SUBREDDITS_INNER = Pattern.compile("<a(.*?)/r/(.*?)>(.+?)</a>");
 
 	private RedditSettings mSettings = new RedditSettings();
-	private DefaultHttpClient mClient = Common.getGzipHttpClient();
+	private HttpClient mClient = Common.getGzipHttpClient();
 	
 	private PickSubredditAdapter mSubredditsAdapter;
 	private ArrayList<String> mSubredditsList;
