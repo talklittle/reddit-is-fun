@@ -309,7 +309,7 @@ public class Constants {
     public static final String PREF_MAIL_NOTIFICATION_SERVICE_1DAY = "MAIL_NOTIFICATION_SERVICE_1DAY";
     
     // Reddit's base URL, without trailing slash
-    public static final String REDDIT_BASE_URL = "http://www.reddit.com";
+    public static final String REDDIT_BASE_URL = "https://pay.reddit.com";
     
     // A short HTML file returned by reddit, so we can get the modhash
     public static final String MODHASH_URL = REDDIT_BASE_URL + "/r";
