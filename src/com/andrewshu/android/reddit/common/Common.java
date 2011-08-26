@@ -42,10 +42,11 @@ import org.apache.http.conn.ClientConnectionManager;
 import org.apache.http.conn.scheme.PlainSocketFactory;
 import org.apache.http.conn.scheme.Scheme;
 import org.apache.http.conn.scheme.SchemeRegistry;
+import org.apache.http.conn.ssl.SSLSocketFactory;
 import org.apache.http.entity.HttpEntityWrapper;
 import org.apache.http.impl.client.DefaultHttpClient;
 import org.apache.http.impl.conn.tsccm.ThreadSafeClientConnManager;
-import org.apache.http.params.BasicHttpParams;
+import org.apache.http.params.HttpParams;
 import org.apache.http.protocol.HttpContext;
 import org.codehaus.jackson.JsonNode;
 import org.codehaus.jackson.map.ObjectMapper;
@@ -512,11 +513,20 @@ public class Common {
 	}
 	
 	private static DefaultHttpClient createGzipHttpClient() {
-		BasicHttpParams params = new BasicHttpParams();
-		SchemeRegistry schemeRegistry = new SchemeRegistry();
-		schemeRegistry.register(new Scheme("http", PlainSocketFactory.getSocketFactory(), 80));
-		ClientConnectionManager cm = new ThreadSafeClientConnManager(params, schemeRegistry);
-		DefaultHttpClient httpclient = new DefaultHttpClient(cm, params);
+		DefaultHttpClient httpclient = new DefaultHttpClient(){
+		    @Override
+		    protected ClientConnectionManager createClientConnectionManager() {
+		        SchemeRegistry registry = new SchemeRegistry();
+		        registry.register(
+		                new Scheme("http", PlainSocketFactory.getSocketFactory(), 80));
+		        registry.register(
+		                new Scheme("https", SSLSocketFactory.getSocketFactory(), 443));
+		        HttpParams params = getParams();
+		        return new ThreadSafeClientConnManager(params, registry);
+		    }
+		};
+		
+		
         httpclient.addRequestInterceptor(new HttpRequestInterceptor() {
             public void process(
                     final HttpRequest request,
