@@ -23,6 +23,7 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.lang.reflect.Method;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.zip.GZIPInputStream;
@@ -42,10 +43,12 @@ import org.apache.http.conn.ClientConnectionManager;
 import org.apache.http.conn.scheme.PlainSocketFactory;
 import org.apache.http.conn.scheme.Scheme;
 import org.apache.http.conn.scheme.SchemeRegistry;
+import org.apache.http.conn.scheme.SocketFactory;
 import org.apache.http.conn.ssl.SSLSocketFactory;
 import org.apache.http.entity.HttpEntityWrapper;
 import org.apache.http.impl.client.DefaultHttpClient;
 import org.apache.http.impl.conn.tsccm.ThreadSafeClientConnManager;
+import org.apache.http.params.HttpConnectionParams;
 import org.apache.http.params.HttpParams;
 import org.apache.http.protocol.HttpContext;
 import org.codehaus.jackson.JsonNode;
@@ -74,6 +77,7 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import com.andrewshu.android.reddit.R;
+import com.andrewshu.android.reddit.RedditIsFunApplication;
 import com.andrewshu.android.reddit.browser.BrowserActivity;
 import com.andrewshu.android.reddit.captcha.CaptchaException;
 import com.andrewshu.android.reddit.comments.CommentsListActivity;
@@ -95,6 +99,9 @@ public class Common {
 	private static final Pattern REDDIT_LINK = Pattern.compile(Constants.REDDIT_PATH_PATTERN_STRING);
 	private static final Pattern USER_LINK = Pattern.compile(Constants.USER_PATH_PATTERN_STRING);
 	private static final ObjectMapper mObjectMapper = new ObjectMapper();
+	
+	// Default connection and socket timeout of 60 seconds.  Tweak to taste.
+	private static final int SOCKET_OPERATION_TIMEOUT = 60 * 1000;
 
 	public static void showErrorToast(String error, int duration, Context context) {
 		LayoutInflater inflater = (LayoutInflater) context.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
@@ -520,9 +527,25 @@ public class Common {
 		        registry.register(
 		                new Scheme("http", PlainSocketFactory.getSocketFactory(), 80));
 		        registry.register(
-		                new Scheme("https", SSLSocketFactory.getSocketFactory(), 443));
+		        		new Scheme("https", getHttpsSocketFactory(), 443));
 		        HttpParams params = getParams();
+				HttpConnectionParams.setConnectionTimeout(params, SOCKET_OPERATION_TIMEOUT);
+				HttpConnectionParams.setSoTimeout(params, SOCKET_OPERATION_TIMEOUT);
 		        return new ThreadSafeClientConnManager(params, registry);
+		    }
+		    
+		    /** Gets an HTTPS socket factory with SSL Session Caching if such support is available, otherwise falls back to a non-caching factory
+		     * @return
+		     */
+		    protected SocketFactory getHttpsSocketFactory(){
+				try {
+					Class<?> sslSessionCacheClass = Class.forName("android.net.SSLSessionCache");
+			    	Object sslSessionCache = sslSessionCacheClass.getConstructor(Context.class).newInstance(RedditIsFunApplication.getApplication());
+			    	Method getHttpSocketFactory = Class.forName("android.net.SSLCertificateSocketFactory").getMethod("getHttpSocketFactory", new Class<?>[]{int.class, sslSessionCacheClass});
+			    	return (SocketFactory) getHttpSocketFactory.invoke(null, SOCKET_OPERATION_TIMEOUT, sslSessionCache);
+				}catch(Exception e){
+					return SSLSocketFactory.getSocketFactory();
+				}
 		    }
 		};
 		
