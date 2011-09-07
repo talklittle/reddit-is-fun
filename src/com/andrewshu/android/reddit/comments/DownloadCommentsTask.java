@@ -507,11 +507,28 @@ public class DownloadCommentsTask extends AsyncTask<Integer, Long, Boolean>
 	
 	private void processCommentSlowSteps(ThingInfo comment) {
 		if (comment.getBody_html() != null) {
-        	CharSequence spanned = createSpanned(comment.getBody_html());
+        	//get title and put in body since images aren't shown
+		String useMeForSpan = comment.getBody_html();
+        	if(useMeForSpan.contains("title=")) {
+			useMeForSpan=commentTextWithTitleText(useMeForSpan);
+        	}
+		CharSequence spanned = createSpanned(useMeForSpan);
         	comment.setSpannedBody(spanned);
 		}
 		markdown.getURLs(comment.getBody(), comment.getUrls());
 	}
+	
+	private String commentTextWithTitleText(String useMeForSpan) {
+		String[] splitHTML = useMeForSpan.split("title="); 
+		for (int i =1; i<splitHTML.length;i++){
+			String[] tags=splitHTML[i].split("&gt;");
+			tags[2]="["+splitHTML[i].split("\"")[1]+"]"+tags[2];
+			splitHTML[i]=StringUtils.join(tags,"&gt;");
+		}
+		return StringUtils.join(splitHTML,"title=");
+	}
+
+
 	
 	private void processDeferredComments() {
     	if (!mDeferredInsertList.isEmpty()) {
