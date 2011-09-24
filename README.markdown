@@ -29,6 +29,7 @@ Contributors:
 * yuri-danilchenko
 * bsimic0001
 * bmwracer0
+* candrews
 * teen-
 
 Android Market QR Codes
