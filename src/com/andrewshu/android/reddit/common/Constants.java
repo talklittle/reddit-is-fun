@@ -74,8 +74,8 @@ public class Constants {
     public static final int SERVICE_ENVELOPE = 0;
     
     // --- Intent extras ---
-    // Tell PickSubredditActivity to hide the fronptage string
-    public static final String EXTRA_HIDE_FRONTPAGE_STRING = "hideFrontpage";
+    // Tell PickSubredditActivity to hide the fake subreddits string
+    public static final String EXTRA_HIDE_FAKE_SUBREDDITS_STRING = "hideFakeSubreddits";
     public static final String EXTRA_ID = "id";
     // Tell CommentsListActivity to jump to a comment context (a URL. pattern match)
     public static final String EXTRA_COMMENT_CONTEXT = "jumpToComment";
@@ -144,6 +144,7 @@ public class Constants {
     public static final String NO_STRING = "no";
     
     public static final String FRONTPAGE_STRING = "reddit front page";
+    
     public static final String HAVE_MAIL_TICKER = "reddit mail";
     public static final String HAVE_MAIL_TITLE = "reddit is fun";
     public static final String HAVE_MAIL_TEXT = "You have reddit mail.";

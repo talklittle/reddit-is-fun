@@ -644,7 +644,7 @@ public class SubmitLinkActivity extends TabActivity {
     	switch (item.getItemId()) {
     	case R.id.pick_subreddit_menu_id:
     		Intent pickSubredditIntent = new Intent(getApplicationContext(), PickSubredditActivity.class);
-    		pickSubredditIntent.putExtra(Constants.EXTRA_HIDE_FRONTPAGE_STRING, true);
+    		pickSubredditIntent.putExtra(Constants.EXTRA_HIDE_FAKE_SUBREDDITS_STRING, true);
     		startActivityForResult(pickSubredditIntent, Constants.ACTIVITY_PICK_SUBREDDIT);
     		break;
     	case R.id.update_captcha_menu_id:

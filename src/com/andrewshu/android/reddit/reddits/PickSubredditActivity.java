@@ -85,7 +85,7 @@ public final class PickSubredditActivity extends ListActivity {
     private AsyncTask<?, ?, ?> mCurrentTask = null;
     private final Object mCurrentTaskLock = new Object();
 	
-    public static final String[] SUBREDDITS_MINUS_FRONTPAGE = {
+    public static final String[] DEFAULT_SUBREDDITS = {
     	"reddit.com",
     	"pics",
     	"politics",
@@ -112,6 +112,12 @@ public final class PickSubredditActivity extends ListActivity {
     	"android"
     };
     
+    // A list of special subreddits that can be viewed, but cannot be used for submissions. They inherit from the FakeSubreddit class
+    // in the redditdev source, so we use the same naming here. Note: Should we add r/Random and r/Friends?
+    public static final String[] FAKE_SUBREDDITS = {
+    	Constants.FRONTPAGE_STRING,
+    	"all"    	
+	};
     
 
 
@@ -137,7 +143,7 @@ public final class PickSubredditActivity extends ListActivity {
         	new DownloadRedditsTask().execute();
         }
         else {
-	        addFrontpageUnlessSuppressed();
+	        addFakeSubredditsUnlessSuppressed();
 	        resetUI(new PickSubredditAdapter(this, mSubredditsList));
         }
     }
@@ -329,25 +335,32 @@ public final class PickSubredditActivity extends ListActivity {
     		if (reddits == null || reddits.size() == 0) {
     			// Need to make a copy because Arrays.asList returns List backed by original array
     	        mSubredditsList = new ArrayList<String>();
-    	        mSubredditsList.addAll(Arrays.asList(SUBREDDITS_MINUS_FRONTPAGE));
+    	        mSubredditsList.addAll(Arrays.asList(DEFAULT_SUBREDDITS));
     		} else {
     			mSubredditsList = reddits;
     		}
-    		addFrontpageUnlessSuppressed();
+    		addFakeSubredditsUnlessSuppressed();
 	        resetUI(new PickSubredditAdapter(PickSubredditActivity.this, mSubredditsList));
     	}
     }
     
-    private void addFrontpageUnlessSuppressed() {
-	    // Insert front page into subreddits list, unless suppressed by Intent extras
+    private void addFakeSubredditsUnlessSuppressed() {
+	    // Insert special reddits (front page, all) into subreddits list, unless suppressed by Intent extras
 		Bundle extras = getIntent().getExtras();
+		boolean addFakeSubreddits = false;
 	    if (extras != null) {
-        	boolean shouldHideFrontpage = extras.getBoolean(Constants.EXTRA_HIDE_FRONTPAGE_STRING, false);
-        	if (!shouldHideFrontpage)
-        		mSubredditsList.add(0, Constants.FRONTPAGE_STRING);
-        } else {
-        	mSubredditsList.add(0, Constants.FRONTPAGE_STRING);
+        	boolean shouldHideFakeSubreddits = extras.getBoolean(Constants.EXTRA_HIDE_FAKE_SUBREDDITS_STRING, false);
+        	if (!shouldHideFakeSubreddits)
+        	{
+        		addFakeSubreddits = true;
+        	}
+        } else {    		
+        	addFakeSubreddits = true;    			    		
         }
+	    if (addFakeSubreddits)
+	    {
+	    	mSubredditsList.addAll(0, Arrays.asList(FAKE_SUBREDDITS));    		
+	    }
     }
 
     private final class PickSubredditAdapter extends ArrayAdapter<String> {
