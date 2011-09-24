@@ -5,8 +5,8 @@ import java.io.InputStream;
 
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpResponse;
+import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.HttpGet;
-import org.apache.http.impl.client.DefaultHttpClient;
 import org.codehaus.jackson.JsonFactory;
 import org.codehaus.jackson.JsonParseException;
 import org.codehaus.jackson.JsonParser;
@@ -27,11 +27,11 @@ public class PeekEnvelopeTask extends AsyncTask<Void, Void, Integer> {
 	private static final String TAG = "PeekEnvelopeTask";
 	
 	protected Context mContext;
-	protected DefaultHttpClient mClient;
+	protected HttpClient mClient;
 	protected String mMailNotificationStyle;
 	protected final JsonFactory jsonFactory = new JsonFactory();
 	
-	public PeekEnvelopeTask(Context context, DefaultHttpClient client, String mailNotificationStyle) {
+	public PeekEnvelopeTask(Context context, HttpClient client, String mailNotificationStyle) {
 		mContext = context;
 		mClient = client;
 		mMailNotificationStyle = mailNotificationStyle;
@@ -42,7 +42,7 @@ public class PeekEnvelopeTask extends AsyncTask<Void, Void, Integer> {
 		try {
 			if (Constants.PREF_MAIL_NOTIFICATION_STYLE_OFF.equals(mMailNotificationStyle))
 	    		return 0;
-			HttpGet request = new HttpGet("http://api.reddit.com/message/inbox/?mark=false");
+			HttpGet request = new HttpGet(Constants.REDDIT_BASE_URL + "/message/inbox/.json?mark=false");
         	HttpResponse response = mClient.execute(request);
         	entity = response.getEntity();
         	

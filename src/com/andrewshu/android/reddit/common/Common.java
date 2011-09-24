@@ -23,6 +23,7 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.lang.reflect.Method;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.zip.GZIPInputStream;
@@ -35,15 +36,20 @@ import org.apache.http.HttpRequest;
 import org.apache.http.HttpRequestInterceptor;
 import org.apache.http.HttpResponse;
 import org.apache.http.HttpResponseInterceptor;
+import org.apache.http.client.CookieStore;
+import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.conn.ClientConnectionManager;
 import org.apache.http.conn.scheme.PlainSocketFactory;
 import org.apache.http.conn.scheme.Scheme;
 import org.apache.http.conn.scheme.SchemeRegistry;
+import org.apache.http.conn.scheme.SocketFactory;
+import org.apache.http.conn.ssl.SSLSocketFactory;
 import org.apache.http.entity.HttpEntityWrapper;
 import org.apache.http.impl.client.DefaultHttpClient;
 import org.apache.http.impl.conn.tsccm.ThreadSafeClientConnManager;
-import org.apache.http.params.BasicHttpParams;
+import org.apache.http.params.HttpConnectionParams;
+import org.apache.http.params.HttpParams;
 import org.apache.http.protocol.HttpContext;
 import org.codehaus.jackson.JsonNode;
 import org.codehaus.jackson.map.ObjectMapper;
@@ -71,6 +77,7 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import com.andrewshu.android.reddit.R;
+import com.andrewshu.android.reddit.RedditIsFunApplication;
 import com.andrewshu.android.reddit.browser.BrowserActivity;
 import com.andrewshu.android.reddit.captcha.CaptchaException;
 import com.andrewshu.android.reddit.comments.CommentsListActivity;
@@ -86,11 +93,15 @@ public class Common {
 	private static final String TAG = "Common";
 	
 	private static final DefaultHttpClient mGzipHttpClient = createGzipHttpClient();
+	private static final CookieStore mCookieStore = mGzipHttpClient.getCookieStore();
 	// 1:subreddit 2:threadId 3:commentId
 	private static final Pattern COMMENT_LINK = Pattern.compile(Constants.COMMENT_PATH_PATTERN_STRING);
 	private static final Pattern REDDIT_LINK = Pattern.compile(Constants.REDDIT_PATH_PATTERN_STRING);
 	private static final Pattern USER_LINK = Pattern.compile(Constants.USER_PATH_PATTERN_STRING);
 	private static final ObjectMapper mObjectMapper = new ObjectMapper();
+	
+	// Default connection and socket timeout of 60 seconds.  Tweak to taste.
+	private static final int SOCKET_OPERATION_TIMEOUT = 60 * 1000;
 
 	public static void showErrorToast(String error, int duration, Context context) {
 		LayoutInflater inflater = (LayoutInflater) context.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
@@ -180,10 +191,10 @@ public class Common {
     }
     
 	
-    static void clearCookies(RedditSettings settings, DefaultHttpClient client, Context context) {
+    static void clearCookies(RedditSettings settings, HttpClient client, Context context) {
         settings.setRedditSessionCookie(null);
 
-        client.getCookieStore().clear();
+        Common.getCookieStore().clear();
         CookieSyncManager.getInstance().sync();
         
         SharedPreferences sessionPrefs = PreferenceManager.getDefaultSharedPreferences(context);
@@ -196,7 +207,7 @@ public class Common {
     }
     
         
-    public static void doLogout(RedditSettings settings, DefaultHttpClient client, Context context) {
+    public static void doLogout(RedditSettings settings, HttpClient client, Context context) {
     	clearCookies(settings, client, context);
     	CacheInfo.invalidateAllCaches(context);
     	settings.setUsername(null);
@@ -209,7 +220,7 @@ public class Common {
      * @param client
      * @return
      */
-    public static String doUpdateModhash(DefaultHttpClient client) {
+    public static String doUpdateModhash(HttpClient client) {
         final Pattern MODHASH_PATTERN = Pattern.compile("modhash: '(.*?)'");
     	String modhash;
     	HttpEntity entity = null;
@@ -500,16 +511,45 @@ public class Common {
 	 * http://hc.apache.org/httpcomponents-client/examples.html
 	 * @return a Gzip-enabled DefaultHttpClient
 	 */
-	public static DefaultHttpClient getGzipHttpClient() {
+	public static HttpClient getGzipHttpClient() {
 		return mGzipHttpClient;
 	}
 	
+	public static CookieStore getCookieStore() {
+		return mCookieStore;
+	}
+	
 	private static DefaultHttpClient createGzipHttpClient() {
-		BasicHttpParams params = new BasicHttpParams();
-		SchemeRegistry schemeRegistry = new SchemeRegistry();
-		schemeRegistry.register(new Scheme("http", PlainSocketFactory.getSocketFactory(), 80));
-		ClientConnectionManager cm = new ThreadSafeClientConnManager(params, schemeRegistry);
-		DefaultHttpClient httpclient = new DefaultHttpClient(cm, params);
+		DefaultHttpClient httpclient = new DefaultHttpClient(){
+		    @Override
+		    protected ClientConnectionManager createClientConnectionManager() {
+		        SchemeRegistry registry = new SchemeRegistry();
+		        registry.register(
+		                new Scheme("http", PlainSocketFactory.getSocketFactory(), 80));
+		        registry.register(
+		        		new Scheme("https", getHttpsSocketFactory(), 443));
+		        HttpParams params = getParams();
+				HttpConnectionParams.setConnectionTimeout(params, SOCKET_OPERATION_TIMEOUT);
+				HttpConnectionParams.setSoTimeout(params, SOCKET_OPERATION_TIMEOUT);
+		        return new ThreadSafeClientConnManager(params, registry);
+		    }
+		    
+		    /** Gets an HTTPS socket factory with SSL Session Caching if such support is available, otherwise falls back to a non-caching factory
+		     * @return
+		     */
+		    protected SocketFactory getHttpsSocketFactory(){
+				try {
+					Class<?> sslSessionCacheClass = Class.forName("android.net.SSLSessionCache");
+			    	Object sslSessionCache = sslSessionCacheClass.getConstructor(Context.class).newInstance(RedditIsFunApplication.getApplication());
+			    	Method getHttpSocketFactory = Class.forName("android.net.SSLCertificateSocketFactory").getMethod("getHttpSocketFactory", new Class<?>[]{int.class, sslSessionCacheClass});
+			    	return (SocketFactory) getHttpSocketFactory.invoke(null, SOCKET_OPERATION_TIMEOUT, sslSessionCache);
+				}catch(Exception e){
+					return SSLSocketFactory.getSocketFactory();
+				}
+		    }
+		};
+		
+		
         httpclient.addRequestInterceptor(new HttpRequestInterceptor() {
             public void process(
                     final HttpRequest request,
@@ -581,7 +621,7 @@ public class Common {
     public static String getSubredditId(String mSubreddit){
     	String subreddit_id = null;
     	JsonNode subredditInfo = 
-    	RestJsonClient.connect("http://www.reddit.com/r/" + mSubreddit + "/.json?count=1");
+    	RestJsonClient.connect(Constants.REDDIT_BASE_URL + "/r/" + mSubreddit + "/.json?count=1");
     	    	
     	if(subredditInfo != null){
     		ArrayNode children = (ArrayNode) subredditInfo.path("data").path("children");

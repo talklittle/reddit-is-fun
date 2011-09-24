@@ -10,9 +10,9 @@ import org.apache.http.HttpEntity;
 import org.apache.http.HttpException;
 import org.apache.http.HttpResponse;
 import org.apache.http.NameValuePair;
+import org.apache.http.client.HttpClient;
 import org.apache.http.client.entity.UrlEncodedFormEntity;
 import org.apache.http.client.methods.HttpPost;
-import org.apache.http.impl.client.DefaultHttpClient;
 import org.apache.http.message.BasicNameValuePair;
 import org.apache.http.protocol.HTTP;
 
@@ -36,13 +36,13 @@ public class SubscribeTask extends AsyncTask<Void, Void, Boolean> {
 	private RedditSettings mSettings;
 	private Context mContext;
 	
-	private final DefaultHttpClient mClient = Common.getGzipHttpClient();
+	private final HttpClient mClient = Common.getGzipHttpClient();
 
 	
 	
 	public SubscribeTask(String mSubreddit, Context context, RedditSettings mSettings) {
 		// TODO Auto-generated constructor stub
-		this.mUrl = "http://www.reddit.com/api/subscribe";
+		this.mUrl = Constants.REDDIT_BASE_URL + "/api/subscribe";
 		this.mContext = context;
 		this.mSettings = mSettings;
 		this.mSubreddit = mSubreddit;

@@ -31,8 +31,8 @@ import java.util.HashMap;
 import java.util.Map;
 
 import org.apache.http.HttpResponse;
+import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.HttpGet;
-import org.apache.http.impl.client.DefaultHttpClient;
 
 import com.andrewshu.android.reddit.common.Common;
 import com.andrewshu.android.reddit.common.Constants;
@@ -52,7 +52,7 @@ public class BitmapManager {
 	private static final String TAG = "BitmapManager";
 	
     private Map<String, SoftReference<Bitmap>> mCache;
-    private DefaultHttpClient mClient = Common.getGzipHttpClient();
+    private HttpClient mClient = Common.getGzipHttpClient();
     
     public BitmapManager() {
     	mCache = new HashMap<String, SoftReference<Bitmap>>();

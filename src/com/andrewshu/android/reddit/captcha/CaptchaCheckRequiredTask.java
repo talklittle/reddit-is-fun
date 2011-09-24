@@ -8,8 +8,8 @@ import java.util.regex.Pattern;
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpException;
 import org.apache.http.HttpResponse;
+import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.HttpGet;
-import org.apache.http.impl.client.DefaultHttpClient;
 
 import com.andrewshu.android.reddit.common.Constants;
 import com.andrewshu.android.reddit.common.util.Util;
@@ -33,9 +33,9 @@ public abstract class CaptchaCheckRequiredTask extends AsyncTask<Void, Void, Boo
     protected String _mCaptchaUrl;
     
     private String _mCheckUrl;
-    private DefaultHttpClient _mClient;
+    private HttpClient _mClient;
     
-	public CaptchaCheckRequiredTask(String checkUrl, DefaultHttpClient client) {
+	public CaptchaCheckRequiredTask(String checkUrl, HttpClient client) {
 		_mCheckUrl = checkUrl;
 		_mClient = client;
 	}
