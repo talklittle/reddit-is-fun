@@ -21,8 +21,8 @@ package com.andrewshu.android.reddit.settings;
 
 import java.util.Date;
 
+import org.apache.http.client.HttpClient;
 import org.apache.http.cookie.Cookie;
-import org.apache.http.impl.client.DefaultHttpClient;
 import org.apache.http.impl.cookie.BasicClientCookie;
 
 import android.content.Context;
@@ -32,6 +32,7 @@ import android.util.Log;
 import android.webkit.CookieSyncManager;
 
 import com.andrewshu.android.reddit.R;
+import com.andrewshu.android.reddit.common.Common;
 import com.andrewshu.android.reddit.common.Constants;
 import com.andrewshu.android.reddit.common.util.StringUtils;
 import com.andrewshu.android.reddit.common.util.Util;
@@ -163,7 +164,7 @@ public class RedditSettings {
     	editor.commit();
     }
     
-    public void loadRedditPreferences(Context context, DefaultHttpClient client) {
+    public void loadRedditPreferences(Context context, HttpClient client) {
         // Session
     	SharedPreferences sessionPrefs = PreferenceManager.getDefaultSharedPreferences(context);
     	this.setUsername(sessionPrefs.getString("username", null));
@@ -181,14 +182,12 @@ public class RedditSettings {
         	else
         		redditSessionCookie.setExpiryDate(null);
         	this.setRedditSessionCookie(redditSessionCookie);
-        	if (client != null) {
-        		client.getCookieStore().addCookie(redditSessionCookie);
-        		try {
-        			CookieSyncManager.getInstance().sync();
-        		} catch (IllegalStateException ex) {
-        			if (Constants.LOGGING) Log.e(TAG, "CookieSyncManager.getInstance().sync()", ex);
-        		}
-        	}
+    		Common.getCookieStore().addCookie(redditSessionCookie);
+    		try {
+    			CookieSyncManager.getInstance().sync();
+    		} catch (IllegalStateException ex) {
+    			if (Constants.LOGGING) Log.e(TAG, "CookieSyncManager.getInstance().sync()", ex);
+    		}
         }
         
         // Default subreddit

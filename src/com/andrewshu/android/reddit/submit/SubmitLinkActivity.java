@@ -30,9 +30,9 @@ import org.apache.http.HttpEntity;
 import org.apache.http.HttpException;
 import org.apache.http.HttpResponse;
 import org.apache.http.NameValuePair;
+import org.apache.http.client.HttpClient;
 import org.apache.http.client.entity.UrlEncodedFormEntity;
 import org.apache.http.client.methods.HttpPost;
-import org.apache.http.impl.client.DefaultHttpClient;
 import org.apache.http.message.BasicNameValuePair;
 import org.apache.http.params.HttpConnectionParams;
 import org.apache.http.params.HttpParams;
@@ -92,7 +92,7 @@ public class SubmitLinkActivity extends TabActivity {
 	TabHost mTabHost;
 	
 	private RedditSettings mSettings = new RedditSettings();
-	private final DefaultHttpClient mClient = Common.getGzipHttpClient();
+	private final HttpClient mClient = Common.getGzipHttpClient();
 
 	private String mSubmitUrl;
 	
@@ -176,7 +176,7 @@ public class SubmitLinkActivity extends TabActivity {
 	        	submitLinkUrl.setText(url);
 	        	submitLinkReddit.setText("reddit.com");
         		submitTextReddit.setText("reddit.com");
-        		mSubmitUrl = "http://www.reddit.com/submit";
+        		mSubmitUrl = Constants.REDDIT_BASE_URL + "/submit";
 	        }
         } else {
         	String submitPath = null;
@@ -332,7 +332,7 @@ public class SubmitLinkActivity extends TabActivity {
     			// Votehash is currently unused by reddit 
 //    				nvps.add(new BasicNameValuePair("vh", "0d4ab0ffd56ad0f66841c15609e9a45aeec6b015"));
     			
-    			HttpPost httppost = new HttpPost("http://www.reddit.com/api/submit");
+    			HttpPost httppost = new HttpPost(Constants.REDDIT_BASE_URL + "/api/submit");
     	        httppost.setEntity(new UrlEncodedFormEntity(nvps, HTTP.UTF_8));
     	        // The progress dialog is non-cancelable, so set a shorter timeout than system's
     	        HttpParams params = httppost.getParams();

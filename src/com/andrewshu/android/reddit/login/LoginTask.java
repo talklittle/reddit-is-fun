@@ -9,10 +9,10 @@ import org.apache.http.HttpEntity;
 import org.apache.http.HttpException;
 import org.apache.http.HttpResponse;
 import org.apache.http.NameValuePair;
+import org.apache.http.client.HttpClient;
 import org.apache.http.client.entity.UrlEncodedFormEntity;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.cookie.Cookie;
-import org.apache.http.impl.client.DefaultHttpClient;
 import org.apache.http.message.BasicNameValuePair;
 import org.apache.http.params.HttpConnectionParams;
 import org.apache.http.params.HttpParams;
@@ -41,10 +41,10 @@ public class LoginTask extends AsyncTask<Void, Void, Boolean> {
 	protected String mUserError = null;
 	
 	private RedditSettings mSettings;
-	private DefaultHttpClient mClient;
+	private HttpClient mClient;
 	private Context mContext;
 	
-	protected LoginTask(String username, String password, RedditSettings settings, DefaultHttpClient client, Context context) {
+	protected LoginTask(String username, String password, RedditSettings settings, HttpClient client, Context context) {
 		mUsername = username;
 		mPassword = password;
 		mSettings = settings;
@@ -63,7 +63,7 @@ public class LoginTask extends AsyncTask<Void, Void, Boolean> {
      * Should be called from a background thread.
      * @return Error message, or null on success
      */
-    private Boolean doLogin(String username, String password, RedditSettings settings, DefaultHttpClient client, Context context) {
+    private Boolean doLogin(String username, String password, RedditSettings settings, HttpClient client, Context context) {
 		String status = "";
     	String userError = "Error logging in. Please try again.";
     	HttpEntity entity = null;
@@ -74,7 +74,7 @@ public class LoginTask extends AsyncTask<Void, Void, Boolean> {
     		nvps.add(new BasicNameValuePair("passwd", password.toString()));
     		nvps.add(new BasicNameValuePair("api_type", "json"));
     		
-            HttpPost httppost = new HttpPost("http://www.reddit.com/api/login/"+username);
+            HttpPost httppost = new HttpPost(Constants.REDDIT_BASE_URL + "/api/login/"+username);
             httppost.setEntity(new UrlEncodedFormEntity(nvps, HTTP.UTF_8));
             
             // Set timeout to 45 seconds for login
@@ -101,7 +101,7 @@ public class LoginTask extends AsyncTask<Void, Void, Boolean> {
         	
         	if (Constants.LOGGING) Common.logDLong(TAG, line);
         	
-        	if (client.getCookieStore().getCookies().isEmpty())
+        	if (Common.getCookieStore().getCookies().isEmpty())
         		throw new HttpException("Failed to login: No cookies");
         	
         	final JsonFactory jsonFactory = new JsonFactory();
@@ -133,7 +133,7 @@ public class LoginTask extends AsyncTask<Void, Void, Boolean> {
         	settings.setModhash(jp.getText());
 
         	// Could grab cookie from JSON too, but it lacks expiration date and stuff. So grab from HttpClient.
-			List<Cookie> cookies = client.getCookieStore().getCookies();
+			List<Cookie> cookies = Common.getCookieStore().getCookies();
         	for (Cookie c : cookies) {
         		if (c.getName().equals("reddit_session")) {
         			settings.setRedditSessionCookie(c);

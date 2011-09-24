@@ -3,8 +3,8 @@ package com.andrewshu.android.reddit.captcha;
 import java.io.InputStream;
 
 import org.apache.http.HttpResponse;
+import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.HttpGet;
-import org.apache.http.impl.client.DefaultHttpClient;
 
 import com.andrewshu.android.reddit.common.Constants;
 
@@ -21,16 +21,16 @@ public abstract class CaptchaDownloadTask extends AsyncTask<Void, Void, Drawable
 	private static final String TAG = "CaptchaDownloadTask";
 	
 	private String _mCaptchaUrl;
-	private DefaultHttpClient _mClient;
+	private HttpClient _mClient;
 	
-	public CaptchaDownloadTask(String captchaUrl, DefaultHttpClient client) {
+	public CaptchaDownloadTask(String captchaUrl, HttpClient client) {
 		_mCaptchaUrl = captchaUrl;
 		_mClient = client;
 	}
 	@Override
 	public Drawable doInBackground(Void... voidz) {
 		try {
-			HttpGet request = new HttpGet("http://www.reddit.com/" + _mCaptchaUrl);
+			HttpGet request = new HttpGet(Constants.REDDIT_BASE_URL + "/" + _mCaptchaUrl);
 			HttpResponse response = _mClient.execute(request);
     	
 			InputStream in = response.getEntity().getContent();

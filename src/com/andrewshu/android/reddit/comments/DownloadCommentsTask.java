@@ -10,8 +10,8 @@ import java.util.LinkedList;
 import org.apache.http.Header;
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpResponse;
+import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.HttpGet;
-import org.apache.http.impl.client.DefaultHttpClient;
 import org.codehaus.jackson.JsonParseException;
 import org.codehaus.jackson.map.ObjectMapper;
 
@@ -65,7 +65,7 @@ public class DownloadCommentsTask extends AsyncTask<Integer, Long, Boolean>
     private String mThreadId;
     private String mThreadTitle;
     private RedditSettings mSettings;
-    private DefaultHttpClient mClient;
+    private HttpClient mClient;
 	
 	// offset of the first comment being loaded; 0 if it includes OP
 	private int mPositionOffset = 0;
@@ -101,7 +101,7 @@ public class DownloadCommentsTask extends AsyncTask<Integer, Long, Boolean>
 			String subreddit,
 			String threadId,
 			RedditSettings settings,
-			DefaultHttpClient client
+			HttpClient client
 	) {
 		this.mActivity = activity;
 		this.mSubreddit = subreddit;
@@ -133,13 +133,13 @@ public class DownloadCommentsTask extends AsyncTask<Integer, Long, Boolean>
 	public Boolean doInBackground(Integer... maxComments) {
 		HttpEntity entity = null;
         try {
-        	StringBuilder sb = new StringBuilder("http://api.reddit.com");
+        	StringBuilder sb = new StringBuilder(Constants.REDDIT_BASE_URL);
     		if (mSubreddit != null) {
     			sb.append("/r/").append(mSubreddit.trim());
     		}
     		sb.append("/comments/")
         		.append(mThreadId)
-        		.append("/z/").append(mMoreChildrenId).append("/?")
+        		.append("/z/").append(mMoreChildrenId).append("/.json?")
         		.append(mSettings.getCommentsSortByUrl()).append("&");
         	if (mJumpToCommentContext.length != 0)
         		sb.append("context=").append(mJumpToCommentContext.length).append("&");

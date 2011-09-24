@@ -19,7 +19,7 @@
 
 package com.andrewshu.android.reddit.mail;
 
-import org.apache.http.impl.client.DefaultHttpClient;
+import org.apache.http.client.HttpClient;
 
 import com.andrewshu.android.reddit.common.Common;
 import com.andrewshu.android.reddit.common.Constants;
@@ -33,7 +33,7 @@ import android.view.Window;
 public class InboxActivity extends TabActivity {
 
 	private final RedditSettings mSettings = new RedditSettings();
-	private final DefaultHttpClient mClient = Common.getGzipHttpClient();
+	private final HttpClient mClient = Common.getGzipHttpClient();
 	
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {

@@ -33,8 +33,8 @@ import java.util.regex.Pattern;
 import org.apache.http.Header;
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpResponse;
+import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.HttpGet;
-import org.apache.http.impl.client.DefaultHttpClient;
 import org.codehaus.jackson.JsonParseException;
 import org.codehaus.jackson.map.ObjectMapper;
 
@@ -123,7 +123,7 @@ public final class ProfileActivity extends ListActivity
     private static final Object MESSAGE_ADAPTER_LOCK = new Object();
     
     
-    private final DefaultHttpClient mClient = Common.getGzipHttpClient();
+    private final HttpClient mClient = Common.getGzipHttpClient();
     
     
     // Common settings are stored here
@@ -585,9 +585,9 @@ public final class ProfileActivity extends ListActivity
     				mKarma = getKarma();
     			
             	String url;
-        		StringBuilder sb = new StringBuilder("http://api.reddit.com/user/")
+        		StringBuilder sb = new StringBuilder(Constants.REDDIT_BASE_URL + "/user/")
         			.append(mUsername.trim())
-        			.append("/?").append(mSortByUrl).append("&")
+        			.append("/.json?").append(mSortByUrl).append("&")
         			.append(mSortByUrlExtra).append("&");
         		
     			// "before" always comes back null unless you provide correct "count"
@@ -667,7 +667,7 @@ public final class ProfileActivity extends ListActivity
     	
     	private String[] getKarma() throws IOException {
         	String url;
-    		StringBuilder sb = new StringBuilder("http://www.reddit.com/user/")
+    		StringBuilder sb = new StringBuilder(Constants.REDDIT_BASE_URL + "/user/")
     			.append(mUsername.trim());
     		
     		url = sb.toString();
@@ -930,7 +930,7 @@ public final class ProfileActivity extends ListActivity
     	Dialog _mDialog;
     	
 		public MyCaptchaCheckRequiredTask(Dialog dialog) {
-			super("http://www.reddit.com/message/compose/", mClient);
+			super(Constants.REDDIT_BASE_URL + "/message/compose/", mClient);
 			_mDialog = dialog;
 		}
 		

@@ -8,8 +8,8 @@ import java.util.ArrayList;
 import org.apache.http.Header;
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpResponse;
+import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.HttpGet;
-import org.apache.http.impl.client.DefaultHttpClient;
 import org.codehaus.jackson.JsonParseException;
 import org.codehaus.jackson.map.ObjectMapper;
 
@@ -37,7 +37,7 @@ public abstract class DownloadThreadsTask extends AsyncTask<Void, Long, Boolean>
 	static final String TAG = "DownloadThreadsTask";
 
 	protected Context mContext;
-	protected final DefaultHttpClient mClient;
+	protected final HttpClient mClient;
 	private ObjectMapper mOm;
 	
 	protected String mSubreddit;
@@ -58,13 +58,13 @@ public abstract class DownloadThreadsTask extends AsyncTask<Void, Long, Boolean>
 	protected ArrayList<ThingInfo> mThingInfos = new ArrayList<ThingInfo>();
 	protected String mModhash = null;
 	
-	public DownloadThreadsTask(Context context, DefaultHttpClient client, ObjectMapper om,
+	public DownloadThreadsTask(Context context, HttpClient client, ObjectMapper om,
 			String sortByUrl, String sortByUrlExtra,
 			String subreddit) {
 		this(context, client, om, sortByUrl, sortByUrlExtra, subreddit, null, null, Constants.DEFAULT_THREAD_DOWNLOAD_LIMIT);
 	}
 	
-	public DownloadThreadsTask(Context context, DefaultHttpClient client, ObjectMapper om,
+	public DownloadThreadsTask(Context context, HttpClient client, ObjectMapper om,
 			String sortByUrl, String sortByUrlExtra,
 			String subreddit, String after, String before, int count) {
 		mContext = context;
@@ -93,12 +93,12 @@ public abstract class DownloadThreadsTask extends AsyncTask<Void, Long, Boolean>
     		// Picking a new subreddit will erase the saved URL, getting rid of after= and before=.
     		// subreddit.length != 0 means you are going Next or Prev, which creates new URL.
 			if (Constants.FRONTPAGE_STRING.equals(mSubreddit)) {
-    			sb = new StringBuilder("http://api.reddit.com/").append(mSortByUrl)
-    				.append("?").append(mSortByUrlExtra).append("&");
+    			sb = new StringBuilder(Constants.REDDIT_BASE_URL + "/").append(mSortByUrl)
+    				.append(".json?").append(mSortByUrlExtra).append("&");
     		} else {
-    			sb = new StringBuilder("http://api.reddit.com/r/")
+    			sb = new StringBuilder(Constants.REDDIT_BASE_URL + "/r/")
         			.append(mSubreddit.toString().trim())
-        			.append("/").append(mSortByUrl).append("?")
+        			.append("/").append(mSortByUrl).append(".json?")
         			.append(mSortByUrlExtra).append("&");
     		}
 			// "before" always comes back null unless you provide correct "count"
