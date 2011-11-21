@@ -31,6 +31,7 @@ Contributors:
 * bmwracer0
 * candrews
 * teen-
+* sztomi
 
 Android Market QR Codes
 ----------------
