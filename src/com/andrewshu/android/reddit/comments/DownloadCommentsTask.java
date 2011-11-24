@@ -564,16 +564,7 @@ public class DownloadCommentsTask extends AsyncTask<Integer, Long, Boolean>
      * Process the slow steps and refresh each new comment
      */
 	private void processDeferredComments() {
-		new Thread() {
-			@Override
-			public void run() {
-				for (final DeferredCommentProcessing deferredCommentProcessing : mDeferredProcessingList) {
-					processCommentSlowSteps(deferredCommentProcessing.comment);
-					refreshDeferredCommentIfVisible(deferredCommentProcessing.commentIndex);
-				}
-				cleanupDeferred();
-			}
-		}.run();
+		new ProcessCommentsSubTask().execute(mDeferredProcessingList.toArray(new DeferredCommentProcessing[0]));
 	}
 	
     private void cleanupDeferred() {
@@ -663,6 +654,25 @@ public class DownloadCommentsTask extends AsyncTask<Integer, Long, Boolean>
 	@Override
 	public void propertyChange(PropertyChangeEvent event) {
 		publishProgress((Long) event.getNewValue());
+	}
+
+	private class ProcessCommentsSubTask extends AsyncTask<DeferredCommentProcessing, Integer, Void> {
+		@Override
+		public Void doInBackground(DeferredCommentProcessing... deferredCommentProcessingList) {
+			for (final DeferredCommentProcessing deferredCommentProcessing : mDeferredProcessingList) {
+				processCommentSlowSteps(deferredCommentProcessing.comment);
+				publishProgress(deferredCommentProcessing.commentIndex);
+			}
+			cleanupDeferred();
+			return null;
+		}
+		
+		@Override
+		public void onProgressUpdate(Integer... commentsToShow) {
+			for (Integer commentIndex : commentsToShow) {
+				refreshDeferredCommentIfVisible(commentIndex);
+			}
+		}
 	}
 }
 
