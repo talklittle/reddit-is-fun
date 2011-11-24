@@ -1636,13 +1636,14 @@ public class CommentsListActivity extends ListActivity
     				dialog.cancel();
     			}
     		});
+    		dialog.setCancelable(false);  // disallow the BACK key
     		dialog.setOnCancelListener(new DialogInterface.OnCancelListener() {
 				public void onCancel(DialogInterface dialog) {
 					replyBody.setText("");
 				}
     		});
-    	}
     		break;
+    	}
     		
     	case Constants.DIALOG_EDIT:
     	{
@@ -1675,8 +1676,8 @@ public class CommentsListActivity extends ListActivity
 					replyBody.setText("");
 				}
     		});
-		}
     		break;
+		}
     		
     	case Constants.DIALOG_DELETE:
     		builder = new AlertDialog.Builder(this);
