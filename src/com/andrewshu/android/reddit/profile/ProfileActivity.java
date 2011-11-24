@@ -478,12 +478,12 @@ public final class ProfileActivity extends ListActivity
 	    	if (mThingsAdapter != null)
 	    		mThingsAdapter.mIsLoading = true;
     	}
-    	getWindow().setFeatureInt(Window.FEATURE_PROGRESS, 0);
+    	getWindow().setFeatureInt(Window.FEATURE_PROGRESS, Window.PROGRESS_START);
     }
     
     private void disableLoadingScreen() {
     	resetUI(mThingsAdapter);
-    	getWindow().setFeatureInt(Window.FEATURE_PROGRESS, 10000);
+    	getWindow().setFeatureInt(Window.FEATURE_PROGRESS, Window.PROGRESS_END);
     }
 
     private void updateNextPreviousButtons() {
@@ -787,8 +787,7 @@ public final class ProfileActivity extends ListActivity
 		
     	@Override
     	public void onProgressUpdate(Long... progress) {
-    		// 0-9999 is ok, 10000 means it's finished
-    		getWindow().setFeatureInt(Window.FEATURE_PROGRESS, progress[0].intValue() * 9999 / (int) _mContentLength);
+    		getWindow().setFeatureInt(Window.FEATURE_PROGRESS, progress[0].intValue() * (Window.PROGRESS_END-1) / (int) _mContentLength);
     	}
     	
     	public void propertyChange(PropertyChangeEvent event) {

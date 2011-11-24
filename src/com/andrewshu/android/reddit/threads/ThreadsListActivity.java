@@ -649,12 +649,12 @@ public final class ThreadsListActivity extends ListActivity {
 	    	if (mThreadsAdapter != null)
 	    		mThreadsAdapter.mIsLoading = true;
     	}
-    	getWindow().setFeatureInt(Window.FEATURE_PROGRESS, 0);
+    	getWindow().setFeatureInt(Window.FEATURE_PROGRESS, Window.PROGRESS_START);
     }
     
     private void disableLoadingScreen() {
     	resetUI(mThreadsAdapter);
-    	getWindow().setFeatureInt(Window.FEATURE_PROGRESS, 10000);
+    	getWindow().setFeatureInt(Window.FEATURE_PROGRESS, Window.PROGRESS_END);
     }
     
     private void updateNextPreviousButtons() {
@@ -761,12 +761,11 @@ public final class ThreadsListActivity extends ListActivity {
     	
     	@Override
     	public void onProgressUpdate(Long... progress) {
-    		// 0-9999 is ok, 10000 means it's finished
     		if (mContentLength == -1) {
-//    			getWindow().setFeatureInt(Window.FEATURE_PROGRESS, progress[0].intValue() * 9999 / (int) mContentLength);
+    			getWindow().setFeatureInt(Window.FEATURE_PROGRESS, Window.PROGRESS_INDETERMINATE_ON);
     		}
     		else {
-    			getWindow().setFeatureInt(Window.FEATURE_PROGRESS, progress[0].intValue() * 9999 / (int) mContentLength);
+    			getWindow().setFeatureInt(Window.FEATURE_PROGRESS, progress[0].intValue() * (Window.PROGRESS_END-1) / (int) mContentLength);
     		}
     	}
     	

@@ -241,12 +241,12 @@ public final class PickSubredditActivity extends ListActivity {
 	    	if (mSubredditsAdapter != null)
 	    		mSubredditsAdapter.mLoading = true;
     	}
-    	getWindow().setFeatureInt(Window.FEATURE_PROGRESS, 0);
+    	getWindow().setFeatureInt(Window.FEATURE_PROGRESS, Window.PROGRESS_START);
     }
     
     private void disableLoadingScreen() {
     	resetUI(mSubredditsAdapter);
-    	getWindow().setFeatureInt(Window.FEATURE_PROGRESS, 10000);
+    	getWindow().setFeatureInt(Window.FEATURE_PROGRESS, Window.PROGRESS_END);
     }
     
     class DownloadRedditsTask extends AsyncTask<Void, Void, ArrayList<String>> {
