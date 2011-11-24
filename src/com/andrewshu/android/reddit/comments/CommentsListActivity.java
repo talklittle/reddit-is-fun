@@ -194,6 +194,7 @@ public class CommentsListActivity extends ListActivity
         	mThreadTitle = savedInstanceState.getString(Constants.THREAD_TITLE_KEY);
         	mSubreddit = savedInstanceState.getString(Constants.SUBREDDIT_KEY);
         	mThreadId = savedInstanceState.getString(Constants.THREAD_ID_KEY);
+        	mVoteTargetThing = savedInstanceState.getParcelable(Constants.VOTE_TARGET_THING_INFO_KEY);
         	
         	if (mThreadTitle != null) {
         	    setTitle(mThreadTitle + " : " + mSubreddit);
@@ -2117,6 +2118,7 @@ public class CommentsListActivity extends ListActivity
     	state.putString(Constants.SUBREDDIT_KEY, mSubreddit);
     	state.putString(Constants.THREAD_ID_KEY, mThreadId);
     	state.putString(Constants.THREAD_TITLE_KEY, mThreadTitle);
+    	state.putParcelable(Constants.VOTE_TARGET_THING_INFO_KEY, mVoteTargetThing);
     }
     
     /**

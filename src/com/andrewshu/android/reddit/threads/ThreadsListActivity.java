@@ -118,7 +118,7 @@ public final class ThreadsListActivity extends ListActivity {
     private final RedditSettings mSettings = new RedditSettings();
     
     // UI State
-    private ThingInfo mVoteTargetThingInfo = null;
+    private ThingInfo mVoteTargetThing = null;
     private DownloadThreadsTask mCurrentDownloadThreadsTask = null;
     private final Object mCurrentDownloadThreadsTaskLock = new Object();
     private View mNextPreviousView = null;
@@ -173,7 +173,7 @@ public final class ThreadsListActivity extends ListActivity {
 	        mLastCount = savedInstanceState.getInt(Constants.THREAD_LAST_COUNT_KEY);
 	        mSortByUrl = savedInstanceState.getString(Constants.ThreadsSort.SORT_BY_KEY);
 		    mJumpToThreadId = savedInstanceState.getString(Constants.JUMP_TO_THREAD_ID_KEY);
-		    mVoteTargetThingInfo = savedInstanceState.getParcelable(Constants.VOTE_TARGET_THING_INFO_KEY);
+		    mVoteTargetThing = savedInstanceState.getParcelable(Constants.VOTE_TARGET_THING_INFO_KEY);
 		    
 		    // try to restore mThreadsList using getLastNonConfigurationInstance()
 		    // (separate function to avoid a compiler warning casting ArrayList<ThingInfo>
@@ -598,7 +598,7 @@ public final class ThreadsListActivity extends ListActivity {
         ThingInfo item = mThreadsAdapter.getItem(position);
         
     	// Mark the thread as selected
-    	mVoteTargetThingInfo = item;
+    	mVoteTargetThing = item;
     	mJumpToThreadId = item.getId();
     	
     	showDialog(Constants.DIALOG_THREAD_CLICK);
@@ -927,7 +927,7 @@ public final class ThreadsListActivity extends ListActivity {
     	info = (AdapterView.AdapterContextMenuInfo) menuInfo;
     	ThingInfo _item = mThreadsAdapter.getItem(info.position);
     	
-    	mVoteTargetThingInfo = _item;
+    	mVoteTargetThing = _item;
     	
     	menu.add(0, Constants.VIEW_SUBREDDIT_CONTEXT_ITEM, 0, R.string.view_subreddit);
     	menu.add(0, Constants.SHARE_CONTEXT_ITEM, 0, R.string.share);
@@ -1221,9 +1221,9 @@ public final class ThreadsListActivity extends ListActivity {
     		break;
     		
     	case Constants.DIALOG_THREAD_CLICK:
-    		if (mVoteTargetThingInfo == null)
+    		if (mVoteTargetThing == null)
     			break;
-    		fillThreadClickDialog(dialog, mVoteTargetThingInfo, mSettings, threadClickDialogOnClickListenerFactory);
+    		fillThreadClickDialog(dialog, mVoteTargetThing, mSettings, threadClickDialogOnClickListenerFactory);
     		break;
     		
     	case Constants.DIALOG_SORT_BY:
@@ -1448,7 +1448,7 @@ public final class ThreadsListActivity extends ListActivity {
     	state.putString(Constants.LAST_AFTER_KEY, mLastAfter);
     	state.putString(Constants.LAST_BEFORE_KEY, mLastBefore);
     	state.putInt(Constants.THREAD_LAST_COUNT_KEY, mLastCount);
-    	state.putParcelable(Constants.VOTE_TARGET_THING_INFO_KEY, mVoteTargetThingInfo);
+    	state.putParcelable(Constants.VOTE_TARGET_THING_INFO_KEY, mVoteTargetThing);
     }
     
     /**
