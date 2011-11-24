@@ -626,7 +626,7 @@ public class CommentsListActivity extends ListActivity
 	    	if (mCommentsAdapter != null)
 	    		mCommentsAdapter.mIsLoading = true;
     	}
-    	getWindow().setFeatureInt(Window.FEATURE_PROGRESS, 0);
+    	getWindow().setFeatureInt(Window.FEATURE_PROGRESS, Window.PROGRESS_START);
     }
     
     
@@ -2016,7 +2016,10 @@ public class CommentsListActivity extends ListActivity
         	submitterView.setText(item.getAuthor());
         submissionTimeView.setText(Util.getTimeAgo(item.getCreated_utc()));
         
-    	bodyView.setText(item.getSpannedBody());
+    	if (item.getSpannedBody() != null)
+    		bodyView.setText(item.getSpannedBody());
+    	else
+    		bodyView.setText(item.getBody());
         
         setCommentIndent(view, item.getIndent(), settings);
         
