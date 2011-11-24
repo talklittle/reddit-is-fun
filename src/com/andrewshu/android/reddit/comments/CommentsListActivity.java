@@ -1205,16 +1205,21 @@ public class CommentsListActivity extends ListActivity
 
         // Login/Logout
     	if (mSettings.isLoggedIn()) {
-	        menu.findItem(R.id.login_logout_menu_id).setTitle(
-	        		String.format(getResources().getString(R.string.logout), mSettings.getUsername()));
+    		menu.findItem(R.id.login_menu_id).setVisible(false);
 	        menu.findItem(R.id.inbox_menu_id).setVisible(true);
 	        menu.findItem(R.id.user_profile_menu_id).setVisible(true);
 	        menu.findItem(R.id.user_profile_menu_id).setTitle(
-	        		String.format(getResources().getString(R.string.user_profile), mSettings.getUsername()));
+	        		String.format(getResources().getString(R.string.user_profile), mSettings.getUsername())
+    		);
+    		menu.findItem(R.id.logout_menu_id).setVisible(true);
+	        menu.findItem(R.id.logout_menu_id).setTitle(
+	        		String.format(getResources().getString(R.string.logout), mSettings.getUsername())
+    		);
     	} else {
-            menu.findItem(R.id.login_logout_menu_id).setTitle(getResources().getString(R.string.login));
+            menu.findItem(R.id.login_menu_id).setVisible(true);
             menu.findItem(R.id.inbox_menu_id).setVisible(false);
 	        menu.findItem(R.id.user_profile_menu_id).setVisible(false);
+            menu.findItem(R.id.logout_menu_id).setVisible(false);
     	}
     	
     	// Edit and delete
@@ -1281,14 +1286,13 @@ public class CommentsListActivity extends ListActivity
 			Util.overridePendingTransition(mActivity_overridePendingTransition, this,
 					android.R.anim.slide_in_left, android.R.anim.slide_out_right);
 			break;
-    	case R.id.login_logout_menu_id:
-        	if (mSettings.isLoggedIn()) {
-        		Common.doLogout(mSettings, mClient, getApplicationContext());
-        		Toast.makeText(this, "You have been logged out.", Toast.LENGTH_SHORT).show();
-        		getNewDownloadCommentsTask().execute(Constants.DEFAULT_COMMENT_DOWNLOAD_LIMIT);
-        	} else {
-        		showDialog(Constants.DIALOG_LOGIN);
-        	}
+    	case R.id.login_menu_id:
+    		showDialog(Constants.DIALOG_LOGIN);
+    		break;
+    	case R.id.logout_menu_id:
+    		Common.doLogout(mSettings, mClient, getApplicationContext());
+    		Toast.makeText(this, "You have been logged out.", Toast.LENGTH_SHORT).show();
+    		getNewDownloadCommentsTask().execute(Constants.DEFAULT_COMMENT_DOWNLOAD_LIMIT);
             break;
         case R.id.find_next_menu_id:
             if (last_search_string != null && last_search_string.length() > 0)

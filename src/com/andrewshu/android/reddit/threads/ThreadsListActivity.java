@@ -1013,7 +1013,8 @@ public final class ThreadsListActivity extends ListActivity {
     	
         // Login/Logout
     	if (mSettings.isLoggedIn()) {
-    		
+    		menu.findItem(R.id.login_menu_id).setVisible(false);
+
     		if(!mSubreddit.equals(Constants.FRONTPAGE_STRING)){
     			ArrayList<String> mSubredditsList = CacheInfo.getCachedSubredditList(getApplicationContext());	
     			
@@ -1021,27 +1022,31 @@ public final class ThreadsListActivity extends ListActivity {
 	    			menu.findItem(R.id.unsubscribe_menu_id).setVisible(true);
 	    			menu.findItem(R.id.subscribe_menu_id).setVisible(false);
 	    		}
-	    		else{
+	    		else {
 	    			menu.findItem(R.id.subscribe_menu_id).setVisible(true);
 	    			menu.findItem(R.id.unsubscribe_menu_id).setVisible(false);
 	    		}
     		}
     		
-	        menu.findItem(R.id.login_logout_menu_id).setTitle(
-	        		String.format(getResources().getString(R.string.logout), mSettings.getUsername()));
 	        menu.findItem(R.id.inbox_menu_id).setVisible(true);
 	        menu.findItem(R.id.user_profile_menu_id).setVisible(true);
 	        menu.findItem(R.id.user_profile_menu_id).setTitle(
-	        		String.format(getResources().getString(R.string.user_profile), mSettings.getUsername()));
-	        
-	        
-	        
-    	} else {
-            menu.findItem(R.id.login_logout_menu_id).setTitle(getResources().getString(R.string.login));
-            menu.findItem(R.id.inbox_menu_id).setVisible(false);
-            menu.findItem(R.id.user_profile_menu_id).setVisible(false);
+	        		String.format(getResources().getString(R.string.user_profile), mSettings.getUsername())
+    		);
+	        menu.findItem(R.id.logout_menu_id).setVisible(true);
+	        menu.findItem(R.id.logout_menu_id).setTitle(
+	        		String.format(getResources().getString(R.string.logout), mSettings.getUsername())
+    		);
+    	}
+    	else {
+			menu.findItem(R.id.login_menu_id).setVisible(true);
+
 			menu.findItem(R.id.unsubscribe_menu_id).setVisible(false);
 			menu.findItem(R.id.subscribe_menu_id).setVisible(false);
+
+            menu.findItem(R.id.inbox_menu_id).setVisible(false);
+            menu.findItem(R.id.user_profile_menu_id).setVisible(false);
+            menu.findItem(R.id.logout_menu_id).setVisible(false);
     	}
     	
     	// Theme: Light/Dark
@@ -1079,14 +1084,13 @@ public final class ThreadsListActivity extends ListActivity {
     		Intent pickSubredditIntent = new Intent(getApplicationContext(), PickSubredditActivity.class);
     		startActivityForResult(pickSubredditIntent, Constants.ACTIVITY_PICK_SUBREDDIT);
     		break;
-    	case R.id.login_logout_menu_id:
-        	if (mSettings.isLoggedIn()) {
-        		Common.doLogout(mSettings, mClient, getApplicationContext());
-        		Toast.makeText(this, "You have been logged out.", Toast.LENGTH_SHORT).show();
-        		new MyDownloadThreadsTask(mSubreddit).execute();
-        	} else {
-        		showDialog(Constants.DIALOG_LOGIN);
-        	}
+    	case R.id.login_menu_id:
+    		showDialog(Constants.DIALOG_LOGIN);
+    		break;
+    	case R.id.logout_menu_id:
+    		Common.doLogout(mSettings, mClient, getApplicationContext());
+    		Toast.makeText(this, "You have been logged out.", Toast.LENGTH_SHORT).show();
+    		new MyDownloadThreadsTask(mSubreddit).execute();
     		break;
     	case R.id.refresh_menu_id:
     		CacheInfo.invalidateCachedSubreddit(getApplicationContext());
@@ -1246,44 +1250,36 @@ public final class ThreadsListActivity extends ListActivity {
     }
     
 	private int getSelectedSortBy() {
-		int selectedSortBy = -1;
 		for (int i = 0; i < Constants.ThreadsSort.SORT_BY_URL_CHOICES.length; i++) {
 			if (Constants.ThreadsSort.SORT_BY_URL_CHOICES[i].equals(mSortByUrl)) {
-				selectedSortBy = i;
-				break;
+				return i;
 			}
 		}
-		return selectedSortBy;
+		return -1;
 	}
 	private int getSelectedSortByNew() {
-		int selectedSortByNew = -1;
 		for (int i = 0; i < Constants.ThreadsSort.SORT_BY_NEW_URL_CHOICES.length; i++) {
 			if (Constants.ThreadsSort.SORT_BY_NEW_URL_CHOICES[i].equals(mSortByUrlExtra)) {
-				selectedSortByNew = i;
-				break;
+				return i;
 			}
 		}
-		return selectedSortByNew;
+		return -1;
 	}
 	private int getSelectedSortByControversial() {
-		int selectedSortByControversial = -1;
 		for (int i = 0; i < Constants.ThreadsSort.SORT_BY_CONTROVERSIAL_URL_CHOICES.length; i++) {
 			if (Constants.ThreadsSort.SORT_BY_CONTROVERSIAL_URL_CHOICES[i].equals(mSortByUrlExtra)) {
-				selectedSortByControversial = i;
-				break;
+				return i;
 			}
 		}
-		return selectedSortByControversial;
+		return -1;
 	}
 	private int getSelectedSortByTop() {
-		int selectedSortByTop = -1;
 		for (int i = 0; i < Constants.ThreadsSort.SORT_BY_TOP_URL_CHOICES.length; i++) {
 			if (Constants.ThreadsSort.SORT_BY_TOP_URL_CHOICES[i].equals(mSortByUrlExtra)) {
-				selectedSortByTop = i;
-				break;
+				return i;
 			}
 		}
-		return selectedSortByTop;
+		return -1;
 	}
 
 	private final OnClickListener downloadAfterOnClickListener = new OnClickListener() {
