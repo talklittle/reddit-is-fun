@@ -1225,7 +1225,7 @@ public class CommentsListActivity extends ListActivity
     	// Edit and delete
     	if (getOpThingInfo() != null) {
 	    	if (mSettings.getUsername() != null && mSettings.getUsername().equalsIgnoreCase(getOpThingInfo().getAuthor())) {
-				if (getOpThingInfo().getSelftext_html() != null)
+				if (getOpThingInfo().isIs_self())
 					menu.findItem(R.id.op_edit_menu_id).setVisible(true);
 				else
 					menu.findItem(R.id.op_edit_menu_id).setVisible(false);
