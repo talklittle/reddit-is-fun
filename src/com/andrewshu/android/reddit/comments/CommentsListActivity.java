@@ -123,7 +123,6 @@ public class CommentsListActivity extends ListActivity
     
     private final HttpClient mClient = Common.getGzipHttpClient();
     
-    
     // Common settings are stored here
     private final RedditSettings mSettings = new RedditSettings();
     

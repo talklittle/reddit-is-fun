@@ -122,6 +122,9 @@ public final class ThreadsListActivity extends ListActivity {
     private final Object mCurrentDownloadThreadsTaskLock = new Object();
     private View mNextPreviousView = null;
     
+    private ShowThumbnailsTask mCurrentShowThumbnailsTask = null;
+    private final Object mCurrentShowThumbnailsTaskLock = new Object();
+    
     // Navigation that can be cached
     private String mSubreddit = Constants.FRONTPAGE_STRING;
     // The after, before, and count to navigate away from current page of results
@@ -469,9 +472,11 @@ public final class ThreadsListActivity extends ListActivity {
             	}
             	
             	if (!StringUtils.isEmpty(item.getThumbnail())) {
-            		if (item.getThumbnailBitmap() != null)
-            			thumbnailView.setImageBitmap(item.getThumbnailBitmap());
-            		// TODO else show loading Drawable like it used to?
+            		if (item.getThumbnailBitmap() != null) {
+            			indeterminateProgressBar.setVisibility(View.GONE);
+	            		thumbnailView.setVisibility(View.VISIBLE);
+	            		thumbnailView.setImageBitmap(item.getThumbnailBitmap());
+            		}
             	} else {
             		if (defaultUseGoArrow) {
 	            		indeterminateProgressBar.setVisibility(View.GONE);
@@ -784,7 +789,12 @@ public final class ThreadsListActivity extends ListActivity {
 	    	for (int i = 0; i < size; i++) {
 	    		thumbnailLoadActions[i] = new ThumbnailLoadAction(thingInfos.get(i), i);
 	    	}
-	    	new ShowThumbnailsTask(this, mClient).execute(thumbnailLoadActions);
+	    	synchronized (mCurrentShowThumbnailsTaskLock) {
+	    		if (mCurrentShowThumbnailsTask != null)
+	    			mCurrentShowThumbnailsTask.cancel(true);
+	    		mCurrentShowThumbnailsTask = new ShowThumbnailsTask(this, mClient);
+	    	}
+	    	mCurrentShowThumbnailsTask.execute(thumbnailLoadActions);
     	}
     }
     

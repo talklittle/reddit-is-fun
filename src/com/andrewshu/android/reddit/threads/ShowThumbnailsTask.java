@@ -65,10 +65,17 @@ public class ShowThumbnailsTask extends AsyncTask<ThumbnailLoadAction, Integer, 
     }
     
 	private Bitmap readBitmapFromNetwork( String url ) {
+		if (url == null)
+			return null;
+		
 		InputStream is = null;
 		BufferedInputStream bis = null;
 		Bitmap bmp = null;
 		try {
+			// http://blog.donnfelker.com/2010/04/29/android-odd-error-in-defaulthttpclient/
+			if (!url.startsWith("http://") && !url.startsWith("https://"))
+				url = "http://" + url;
+			
 			is = fetch(url);
 			bis = new BufferedInputStream(is);
 			bmp = BitmapFactory.decodeStream(bis);
@@ -109,10 +116,19 @@ public class ShowThumbnailsTask extends AsyncTask<ThumbnailLoadAction, Integer, 
 	private void refreshThumbnailUI(int position) {
 		View v = mActivity.getListView().getChildAt(position);
 		if (v != null) {
-			View thumbnailImageView = v.findViewById(R.id.thumbnail_view);
+			View thumbnailImageView = v.findViewById(R.id.thumbnail);
 			if (thumbnailImageView != null) {
-				ThingInfo thingInfo = (ThingInfo) mActivity.getListView().getItemAtPosition(position);
-				((ImageView) thumbnailImageView).setImageBitmap(thingInfo.getThumbnailBitmap());
+				thumbnailImageView.setVisibility(View.VISIBLE);
+
+				View indeterminateProgressView = v.findViewById(R.id.indeterminate_progress);
+				if (indeterminateProgressView != null)
+					indeterminateProgressView.setVisibility(View.GONE);
+				
+				ThingInfo thingInfo = (ThingInfo) mActivity.getListAdapter().getItem(position);
+				if (thingInfo.getThumbnailBitmap() != null)
+					((ImageView) thumbnailImageView).setImageBitmap(thingInfo.getThumbnailBitmap());
+				else
+					((ImageView) thumbnailImageView).setImageResource(R.drawable.go_arrow);
 			}
 		}
 	}

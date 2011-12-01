@@ -59,8 +59,11 @@ public class DownloadCommentsTask extends AsyncTask<Integer, Long, Boolean>
     private final ObjectMapper mObjectMapper = Common.getObjectMapper();
     private final Markdown markdown = new Markdown();
 
-    private AsyncTask<?, ?, ?> mCurrentDownloadCommentsTask = null;
+    private static AsyncTask<?, ?, ?> mCurrentDownloadCommentsTask = null;
     private static final Object mCurrentDownloadCommentsTaskLock = new Object();
+    
+    private ShowThumbnailsTask mCurrentShowThumbnailsTask = null;
+    private final Object mCurrentShowThumbnailsTaskLock = new Object();
     
     private CommentsListActivity mActivity;
     private String mSubreddit;
@@ -570,8 +573,14 @@ public class DownloadCommentsTask extends AsyncTask<Integer, Long, Boolean>
 	}
 	
 	private void showOPThumbnail() {
-		if (mOpThingInfo != null)
-			new ShowThumbnailsTask(mActivity, mClient).execute(new ThumbnailLoadAction(mOpThingInfo, 0));
+		if (mOpThingInfo != null) {
+	    	synchronized (mCurrentShowThumbnailsTaskLock) {
+	    		if (mCurrentShowThumbnailsTask != null)
+	    			mCurrentShowThumbnailsTask.cancel(true);
+	    		mCurrentShowThumbnailsTask = new ShowThumbnailsTask(mActivity, mClient);
+	    	}
+	    	mCurrentShowThumbnailsTask.execute(new ThumbnailLoadAction(mOpThingInfo, 0));
+		}
 	}
 	
     private void cleanupDeferred() {
