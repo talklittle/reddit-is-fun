@@ -47,7 +47,6 @@
 	<EditText android:id="@+id/login_password_input"
 		android:layout_width="fill_parent"
 		android:layout_height="wrap_content"
-		android:maxLength="20"
 		android:password="true"
 		android:inputType="textPassword"
 		/>
