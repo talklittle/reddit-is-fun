@@ -72,7 +72,7 @@
 	    <activity android:name=".browser.BrowserActivity" android:configChanges="keyboardHidden|orientation"></activity>
 	    <service android:name=".mail.EnvelopeService" android:label="@string/pref_mail_notification_service"></service>
 	</application>
-    <uses-sdk android:minSdkVersion="4" android:targetSdkVersion="7" />
+    <uses-sdk android:minSdkVersion="4" android:targetSdkVersion="10" />
     <supports-screens />
 <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE"></uses-permission>
 </manifest> 
