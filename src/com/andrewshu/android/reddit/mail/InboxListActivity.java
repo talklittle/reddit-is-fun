@@ -666,6 +666,8 @@ public final class InboxListActivity extends ListActivity
     		
     		if (_mContentLength == -1)
     			getWindow().setFeatureInt(Window.FEATURE_PROGRESS, Window.PROGRESS_INDETERMINATE_OFF);
+    		else
+    			getWindow().setFeatureInt(Window.FEATURE_PROGRESS, Window.PROGRESS_END);
     		
 			disableLoadingScreen();
 			Common.cancelMailNotification(InboxListActivity.this.getApplicationContext());

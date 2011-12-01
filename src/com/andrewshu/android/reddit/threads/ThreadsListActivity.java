@@ -737,9 +737,10 @@ public final class ThreadsListActivity extends ListActivity {
 
     		disableLoadingScreen();
 
-    		if (mContentLength == -1) {
+    		if (mContentLength == -1)
     			getWindow().setFeatureInt(Window.FEATURE_PROGRESS, Window.PROGRESS_INDETERMINATE_OFF);
-    		}
+    		else
+    			getWindow().setFeatureInt(Window.FEATURE_PROGRESS, Window.PROGRESS_END);
 
     		if (success) {
     			synchronized (THREAD_ADAPTER_LOCK) {
