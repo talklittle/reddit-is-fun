@@ -62,7 +62,7 @@ public class ShowThumbnailsTask extends AsyncTask<ThumbnailLoadAction, Thumbnail
 	
 	// TODO use external storage cache if present
 	private void loadThumbnail(ThingInfo thingInfo) {
-		if ("default".equals(thingInfo.getThumbnail()) || StringUtils.isEmpty(thingInfo.getThumbnail())) {
+		if ("default".equals(thingInfo.getThumbnail()) || "self".equals(thingInfo.getThumbnail()) || StringUtils.isEmpty(thingInfo.getThumbnail())) {
 			thingInfo.setThumbnailResource(mDefaultThumbnailResource);
 		}
 		else {

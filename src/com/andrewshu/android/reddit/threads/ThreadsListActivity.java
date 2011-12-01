@@ -460,7 +460,7 @@ public final class ThreadsListActivity extends ListActivity {
             	}
             	
             	// Show thumbnail based on ThingInfo
-            	if ("default".equals(item.getThumbnail()) || StringUtils.isEmpty(item.getThumbnail())) {
+            	if ("default".equals(item.getThumbnail()) || "self".equals(item.getThumbnail()) || StringUtils.isEmpty(item.getThumbnail())) {
         			indeterminateProgressBar.setVisibility(View.GONE);
             		thumbnailView.setVisibility(View.VISIBLE);
             		thumbnailView.setImageResource(R.drawable.go_arrow);
