@@ -312,7 +312,8 @@ public class Constants {
     // Reddit's base URL, without trailing slash
     public static final String REDDIT_BASE_URL = "http://www.reddit.com";
     public static final String REDDIT_SSL_BASE_URL = "https://pay.reddit.com";
-    
+	public static final String REDDIT_LOGIN_URL = "https://ssl.reddit.com/api/login";
+	
     // A short HTML file returned by reddit, so we can get the modhash
     public static final String MODHASH_URL = REDDIT_BASE_URL + "/r";
 }

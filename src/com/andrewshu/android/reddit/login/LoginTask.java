@@ -74,7 +74,7 @@ public class LoginTask extends AsyncTask<Void, Void, Boolean> {
     		nvps.add(new BasicNameValuePair("passwd", password.toString()));
     		nvps.add(new BasicNameValuePair("api_type", "json"));
     		
-            HttpPost httppost = new HttpPost(Constants.REDDIT_BASE_URL + "/api/login/"+username);
+            HttpPost httppost = new HttpPost(Constants.REDDIT_LOGIN_URL);
             httppost.setEntity(new UrlEncodedFormEntity(nvps, HTTP.UTF_8));
             
             // Set timeout to 45 seconds for login
