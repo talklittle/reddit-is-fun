@@ -631,7 +631,9 @@ public class DownloadCommentsTask extends AsyncTask<Integer, Long, Boolean>
 		
 		// have to wait till onPostExecute to do this, to ensure they've been inserted by UI thread
 		processDeferredComments();
-		showOPThumbnail();
+		
+		if (Common.shouldLoadThumbnails(mActivity, mSettings))
+			showOPThumbnail();
 
         // label the OP's comments with [S]
         mActivity.markSubmitterComments();

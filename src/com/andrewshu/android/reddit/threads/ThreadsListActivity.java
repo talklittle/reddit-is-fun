@@ -37,8 +37,6 @@ import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.res.Resources;
-import android.net.ConnectivityManager;
-import android.net.NetworkInfo;
 import android.os.Bundle;
 import android.text.SpannableString;
 import android.text.SpannableStringBuilder;
@@ -353,21 +351,6 @@ public final class ThreadsListActivity extends ListActivity {
         }
     }
     
-    private static boolean shouldLoadThumbnails(Activity activity, RedditSettings settings) {
-    	//check for wifi connection and wifi thumbnail setting
-    	boolean thumbOkay = true;
-    	if (settings.isLoadThumbnailsOnlyWifi())
-    	{
-    		thumbOkay = false;
-    		ConnectivityManager connMan = (ConnectivityManager) activity.getSystemService(Context.CONNECTIVITY_SERVICE);
-    		NetworkInfo netInfo = connMan.getActiveNetworkInfo();
-    		if (netInfo != null && netInfo.getType() == ConnectivityManager.TYPE_WIFI && netInfo.isConnected()) {
-    			thumbOkay = true;
-    		}
-    	}
-    	return settings.isLoadThumbnails() && thumbOkay;
-    }
-    
     public static void fillThreadsListItemView(View view, ThingInfo item,
     		Activity activity, RedditSettings settings,
     		boolean defaultUseGoArrow,
@@ -457,7 +440,7 @@ public final class ThreadsListActivity extends ListActivity {
         
         // Thumbnails open links
         if (thumbnailView != null) {
-        	if (shouldLoadThumbnails(activity, settings)) {
+        	if (Common.shouldLoadThumbnails(activity, settings)) {
         		dividerView.setVisibility(View.VISIBLE);
         		thumbnailView.setVisibility(View.VISIBLE);
         		indeterminateProgressBar.setVisibility(View.GONE);
@@ -783,7 +766,7 @@ public final class ThreadsListActivity extends ListActivity {
     }
     
     private void showThumbnails(List<ThingInfo> thingInfos) {
-    	if (mSettings.isLoadThumbnails()) {
+    	if (Common.shouldLoadThumbnails(this, mSettings)) {
 	    	ThumbnailLoadAction[] thumbnailLoadActions = new ThumbnailLoadAction[thingInfos.size()];
 	    	int size = thingInfos.size();
 	    	for (int i = 0; i < size; i++) {

@@ -58,6 +58,7 @@ import org.codehaus.jackson.JsonNode;
 import org.codehaus.jackson.map.ObjectMapper;
 import org.codehaus.jackson.node.ArrayNode;
 
+import android.app.Activity;
 import android.app.ListActivity;
 import android.app.Notification;
 import android.app.NotificationManager;
@@ -65,6 +66,8 @@ import android.app.PendingIntent;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.net.ConnectivityManager;
+import android.net.NetworkInfo;
 import android.net.Uri;
 import android.preference.PreferenceManager;
 import android.provider.Browser;
@@ -117,6 +120,21 @@ public class Common {
 		t.show();
 	}
 	
+    public static boolean shouldLoadThumbnails(Activity activity, RedditSettings settings) {
+    	//check for wifi connection and wifi thumbnail setting
+    	boolean thumbOkay = true;
+    	if (settings.isLoadThumbnailsOnlyWifi())
+    	{
+    		thumbOkay = false;
+    		ConnectivityManager connMan = (ConnectivityManager) activity.getSystemService(Context.CONNECTIVITY_SERVICE);
+    		NetworkInfo netInfo = connMan.getActiveNetworkInfo();
+    		if (netInfo != null && netInfo.getType() == ConnectivityManager.TYPE_WIFI && netInfo.isConnected()) {
+    			thumbOkay = true;
+    		}
+    	}
+    	return settings.isLoadThumbnails() && thumbOkay;
+    }
+    
 	/**
      * Set the Drawable for the list selector etc. based on the current theme.
      */
