@@ -87,7 +87,9 @@ public class ThingInfo implements Serializable, Parcelable {
 	transient private CharSequence mSpannedSelftext = null;
 	transient private CharSequence mSpannedBody = null;
 	transient private SpannableString mSSAuthor = null;
+	
 	transient private Bitmap mThumbnailBitmap = null;
+	transient private Integer mThumbnailResource = null;
 	
 	private int mIndent = 0;
 	private String mReplyDraft = null;
@@ -221,6 +223,10 @@ public class ThingInfo implements Serializable, Parcelable {
 
 	public Bitmap getThumbnailBitmap() {
 		return mThumbnailBitmap;
+	}
+	
+	public Integer getThumbnailResource() {
+		return mThumbnailResource;
 	}
 
 	public String getTitle() {
@@ -442,6 +448,10 @@ public class ThingInfo implements Serializable, Parcelable {
 
 	public void setThumbnailBitmap(Bitmap thumbnailBitmap) {
 		this.mThumbnailBitmap = thumbnailBitmap;
+	}
+	
+	public void setThumbnailResource(Integer thumbnailResource) {
+		this.mThumbnailResource = thumbnailResource;
 	}
 
 	public void setTitle(String title) {

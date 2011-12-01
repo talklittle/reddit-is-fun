@@ -3,7 +3,9 @@ package com.andrewshu.android.reddit.threads;
 import java.io.BufferedInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.lang.ref.SoftReference;
 import java.net.MalformedURLException;
+import java.util.HashMap;
 
 import org.apache.http.HttpResponse;
 import org.apache.http.client.HttpClient;
@@ -22,40 +24,65 @@ import com.andrewshu.android.reddit.common.util.StringUtils;
 import com.andrewshu.android.reddit.things.ThingInfo;
 import com.andrewshu.android.reddit.threads.ShowThumbnailsTask.ThumbnailLoadAction;
 
-public class ShowThumbnailsTask extends AsyncTask<ThumbnailLoadAction, Integer, Void> {
+public class ShowThumbnailsTask extends AsyncTask<ThumbnailLoadAction, ThumbnailLoadAction, Void> {
 	
 	private ListActivity mActivity;
 	private HttpClient mClient;
+	private Integer mDefaultThumbnailResource;
+	
+	private static HashMap<String, SoftReference<Bitmap>> cache = new HashMap<String, SoftReference<Bitmap>>();
 	
 	private static final String TAG = "ShowThumbnailsTask";
 
+	public ShowThumbnailsTask(ListActivity activity, HttpClient client, Integer defaultThumbnailResource) {
+		this.mActivity = activity;
+		this.mClient = client;
+		this.mDefaultThumbnailResource = defaultThumbnailResource;
+	}
+	
 	public static class ThumbnailLoadAction {
     	public ThingInfo thingInfo;
+    	public ImageView imageView;  // prefer imageView; if it's null, use threadIndex
     	public int threadIndex;
-    	public ThumbnailLoadAction(ThingInfo thingInfo, int threadIndex) {
+    	public ThumbnailLoadAction(ThingInfo thingInfo, ImageView imageView, int threadIndex) {
     		this.thingInfo = thingInfo;
+    		this.imageView = imageView;
     		this.threadIndex = threadIndex;
     	}
     }
-	
-	public ShowThumbnailsTask(ListActivity activity, HttpClient client) {
-		this.mActivity = activity;
-		this.mClient = client;
-	}
 	
 	@Override
 	protected Void doInBackground(ThumbnailLoadAction... thumbnailLoadActions) {
 		for (ThumbnailLoadAction thumbnailLoadAction : thumbnailLoadActions) {
 			loadThumbnail(thumbnailLoadAction.thingInfo);
-			publishProgress(thumbnailLoadAction.threadIndex);
+			publishProgress(thumbnailLoadAction);
 		}
 		return null;
 	}
 	
 	// TODO use external storage cache if present
 	private void loadThumbnail(ThingInfo thingInfo) {
-		if (!StringUtils.isEmpty(thingInfo.getThumbnail()))
-			thingInfo.setThumbnailBitmap(readBitmapFromNetwork(thingInfo.getThumbnail()));
+		if ("default".equals(thingInfo.getThumbnail()) || StringUtils.isEmpty(thingInfo.getThumbnail())) {
+			thingInfo.setThumbnailResource(mDefaultThumbnailResource);
+		}
+		else {
+			SoftReference<Bitmap> ref;
+			Bitmap bitmap;
+			
+			ref = cache.get(thingInfo);
+			if (ref != null) {
+				bitmap = ref.get();
+				if (bitmap != null) {
+					thingInfo.setThumbnailBitmap(bitmap);
+					return;
+				}
+			}
+			
+			bitmap = readBitmapFromNetwork(thingInfo.getThumbnail());
+			ref = new SoftReference<Bitmap>(bitmap);
+			cache.put(thingInfo.getThumbnail(), ref);
+			thingInfo.setThumbnailBitmap(ref.get());
+		}
 	}
 	
     private InputStream fetch(String urlString) throws MalformedURLException, IOException {
@@ -97,39 +124,30 @@ public class ShowThumbnailsTask extends AsyncTask<ThumbnailLoadAction, Integer, 
 	}
 	
 	@Override
-	protected void onProgressUpdate(Integer... threadIndices) {
-		for (Integer threadIndex : threadIndices)
-			refreshThumbnailIfVisible(threadIndex);
+	protected void onProgressUpdate(ThumbnailLoadAction... thumbnailLoadActions) {
+		for (ThumbnailLoadAction thumbnailLoadAction : thumbnailLoadActions)
+			refreshThumbnailUI(thumbnailLoadAction);
 	}
 	
-	private void refreshThumbnailIfVisible(int threadIndex) {
-		if (isPositionVisibleUI(threadIndex))
-			refreshThumbnailUI(threadIndex);
-	}
-
-	// TODO factor out from here and CommentsListActivity
-	private boolean isPositionVisibleUI(int position) {
-		return position <= mActivity.getListView().getLastVisiblePosition() &&
-				position >= mActivity.getListView().getFirstVisiblePosition();
-	}
-	
-	private void refreshThumbnailUI(int position) {
-		View v = mActivity.getListView().getChildAt(position);
-		if (v != null) {
-			View thumbnailImageView = v.findViewById(R.id.thumbnail);
-			if (thumbnailImageView != null) {
-				thumbnailImageView.setVisibility(View.VISIBLE);
-
-				View indeterminateProgressView = v.findViewById(R.id.indeterminate_progress);
-				if (indeterminateProgressView != null)
-					indeterminateProgressView.setVisibility(View.GONE);
-				
-				ThingInfo thingInfo = (ThingInfo) mActivity.getListAdapter().getItem(position);
-				if (thingInfo.getThumbnailBitmap() != null)
-					((ImageView) thumbnailImageView).setImageBitmap(thingInfo.getThumbnailBitmap());
-				else
-					((ImageView) thumbnailImageView).setImageResource(R.drawable.go_arrow);
+	private void refreshThumbnailUI(ThumbnailLoadAction thumbnailLoadAction) {
+		ImageView imageView = null;
+		if (thumbnailLoadAction.imageView != null) {
+			imageView = thumbnailLoadAction.imageView;
+		}
+		else {
+			View v = mActivity.getListView().getChildAt(thumbnailLoadAction.threadIndex);
+			if (v != null) {
+				View thumbnailImageView = v.findViewById(R.id.thumbnail);
+				if (thumbnailImageView != null) {
+					imageView = (ImageView) thumbnailImageView;
+				}
 			}
+		}
+		if (imageView != null) {
+			if (thumbnailLoadAction.thingInfo.getThumbnailBitmap() != null)
+				imageView.setImageBitmap(thumbnailLoadAction.thingInfo.getThumbnailBitmap());
+			else if (thumbnailLoadAction.thingInfo.getThumbnailResource() != null)
+				imageView.setImageResource(thumbnailLoadAction.thingInfo.getThumbnailResource());
 		}
 	}
 	

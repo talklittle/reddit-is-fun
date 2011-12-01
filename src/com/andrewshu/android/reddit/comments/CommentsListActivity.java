@@ -390,7 +390,7 @@ public class CommentsListActivity extends ListActivity
 	            	}
 	            	
 	            	ThreadsListActivity.fillThreadsListItemView(
-	            			view, item, CommentsListActivity.this, mSettings, false, thumbnailOnClickListenerFactory
+	            			position, view, item, CommentsListActivity.this, mClient, mSettings, thumbnailOnClickListenerFactory
         			);
 	                
 	                // In addition to stuff from ThreadsListActivity,

@@ -344,17 +344,22 @@ public final class ThreadsListActivity extends ListActivity {
             
             // Set the values of the Views for the ThreadsListItem
             fillThreadsListItemView(
-            		view, item, ThreadsListActivity.this, mSettings, true, thumbnailOnClickListenerFactory
+            		position, view, item, ThreadsListActivity.this, mClient, mSettings, thumbnailOnClickListenerFactory
     		);
             
             return view;
         }
     }
     
-    public static void fillThreadsListItemView(View view, ThingInfo item,
-    		Activity activity, RedditSettings settings,
-    		boolean defaultUseGoArrow,
-    		ThumbnailOnClickListenerFactory thumbnailOnClickListenerFactory) {
+    public static void fillThreadsListItemView(
+    		int position,
+    		View view,
+    		ThingInfo item,
+    		ListActivity activity,
+    		HttpClient client,
+    		RedditSettings settings,
+    		ThumbnailOnClickListenerFactory thumbnailOnClickListenerFactory
+	) {
     	
     	Resources res = activity.getResources();
     	
@@ -454,22 +459,21 @@ public final class ThreadsListActivity extends ListActivity {
             		}
             	}
             	
-            	if (!StringUtils.isEmpty(item.getThumbnail())) {
+            	// Show thumbnail based on ThingInfo
+            	if ("default".equals(item.getThumbnail()) || StringUtils.isEmpty(item.getThumbnail())) {
+        			indeterminateProgressBar.setVisibility(View.GONE);
+            		thumbnailView.setVisibility(View.VISIBLE);
+            		thumbnailView.setImageResource(R.drawable.go_arrow);
+            	}
+            	else {
             		if (item.getThumbnailBitmap() != null) {
-            			indeterminateProgressBar.setVisibility(View.GONE);
+	        			indeterminateProgressBar.setVisibility(View.GONE);
 	            		thumbnailView.setVisibility(View.VISIBLE);
 	            		thumbnailView.setImageBitmap(item.getThumbnailBitmap());
             		}
-            	} else {
-            		if (defaultUseGoArrow) {
-	            		indeterminateProgressBar.setVisibility(View.GONE);
-	            		thumbnailView.setVisibility(View.VISIBLE);
-	            		thumbnailView.setImageResource(R.drawable.go_arrow);
-            		} else {
-            			// if no thumbnail image, hide thumbnail icon
-            			dividerView.setVisibility(View.GONE);
-            			thumbnailView.setVisibility(View.GONE);
-            			indeterminateProgressBar.setVisibility(View.GONE);
+            		else {
+            			thumbnailView.setImageBitmap(null);
+            			new ShowThumbnailsTask(activity, client, R.drawable.go_arrow).execute(new ThumbnailLoadAction(item, thumbnailView, position));
             		}
             	}
             	
@@ -767,15 +771,15 @@ public final class ThreadsListActivity extends ListActivity {
     
     private void showThumbnails(List<ThingInfo> thingInfos) {
     	if (Common.shouldLoadThumbnails(this, mSettings)) {
-	    	ThumbnailLoadAction[] thumbnailLoadActions = new ThumbnailLoadAction[thingInfos.size()];
 	    	int size = thingInfos.size();
+	    	ThumbnailLoadAction[] thumbnailLoadActions = new ThumbnailLoadAction[size];
 	    	for (int i = 0; i < size; i++) {
-	    		thumbnailLoadActions[i] = new ThumbnailLoadAction(thingInfos.get(i), i);
+	    		thumbnailLoadActions[i] = new ThumbnailLoadAction(thingInfos.get(i), null, i);
 	    	}
 	    	synchronized (mCurrentShowThumbnailsTaskLock) {
 	    		if (mCurrentShowThumbnailsTask != null)
 	    			mCurrentShowThumbnailsTask.cancel(true);
-	    		mCurrentShowThumbnailsTask = new ShowThumbnailsTask(this, mClient);
+	    		mCurrentShowThumbnailsTask = new ShowThumbnailsTask(this, mClient, R.drawable.go_arrow);
 	    	}
 	    	mCurrentShowThumbnailsTask.execute(thumbnailLoadActions);
     	}

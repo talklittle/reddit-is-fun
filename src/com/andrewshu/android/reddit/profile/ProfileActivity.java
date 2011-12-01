@@ -92,6 +92,8 @@ import com.andrewshu.android.reddit.things.Listing;
 import com.andrewshu.android.reddit.things.ListingData;
 import com.andrewshu.android.reddit.things.ThingInfo;
 import com.andrewshu.android.reddit.things.ThingListing;
+import com.andrewshu.android.reddit.threads.ShowThumbnailsTask;
+import com.andrewshu.android.reddit.threads.ShowThumbnailsTask.ThumbnailLoadAction;
 import com.andrewshu.android.reddit.threads.ThreadsListActivity;
 import com.andrewshu.android.reddit.threads.ThreadsListActivity.ThreadClickDialogOnClickListenerFactory;
 import com.andrewshu.android.reddit.threads.ThreadsListActivity.ThumbnailOnClickListenerFactory;
@@ -342,7 +344,7 @@ public final class ProfileActivity extends ListActivity
 	            }
 	            
 	            ThreadsListActivity.fillThreadsListItemView(
-	            		view, item, ProfileActivity.this, mSettings, true, thumbnailOnClickListenerFactory
+	            		position, view, item, ProfileActivity.this, mClient, mSettings, thumbnailOnClickListenerFactory
         		);
             }
             
@@ -779,6 +781,8 @@ public final class ProfileActivity extends ListActivity
     			getWindow().setFeatureInt(Window.FEATURE_PROGRESS, Window.PROGRESS_INDETERMINATE_OFF);
     		else
     			getWindow().setFeatureInt(Window.FEATURE_PROGRESS, Window.PROGRESS_END);
+    		
+    		showThumbnails(_mThingInfos);
 			
     		disableLoadingScreen();
 			setTitle(String.format(getResources().getString(R.string.user_profile), mUsername));
@@ -794,6 +798,15 @@ public final class ProfileActivity extends ListActivity
     	public void propertyChange(PropertyChangeEvent event) {
     		publishProgress((Long) event.getNewValue());
     	}
+    }
+    
+    private void showThumbnails(List<ThingInfo> thingInfos) {
+    	int size = thingInfos.size();
+    	ThumbnailLoadAction[] thumbnailLoadActions = new ThumbnailLoadAction[size];
+    	for (int i = 0; i < thumbnailLoadActions.length; i++) {
+    		thumbnailLoadActions[i] = new ThumbnailLoadAction(thingInfos.get(i), null, i);
+    	}
+    	new ShowThumbnailsTask(this, mClient, R.drawable.go_arrow).execute(thumbnailLoadActions);
     }
     
     
