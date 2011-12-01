@@ -39,6 +39,7 @@ public class PeekEnvelopeTask extends AsyncTask<Void, Void, Integer> {
 	@Override
 	public Integer doInBackground(Void... voidz) {
 		HttpEntity entity = null;
+		InputStream in = null;
 		try {
 			if (Constants.PREF_MAIL_NOTIFICATION_STYLE_OFF.equals(mMailNotificationStyle))
 	    		return 0;
@@ -46,24 +47,21 @@ public class PeekEnvelopeTask extends AsyncTask<Void, Void, Integer> {
         	HttpResponse response = mClient.execute(request);
         	entity = response.getEntity();
         	
-        	InputStream in = entity.getContent();
+        	in = entity.getContent();
             
         	Integer count = processInboxJSON(in);
-            
-            in.close();
             
             return count;
             
         } catch (Exception e) {
         	if (Constants.LOGGING) Log.e(TAG, "failed", e);
         } finally {
-            if (entity != null) {
-            	try {
-            		entity.consumeContent();
-            	} catch (Exception e2) {
-            		// Ignore.
-            	}
-            }
+        	try {
+        		entity.consumeContent();
+        	} catch (Exception ignore) {}
+        	try {
+                in.close();
+        	} catch (Exception ignore) {}
         }
         return null;
 	}
