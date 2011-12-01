@@ -38,6 +38,8 @@ import com.andrewshu.android.reddit.things.Listing;
 import com.andrewshu.android.reddit.things.ListingData;
 import com.andrewshu.android.reddit.things.ThingInfo;
 import com.andrewshu.android.reddit.things.ThingListing;
+import com.andrewshu.android.reddit.threads.ShowThumbnailsTask;
+import com.andrewshu.android.reddit.threads.ShowThumbnailsTask.ThumbnailLoadAction;
 
 /**
  * Task takes in a subreddit name string and thread id, downloads its data, parses
@@ -567,6 +569,11 @@ public class DownloadCommentsTask extends AsyncTask<Integer, Long, Boolean>
 		new ProcessCommentsSubTask().execute(mDeferredProcessingList.toArray(new DeferredCommentProcessing[0]));
 	}
 	
+	private void showOPThumbnail() {
+		if (mOpThingInfo != null)
+			new ShowThumbnailsTask(mActivity, mClient).execute(new ThumbnailLoadAction(mOpThingInfo, 0));
+	}
+	
     private void cleanupDeferred() {
     	mDeferredAppendList.clear();
     	mDeferredReplacementList.clear();
@@ -615,6 +622,7 @@ public class DownloadCommentsTask extends AsyncTask<Integer, Long, Boolean>
 		
 		// have to wait till onPostExecute to do this, to ensure they've been inserted by UI thread
 		processDeferredComments();
+		showOPThumbnail();
 
         // label the OP's comments with [S]
         mActivity.markSubmitterComments();
@@ -659,7 +667,7 @@ public class DownloadCommentsTask extends AsyncTask<Integer, Long, Boolean>
 	private class ProcessCommentsSubTask extends AsyncTask<DeferredCommentProcessing, Integer, Void> {
 		@Override
 		public Void doInBackground(DeferredCommentProcessing... deferredCommentProcessingList) {
-			for (final DeferredCommentProcessing deferredCommentProcessing : mDeferredProcessingList) {
+			for (final DeferredCommentProcessing deferredCommentProcessing : deferredCommentProcessingList) {
 				processCommentSlowSteps(deferredCommentProcessing.comment);
 				publishProgress(deferredCommentProcessing.commentIndex);
 			}

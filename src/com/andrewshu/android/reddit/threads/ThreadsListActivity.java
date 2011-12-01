@@ -91,6 +91,7 @@ import com.andrewshu.android.reddit.settings.RedditPreferencesPage;
 import com.andrewshu.android.reddit.settings.RedditSettings;
 import com.andrewshu.android.reddit.submit.SubmitLinkActivity;
 import com.andrewshu.android.reddit.things.ThingInfo;
+import com.andrewshu.android.reddit.threads.ShowThumbnailsTask.ThumbnailLoadAction;
 
 /**
  * Main Activity class representing a Subreddit, i.e., a ThreadsList.
@@ -104,8 +105,6 @@ public final class ThreadsListActivity extends ListActivity {
 	private final Pattern REDDIT_PATH_PATTERN = Pattern.compile(Constants.REDDIT_PATH_PATTERN_STRING);
 	
 	private final ObjectMapper mObjectMapper = Common.getObjectMapper();
-	// BitmapManager helps with filling in thumbnails
-	private final BitmapManager drawableManager = new BitmapManager();
 
     /** Custom list adapter that fits our threads data into the list. */
     private ThreadsListAdapter mThreadsAdapter = null;
@@ -343,16 +342,31 @@ public final class ThreadsListActivity extends ListActivity {
             ThingInfo item = this.getItem(position);
             
             // Set the values of the Views for the ThreadsListItem
-            fillThreadsListItemView(view, item, ThreadsListActivity.this, mSettings, drawableManager,
-            		true, thumbnailOnClickListenerFactory);
+            fillThreadsListItemView(
+            		view, item, ThreadsListActivity.this, mSettings, true, thumbnailOnClickListenerFactory
+    		);
             
             return view;
         }
     }
     
+    private static boolean shouldLoadThumbnails(Activity activity, RedditSettings settings) {
+    	//check for wifi connection and wifi thumbnail setting
+    	boolean thumbOkay = true;
+    	if (settings.isLoadThumbnailsOnlyWifi())
+    	{
+    		thumbOkay = false;
+    		ConnectivityManager connMan = (ConnectivityManager) activity.getSystemService(Context.CONNECTIVITY_SERVICE);
+    		NetworkInfo netInfo = connMan.getActiveNetworkInfo();
+    		if (netInfo != null && netInfo.getType() == ConnectivityManager.TYPE_WIFI && netInfo.isConnected()) {
+    			thumbOkay = true;
+    		}
+    	}
+    	return settings.isLoadThumbnails() && thumbOkay;
+    }
+    
     public static void fillThreadsListItemView(View view, ThingInfo item,
     		Activity activity, RedditSettings settings,
-    		BitmapManager bitmapManager,
     		boolean defaultUseGoArrow,
     		ThumbnailOnClickListenerFactory thumbnailOnClickListenerFactory) {
     	
@@ -440,19 +454,7 @@ public final class ThreadsListActivity extends ListActivity {
         
         // Thumbnails open links
         if (thumbnailView != null) {
-        	
-        	//check for wifi connection and wifi thumbnail setting
-        	boolean thumbOkay = true;
-        	if (settings.isLoadThumbnailsOnlyWifi())
-        	{
-        		thumbOkay = false;
-        		ConnectivityManager connMan = (ConnectivityManager) activity.getSystemService(Context.CONNECTIVITY_SERVICE);
-        		NetworkInfo netInfo = connMan.getActiveNetworkInfo();
-        		if (netInfo != null && netInfo.getType() == ConnectivityManager.TYPE_WIFI && netInfo.isConnected()) {
-        			thumbOkay = true;
-        		}
-        	}
-        	if (settings.isLoadThumbnails() && thumbOkay) {
+        	if (shouldLoadThumbnails(activity, settings)) {
         		dividerView.setVisibility(View.VISIBLE);
         		thumbnailView.setVisibility(View.VISIBLE);
         		indeterminateProgressBar.setVisibility(View.GONE);
@@ -466,10 +468,10 @@ public final class ThreadsListActivity extends ListActivity {
             		}
             	}
             	
-            	// Fill in the thumbnail using a Thread. Note that thumbnail URL can be absolute path.
             	if (!StringUtils.isEmpty(item.getThumbnail())) {
-            		bitmapManager.fetchBitmapOnThread(Util.absolutePathToURL(item.getThumbnail()),
-            				thumbnailView, indeterminateProgressBar, activity);
+            		if (item.getThumbnailBitmap() != null)
+            			thumbnailView.setImageBitmap(item.getThumbnailBitmap());
+            		// TODO else show loading Drawable like it used to?
             	} else {
             		if (defaultUseGoArrow) {
 	            		indeterminateProgressBar.setVisibility(View.GONE);
@@ -744,11 +746,11 @@ public final class ThreadsListActivity extends ListActivity {
 
     		if (success) {
     			synchronized (THREAD_ADAPTER_LOCK) {
-		    		for (ThingInfo ti : mThingInfos)
-		        		mThreadsList.add(ti);
-		    		drawableManager.clearCache();  // clear thumbnails
+    				mThreadsList.addAll(mThingInfos);
 		    		mThreadsAdapter.notifyDataSetChanged();
     			}
+    			
+    			showThumbnails(mThingInfos);
     			
     			updateNextPreviousButtons();
 
@@ -772,6 +774,17 @@ public final class ThreadsListActivity extends ListActivity {
     	
     	public void propertyChange(PropertyChangeEvent event) {
     		publishProgress((Long) event.getNewValue());
+    	}
+    }
+    
+    private void showThumbnails(List<ThingInfo> thingInfos) {
+    	if (mSettings.isLoadThumbnails()) {
+	    	ThumbnailLoadAction[] thumbnailLoadActions = new ThumbnailLoadAction[thingInfos.size()];
+	    	int size = thingInfos.size();
+	    	for (int i = 0; i < size; i++) {
+	    		thumbnailLoadActions[i] = new ThumbnailLoadAction(thingInfos.get(i), i);
+	    	}
+	    	new ShowThumbnailsTask(this, mClient).execute(thumbnailLoadActions);
     	}
     }
     

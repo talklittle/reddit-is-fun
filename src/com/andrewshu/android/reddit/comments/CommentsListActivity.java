@@ -96,7 +96,6 @@ import com.andrewshu.android.reddit.profile.ProfileActivity;
 import com.andrewshu.android.reddit.settings.RedditPreferencesPage;
 import com.andrewshu.android.reddit.settings.RedditSettings;
 import com.andrewshu.android.reddit.things.ThingInfo;
-import com.andrewshu.android.reddit.threads.BitmapManager;
 import com.andrewshu.android.reddit.threads.ThreadsListActivity;
 import com.andrewshu.android.reddit.threads.ThreadsListActivity.ThumbnailOnClickListenerFactory;
 
@@ -116,8 +115,6 @@ public class CommentsListActivity extends ListActivity
     private final Pattern COMMENT_PATH_PATTERN = Pattern.compile(Constants.COMMENT_PATH_PATTERN_STRING);
     private final Pattern COMMENT_CONTEXT_PATTERN = Pattern.compile("context=(\\d+)");
 
-    private final BitmapManager drawableManager = new BitmapManager();
-    
     /** Custom list adapter that fits our threads data into the list. */
     CommentsListAdapter mCommentsAdapter = null;
     ArrayList<ThingInfo> mCommentsList = null;
@@ -393,8 +390,9 @@ public class CommentsListActivity extends ListActivity
 	            		view = mInflater.inflate(R.layout.threads_list_item, null);
 	            	}
 	            	
-	            	ThreadsListActivity.fillThreadsListItemView(view, item, CommentsListActivity.this,
-	                		mSettings, drawableManager, false, thumbnailOnClickListenerFactory);
+	            	ThreadsListActivity.fillThreadsListItemView(
+	            			view, item, CommentsListActivity.this, mSettings, false, thumbnailOnClickListenerFactory
+        			);
 	                
 	                // In addition to stuff from ThreadsListActivity,
 	            	// we want to show selftext in CommentsListActivity.

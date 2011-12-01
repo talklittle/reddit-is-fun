@@ -92,7 +92,6 @@ import com.andrewshu.android.reddit.things.Listing;
 import com.andrewshu.android.reddit.things.ListingData;
 import com.andrewshu.android.reddit.things.ThingInfo;
 import com.andrewshu.android.reddit.things.ThingListing;
-import com.andrewshu.android.reddit.threads.BitmapManager;
 import com.andrewshu.android.reddit.threads.ThreadsListActivity;
 import com.andrewshu.android.reddit.threads.ThreadsListActivity.ThreadClickDialogOnClickListenerFactory;
 import com.andrewshu.android.reddit.threads.ThreadsListActivity.ThumbnailOnClickListenerFactory;
@@ -114,7 +113,6 @@ public final class ProfileActivity extends ListActivity
 	static final Pattern KARMA_PATTERN = Pattern.compile(">(\\d[^<]*)<.{2,20}link karma.+>(\\d[^<]*)<.{2,20}comment karma");
 	
     private final ObjectMapper mObjectMapper = Common.getObjectMapper();
-    private BitmapManager mBitmapManager = new BitmapManager();
     
     /** Custom list adapter that fits our threads data into the list. */
     private ThingsListAdapter mThingsAdapter;
@@ -343,8 +341,9 @@ public final class ProfileActivity extends ListActivity
 	                view = convertView;
 	            }
 	            
-	            ThreadsListActivity.fillThreadsListItemView(view, item, ProfileActivity.this, mSettings,
-	            		mBitmapManager, true, thumbnailOnClickListenerFactory);
+	            ThreadsListActivity.fillThreadsListItemView(
+	            		view, item, ProfileActivity.this, mSettings, true, thumbnailOnClickListenerFactory
+        		);
             }
             
             else if (getItemViewType(position) == COMMENT_ITEM_VIEW_TYPE) {

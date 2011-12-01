@@ -24,13 +24,13 @@ import java.util.ArrayList;
 
 import org.codehaus.jackson.annotate.JsonAnySetter;
 
-import com.andrewshu.android.reddit.markdown.MarkdownURL;
-
-import android.graphics.drawable.Drawable;
+import android.graphics.Bitmap;
 import android.os.Parcel;
 import android.os.Parcelable;
 import android.text.Html;
 import android.text.SpannableString;
+
+import com.andrewshu.android.reddit.markdown.MarkdownURL;
 
 /**
  * Class representing a thread posting in reddit API.
@@ -87,7 +87,7 @@ public class ThingInfo implements Serializable, Parcelable {
 	transient private CharSequence mSpannedSelftext = null;
 	transient private CharSequence mSpannedBody = null;
 	transient private SpannableString mSSAuthor = null;
-	transient private Drawable mThumbnailDrawable = null;
+	transient private Bitmap mThumbnailBitmap = null;
 	
 	private int mIndent = 0;
 	private String mReplyDraft = null;
@@ -219,8 +219,8 @@ public class ThingInfo implements Serializable, Parcelable {
 		return thumbnail;
 	}
 
-	public Drawable getThumbnailDrawable() {
-		return mThumbnailDrawable;
+	public Bitmap getThumbnailBitmap() {
+		return mThumbnailBitmap;
 	}
 
 	public String getTitle() {
@@ -440,8 +440,8 @@ public class ThingInfo implements Serializable, Parcelable {
 		this.thumbnail = thumbnail;
 	}
 
-	public void setThumbnailDrawable(Drawable mThumbnailDrawable) {
-		this.mThumbnailDrawable = mThumbnailDrawable;
+	public void setThumbnailBitmap(Bitmap thumbnailBitmap) {
+		this.mThumbnailBitmap = thumbnailBitmap;
 	}
 
 	public void setTitle(String title) {
