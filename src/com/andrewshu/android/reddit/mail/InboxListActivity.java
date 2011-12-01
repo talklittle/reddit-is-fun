@@ -697,7 +697,7 @@ public final class InboxListActivity extends ListActivity
     	
     	@Override
     	protected void onPostExecute(Boolean success) {
-    		dismissDialog(Constants.DIALOG_LOGGING_IN);
+    		removeDialog(Constants.DIALOG_LOGGING_IN);
     		if (success) {
     			Toast.makeText(InboxListActivity.this, "Logged in as "+mUsername, Toast.LENGTH_SHORT).show();
 	    		// Refresh the threads list
@@ -898,7 +898,7 @@ public final class InboxListActivity extends ListActivity
     	
     	@Override
     	public void onPostExecute(Boolean success) {
-    		dismissDialog(Constants.DIALOG_REPLYING);
+    		removeDialog(Constants.DIALOG_REPLYING);
     		if (success) {
     			Toast.makeText(InboxListActivity.this, "Reply sent.", Toast.LENGTH_SHORT).show();
     			// TODO: add the reply beneath the original, OR redirect to sent messages page
@@ -994,7 +994,7 @@ public final class InboxListActivity extends ListActivity
     	
     	@Override
     	public void onPostExecute(Boolean success) {
-    		dismissDialog(Constants.DIALOG_COMPOSING);
+    		removeDialog(Constants.DIALOG_COMPOSING);
     		if (success) {
     			Toast.makeText(InboxListActivity.this, "Message sent.", Toast.LENGTH_SHORT).show();
     			// TODO: add the reply beneath the original, OR redirect to sent messages page
@@ -1120,7 +1120,7 @@ public final class InboxListActivity extends ListActivity
     		dialog = new LoginDialog(this, mSettings, true) {
 				@Override
 				public void onLoginChosen(String user, String password) {
-					dismissDialog(Constants.DIALOG_LOGIN);
+					removeDialog(Constants.DIALOG_LOGIN);
 		        	new MyLoginTask(user, password).execute();
 				}
 			};
@@ -1136,7 +1136,7 @@ public final class InboxListActivity extends ListActivity
     			public void onClick(View v) {
     				if(mReplyTargetName != null){
         				new MessageReplyTask(mReplyTargetName).execute(replyBody.getText().toString());
-        				dismissDialog(Constants.DIALOG_REPLY);
+        				removeDialog(Constants.DIALOG_REPLY);
     				}
     				else{
     					Common.showErrorToast("Error replying. Please try again.", Toast.LENGTH_SHORT, InboxListActivity.this);
@@ -1145,7 +1145,7 @@ public final class InboxListActivity extends ListActivity
     		});
     		replyCancelButton.setOnClickListener(new OnClickListener() {
     			public void onClick(View v) {
-    				dismissDialog(Constants.DIALOG_REPLY);
+    				removeDialog(Constants.DIALOG_REPLY);
     			}
     		});
     		break;
@@ -1185,12 +1185,12 @@ public final class InboxListActivity extends ListActivity
 		    		hi.setSubject(composeSubject.getText().toString().trim());
 		    		new MessageComposeTask(composeDialog, hi, composeCaptcha.getText().toString().trim())
 		    			.execute(composeText.getText().toString().trim());
-		    		dismissDialog(Constants.DIALOG_COMPOSE);
+		    		removeDialog(Constants.DIALOG_COMPOSE);
 				}
     		});
     		composeCancelButton.setOnClickListener(new OnClickListener() {
 				public void onClick(View v) {
-					dismissDialog(Constants.DIALOG_COMPOSE);
+					removeDialog(Constants.DIALOG_COMPOSE);
 				}
     		});
     		break;
@@ -1299,7 +1299,7 @@ public final class InboxListActivity extends ListActivity
         };
         for (int dialog : myDialogs) {
 	        try {
-	        	dismissDialog(dialog);
+	        	removeDialog(dialog);
 		    } catch (IllegalArgumentException e) {
 		    	// Ignore.
 		    }

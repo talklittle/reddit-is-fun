@@ -440,7 +440,7 @@ public final class PickSubredditActivity extends ListActivity {
         };
         for (int dialog : myDialogs) {
 	        try {
-	        	dismissDialog(dialog);
+	        	removeDialog(dialog);
 		    } catch (IllegalArgumentException e) {
 		    	// Ignore.
 		    }

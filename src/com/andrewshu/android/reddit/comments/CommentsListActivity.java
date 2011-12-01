@@ -641,7 +641,7 @@ public class CommentsListActivity extends ListActivity
     	
     	@Override
     	protected void onPostExecute(Boolean success) {
-    		dismissDialog(Constants.DIALOG_LOGGING_IN);
+    		removeDialog(Constants.DIALOG_LOGGING_IN);
     		if (success) {
     			Toast.makeText(CommentsListActivity.this, "Logged in as "+mUsername, Toast.LENGTH_SHORT).show();
     			// Check mail
@@ -734,7 +734,7 @@ public class CommentsListActivity extends ListActivity
     	
     	@Override
     	public void onPostExecute(String newId) {
-    		dismissDialog(Constants.DIALOG_REPLYING);
+    		removeDialog(Constants.DIALOG_REPLYING);
     		if (newId == null) {
     			Common.showErrorToast(_mUserError, Toast.LENGTH_LONG, CommentsListActivity.this);
     		} else {
@@ -818,7 +818,7 @@ public class CommentsListActivity extends ListActivity
     	
     	@Override
     	public void onPostExecute(String newId) {
-    		dismissDialog(Constants.DIALOG_EDITING);
+    		removeDialog(Constants.DIALOG_EDITING);
     		if (newId == null) {
     			Common.showErrorToast(_mUserError, Toast.LENGTH_LONG, CommentsListActivity.this);
     		} else {
@@ -909,7 +909,7 @@ public class CommentsListActivity extends ListActivity
     	
     	@Override
     	public void onPostExecute(Boolean success) {
-    		dismissDialog(Constants.DIALOG_DELETING);
+    		removeDialog(Constants.DIALOG_DELETING);
     		if (success) {
     			CacheInfo.invalidateCachedThread(getApplicationContext());
     			if (Constants.THREAD_KIND.equals(_mKind)) {
@@ -1598,7 +1598,7 @@ public class CommentsListActivity extends ListActivity
     		dialog = new LoginDialog(this, mSettings, false) {
 				@Override
 				public void onLoginChosen(String user, String password) {
-					dismissDialog(Constants.DIALOG_LOGIN);
+					removeDialog(Constants.DIALOG_LOGIN);
     				new MyLoginTask(user, password).execute();
 				}
 			};
@@ -1685,7 +1685,7 @@ public class CommentsListActivity extends ListActivity
     		builder.setTitle("Really delete this?");
     		builder.setPositiveButton("Yes", new DialogInterface.OnClickListener() {
     			public void onClick(DialogInterface dialog, int item) {
-    				dismissDialog(Constants.DIALOG_DELETE);
+    				removeDialog(Constants.DIALOG_DELETE);
     				new DeleteTask(mDeleteTargetKind).execute(mReplyTargetName);
     			}
     		})
@@ -1716,7 +1716,7 @@ public class CommentsListActivity extends ListActivity
     		builder.setTitle("Really report this?");
     		builder.setPositiveButton("Yes", new DialogInterface.OnClickListener() {
     			public void onClick(DialogInterface dialog, int item) {
-    				dismissDialog(Constants.DIALOG_REPORT);
+    				removeDialog(Constants.DIALOG_REPORT);
     				new ReportTask(mReportTargetName.toString()).execute();
     			}
     		})
@@ -1827,7 +1827,7 @@ public class CommentsListActivity extends ListActivity
     				linkButton.setText(R.string.thread_link_button);
 	    			linkButton.setOnClickListener(new OnClickListener() {
 	    				public void onClick(View v) {
-	    					dismissDialog(Constants.DIALOG_COMMENT_CLICK);
+	    					removeDialog(Constants.DIALOG_COMMENT_CLICK);
 	    					// Launch Intent to goto the URL
 	    					Common.launchBrowser(CommentsListActivity.this, url,
 	    							Util.createThreadUri(getOpThingInfo()).toString(),
@@ -1936,7 +1936,7 @@ public class CommentsListActivity extends ListActivity
         	linkButton.setEnabled(true);
         	linkButton.setOnClickListener(new OnClickListener() {
         		public void onClick(View v) {
-        			dismissDialog(Constants.DIALOG_COMMENT_CLICK);      
+        			removeDialog(Constants.DIALOG_COMMENT_CLICK);      
         			
     	            ArrayAdapter<MarkdownURL> adapter = 
     	                new ArrayAdapter<MarkdownURL>(CommentsListActivity.this, android.R.layout.select_dialog_item, vtUrls) {
@@ -2060,7 +2060,7 @@ public class CommentsListActivity extends ListActivity
     
     private final CompoundButton.OnCheckedChangeListener voteUpOnCheckedChangeListener = new CompoundButton.OnCheckedChangeListener() {
     	public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
-	    	dismissDialog(Constants.DIALOG_COMMENT_CLICK);
+	    	removeDialog(Constants.DIALOG_COMMENT_CLICK);
 	    	String thingFullname = mVoteTargetThing.getName();
 			if (isChecked)
 				new VoteTask(thingFullname, 1).execute();
@@ -2070,7 +2070,7 @@ public class CommentsListActivity extends ListActivity
     };
     private final CompoundButton.OnCheckedChangeListener voteDownOnCheckedChangeListener = new CompoundButton.OnCheckedChangeListener() {
 	    public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
-	    	dismissDialog(Constants.DIALOG_COMMENT_CLICK);
+	    	removeDialog(Constants.DIALOG_COMMENT_CLICK);
 	    	String thingFullname = mVoteTargetThing.getName();
 			if (isChecked)
 				new VoteTask(thingFullname, -1).execute();
@@ -2081,14 +2081,14 @@ public class CommentsListActivity extends ListActivity
     
     private final OnClickListener replyOnClickListener = new OnClickListener() {
 		public void onClick(View v) {
-			dismissDialog(Constants.DIALOG_COMMENT_CLICK);
+			removeDialog(Constants.DIALOG_COMMENT_CLICK);
 			showDialog(Constants.DIALOG_REPLY);
 		}
 	};
 	
 	private final OnClickListener loginOnClickListener = new OnClickListener() {
 		public void onClick(View v) {
-			dismissDialog(Constants.DIALOG_COMMENT_CLICK);
+			removeDialog(Constants.DIALOG_COMMENT_CLICK);
 			showDialog(Constants.DIALOG_LOGIN);
 		}
 	};
@@ -2146,7 +2146,7 @@ public class CommentsListActivity extends ListActivity
         };
         for (int dialog : myDialogs) {
 	        try {
-	        	dismissDialog(dialog);
+	        	removeDialog(dialog);
 		    } catch (IllegalArgumentException e) {
 		    	// Ignore.
 		    }

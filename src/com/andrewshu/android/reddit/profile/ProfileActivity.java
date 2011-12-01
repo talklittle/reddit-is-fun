@@ -809,7 +809,7 @@ public final class ProfileActivity extends ListActivity
     	
     	@Override
     	protected void onPostExecute(Boolean success) {
-    		dismissDialog(Constants.DIALOG_LOGGING_IN);
+    		removeDialog(Constants.DIALOG_LOGGING_IN);
     		if (success) {
     			Toast.makeText(ProfileActivity.this, "Logged in as "+mUsername, Toast.LENGTH_SHORT).show();
     			showDialog(Constants.DIALOG_COMPOSE);
@@ -832,7 +832,7 @@ public final class ProfileActivity extends ListActivity
     	
     	@Override
     	public void onPostExecute(Boolean success) {
-    		dismissDialog(Constants.DIALOG_COMPOSING);
+    		removeDialog(Constants.DIALOG_COMPOSING);
     		if (success) {
     			Toast.makeText(ProfileActivity.this, "Message sent.", Toast.LENGTH_SHORT).show();
     			// TODO: add the reply beneath the original, OR redirect to sent messages page
@@ -1045,7 +1045,7 @@ public final class ProfileActivity extends ListActivity
     		dialog = new LoginDialog(this, mSettings, false) {
 				@Override
 				public void onLoginChosen(String user, String password) {
-					dismissDialog(Constants.DIALOG_LOGIN);
+					removeDialog(Constants.DIALOG_LOGIN);
 		        	new MyLoginTask(user, password).execute();
 				}
 			};
@@ -1089,12 +1089,12 @@ public final class ProfileActivity extends ListActivity
 		    		hi.setSubject(composeSubject.getText().toString().trim());
 		    		new MyMessageComposeTask(composeDialog, hi, composeCaptcha.getText().toString().trim())
 		    			.execute(composeText.getText().toString().trim());
-		    		dismissDialog(Constants.DIALOG_COMPOSE);
+		    		removeDialog(Constants.DIALOG_COMPOSE);
 				}
     		});
     		composeCancelButton.setOnClickListener(new OnClickListener() {
 				public void onClick(View v) {
-					dismissDialog(Constants.DIALOG_COMPOSE);
+					removeDialog(Constants.DIALOG_COMPOSE);
 				}
     		});
     		break;
@@ -1197,7 +1197,7 @@ public final class ProfileActivity extends ListActivity
 		public OnClickListener getLoginOnClickListener() {
 			return new OnClickListener() {
 				public void onClick(View v) {
-					dismissDialog(Constants.DIALOG_THREAD_CLICK);
+					removeDialog(Constants.DIALOG_THREAD_CLICK);
 					showDialog(Constants.DIALOG_LOGIN);
 				}
 			};
@@ -1207,7 +1207,7 @@ public final class ProfileActivity extends ListActivity
 			final boolean fUseExternalBrowser = useExternalBrowser;
 			return new OnClickListener() {
 				public void onClick(View v) {
-					dismissDialog(Constants.DIALOG_THREAD_CLICK);
+					removeDialog(Constants.DIALOG_THREAD_CLICK);
 					// Launch Intent to goto the URL
 					Common.launchBrowser(ProfileActivity.this, info.getUrl(),
 							Util.createThreadUri(info).toString(),
@@ -1219,7 +1219,7 @@ public final class ProfileActivity extends ListActivity
 			final ThingInfo info = thingInfo;
 			return new OnClickListener() {
 				public void onClick(View v) {
-					dismissDialog(Constants.DIALOG_THREAD_CLICK);
+					removeDialog(Constants.DIALOG_THREAD_CLICK);
 					// Launch an Intent for CommentsListActivity
 					CacheInfo.invalidateCachedThread(ProfileActivity.this);
 					Intent i = new Intent(ProfileActivity.this, CommentsListActivity.class);
@@ -1235,7 +1235,7 @@ public final class ProfileActivity extends ListActivity
 			final ThingInfo info = thingInfo;
 			return new CompoundButton.OnCheckedChangeListener() {
 		    	public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
-		    		dismissDialog(Constants.DIALOG_THREAD_CLICK);
+		    		removeDialog(Constants.DIALOG_THREAD_CLICK);
 			    	if (isChecked) {
 						new MyVoteTask(info, 1, info.getSubreddit()).execute();
 					} else {
@@ -1248,7 +1248,7 @@ public final class ProfileActivity extends ListActivity
 			final ThingInfo info = thingInfo;
 			return new CompoundButton.OnCheckedChangeListener() {
 		        public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
-			    	dismissDialog(Constants.DIALOG_THREAD_CLICK);
+			    	removeDialog(Constants.DIALOG_THREAD_CLICK);
 					if (isChecked) {
 						new MyVoteTask(info, -1, info.getSubreddit()).execute();
 					} else {
@@ -1294,7 +1294,7 @@ public final class ProfileActivity extends ListActivity
         };
         for (int dialog : myDialogs) {
 	        try {
-	        	dismissDialog(dialog);
+	        	removeDialog(dialog);
 		    } catch (IllegalArgumentException e) {
 		    	// Ignore.
 		    }

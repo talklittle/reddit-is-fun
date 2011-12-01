@@ -793,7 +793,7 @@ public final class ThreadsListActivity extends ListActivity {
     	
     	@Override
     	protected void onPostExecute(Boolean success) {
-    		dismissDialog(Constants.DIALOG_LOGGING_IN);
+    		removeDialog(Constants.DIALOG_LOGGING_IN);
     		if (success) {
     			Toast.makeText(ThreadsListActivity.this, "Logged in as "+mUsername, Toast.LENGTH_SHORT).show();
     			// Check mail
@@ -1161,7 +1161,7 @@ public final class ThreadsListActivity extends ListActivity {
     	case Constants.DIALOG_LOGIN:
     		dialog = new LoginDialog(this, mSettings, false) {
 				public void onLoginChosen(String user, String password) {
-					dismissDialog(Constants.DIALOG_LOGIN);
+					removeDialog(Constants.DIALOG_LOGIN);
 		        	new MyLoginTask(user, password).execute(); 
 				}
 			};
@@ -1364,7 +1364,7 @@ public final class ThreadsListActivity extends ListActivity {
 		public OnClickListener getLoginOnClickListener() {
 			return new OnClickListener() {
 				public void onClick(View v) {
-					dismissDialog(Constants.DIALOG_THREAD_CLICK);
+					removeDialog(Constants.DIALOG_THREAD_CLICK);
 					showDialog(Constants.DIALOG_LOGIN);
 				}
 			};
@@ -1374,7 +1374,7 @@ public final class ThreadsListActivity extends ListActivity {
     		final boolean fUseExternalBrowser = useExternalBrowser;
     		return new OnClickListener() {
 				public void onClick(View v) {
-					dismissDialog(Constants.DIALOG_THREAD_CLICK);
+					removeDialog(Constants.DIALOG_THREAD_CLICK);
 					// Launch Intent to goto the URL
 					Common.launchBrowser(ThreadsListActivity.this, info.getUrl(),
 							Util.createThreadUri(info).toString(),
@@ -1386,7 +1386,7 @@ public final class ThreadsListActivity extends ListActivity {
 			final ThingInfo info = thingInfo;
 			return new OnClickListener() {
 				public void onClick(View v) {
-					dismissDialog(Constants.DIALOG_THREAD_CLICK);
+					removeDialog(Constants.DIALOG_THREAD_CLICK);
 					// Launch an Intent for CommentsListActivity
 					CacheInfo.invalidateCachedThread(ThreadsListActivity.this);
 					Intent i = new Intent(ThreadsListActivity.this, CommentsListActivity.class);
@@ -1402,7 +1402,7 @@ public final class ThreadsListActivity extends ListActivity {
 			final ThingInfo info = thingInfo;
 			return new CompoundButton.OnCheckedChangeListener() {
 		    	public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
-		    		dismissDialog(Constants.DIALOG_THREAD_CLICK);
+		    		removeDialog(Constants.DIALOG_THREAD_CLICK);
 			    	if (isChecked) {
 						new MyVoteTask(info, 1, info.getSubreddit()).execute();
 					} else {
@@ -1415,7 +1415,7 @@ public final class ThreadsListActivity extends ListActivity {
 	    	final ThingInfo info = thingInfo;
 	    	return new CompoundButton.OnCheckedChangeListener() {
 		        public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
-			    	dismissDialog(Constants.DIALOG_THREAD_CLICK);
+			    	removeDialog(Constants.DIALOG_THREAD_CLICK);
 					if (isChecked) {
 						new MyVoteTask(info, -1, info.getSubreddit()).execute();
 					} else {
@@ -1473,7 +1473,7 @@ public final class ThreadsListActivity extends ListActivity {
         };
         for (int dialog : myDialogs) {
 	        try {
-	        	dismissDialog(dialog);
+	        	removeDialog(dialog);
 		    } catch (IllegalArgumentException e) {
 		    	// Ignore.
 		    }
