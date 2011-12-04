@@ -92,12 +92,12 @@ import com.andrewshu.android.reddit.login.LoginTask;
 import com.andrewshu.android.reddit.mail.InboxActivity;
 import com.andrewshu.android.reddit.mail.PeekEnvelopeTask;
 import com.andrewshu.android.reddit.markdown.MarkdownURL;
-import com.andrewshu.android.reddit.profile.ProfileActivity;
 import com.andrewshu.android.reddit.settings.RedditPreferencesPage;
 import com.andrewshu.android.reddit.settings.RedditSettings;
 import com.andrewshu.android.reddit.things.ThingInfo;
 import com.andrewshu.android.reddit.threads.ThreadsListActivity;
 import com.andrewshu.android.reddit.threads.ThreadsListActivity.ThumbnailOnClickListenerFactory;
+import com.andrewshu.android.reddit.user.ProfileActivity;
 
 
 /**

@@ -90,9 +90,9 @@ import com.andrewshu.android.reddit.comments.CommentsListActivity;
 import com.andrewshu.android.reddit.common.util.StringUtils;
 import com.andrewshu.android.reddit.common.util.Util;
 import com.andrewshu.android.reddit.mail.InboxActivity;
-import com.andrewshu.android.reddit.profile.ProfileActivity;
 import com.andrewshu.android.reddit.settings.RedditSettings;
 import com.andrewshu.android.reddit.threads.ThreadsListActivity;
+import com.andrewshu.android.reddit.user.ProfileActivity;
 
 public class Common {
 	

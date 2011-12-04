@@ -1,4 +1,4 @@
-package com.andrewshu.android.reddit.me;
+package com.andrewshu.android.reddit.user;
 
 import java.io.InputStream;
 
@@ -7,13 +7,10 @@ import org.apache.http.HttpEntity;
 import org.apache.http.HttpResponse;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.HttpGet;
-import org.codehaus.jackson.map.JsonMappingException;
-import org.codehaus.jackson.map.ObjectMapper;
 
 import android.os.AsyncTask;
 import android.util.Log;
 
-import com.andrewshu.android.reddit.common.Common;
 import com.andrewshu.android.reddit.common.Constants;
 
 public abstract class MeTask extends AsyncTask<Void, Void, Object> {
@@ -21,8 +18,6 @@ public abstract class MeTask extends AsyncTask<Void, Void, Object> {
 	private static final String TAG = "MeTask";
 	
 	private static final String REQUEST_URL = Constants.REDDIT_BASE_URL + "/api/me.json";
-	
-	protected final ObjectMapper mObjectMapper = Common.getObjectMapper();
 	
 	protected HttpClient mClient;
 	protected long mContentLength = 0;
@@ -53,8 +48,11 @@ public abstract class MeTask extends AsyncTask<Void, Void, Object> {
         	entity = response.getEntity();
         	in = entity.getContent();
         	
-        	return parseMeJSON(in);
-            
+        	UserInfo parseResult = UserInfoParser.parseJSON(in);
+
+        	if (parseResult != null)
+        		return onLoggedIn(parseResult);
+
         } catch (Exception e) {
         	if (Constants.LOGGING) Log.e(TAG, "MeTask", e);
         } finally {
@@ -65,33 +63,9 @@ public abstract class MeTask extends AsyncTask<Void, Void, Object> {
 				entity.consumeContent();
     		} catch (Exception ignore) {}
         }
-        return false;
+        return null;
 	}
 	
-	private Object parseMeJSON(InputStream in) {
-		MeListing meListing = null;
-		MeInfo meInfo = null;
-		try {
-			try {
-				meListing = mObjectMapper.readValue(in, MeListing.class);
-			} catch (JsonMappingException ex) {
-				// it is not a Listing. user is not logged in.
-				if (Constants.LOGGING) Log.i(TAG, "User is not logged in according to " + REQUEST_URL);
-				return null;
-			}
-			
-			meInfo = meListing.getData();
-			return onLoggedIn(meInfo);
-			
-		} catch (Exception ex) {
-			if (Constants.LOGGING) Log.e(TAG, "parseMeJSON", ex);
-			return null;
-		} finally {
-			meListing = null;
-			meInfo = null;
-		}
-	}
-	
-	protected abstract Object onLoggedIn(MeInfo me);
+	protected abstract Object onLoggedIn(UserInfo me);
 
 }

@@ -17,14 +17,12 @@
  * along with "reddit is fun".  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.andrewshu.android.reddit.profile;
+package com.andrewshu.android.reddit.user;
 
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
-import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.regex.Matcher;
@@ -111,8 +109,6 @@ public final class ProfileActivity extends ListActivity
 	private static final String TAG = "ProfileActivity";
 	
 	static final Pattern USER_PATH_PATTERN = Pattern.compile(Constants.USER_PATH_PATTERN_STRING);
-	// 1: link karma; 2: comment karma
-	static final Pattern KARMA_PATTERN = Pattern.compile(">(\\d[^<]*)<.{2,20}link karma.+>(\\d[^<]*)<.{2,20}comment karma");
 	
     private final ObjectMapper mObjectMapper = Common.getObjectMapper();
     
@@ -146,7 +142,7 @@ public final class ProfileActivity extends ListActivity
     private String mLastAfter = null;
     private String mLastBefore = null;
     private int mLastCount = 0;
-    private String[] mKarma = null;
+    private int[] mKarma = null;
     private String mSortByUrl = null;
     private String mSortByUrlExtra = null;
     
@@ -190,7 +186,7 @@ public final class ProfileActivity extends ListActivity
 	        mLastAfter = savedInstanceState.getString(Constants.LAST_AFTER_KEY);
 	        mLastBefore = savedInstanceState.getString(Constants.LAST_BEFORE_KEY);
 	        mLastCount = savedInstanceState.getInt(Constants.THREAD_LAST_COUNT_KEY);
-	        mKarma = savedInstanceState.getStringArray(Constants.KARMA_KEY);
+	        mKarma = savedInstanceState.getIntArray(Constants.KARMA_KEY);
 		    mSortByUrl = savedInstanceState.getString(Constants.CommentsSort.SORT_BY_KEY);
 	        mJumpToThreadId = savedInstanceState.getString(Constants.JUMP_TO_THREAD_ID_KEY);
 		    mVoteTargetThingInfo = savedInstanceState.getParcelable(Constants.VOTE_TARGET_THING_INFO_KEY);
@@ -273,22 +269,6 @@ public final class ProfileActivity extends ListActivity
     	mThingsList = (ArrayList<ThingInfo>) getLastNonConfigurationInstance();
     }
 
-    
-    
-    /**
-     * Return the ThingInfo based on linear search over the names
-     */
-    private ThingInfo findThingInfoByName(String name) {
-    	if (name == null)
-    		return null;
-    	synchronized(MESSAGE_ADAPTER_LOCK) {
-    		for (int i = 0; i < mThingsAdapter.getCount(); i++) {
-    			if (mThingsAdapter.getItem(i).getName().equals(name))
-    				return mThingsAdapter.getItem(i);
-    		}
-    	}
-    	return null;
-    }
     
     
     private final class ThingsListAdapter extends ArrayAdapter<ThingInfo> {
@@ -527,7 +507,7 @@ public final class ProfileActivity extends ListActivity
     	private String mLastAfter = null;
     	private String mLastBefore = null;
     	private int mLastCount = 0;
-    	private String[] mKarma;
+    	private int[] mKarma;
     	private String mSortByUrl;
     	private String mSortByUrlExtra;
     	
@@ -666,45 +646,34 @@ public final class ProfileActivity extends ListActivity
             return null;
 	    }
     	
-    	private String[] getKarma() throws IOException {
-        	String url;
-    		StringBuilder sb = new StringBuilder(Constants.REDDIT_BASE_URL + "/user/")
-    			.append(mUsername.trim());
+    	/**
+    	 * @return [linkKarma, commentKarma]
+    	 */
+    	private int[] getKarma() throws IOException {
+        	String url = new StringBuilder(Constants.REDDIT_BASE_URL).append("/user/").append(mUsername.trim()).append("/about.json").toString();
     		
-    		url = sb.toString();
     		if (Constants.LOGGING) Log.d(TAG, "karma url=" + url);
     		
     		HttpGet request = new HttpGet(url);
         	HttpResponse response = mClient.execute(request);
         	
         	HttpEntity entity = null;
-        	BufferedReader in = null;
+        	InputStream in = null;
         	try {
 	        	entity = response.getEntity();
-	        	in = new BufferedReader(new InputStreamReader(entity.getContent()));
-	        	String line;
-	        	while ((line = in.readLine()) != null) {
-	        		Matcher m = KARMA_PATTERN.matcher(line);
-	        		if (m.find()) {
-	        			return new String[] { m.group(1), m.group(2) };
-	        		}
-	        	}
-        	} catch (IOException ex) {
-        		throw ex;
-        	} catch (Exception ex) {
-        		if (Constants.LOGGING) Log.e(TAG, "getKarma", ex);
+	        	in = entity.getContent();
+	        	
+	        	UserInfo userInfo = UserInfoParser.parseJSON(in);
+	        	if (userInfo != null)
+	        		return new int[] { userInfo.getLink_karma(), userInfo.getComment_karma() };
+	        	
         	} finally {
         		try {
         			in.close();
-        		} catch (NullPointerException ex2) {
-        		} catch (Exception ex2) {
-        			if (Constants.LOGGING) Log.e(TAG, "in.close()", ex2);
-        		}
+        		} catch (Exception ignore) {}
         		try {
         			entity.consumeContent();
-        		} catch (Exception ex2) {
-        			if (Constants.LOGGING) Log.e(TAG, "entity.consumeContent()", ex2);
-        		}
+        		} catch (Exception ignore) {}
         	}
         	
         	return null;
@@ -745,7 +714,6 @@ public final class ProfileActivity extends ListActivity
 	   						ti.setSpannedBody("");
 	   					_mThingInfos.add(ti);
     				} else if (Constants.THREAD_KIND.equals(tiContainer.getKind())) {
-    					ThingInfo ti = tiContainer.getData();
     					_mThingInfos.add(tiContainer.getData());
     				}
     			}
@@ -1285,7 +1253,7 @@ public final class ProfileActivity extends ListActivity
     	state.putString(Constants.LAST_AFTER_KEY, mLastAfter);
     	state.putString(Constants.LAST_BEFORE_KEY, mLastBefore);
     	state.putInt(Constants.THREAD_LAST_COUNT_KEY, mLastCount);
-    	state.putStringArray(Constants.KARMA_KEY, mKarma);
+    	state.putIntArray(Constants.KARMA_KEY, mKarma);
     	state.putParcelable(Constants.VOTE_TARGET_THING_INFO_KEY, mVoteTargetThingInfo);
     }
     

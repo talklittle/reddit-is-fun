@@ -20,8 +20,8 @@ import android.util.Log;
 import com.andrewshu.android.reddit.common.Common;
 import com.andrewshu.android.reddit.common.Constants;
 import com.andrewshu.android.reddit.common.util.Util;
-import com.andrewshu.android.reddit.me.MeInfo;
-import com.andrewshu.android.reddit.me.MeTask;
+import com.andrewshu.android.reddit.user.UserInfo;
+import com.andrewshu.android.reddit.user.MeTask;
 
 public class PeekEnvelopeTask extends MeTask {
 	
@@ -38,7 +38,7 @@ public class PeekEnvelopeTask extends MeTask {
 	}
 	
 	@Override
-	protected Integer onLoggedIn(MeInfo me) {
+	protected Integer onLoggedIn(UserInfo me) {
 		HttpEntity entity = null;
 		InputStream in = null;
 		try {

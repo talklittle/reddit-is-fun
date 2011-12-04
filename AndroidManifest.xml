@@ -60,7 +60,7 @@
 	    </activity>
 	    <activity android:name=".mail.InboxActivity"></activity>
 	    <activity android:name=".mail.InboxListActivity"></activity>
-	    <activity android:name=".profile.ProfileActivity">
+	    <activity android:name=".user.ProfileActivity">
 	        <intent-filter>
 	            <action android:name="android.intent.action.VIEW" />
 	            <category android:name="android.intent.category.DEFAULT" />

@@ -81,7 +81,6 @@ import com.andrewshu.android.reddit.login.LoginDialog;
 import com.andrewshu.android.reddit.login.LoginTask;
 import com.andrewshu.android.reddit.mail.InboxActivity;
 import com.andrewshu.android.reddit.mail.PeekEnvelopeTask;
-import com.andrewshu.android.reddit.profile.ProfileActivity;
 import com.andrewshu.android.reddit.reddits.PickSubredditActivity;
 import com.andrewshu.android.reddit.reddits.SubscribeTask;
 import com.andrewshu.android.reddit.reddits.UnsubscribeTask;
@@ -90,6 +89,7 @@ import com.andrewshu.android.reddit.settings.RedditSettings;
 import com.andrewshu.android.reddit.submit.SubmitLinkActivity;
 import com.andrewshu.android.reddit.things.ThingInfo;
 import com.andrewshu.android.reddit.threads.ShowThumbnailsTask.ThumbnailLoadAction;
+import com.andrewshu.android.reddit.user.ProfileActivity;
 
 /**
  * Main Activity class representing a Subreddit, i.e., a ThreadsList.
