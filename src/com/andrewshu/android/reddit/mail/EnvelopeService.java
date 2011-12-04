@@ -61,7 +61,7 @@ public class EnvelopeService extends Service {
     		super(context, client, mailNotificationStyle);
     	}
     	@Override
-    	public void onPostExecute(Integer count) {
+    	public void onPostExecute(Object count) {
     		super.onPostExecute(count);
     		EnvelopeService.this.stopSelf();
     	}

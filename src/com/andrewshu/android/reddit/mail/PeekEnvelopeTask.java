@@ -12,37 +12,39 @@ import org.codehaus.jackson.JsonParseException;
 import org.codehaus.jackson.JsonParser;
 import org.codehaus.jackson.JsonToken;
 
-import com.andrewshu.android.reddit.common.Common;
-import com.andrewshu.android.reddit.common.Constants;
-import com.andrewshu.android.reddit.common.util.Util;
-
 import android.content.Context;
 import android.content.SharedPreferences;
-import android.os.AsyncTask;
 import android.preference.PreferenceManager;
 import android.util.Log;
 
-public class PeekEnvelopeTask extends AsyncTask<Void, Void, Integer> {
+import com.andrewshu.android.reddit.common.Common;
+import com.andrewshu.android.reddit.common.Constants;
+import com.andrewshu.android.reddit.common.util.Util;
+import com.andrewshu.android.reddit.me.MeInfo;
+import com.andrewshu.android.reddit.me.MeTask;
+
+public class PeekEnvelopeTask extends MeTask {
 	
 	private static final String TAG = "PeekEnvelopeTask";
 	
 	protected Context mContext;
-	protected HttpClient mClient;
 	protected String mMailNotificationStyle;
 	protected final JsonFactory jsonFactory = new JsonFactory();
 	
 	public PeekEnvelopeTask(Context context, HttpClient client, String mailNotificationStyle) {
+		super(client);
 		mContext = context;
-		mClient = client;
 		mMailNotificationStyle = mailNotificationStyle;
 	}
+	
 	@Override
-	public Integer doInBackground(Void... voidz) {
+	protected Integer onLoggedIn(MeInfo me) {
 		HttpEntity entity = null;
 		InputStream in = null;
 		try {
-			if (Constants.PREF_MAIL_NOTIFICATION_STYLE_OFF.equals(mMailNotificationStyle))
-	    		return 0;
+			if (!me.isHas_mail() && !me.isHas_mod_mail())
+				return 0;
+			
 			HttpGet request = new HttpGet(Constants.REDDIT_BASE_URL + "/message/inbox/.json?mark=false");
         	HttpResponse response = mClient.execute(request);
         	entity = response.getEntity();
@@ -54,7 +56,7 @@ public class PeekEnvelopeTask extends AsyncTask<Void, Void, Integer> {
             return count;
             
         } catch (Exception e) {
-        	if (Constants.LOGGING) Log.e(TAG, "failed", e);
+        	if (Constants.LOGGING) Log.e(TAG, "PeekEnvelopeTask failed", e);
         } finally {
         	try {
         		entity.consumeContent();
@@ -67,15 +69,23 @@ public class PeekEnvelopeTask extends AsyncTask<Void, Void, Integer> {
 	}
 	
 	@Override
-	public void onPostExecute(Integer count) {
+	protected void onPreExecute() {
+		if (Constants.PREF_MAIL_NOTIFICATION_STYLE_OFF.equals(mMailNotificationStyle))
+    		this.cancel(true);
+	}
+	
+	@Override
+	public void onPostExecute(Object countObject) {
 		// reset the alarm
 		SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(mContext);
 		EnvelopeService.resetAlarm(mContext, Util.getMillisFromMailNotificationPref(
 				prefs.getString(Constants.PREF_MAIL_NOTIFICATION_SERVICE, Constants.PREF_MAIL_NOTIFICATION_SERVICE_OFF)));
 
 		// null means error. Don't do anything.
-		if (count == null)
+		if (countObject == null)
 			return;
+		
+		int count = (Integer) countObject;
 		if (count > 0) {
 			Common.newMailNotification(mContext, mMailNotificationStyle, count);
 		} else {
@@ -128,4 +138,5 @@ public class PeekEnvelopeTask extends AsyncTask<Void, Void, Integer> {
 		// Finished parsing first child
 		return count;
 	}
+
 }

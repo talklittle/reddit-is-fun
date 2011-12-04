@@ -563,8 +563,8 @@ public final class InboxListActivity extends ListActivity
                 parseInboxJSON(pin);
                 
                 // XXX: HACK: http://code.reddit.com/ticket/709
-                // Marking messages as read is currently broken (even with mark=
-                // For now, just send an extra request to the regular non-JSON i
+                // Marking messages as read is currently broken (even with mark=false)
+                // For now, just send an extra request to the regular non-JSON inbox
                 mClient.execute(new HttpGet(Constants.REDDIT_BASE_URL + "/message/" + mWhichInbox));
 
             	mLastCount = mCount;

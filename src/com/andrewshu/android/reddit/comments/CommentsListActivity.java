@@ -1546,7 +1546,7 @@ public class CommentsListActivity extends ListActivity
 		}
 
 		if ( wrap ) {
-			Log.d(TAG, "Continuing search from top...");
+			if (Constants.LOGGING) Log.d(TAG, "Continuing search from top...");
 			if ( getFoundPosition(0, current_position, search_text) ) {
 				mCommentsAdapter.notifyDataSetChanged();
 				return;
