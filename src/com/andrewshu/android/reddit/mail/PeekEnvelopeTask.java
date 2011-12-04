@@ -20,8 +20,8 @@ import android.util.Log;
 import com.andrewshu.android.reddit.common.Common;
 import com.andrewshu.android.reddit.common.Constants;
 import com.andrewshu.android.reddit.common.util.Util;
-import com.andrewshu.android.reddit.user.UserInfo;
 import com.andrewshu.android.reddit.user.MeTask;
+import com.andrewshu.android.reddit.user.UserInfo;
 
 public class PeekEnvelopeTask extends MeTask {
 	
@@ -72,17 +72,28 @@ public class PeekEnvelopeTask extends MeTask {
 	protected void onPreExecute() {
 		if (Constants.PREF_MAIL_NOTIFICATION_STYLE_OFF.equals(mMailNotificationStyle))
     		this.cancel(true);
+		
+		SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(mContext);
+		long lastCheck = prefs.getLong(Constants.LAST_MAIL_CHECK_TIME_MILLIS_KEY, 0);
+		long nowMillis = System.currentTimeMillis();
+		if (nowMillis - lastCheck < Constants.MESSAGE_CHECK_MINIMUM_INTERVAL_MILLIS) {
+			if (Constants.LOGGING) Log.i(TAG, "Skipping message check; last check was " + (nowMillis - lastCheck) + " millis ago");
+			resetAlarm();
+			this.cancel(true);
+		}
+		else {
+			SharedPreferences.Editor editor = prefs.edit();
+			editor.putLong(Constants.LAST_MAIL_CHECK_TIME_MILLIS_KEY, nowMillis);
+			editor.commit();
+		}
 	}
 	
 	@Override
 	public void onPostExecute(Object countObject) {
 		Integer count = (Integer) countObject;
 		
-		// reset the alarm
-		SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(mContext);
-		EnvelopeService.resetAlarm(mContext, Util.getMillisFromMailNotificationPref(
-				prefs.getString(Constants.PREF_MAIL_NOTIFICATION_SERVICE, Constants.PREF_MAIL_NOTIFICATION_SERVICE_OFF)));
-
+		resetAlarm();
+		
 		// null means error. Don't do anything.
 		if (count == null)
 			return;
@@ -91,6 +102,12 @@ public class PeekEnvelopeTask extends MeTask {
 		} else {
 			Common.cancelMailNotification(mContext);
 		}
+	}
+	
+	private void resetAlarm() {
+		SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(mContext);
+		EnvelopeService.resetAlarm(mContext, Util.getMillisFromMailNotificationPref(
+				prefs.getString(Constants.PREF_MAIL_NOTIFICATION_SERVICE, Constants.PREF_MAIL_NOTIFICATION_SERVICE_OFF)));
 	}
 	
 	/**

@@ -282,14 +282,15 @@ public class CommentsListActivity extends ListActivity
     protected void onResume() {
     	super.onResume();
 		CookieSyncManager.getInstance().startSync();
-    	int previousTheme = mSettings.getTheme();
+    	
+		int previousTheme = mSettings.getTheme();
     	mSettings.loadRedditPreferences(this, mClient);
     	setRequestedOrientation(mSettings.getRotation());
-    	if (mSettings.getTheme() != previousTheme) {
+    	if (mSettings.getTheme() != previousTheme)
     		resetUI(mCommentsAdapter);
-    	}
 
-    	new PeekEnvelopeTask(this, mClient, mSettings.getMailNotificationStyle()).execute();
+    	if (mSettings.isLoggedIn())
+    		new PeekEnvelopeTask(this, mClient, mSettings.getMailNotificationStyle()).execute();
     }
     
     @Override

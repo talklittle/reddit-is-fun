@@ -218,14 +218,16 @@ public final class ThreadsListActivity extends ListActivity {
     	int previousTheme = mSettings.getTheme();
     	mSettings.loadRedditPreferences(this, mClient);
     	setRequestedOrientation(mSettings.getRotation());
-    	if (mSettings.getTheme() != previousTheme) {
+    	if (mSettings.getTheme() != previousTheme)
     		resetUI(mThreadsAdapter);
-    	}
+    	
     	updateNextPreviousButtons();
-    	if (mThreadsAdapter != null) {
+    	
+    	if (mThreadsAdapter != null)
     		jumpToThread();
-    	}
-    	new PeekEnvelopeTask(this, mClient, mSettings.getMailNotificationStyle()).execute();
+    	
+    	if (mSettings.isLoggedIn())
+    		new PeekEnvelopeTask(this, mClient, mSettings.getMailNotificationStyle()).execute();
     }
     
     @Override
