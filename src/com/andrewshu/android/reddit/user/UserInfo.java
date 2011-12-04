@@ -9,7 +9,7 @@ public class UserInfo implements Serializable, Parcelable {
 	
 	private static final long serialVersionUID = 1L;
 	
-	private boolean has_mail;
+	private Boolean has_mail;
 	private String name;
 	private long created;
 	private String modhash;
@@ -19,29 +19,63 @@ public class UserInfo implements Serializable, Parcelable {
 	private boolean is_gold;
 	private boolean is_mod;
 	private String id;
-	private boolean has_mod_mail;
+	private Boolean has_mod_mail;
+	
+	public UserInfo() {
+		super();
+	}
 
 	@Override
 	public int describeContents() {
 		return 0;
 	}
 
+	/**
+	 * Use dest.writeValue for fields that may be null
+	 */
 	@Override
 	public void writeToParcel(Parcel dest, int flags) {
+		dest.writeValue(has_mail);
 		dest.writeString(name);
 		dest.writeLong(created);
-		dest.writeString(modhash);
+		dest.writeValue(modhash);
 		dest.writeLong(created_utc);
 		dest.writeInt(link_karma);
 		dest.writeInt(comment_karma);
 		dest.writeString(id);
+		dest.writeValue(has_mod_mail);
 		
-		boolean booleans[] = new boolean[4];
-		booleans[0] = has_mail;
-		booleans[1] = is_gold;
-		booleans[2] = is_mod;
-		booleans[3] = has_mod_mail;
+		boolean booleans[] = new boolean[2];
+		booleans[0] = is_gold;
+		booleans[1] = is_mod;
 		dest.writeBooleanArray(booleans);
+	}
+	
+	public static final Parcelable.Creator<UserInfo> CREATOR = new Parcelable.Creator<UserInfo>() {
+		public UserInfo createFromParcel(Parcel in) {
+		    return new UserInfo(in);
+		}
+		
+		public UserInfo[] newArray(int size) {
+		    return new UserInfo[size];
+		}
+	};
+		
+	private UserInfo(Parcel in) {
+		has_mail      = (Boolean) in.readValue(null);
+		name          = in.readString();
+		created       = in.readLong();
+		modhash       = (String) in.readValue(null);
+		created_utc   = in.readLong();
+		link_karma    = in.readInt();
+		comment_karma = in.readInt();
+		id            = in.readString();
+		has_mod_mail  = (Boolean) in.readValue(null);
+		
+		boolean booleans[] = new boolean[2];
+		in.readBooleanArray(booleans);
+		is_gold = booleans[0];
+		is_mod  = booleans[1];
 	}
 
 	public boolean isHas_mail() {

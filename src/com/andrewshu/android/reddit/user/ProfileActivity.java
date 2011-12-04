@@ -566,10 +566,12 @@ public final class ProfileActivity extends ListActivity
     				mKarma = getKarma();
     			
             	String url;
-        		StringBuilder sb = new StringBuilder(Constants.REDDIT_BASE_URL + "/user/")
-        			.append(mUsername.trim())
-        			.append("/.json?").append(mSortByUrl).append("&")
-        			.append(mSortByUrlExtra).append("&");
+        		StringBuilder sb = new StringBuilder(Constants.REDDIT_BASE_URL).append("/user/").append(mUsername.trim()).append("/.json?");
+        		
+        		if (mSortByUrl != null)
+        			sb = sb.append(mSortByUrl).append("&");
+        		if (mSortByUrlExtra != null)
+        			sb = sb.append(mSortByUrlExtra).append("&");
         		
     			// "before" always comes back null unless you provide correct "count"
         		if (mAfter != null) {

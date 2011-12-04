@@ -76,16 +76,16 @@ public class PeekEnvelopeTask extends MeTask {
 	
 	@Override
 	public void onPostExecute(Object countObject) {
+		Integer count = (Integer) countObject;
+		
 		// reset the alarm
 		SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(mContext);
 		EnvelopeService.resetAlarm(mContext, Util.getMillisFromMailNotificationPref(
 				prefs.getString(Constants.PREF_MAIL_NOTIFICATION_SERVICE, Constants.PREF_MAIL_NOTIFICATION_SERVICE_OFF)));
 
 		// null means error. Don't do anything.
-		if (countObject == null)
+		if (count == null)
 			return;
-		
-		int count = (Integer) countObject;
 		if (count > 0) {
 			Common.newMailNotification(mContext, mMailNotificationStyle, count);
 		} else {

@@ -20,7 +20,7 @@ public class UserInfoParser {
 				meListing = Common.getObjectMapper().readValue(in, UserListing.class);
 			} catch (JsonMappingException ex) {
 				// it is not a Listing. user is not logged in.
-				if (Constants.LOGGING) Log.i(TAG, "InputStream is not UserListing JSON; user is not logged in?");
+				if (Constants.LOGGING) Log.i(TAG, "InputStream is not UserListing JSON; user is not logged in?", ex);
 				return null;
 			}
 			
