@@ -423,6 +423,7 @@ public class CommentsListActivity extends ListActivity
 	            		view = mInflater.inflate(R.layout.comments_list_item_hidden, null);
 	            	}
 	            	TextView votesView = (TextView) view.findViewById(R.id.votes);
+	            	TextView textFlairView = (TextView) view.findViewById(R.id.textFlair);
 		            TextView submitterView = (TextView) view.findViewById(R.id.submitter);
 	                TextView submissionTimeView = (TextView) view.findViewById(R.id.submissionTime);
 		            
@@ -433,10 +434,17 @@ public class CommentsListActivity extends ListActivity
 		            	// so the ListView might try to display the View before "ups" in JSON has been parsed.
 		            	if (Constants.LOGGING) Log.e(TAG, "getView, hidden comment heads", e);
 		            }
-		            if (getOpThingInfo() != null && item.getAuthor().equalsIgnoreCase(getOpThingInfo().getAuthor()))
-		            	submitterView.setText(item.getAuthor() + " [S]");
+		            
+		            if (item.getAuthor_flair_text() != null && ! "".equals(item.getAuthor_flair_text()))
+		            	textFlairView.setText(item.getAuthor_flair_text() + " ");
 		            else
-		            	submitterView.setText(item.getAuthor());
+		            	textFlairView.setText("");
+		            
+		            if (getOpThingInfo() != null && item.getAuthor().equalsIgnoreCase(getOpThingInfo().getAuthor()))
+		            		submitterView.setText(item.getAuthor() + " [S]");
+		            else
+		            		submitterView.setText(item.getAuthor());
+		            
 		            submissionTimeView.setText(Util.getTimeAgo(item.getCreated_utc()));
 		            
 		            setCommentIndent(view, item.getIndent(), mSettings);
@@ -1996,9 +2004,10 @@ public class CommentsListActivity extends ListActivity
         // Set the values of the Views for the CommentsListItem
         
         TextView votesView = (TextView) view.findViewById(R.id.votes);
+        TextView textFlairView = (TextView) view.findViewById(R.id.textFlair);
         TextView submitterView = (TextView) view.findViewById(R.id.submitter);
         TextView bodyView = (TextView) view.findViewById(R.id.body);
-        
+ 
         TextView submissionTimeView = (TextView) view.findViewById(R.id.submissionTime);
         ImageView voteUpView = (ImageView) view.findViewById(R.id.vote_up_image);
         ImageView voteDownView = (ImageView) view.findViewById(R.id.vote_down_image);
@@ -2010,6 +2019,12 @@ public class CommentsListActivity extends ListActivity
         	// so the ListView might try to display the View before "ups" in JSON has been parsed.
         	if (Constants.LOGGING) Log.e(TAG, "getView, normal comment", e);
         }
+        
+        if (item.getAuthor_flair_text() != null && ! "".equals(item.getAuthor_flair_text()))
+        	textFlairView.setText(item.getAuthor_flair_text() + " ");
+        else
+        	textFlairView.setText("");
+        
         if (item.getSSAuthor() != null)
         	submitterView.setText(item.getSSAuthor());
         else

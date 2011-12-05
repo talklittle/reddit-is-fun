@@ -123,7 +123,7 @@
 		    android:layout_height="wrap_content"
 		    android:paddingLeft="5dip"
 		    android:paddingRight="5dip">
-
+		    
 			<TextView android:id="@+id/submitter"
 		        android:layout_width="wrap_content"
 		        android:layout_height="wrap_content"
@@ -160,12 +160,25 @@
 		            
 	    
 	    <!-- Bottom row -->
+	    
+	    
+			<TextView android:id="@+id/textFlair"
+		        android:layout_width="wrap_content"
+		        android:layout_height="wrap_content"
+		        
+		        android:layout_below="@id/submitter"
+		        android:layout_marginBottom="5dip"
+		        android:singleLine="true"
+		        android:ellipsize="marquee"
+		        android:textAppearance="?android:attr/textAppearanceSmall"
+		        android:textColor="#888"
+		    />
 		    
 	        <TextView android:id="@+id/body"
 		        android:layout_width="wrap_content"
 		        android:layout_height="wrap_content"
-		        android:layout_below="@id/submitter"
-		        android:layout_alignLeft="@id/submitter"
+		        android:layout_below="@id/textFlair"
+		        android:layout_alignLeft="@id/textFlair"
 		        android:layout_marginRight="5dip"
 		        android:text="Loading..."
 		        android:textAppearance="?android:attr/textAppearanceMedium"

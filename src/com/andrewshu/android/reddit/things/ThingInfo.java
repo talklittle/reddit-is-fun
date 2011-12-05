@@ -46,6 +46,7 @@ public class ThingInfo implements Serializable, Parcelable {
 	// message: m
 	
 	private String author;					// t c m
+	private String author_flair_text;       //   c
 	private String body;					//   c m
 	private String body_html;				//   c m
 	private boolean clicked;				// t
@@ -101,6 +102,10 @@ public class ThingInfo implements Serializable, Parcelable {
 	
 	public String getAuthor() {
 		return author;
+	}
+	
+	public String getAuthor_flair_text() {
+		return author_flair_text;
 	}
 	
 	public String getBody() {
@@ -287,6 +292,10 @@ public class ThingInfo implements Serializable, Parcelable {
 	public void setAuthor(String author) {
 		this.author = author;
 	}
+	
+	public void setAuthor_flair_text(String author_flair_text) {
+		this.author_flair_text = author_flair_text;
+	}
 
 	public void setBody(String body) {
 		this.body = body;
@@ -469,6 +478,7 @@ public class ThingInfo implements Serializable, Parcelable {
 
 	public void writeToParcel(Parcel out, int flags) {
 		out.writeValue(author);
+		out.writeValue(author_flair_text);
 		out.writeValue(body);
 		out.writeValue(body_html);
 		out.writeValue(context);
@@ -512,6 +522,7 @@ public class ThingInfo implements Serializable, Parcelable {
 
 	private ThingInfo(Parcel in) {
 		author = (String) in.readValue(null);
+		author_flair_text = (String) in.readValue(null);
 		body = (String) in.readValue(null);
 		body_html = (String) in.readValue(null);
 		context = (String) in.readValue(null);
