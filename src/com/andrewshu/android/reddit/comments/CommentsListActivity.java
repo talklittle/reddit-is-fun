@@ -2024,11 +2024,14 @@ public class CommentsListActivity extends ListActivity
         	if (Constants.LOGGING) Log.e(TAG, "getView, normal comment", e);
         }
         
-        if (item.getAuthor_flair_text() != null && ! "".equals(item.getAuthor_flair_text()))
+        if (item.getAuthor_flair_text() != null && ! "".equals(item.getAuthor_flair_text())){
         	textFlairView.setText(item.getAuthor_flair_text() + " ");
-        else
+        }
+        else {
         	textFlairView.setText("");
-        
+        	textFlairView.setHeight(0);
+        }
+        	
         if (item.getSSAuthor() != null)
         	submitterView.setText(item.getSSAuthor());
         else
