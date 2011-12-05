@@ -36,6 +36,7 @@ import org.apache.http.HttpRequest;
 import org.apache.http.HttpRequestInterceptor;
 import org.apache.http.HttpResponse;
 import org.apache.http.HttpResponseInterceptor;
+import org.apache.http.HttpVersion;
 import org.apache.http.client.CookieStore;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.HttpGet;
@@ -48,6 +49,8 @@ import org.apache.http.conn.ssl.SSLSocketFactory;
 import org.apache.http.entity.HttpEntityWrapper;
 import org.apache.http.impl.client.DefaultHttpClient;
 import org.apache.http.impl.conn.tsccm.ThreadSafeClientConnManager;
+import org.apache.http.params.BasicHttpParams;
+import org.apache.http.params.CoreProtocolPNames;
 import org.apache.http.params.HttpConnectionParams;
 import org.apache.http.params.HttpParams;
 import org.apache.http.protocol.HttpContext;
@@ -55,6 +58,7 @@ import org.codehaus.jackson.JsonNode;
 import org.codehaus.jackson.map.ObjectMapper;
 import org.codehaus.jackson.node.ArrayNode;
 
+import android.app.Activity;
 import android.app.ListActivity;
 import android.app.Notification;
 import android.app.NotificationManager;
@@ -62,6 +66,8 @@ import android.app.PendingIntent;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.net.ConnectivityManager;
+import android.net.NetworkInfo;
 import android.net.Uri;
 import android.preference.PreferenceManager;
 import android.provider.Browser;
@@ -84,9 +90,9 @@ import com.andrewshu.android.reddit.comments.CommentsListActivity;
 import com.andrewshu.android.reddit.common.util.StringUtils;
 import com.andrewshu.android.reddit.common.util.Util;
 import com.andrewshu.android.reddit.mail.InboxActivity;
-import com.andrewshu.android.reddit.profile.ProfileActivity;
 import com.andrewshu.android.reddit.settings.RedditSettings;
 import com.andrewshu.android.reddit.threads.ThreadsListActivity;
+import com.andrewshu.android.reddit.user.ProfileActivity;
 
 public class Common {
 	
@@ -114,6 +120,21 @@ public class Common {
 		t.show();
 	}
 	
+    public static boolean shouldLoadThumbnails(Activity activity, RedditSettings settings) {
+    	//check for wifi connection and wifi thumbnail setting
+    	boolean thumbOkay = true;
+    	if (settings.isLoadThumbnailsOnlyWifi())
+    	{
+    		thumbOkay = false;
+    		ConnectivityManager connMan = (ConnectivityManager) activity.getSystemService(Context.CONNECTIVITY_SERVICE);
+    		NetworkInfo netInfo = connMan.getActiveNetworkInfo();
+    		if (netInfo != null && netInfo.getType() == ConnectivityManager.TYPE_WIFI && netInfo.isConnected()) {
+    			thumbOkay = true;
+    		}
+    	}
+    	return settings.isLoadThumbnails() && thumbOkay;
+    }
+    
 	/**
      * Set the Drawable for the list selector etc. based on the current theme.
      */
@@ -520,7 +541,10 @@ public class Common {
 	}
 	
 	private static DefaultHttpClient createGzipHttpClient() {
-		DefaultHttpClient httpclient = new DefaultHttpClient(){
+		HttpParams params = new BasicHttpParams();
+		params.setParameter(CoreProtocolPNames.PROTOCOL_VERSION, HttpVersion.HTTP_1_1);
+		
+		DefaultHttpClient httpclient = new DefaultHttpClient(params) {
 		    @Override
 		    protected ClientConnectionManager createClientConnectionManager() {
 		        SchemeRegistry registry = new SchemeRegistry();

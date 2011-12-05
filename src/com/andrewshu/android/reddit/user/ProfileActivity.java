@@ -17,14 +17,12 @@
  * along with "reddit is fun".  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.andrewshu.android.reddit.profile;
+package com.andrewshu.android.reddit.user;
 
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
-import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.regex.Matcher;
@@ -92,7 +90,8 @@ import com.andrewshu.android.reddit.things.Listing;
 import com.andrewshu.android.reddit.things.ListingData;
 import com.andrewshu.android.reddit.things.ThingInfo;
 import com.andrewshu.android.reddit.things.ThingListing;
-import com.andrewshu.android.reddit.threads.BitmapManager;
+import com.andrewshu.android.reddit.threads.ShowThumbnailsTask;
+import com.andrewshu.android.reddit.threads.ShowThumbnailsTask.ThumbnailLoadAction;
 import com.andrewshu.android.reddit.threads.ThreadsListActivity;
 import com.andrewshu.android.reddit.threads.ThreadsListActivity.ThreadClickDialogOnClickListenerFactory;
 import com.andrewshu.android.reddit.threads.ThreadsListActivity.ThumbnailOnClickListenerFactory;
@@ -110,11 +109,8 @@ public final class ProfileActivity extends ListActivity
 	private static final String TAG = "ProfileActivity";
 	
 	static final Pattern USER_PATH_PATTERN = Pattern.compile(Constants.USER_PATH_PATTERN_STRING);
-	// 1: link karma; 2: comment karma
-	static final Pattern KARMA_PATTERN = Pattern.compile(">(\\d[^<]*)<.{2,20}link karma.+>(\\d[^<]*)<.{2,20}comment karma");
 	
     private final ObjectMapper mObjectMapper = Common.getObjectMapper();
-    private BitmapManager mBitmapManager = new BitmapManager();
     
     /** Custom list adapter that fits our threads data into the list. */
     private ThingsListAdapter mThingsAdapter;
@@ -146,7 +142,7 @@ public final class ProfileActivity extends ListActivity
     private String mLastAfter = null;
     private String mLastBefore = null;
     private int mLastCount = 0;
-    private String[] mKarma = null;
+    private int[] mKarma = null;
     private String mSortByUrl = null;
     private String mSortByUrlExtra = null;
     
@@ -190,7 +186,7 @@ public final class ProfileActivity extends ListActivity
 	        mLastAfter = savedInstanceState.getString(Constants.LAST_AFTER_KEY);
 	        mLastBefore = savedInstanceState.getString(Constants.LAST_BEFORE_KEY);
 	        mLastCount = savedInstanceState.getInt(Constants.THREAD_LAST_COUNT_KEY);
-	        mKarma = savedInstanceState.getStringArray(Constants.KARMA_KEY);
+	        mKarma = savedInstanceState.getIntArray(Constants.KARMA_KEY);
 		    mSortByUrl = savedInstanceState.getString(Constants.CommentsSort.SORT_BY_KEY);
 	        mJumpToThreadId = savedInstanceState.getString(Constants.JUMP_TO_THREAD_ID_KEY);
 		    mVoteTargetThingInfo = savedInstanceState.getParcelable(Constants.VOTE_TARGET_THING_INFO_KEY);
@@ -275,22 +271,6 @@ public final class ProfileActivity extends ListActivity
 
     
     
-    /**
-     * Return the ThingInfo based on linear search over the names
-     */
-    private ThingInfo findThingInfoByName(String name) {
-    	if (name == null)
-    		return null;
-    	synchronized(MESSAGE_ADAPTER_LOCK) {
-    		for (int i = 0; i < mThingsAdapter.getCount(); i++) {
-    			if (mThingsAdapter.getItem(i).getName().equals(name))
-    				return mThingsAdapter.getItem(i);
-    		}
-    	}
-    	return null;
-    }
-    
-    
     private final class ThingsListAdapter extends ArrayAdapter<ThingInfo> {
     	static final int THREAD_ITEM_VIEW_TYPE = 0;
     	static final int COMMENT_ITEM_VIEW_TYPE = 1;
@@ -343,8 +323,9 @@ public final class ProfileActivity extends ListActivity
 	                view = convertView;
 	            }
 	            
-	            ThreadsListActivity.fillThreadsListItemView(view, item, ProfileActivity.this, mSettings,
-	            		mBitmapManager, true, thumbnailOnClickListenerFactory);
+	            ThreadsListActivity.fillThreadsListItemView(
+	            		position, view, item, ProfileActivity.this, mClient, mSettings, thumbnailOnClickListenerFactory
+        		);
             }
             
             else if (getItemViewType(position) == COMMENT_ITEM_VIEW_TYPE) {
@@ -478,12 +459,12 @@ public final class ProfileActivity extends ListActivity
 	    	if (mThingsAdapter != null)
 	    		mThingsAdapter.mIsLoading = true;
     	}
-    	getWindow().setFeatureInt(Window.FEATURE_PROGRESS, 0);
+    	getWindow().setFeatureInt(Window.FEATURE_PROGRESS, Window.PROGRESS_START);
     }
     
     private void disableLoadingScreen() {
     	resetUI(mThingsAdapter);
-    	getWindow().setFeatureInt(Window.FEATURE_PROGRESS, 10000);
+    	getWindow().setFeatureInt(Window.FEATURE_PROGRESS, Window.PROGRESS_END);
     }
 
     private void updateNextPreviousButtons() {
@@ -526,7 +507,7 @@ public final class ProfileActivity extends ListActivity
     	private String mLastAfter = null;
     	private String mLastBefore = null;
     	private int mLastCount = 0;
-    	private String[] mKarma;
+    	private int[] mKarma;
     	private String mSortByUrl;
     	private String mSortByUrlExtra;
     	
@@ -585,10 +566,12 @@ public final class ProfileActivity extends ListActivity
     				mKarma = getKarma();
     			
             	String url;
-        		StringBuilder sb = new StringBuilder(Constants.REDDIT_BASE_URL + "/user/")
-        			.append(mUsername.trim())
-        			.append("/.json?").append(mSortByUrl).append("&")
-        			.append(mSortByUrlExtra).append("&");
+        		StringBuilder sb = new StringBuilder(Constants.REDDIT_BASE_URL).append("/user/").append(mUsername.trim()).append("/.json?");
+        		
+        		if (mSortByUrl != null)
+        			sb = sb.append(mSortByUrl).append("&");
+        		if (mSortByUrlExtra != null)
+        			sb = sb.append(mSortByUrlExtra).append("&");
         		
     			// "before" always comes back null unless you provide correct "count"
         		if (mAfter != null) {
@@ -665,45 +648,34 @@ public final class ProfileActivity extends ListActivity
             return null;
 	    }
     	
-    	private String[] getKarma() throws IOException {
-        	String url;
-    		StringBuilder sb = new StringBuilder(Constants.REDDIT_BASE_URL + "/user/")
-    			.append(mUsername.trim());
+    	/**
+    	 * @return [linkKarma, commentKarma]
+    	 */
+    	private int[] getKarma() throws IOException {
+        	String url = new StringBuilder(Constants.REDDIT_BASE_URL).append("/user/").append(mUsername.trim()).append("/about.json").toString();
     		
-    		url = sb.toString();
     		if (Constants.LOGGING) Log.d(TAG, "karma url=" + url);
     		
     		HttpGet request = new HttpGet(url);
         	HttpResponse response = mClient.execute(request);
         	
         	HttpEntity entity = null;
-        	BufferedReader in = null;
+        	InputStream in = null;
         	try {
 	        	entity = response.getEntity();
-	        	in = new BufferedReader(new InputStreamReader(entity.getContent()));
-	        	String line;
-	        	while ((line = in.readLine()) != null) {
-	        		Matcher m = KARMA_PATTERN.matcher(line);
-	        		if (m.find()) {
-	        			return new String[] { m.group(1), m.group(2) };
-	        		}
-	        	}
-        	} catch (IOException ex) {
-        		throw ex;
-        	} catch (Exception ex) {
-        		if (Constants.LOGGING) Log.e(TAG, "getKarma", ex);
+	        	in = entity.getContent();
+	        	
+	        	UserInfo userInfo = UserInfoParser.parseJSON(in);
+	        	if (userInfo != null)
+	        		return new int[] { userInfo.getLink_karma(), userInfo.getComment_karma() };
+	        	
         	} finally {
         		try {
         			in.close();
-        		} catch (NullPointerException ex2) {
-        		} catch (Exception ex2) {
-        			if (Constants.LOGGING) Log.e(TAG, "in.close()", ex2);
-        		}
+        		} catch (Exception ignore) {}
         		try {
         			entity.consumeContent();
-        		} catch (Exception ex2) {
-        			if (Constants.LOGGING) Log.e(TAG, "entity.consumeContent()", ex2);
-        		}
+        		} catch (Exception ignore) {}
         	}
         	
         	return null;
@@ -744,7 +716,6 @@ public final class ProfileActivity extends ListActivity
 	   						ti.setSpannedBody("");
 	   					_mThingInfos.add(ti);
     				} else if (Constants.THREAD_KIND.equals(tiContainer.getKind())) {
-    					ThingInfo ti = tiContainer.getData();
     					_mThingInfos.add(tiContainer.getData());
     				}
     			}
@@ -778,6 +749,10 @@ public final class ProfileActivity extends ListActivity
     		
     		if (_mContentLength == -1)
     			getWindow().setFeatureInt(Window.FEATURE_PROGRESS, Window.PROGRESS_INDETERMINATE_OFF);
+    		else
+    			getWindow().setFeatureInt(Window.FEATURE_PROGRESS, Window.PROGRESS_END);
+    		
+    		showThumbnails(_mThingInfos);
 			
     		disableLoadingScreen();
 			setTitle(String.format(getResources().getString(R.string.user_profile), mUsername));
@@ -787,13 +762,21 @@ public final class ProfileActivity extends ListActivity
 		
     	@Override
     	public void onProgressUpdate(Long... progress) {
-    		// 0-9999 is ok, 10000 means it's finished
-    		getWindow().setFeatureInt(Window.FEATURE_PROGRESS, progress[0].intValue() * 9999 / (int) _mContentLength);
+    		getWindow().setFeatureInt(Window.FEATURE_PROGRESS, progress[0].intValue() * (Window.PROGRESS_END-1) / (int) _mContentLength);
     	}
     	
     	public void propertyChange(PropertyChangeEvent event) {
     		publishProgress((Long) event.getNewValue());
     	}
+    }
+    
+    private void showThumbnails(List<ThingInfo> thingInfos) {
+    	int size = thingInfos.size();
+    	ThumbnailLoadAction[] thumbnailLoadActions = new ThumbnailLoadAction[size];
+    	for (int i = 0; i < thumbnailLoadActions.length; i++) {
+    		thumbnailLoadActions[i] = new ThumbnailLoadAction(thingInfos.get(i), null, i);
+    	}
+    	new ShowThumbnailsTask(this, mClient, R.drawable.go_arrow).execute(thumbnailLoadActions);
     }
     
     
@@ -809,7 +792,7 @@ public final class ProfileActivity extends ListActivity
     	
     	@Override
     	protected void onPostExecute(Boolean success) {
-    		dismissDialog(Constants.DIALOG_LOGGING_IN);
+    		removeDialog(Constants.DIALOG_LOGGING_IN);
     		if (success) {
     			Toast.makeText(ProfileActivity.this, "Logged in as "+mUsername, Toast.LENGTH_SHORT).show();
     			showDialog(Constants.DIALOG_COMPOSE);
@@ -832,7 +815,7 @@ public final class ProfileActivity extends ListActivity
     	
     	@Override
     	public void onPostExecute(Boolean success) {
-    		dismissDialog(Constants.DIALOG_COMPOSING);
+    		removeDialog(Constants.DIALOG_COMPOSING);
     		if (success) {
     			Toast.makeText(ProfileActivity.this, "Message sent.", Toast.LENGTH_SHORT).show();
     			// TODO: add the reply beneath the original, OR redirect to sent messages page
@@ -1045,7 +1028,7 @@ public final class ProfileActivity extends ListActivity
     		dialog = new LoginDialog(this, mSettings, false) {
 				@Override
 				public void onLoginChosen(String user, String password) {
-					dismissDialog(Constants.DIALOG_LOGIN);
+					removeDialog(Constants.DIALOG_LOGIN);
 		        	new MyLoginTask(user, password).execute();
 				}
 			};
@@ -1089,12 +1072,12 @@ public final class ProfileActivity extends ListActivity
 		    		hi.setSubject(composeSubject.getText().toString().trim());
 		    		new MyMessageComposeTask(composeDialog, hi, composeCaptcha.getText().toString().trim())
 		    			.execute(composeText.getText().toString().trim());
-		    		dismissDialog(Constants.DIALOG_COMPOSE);
+		    		removeDialog(Constants.DIALOG_COMPOSE);
 				}
     		});
     		composeCancelButton.setOnClickListener(new OnClickListener() {
 				public void onClick(View v) {
-					dismissDialog(Constants.DIALOG_COMPOSE);
+					removeDialog(Constants.DIALOG_COMPOSE);
 				}
     		});
     		break;
@@ -1197,7 +1180,7 @@ public final class ProfileActivity extends ListActivity
 		public OnClickListener getLoginOnClickListener() {
 			return new OnClickListener() {
 				public void onClick(View v) {
-					dismissDialog(Constants.DIALOG_THREAD_CLICK);
+					removeDialog(Constants.DIALOG_THREAD_CLICK);
 					showDialog(Constants.DIALOG_LOGIN);
 				}
 			};
@@ -1207,7 +1190,7 @@ public final class ProfileActivity extends ListActivity
 			final boolean fUseExternalBrowser = useExternalBrowser;
 			return new OnClickListener() {
 				public void onClick(View v) {
-					dismissDialog(Constants.DIALOG_THREAD_CLICK);
+					removeDialog(Constants.DIALOG_THREAD_CLICK);
 					// Launch Intent to goto the URL
 					Common.launchBrowser(ProfileActivity.this, info.getUrl(),
 							Util.createThreadUri(info).toString(),
@@ -1219,7 +1202,7 @@ public final class ProfileActivity extends ListActivity
 			final ThingInfo info = thingInfo;
 			return new OnClickListener() {
 				public void onClick(View v) {
-					dismissDialog(Constants.DIALOG_THREAD_CLICK);
+					removeDialog(Constants.DIALOG_THREAD_CLICK);
 					// Launch an Intent for CommentsListActivity
 					CacheInfo.invalidateCachedThread(ProfileActivity.this);
 					Intent i = new Intent(ProfileActivity.this, CommentsListActivity.class);
@@ -1235,7 +1218,7 @@ public final class ProfileActivity extends ListActivity
 			final ThingInfo info = thingInfo;
 			return new CompoundButton.OnCheckedChangeListener() {
 		    	public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
-		    		dismissDialog(Constants.DIALOG_THREAD_CLICK);
+		    		removeDialog(Constants.DIALOG_THREAD_CLICK);
 			    	if (isChecked) {
 						new MyVoteTask(info, 1, info.getSubreddit()).execute();
 					} else {
@@ -1248,7 +1231,7 @@ public final class ProfileActivity extends ListActivity
 			final ThingInfo info = thingInfo;
 			return new CompoundButton.OnCheckedChangeListener() {
 		        public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
-			    	dismissDialog(Constants.DIALOG_THREAD_CLICK);
+			    	removeDialog(Constants.DIALOG_THREAD_CLICK);
 					if (isChecked) {
 						new MyVoteTask(info, -1, info.getSubreddit()).execute();
 					} else {
@@ -1272,7 +1255,7 @@ public final class ProfileActivity extends ListActivity
     	state.putString(Constants.LAST_AFTER_KEY, mLastAfter);
     	state.putString(Constants.LAST_BEFORE_KEY, mLastBefore);
     	state.putInt(Constants.THREAD_LAST_COUNT_KEY, mLastCount);
-    	state.putStringArray(Constants.KARMA_KEY, mKarma);
+    	state.putIntArray(Constants.KARMA_KEY, mKarma);
     	state.putParcelable(Constants.VOTE_TARGET_THING_INFO_KEY, mVoteTargetThingInfo);
     }
     
@@ -1294,7 +1277,7 @@ public final class ProfileActivity extends ListActivity
         };
         for (int dialog : myDialogs) {
 	        try {
-	        	dismissDialog(dialog);
+	        	removeDialog(dialog);
 		    } catch (IllegalArgumentException e) {
 		    	// Ignore.
 		    }

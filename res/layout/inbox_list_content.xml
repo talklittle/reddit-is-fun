@@ -71,7 +71,6 @@
 	    android:layout_height="fill_parent"
 	    android:layout_alignParentTop="true"
 	    android:layout_above="@id/next_previous_layout"
-	    android:cacheColorHint="#00000000"
 	    />
 
     <ScrollView android:id="@android:id/empty"

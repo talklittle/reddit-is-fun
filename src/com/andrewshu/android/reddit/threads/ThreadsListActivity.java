@@ -37,8 +37,6 @@ import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.res.Resources;
-import android.net.ConnectivityManager;
-import android.net.NetworkInfo;
 import android.os.Bundle;
 import android.text.SpannableString;
 import android.text.SpannableStringBuilder;
@@ -83,7 +81,6 @@ import com.andrewshu.android.reddit.login.LoginDialog;
 import com.andrewshu.android.reddit.login.LoginTask;
 import com.andrewshu.android.reddit.mail.InboxActivity;
 import com.andrewshu.android.reddit.mail.PeekEnvelopeTask;
-import com.andrewshu.android.reddit.profile.ProfileActivity;
 import com.andrewshu.android.reddit.reddits.PickSubredditActivity;
 import com.andrewshu.android.reddit.reddits.SubscribeTask;
 import com.andrewshu.android.reddit.reddits.UnsubscribeTask;
@@ -91,6 +88,8 @@ import com.andrewshu.android.reddit.settings.RedditPreferencesPage;
 import com.andrewshu.android.reddit.settings.RedditSettings;
 import com.andrewshu.android.reddit.submit.SubmitLinkActivity;
 import com.andrewshu.android.reddit.things.ThingInfo;
+import com.andrewshu.android.reddit.threads.ShowThumbnailsTask.ThumbnailLoadAction;
+import com.andrewshu.android.reddit.user.ProfileActivity;
 
 /**
  * Main Activity class representing a Subreddit, i.e., a ThreadsList.
@@ -104,8 +103,6 @@ public final class ThreadsListActivity extends ListActivity {
 	private final Pattern REDDIT_PATH_PATTERN = Pattern.compile(Constants.REDDIT_PATH_PATTERN_STRING);
 	
 	private final ObjectMapper mObjectMapper = Common.getObjectMapper();
-	// BitmapManager helps with filling in thumbnails
-	private final BitmapManager drawableManager = new BitmapManager();
 
     /** Custom list adapter that fits our threads data into the list. */
     private ThreadsListAdapter mThreadsAdapter = null;
@@ -118,10 +115,13 @@ public final class ThreadsListActivity extends ListActivity {
     private final RedditSettings mSettings = new RedditSettings();
     
     // UI State
-    private ThingInfo mVoteTargetThingInfo = null;
+    private ThingInfo mVoteTargetThing = null;
     private DownloadThreadsTask mCurrentDownloadThreadsTask = null;
     private final Object mCurrentDownloadThreadsTaskLock = new Object();
     private View mNextPreviousView = null;
+    
+    private ShowThumbnailsTask mCurrentShowThumbnailsTask = null;
+    private final Object mCurrentShowThumbnailsTaskLock = new Object();
     
     // Navigation that can be cached
     private String mSubreddit = Constants.FRONTPAGE_STRING;
@@ -173,7 +173,7 @@ public final class ThreadsListActivity extends ListActivity {
 	        mLastCount = savedInstanceState.getInt(Constants.THREAD_LAST_COUNT_KEY);
 	        mSortByUrl = savedInstanceState.getString(Constants.ThreadsSort.SORT_BY_KEY);
 		    mJumpToThreadId = savedInstanceState.getString(Constants.JUMP_TO_THREAD_ID_KEY);
-		    mVoteTargetThingInfo = savedInstanceState.getParcelable(Constants.VOTE_TARGET_THING_INFO_KEY);
+		    mVoteTargetThing = savedInstanceState.getParcelable(Constants.VOTE_TARGET_THING_INFO_KEY);
 		    
 		    // try to restore mThreadsList using getLastNonConfigurationInstance()
 		    // (separate function to avoid a compiler warning casting ArrayList<ThingInfo>
@@ -218,14 +218,16 @@ public final class ThreadsListActivity extends ListActivity {
     	int previousTheme = mSettings.getTheme();
     	mSettings.loadRedditPreferences(this, mClient);
     	setRequestedOrientation(mSettings.getRotation());
-    	if (mSettings.getTheme() != previousTheme) {
+    	if (mSettings.getTheme() != previousTheme)
     		resetUI(mThreadsAdapter);
-    	}
+    	
     	updateNextPreviousButtons();
-    	if (mThreadsAdapter != null) {
+    	
+    	if (mThreadsAdapter != null)
     		jumpToThread();
-    	}
-    	new PeekEnvelopeTask(this, mClient, mSettings.getMailNotificationStyle()).execute();
+    	
+    	if (mSettings.isLoggedIn())
+    		new PeekEnvelopeTask(this, mClient, mSettings.getMailNotificationStyle()).execute();
     }
     
     @Override
@@ -343,18 +345,23 @@ public final class ThreadsListActivity extends ListActivity {
             ThingInfo item = this.getItem(position);
             
             // Set the values of the Views for the ThreadsListItem
-            fillThreadsListItemView(view, item, ThreadsListActivity.this, mSettings, drawableManager,
-            		true, thumbnailOnClickListenerFactory);
+            fillThreadsListItemView(
+            		position, view, item, ThreadsListActivity.this, mClient, mSettings, thumbnailOnClickListenerFactory
+    		);
             
             return view;
         }
     }
     
-    public static void fillThreadsListItemView(View view, ThingInfo item,
-    		Activity activity, RedditSettings settings,
-    		BitmapManager bitmapManager,
-    		boolean defaultUseGoArrow,
-    		ThumbnailOnClickListenerFactory thumbnailOnClickListenerFactory) {
+    public static void fillThreadsListItemView(
+    		int position,
+    		View view,
+    		ThingInfo item,
+    		ListActivity activity,
+    		HttpClient client,
+    		RedditSettings settings,
+    		ThumbnailOnClickListenerFactory thumbnailOnClickListenerFactory
+	) {
     	
     	Resources res = activity.getResources();
     	
@@ -440,19 +447,7 @@ public final class ThreadsListActivity extends ListActivity {
         
         // Thumbnails open links
         if (thumbnailView != null) {
-        	
-        	//check for wifi connection and wifi thumbnail setting
-        	boolean thumbOkay = true;
-        	if (settings.isLoadThumbnailsOnlyWifi())
-        	{
-        		thumbOkay = false;
-        		ConnectivityManager connMan = (ConnectivityManager) activity.getSystemService(Context.CONNECTIVITY_SERVICE);
-        		NetworkInfo netInfo = connMan.getActiveNetworkInfo();
-        		if (netInfo != null && netInfo.getType() == ConnectivityManager.TYPE_WIFI && netInfo.isConnected()) {
-        			thumbOkay = true;
-        		}
-        	}
-        	if (settings.isLoadThumbnails() && thumbOkay) {
+        	if (Common.shouldLoadThumbnails(activity, settings)) {
         		dividerView.setVisibility(View.VISIBLE);
         		thumbnailView.setVisibility(View.VISIBLE);
         		indeterminateProgressBar.setVisibility(View.GONE);
@@ -466,20 +461,21 @@ public final class ThreadsListActivity extends ListActivity {
             		}
             	}
             	
-            	// Fill in the thumbnail using a Thread. Note that thumbnail URL can be absolute path.
-            	if (!StringUtils.isEmpty(item.getThumbnail())) {
-            		bitmapManager.fetchBitmapOnThread(Util.absolutePathToURL(item.getThumbnail()),
-            				thumbnailView, indeterminateProgressBar, activity);
-            	} else {
-            		if (defaultUseGoArrow) {
-	            		indeterminateProgressBar.setVisibility(View.GONE);
+            	// Show thumbnail based on ThingInfo
+            	if ("default".equals(item.getThumbnail()) || "self".equals(item.getThumbnail()) || StringUtils.isEmpty(item.getThumbnail())) {
+        			indeterminateProgressBar.setVisibility(View.GONE);
+            		thumbnailView.setVisibility(View.VISIBLE);
+            		thumbnailView.setImageResource(R.drawable.go_arrow);
+            	}
+            	else {
+            		if (item.getThumbnailBitmap() != null) {
+	        			indeterminateProgressBar.setVisibility(View.GONE);
 	            		thumbnailView.setVisibility(View.VISIBLE);
-	            		thumbnailView.setImageResource(R.drawable.go_arrow);
-            		} else {
-            			// if no thumbnail image, hide thumbnail icon
-            			dividerView.setVisibility(View.GONE);
-            			thumbnailView.setVisibility(View.GONE);
-            			indeterminateProgressBar.setVisibility(View.GONE);
+	            		thumbnailView.setImageBitmap(item.getThumbnailBitmap());
+            		}
+            		else {
+            			thumbnailView.setImageBitmap(null);
+            			new ShowThumbnailsTask(activity, client, R.drawable.go_arrow).execute(new ThumbnailLoadAction(item, thumbnailView, position));
             		}
             	}
             	
@@ -598,7 +594,7 @@ public final class ThreadsListActivity extends ListActivity {
         ThingInfo item = mThreadsAdapter.getItem(position);
         
     	// Mark the thread as selected
-    	mVoteTargetThingInfo = item;
+    	mVoteTargetThing = item;
     	mJumpToThreadId = item.getId();
     	
     	showDialog(Constants.DIALOG_THREAD_CLICK);
@@ -649,12 +645,12 @@ public final class ThreadsListActivity extends ListActivity {
 	    	if (mThreadsAdapter != null)
 	    		mThreadsAdapter.mIsLoading = true;
     	}
-    	getWindow().setFeatureInt(Window.FEATURE_PROGRESS, 0);
+    	getWindow().setFeatureInt(Window.FEATURE_PROGRESS, Window.PROGRESS_START);
     }
     
     private void disableLoadingScreen() {
     	resetUI(mThreadsAdapter);
-    	getWindow().setFeatureInt(Window.FEATURE_PROGRESS, 10000);
+    	getWindow().setFeatureInt(Window.FEATURE_PROGRESS, Window.PROGRESS_END);
     }
     
     private void updateNextPreviousButtons() {
@@ -737,17 +733,18 @@ public final class ThreadsListActivity extends ListActivity {
 
     		disableLoadingScreen();
 
-    		if (mContentLength == -1) {
+    		if (mContentLength == -1)
     			getWindow().setFeatureInt(Window.FEATURE_PROGRESS, Window.PROGRESS_INDETERMINATE_OFF);
-    		}
+    		else
+    			getWindow().setFeatureInt(Window.FEATURE_PROGRESS, Window.PROGRESS_END);
 
     		if (success) {
     			synchronized (THREAD_ADAPTER_LOCK) {
-		    		for (ThingInfo ti : mThingInfos)
-		        		mThreadsList.add(ti);
-		    		drawableManager.clearCache();  // clear thumbnails
+    				mThreadsList.addAll(mThingInfos);
 		    		mThreadsAdapter.notifyDataSetChanged();
     			}
+    			
+    			showThumbnails(mThingInfos);
     			
     			updateNextPreviousButtons();
 
@@ -761,17 +758,32 @@ public final class ThreadsListActivity extends ListActivity {
     	
     	@Override
     	public void onProgressUpdate(Long... progress) {
-    		// 0-9999 is ok, 10000 means it's finished
     		if (mContentLength == -1) {
-//    			getWindow().setFeatureInt(Window.FEATURE_PROGRESS, progress[0].intValue() * 9999 / (int) mContentLength);
+    			getWindow().setFeatureInt(Window.FEATURE_PROGRESS, Window.PROGRESS_INDETERMINATE_ON);
     		}
     		else {
-    			getWindow().setFeatureInt(Window.FEATURE_PROGRESS, progress[0].intValue() * 9999 / (int) mContentLength);
+    			getWindow().setFeatureInt(Window.FEATURE_PROGRESS, progress[0].intValue() * (Window.PROGRESS_END-1) / (int) mContentLength);
     		}
     	}
     	
     	public void propertyChange(PropertyChangeEvent event) {
     		publishProgress((Long) event.getNewValue());
+    	}
+    }
+    
+    private void showThumbnails(List<ThingInfo> thingInfos) {
+    	if (Common.shouldLoadThumbnails(this, mSettings)) {
+	    	int size = thingInfos.size();
+	    	ThumbnailLoadAction[] thumbnailLoadActions = new ThumbnailLoadAction[size];
+	    	for (int i = 0; i < size; i++) {
+	    		thumbnailLoadActions[i] = new ThumbnailLoadAction(thingInfos.get(i), null, i);
+	    	}
+	    	synchronized (mCurrentShowThumbnailsTaskLock) {
+	    		if (mCurrentShowThumbnailsTask != null)
+	    			mCurrentShowThumbnailsTask.cancel(true);
+	    		mCurrentShowThumbnailsTask = new ShowThumbnailsTask(this, mClient, R.drawable.go_arrow);
+	    	}
+	    	mCurrentShowThumbnailsTask.execute(thumbnailLoadActions);
     	}
     }
     
@@ -787,7 +799,7 @@ public final class ThreadsListActivity extends ListActivity {
     	
     	@Override
     	protected void onPostExecute(Boolean success) {
-    		dismissDialog(Constants.DIALOG_LOGGING_IN);
+    		removeDialog(Constants.DIALOG_LOGGING_IN);
     		if (success) {
     			Toast.makeText(ThreadsListActivity.this, "Logged in as "+mUsername, Toast.LENGTH_SHORT).show();
     			// Check mail
@@ -928,7 +940,7 @@ public final class ThreadsListActivity extends ListActivity {
     	info = (AdapterView.AdapterContextMenuInfo) menuInfo;
     	ThingInfo _item = mThreadsAdapter.getItem(info.position);
     	
-    	mVoteTargetThingInfo = _item;
+    	mVoteTargetThing = _item;
     	
     	menu.add(0, Constants.VIEW_SUBREDDIT_CONTEXT_ITEM, 0, R.string.view_subreddit);
     	menu.add(0, Constants.SHARE_CONTEXT_ITEM, 0, R.string.share);
@@ -1014,7 +1026,8 @@ public final class ThreadsListActivity extends ListActivity {
     	
         // Login/Logout
     	if (mSettings.isLoggedIn()) {
-    		
+    		menu.findItem(R.id.login_menu_id).setVisible(false);
+
     		if(!mSubreddit.equals(Constants.FRONTPAGE_STRING)){
     			ArrayList<String> mSubredditsList = CacheInfo.getCachedSubredditList(getApplicationContext());	
     			
@@ -1022,27 +1035,31 @@ public final class ThreadsListActivity extends ListActivity {
 	    			menu.findItem(R.id.unsubscribe_menu_id).setVisible(true);
 	    			menu.findItem(R.id.subscribe_menu_id).setVisible(false);
 	    		}
-	    		else{
+	    		else {
 	    			menu.findItem(R.id.subscribe_menu_id).setVisible(true);
 	    			menu.findItem(R.id.unsubscribe_menu_id).setVisible(false);
 	    		}
     		}
     		
-	        menu.findItem(R.id.login_logout_menu_id).setTitle(
-	        		String.format(getResources().getString(R.string.logout), mSettings.getUsername()));
 	        menu.findItem(R.id.inbox_menu_id).setVisible(true);
 	        menu.findItem(R.id.user_profile_menu_id).setVisible(true);
 	        menu.findItem(R.id.user_profile_menu_id).setTitle(
-	        		String.format(getResources().getString(R.string.user_profile), mSettings.getUsername()));
-	        
-	        
-	        
-    	} else {
-            menu.findItem(R.id.login_logout_menu_id).setTitle(getResources().getString(R.string.login));
-            menu.findItem(R.id.inbox_menu_id).setVisible(false);
-            menu.findItem(R.id.user_profile_menu_id).setVisible(false);
+	        		String.format(getResources().getString(R.string.user_profile), mSettings.getUsername())
+    		);
+	        menu.findItem(R.id.logout_menu_id).setVisible(true);
+	        menu.findItem(R.id.logout_menu_id).setTitle(
+	        		String.format(getResources().getString(R.string.logout), mSettings.getUsername())
+    		);
+    	}
+    	else {
+			menu.findItem(R.id.login_menu_id).setVisible(true);
+
 			menu.findItem(R.id.unsubscribe_menu_id).setVisible(false);
 			menu.findItem(R.id.subscribe_menu_id).setVisible(false);
+
+            menu.findItem(R.id.inbox_menu_id).setVisible(false);
+            menu.findItem(R.id.user_profile_menu_id).setVisible(false);
+            menu.findItem(R.id.logout_menu_id).setVisible(false);
     	}
     	
     	// Theme: Light/Dark
@@ -1080,14 +1097,13 @@ public final class ThreadsListActivity extends ListActivity {
     		Intent pickSubredditIntent = new Intent(getApplicationContext(), PickSubredditActivity.class);
     		startActivityForResult(pickSubredditIntent, Constants.ACTIVITY_PICK_SUBREDDIT);
     		break;
-    	case R.id.login_logout_menu_id:
-        	if (mSettings.isLoggedIn()) {
-        		Common.doLogout(mSettings, mClient, getApplicationContext());
-        		Toast.makeText(this, "You have been logged out.", Toast.LENGTH_SHORT).show();
-        		new MyDownloadThreadsTask(mSubreddit).execute();
-        	} else {
-        		showDialog(Constants.DIALOG_LOGIN);
-        	}
+    	case R.id.login_menu_id:
+    		showDialog(Constants.DIALOG_LOGIN);
+    		break;
+    	case R.id.logout_menu_id:
+    		Common.doLogout(mSettings, mClient, getApplicationContext());
+    		Toast.makeText(this, "You have been logged out.", Toast.LENGTH_SHORT).show();
+    		new MyDownloadThreadsTask(mSubreddit).execute();
     		break;
     	case R.id.refresh_menu_id:
     		CacheInfo.invalidateCachedSubreddit(getApplicationContext());
@@ -1151,7 +1167,7 @@ public final class ThreadsListActivity extends ListActivity {
     	case Constants.DIALOG_LOGIN:
     		dialog = new LoginDialog(this, mSettings, false) {
 				public void onLoginChosen(String user, String password) {
-					dismissDialog(Constants.DIALOG_LOGIN);
+					removeDialog(Constants.DIALOG_LOGIN);
 		        	new MyLoginTask(user, password).execute(); 
 				}
 			};
@@ -1222,9 +1238,9 @@ public final class ThreadsListActivity extends ListActivity {
     		break;
     		
     	case Constants.DIALOG_THREAD_CLICK:
-    		if (mVoteTargetThingInfo == null)
+    		if (mVoteTargetThing == null)
     			break;
-    		fillThreadClickDialog(dialog, mVoteTargetThingInfo, mSettings, threadClickDialogOnClickListenerFactory);
+    		fillThreadClickDialog(dialog, mVoteTargetThing, mSettings, threadClickDialogOnClickListenerFactory);
     		break;
     		
     	case Constants.DIALOG_SORT_BY:
@@ -1247,44 +1263,36 @@ public final class ThreadsListActivity extends ListActivity {
     }
     
 	private int getSelectedSortBy() {
-		int selectedSortBy = -1;
 		for (int i = 0; i < Constants.ThreadsSort.SORT_BY_URL_CHOICES.length; i++) {
 			if (Constants.ThreadsSort.SORT_BY_URL_CHOICES[i].equals(mSortByUrl)) {
-				selectedSortBy = i;
-				break;
+				return i;
 			}
 		}
-		return selectedSortBy;
+		return -1;
 	}
 	private int getSelectedSortByNew() {
-		int selectedSortByNew = -1;
 		for (int i = 0; i < Constants.ThreadsSort.SORT_BY_NEW_URL_CHOICES.length; i++) {
 			if (Constants.ThreadsSort.SORT_BY_NEW_URL_CHOICES[i].equals(mSortByUrlExtra)) {
-				selectedSortByNew = i;
-				break;
+				return i;
 			}
 		}
-		return selectedSortByNew;
+		return -1;
 	}
 	private int getSelectedSortByControversial() {
-		int selectedSortByControversial = -1;
 		for (int i = 0; i < Constants.ThreadsSort.SORT_BY_CONTROVERSIAL_URL_CHOICES.length; i++) {
 			if (Constants.ThreadsSort.SORT_BY_CONTROVERSIAL_URL_CHOICES[i].equals(mSortByUrlExtra)) {
-				selectedSortByControversial = i;
-				break;
+				return i;
 			}
 		}
-		return selectedSortByControversial;
+		return -1;
 	}
 	private int getSelectedSortByTop() {
-		int selectedSortByTop = -1;
 		for (int i = 0; i < Constants.ThreadsSort.SORT_BY_TOP_URL_CHOICES.length; i++) {
 			if (Constants.ThreadsSort.SORT_BY_TOP_URL_CHOICES[i].equals(mSortByUrlExtra)) {
-				selectedSortByTop = i;
-				break;
+				return i;
 			}
 		}
-		return selectedSortByTop;
+		return -1;
 	}
 
 	private final OnClickListener downloadAfterOnClickListener = new OnClickListener() {
@@ -1362,7 +1370,7 @@ public final class ThreadsListActivity extends ListActivity {
 		public OnClickListener getLoginOnClickListener() {
 			return new OnClickListener() {
 				public void onClick(View v) {
-					dismissDialog(Constants.DIALOG_THREAD_CLICK);
+					removeDialog(Constants.DIALOG_THREAD_CLICK);
 					showDialog(Constants.DIALOG_LOGIN);
 				}
 			};
@@ -1372,7 +1380,7 @@ public final class ThreadsListActivity extends ListActivity {
     		final boolean fUseExternalBrowser = useExternalBrowser;
     		return new OnClickListener() {
 				public void onClick(View v) {
-					dismissDialog(Constants.DIALOG_THREAD_CLICK);
+					removeDialog(Constants.DIALOG_THREAD_CLICK);
 					// Launch Intent to goto the URL
 					Common.launchBrowser(ThreadsListActivity.this, info.getUrl(),
 							Util.createThreadUri(info).toString(),
@@ -1384,7 +1392,7 @@ public final class ThreadsListActivity extends ListActivity {
 			final ThingInfo info = thingInfo;
 			return new OnClickListener() {
 				public void onClick(View v) {
-					dismissDialog(Constants.DIALOG_THREAD_CLICK);
+					removeDialog(Constants.DIALOG_THREAD_CLICK);
 					// Launch an Intent for CommentsListActivity
 					CacheInfo.invalidateCachedThread(ThreadsListActivity.this);
 					Intent i = new Intent(ThreadsListActivity.this, CommentsListActivity.class);
@@ -1400,7 +1408,7 @@ public final class ThreadsListActivity extends ListActivity {
 			final ThingInfo info = thingInfo;
 			return new CompoundButton.OnCheckedChangeListener() {
 		    	public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
-		    		dismissDialog(Constants.DIALOG_THREAD_CLICK);
+		    		removeDialog(Constants.DIALOG_THREAD_CLICK);
 			    	if (isChecked) {
 						new MyVoteTask(info, 1, info.getSubreddit()).execute();
 					} else {
@@ -1413,7 +1421,7 @@ public final class ThreadsListActivity extends ListActivity {
 	    	final ThingInfo info = thingInfo;
 	    	return new CompoundButton.OnCheckedChangeListener() {
 		        public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
-			    	dismissDialog(Constants.DIALOG_THREAD_CLICK);
+			    	removeDialog(Constants.DIALOG_THREAD_CLICK);
 					if (isChecked) {
 						new MyVoteTask(info, -1, info.getSubreddit()).execute();
 					} else {
@@ -1449,7 +1457,7 @@ public final class ThreadsListActivity extends ListActivity {
     	state.putString(Constants.LAST_AFTER_KEY, mLastAfter);
     	state.putString(Constants.LAST_BEFORE_KEY, mLastBefore);
     	state.putInt(Constants.THREAD_LAST_COUNT_KEY, mLastCount);
-    	state.putParcelable(Constants.VOTE_TARGET_THING_INFO_KEY, mVoteTargetThingInfo);
+    	state.putParcelable(Constants.VOTE_TARGET_THING_INFO_KEY, mVoteTargetThing);
     }
     
     /**
@@ -1471,7 +1479,7 @@ public final class ThreadsListActivity extends ListActivity {
         };
         for (int dialog : myDialogs) {
 	        try {
-	        	dismissDialog(dialog);
+	        	removeDialog(dialog);
 		    } catch (IllegalArgumentException e) {
 		    	// Ignore.
 		    }

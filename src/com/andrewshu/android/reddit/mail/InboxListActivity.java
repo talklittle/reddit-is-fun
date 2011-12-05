@@ -454,12 +454,12 @@ public final class InboxListActivity extends ListActivity
 	    	if (mMessagesAdapter != null)
 	    		mMessagesAdapter.mIsLoading = true;
     	}
-    	getWindow().setFeatureInt(Window.FEATURE_PROGRESS, 0);
+    	getWindow().setFeatureInt(Window.FEATURE_PROGRESS, Window.PROGRESS_START);
     }
     
     private void disableLoadingScreen() {
     	resetUI(mMessagesAdapter);
-    	getWindow().setFeatureInt(Window.FEATURE_PROGRESS, 10000);
+    	getWindow().setFeatureInt(Window.FEATURE_PROGRESS, Window.PROGRESS_END);
     }
 
     private void updateNextPreviousButtons() {
@@ -563,8 +563,8 @@ public final class InboxListActivity extends ListActivity
                 parseInboxJSON(pin);
                 
                 // XXX: HACK: http://code.reddit.com/ticket/709
-                // Marking messages as read is currently broken (even with mark=
-                // For now, just send an extra request to the regular non-JSON i
+                // Marking messages as read is currently broken (even with mark=true)
+                // For now, just send an extra request to the regular non-JSON inbox
                 mClient.execute(new HttpGet(Constants.REDDIT_BASE_URL + "/message/" + mWhichInbox));
 
             	mLastCount = mCount;
@@ -666,6 +666,8 @@ public final class InboxListActivity extends ListActivity
     		
     		if (_mContentLength == -1)
     			getWindow().setFeatureInt(Window.FEATURE_PROGRESS, Window.PROGRESS_INDETERMINATE_OFF);
+    		else
+    			getWindow().setFeatureInt(Window.FEATURE_PROGRESS, Window.PROGRESS_END);
     		
 			disableLoadingScreen();
 			Common.cancelMailNotification(InboxListActivity.this.getApplicationContext());
@@ -673,9 +675,8 @@ public final class InboxListActivity extends ListActivity
 		
     	@Override
     	public void onProgressUpdate(Long... progress) {
-    		// 0-9999 is ok, 10000 means it's finished
     		if (_mContentLength != -1)
-    			getWindow().setFeatureInt(Window.FEATURE_PROGRESS, progress[0].intValue() * 9999 / (int) _mContentLength);
+    			getWindow().setFeatureInt(Window.FEATURE_PROGRESS, progress[0].intValue() * (Window.PROGRESS_END-1) / (int) _mContentLength);
     	}
     	
     	public void propertyChange(PropertyChangeEvent event) {
@@ -696,7 +697,7 @@ public final class InboxListActivity extends ListActivity
     	
     	@Override
     	protected void onPostExecute(Boolean success) {
-    		dismissDialog(Constants.DIALOG_LOGGING_IN);
+    		removeDialog(Constants.DIALOG_LOGGING_IN);
     		if (success) {
     			Toast.makeText(InboxListActivity.this, "Logged in as "+mUsername, Toast.LENGTH_SHORT).show();
 	    		// Refresh the threads list
@@ -897,7 +898,7 @@ public final class InboxListActivity extends ListActivity
     	
     	@Override
     	public void onPostExecute(Boolean success) {
-    		dismissDialog(Constants.DIALOG_REPLYING);
+    		removeDialog(Constants.DIALOG_REPLYING);
     		if (success) {
     			Toast.makeText(InboxListActivity.this, "Reply sent.", Toast.LENGTH_SHORT).show();
     			// TODO: add the reply beneath the original, OR redirect to sent messages page
@@ -993,7 +994,7 @@ public final class InboxListActivity extends ListActivity
     	
     	@Override
     	public void onPostExecute(Boolean success) {
-    		dismissDialog(Constants.DIALOG_COMPOSING);
+    		removeDialog(Constants.DIALOG_COMPOSING);
     		if (success) {
     			Toast.makeText(InboxListActivity.this, "Message sent.", Toast.LENGTH_SHORT).show();
     			// TODO: add the reply beneath the original, OR redirect to sent messages page
@@ -1119,7 +1120,7 @@ public final class InboxListActivity extends ListActivity
     		dialog = new LoginDialog(this, mSettings, true) {
 				@Override
 				public void onLoginChosen(String user, String password) {
-					dismissDialog(Constants.DIALOG_LOGIN);
+					removeDialog(Constants.DIALOG_LOGIN);
 		        	new MyLoginTask(user, password).execute();
 				}
 			};
@@ -1135,7 +1136,7 @@ public final class InboxListActivity extends ListActivity
     			public void onClick(View v) {
     				if(mReplyTargetName != null){
         				new MessageReplyTask(mReplyTargetName).execute(replyBody.getText().toString());
-        				dismissDialog(Constants.DIALOG_REPLY);
+        				removeDialog(Constants.DIALOG_REPLY);
     				}
     				else{
     					Common.showErrorToast("Error replying. Please try again.", Toast.LENGTH_SHORT, InboxListActivity.this);
@@ -1144,7 +1145,7 @@ public final class InboxListActivity extends ListActivity
     		});
     		replyCancelButton.setOnClickListener(new OnClickListener() {
     			public void onClick(View v) {
-    				dismissDialog(Constants.DIALOG_REPLY);
+    				removeDialog(Constants.DIALOG_REPLY);
     			}
     		});
     		break;
@@ -1184,12 +1185,12 @@ public final class InboxListActivity extends ListActivity
 		    		hi.setSubject(composeSubject.getText().toString().trim());
 		    		new MessageComposeTask(composeDialog, hi, composeCaptcha.getText().toString().trim())
 		    			.execute(composeText.getText().toString().trim());
-		    		dismissDialog(Constants.DIALOG_COMPOSE);
+		    		removeDialog(Constants.DIALOG_COMPOSE);
 				}
     		});
     		composeCancelButton.setOnClickListener(new OnClickListener() {
 				public void onClick(View v) {
-					dismissDialog(Constants.DIALOG_COMPOSE);
+					removeDialog(Constants.DIALOG_COMPOSE);
 				}
     		});
     		break;
@@ -1298,7 +1299,7 @@ public final class InboxListActivity extends ListActivity
         };
         for (int dialog : myDialogs) {
 	        try {
-	        	dismissDialog(dialog);
+	        	removeDialog(dialog);
 		    } catch (IllegalArgumentException e) {
 		    	// Ignore.
 		    }

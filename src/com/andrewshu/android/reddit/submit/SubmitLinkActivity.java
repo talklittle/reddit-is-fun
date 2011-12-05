@@ -262,7 +262,7 @@ public class SubmitLinkActivity extends TabActivity {
     	
     	@Override
     	protected void onPostExecute(Boolean success) {
-    		dismissDialog(Constants.DIALOG_LOGGING_IN);
+    		removeDialog(Constants.DIALOG_LOGGING_IN);
 			if (success) {
     			Toast.makeText(SubmitLinkActivity.this, "Logged in as "+mUsername, Toast.LENGTH_SHORT).show();
     			// Check mail
@@ -428,7 +428,7 @@ public class SubmitLinkActivity extends TabActivity {
     	
     	@Override
     	public void onPostExecute(ThingInfo newlyCreatedThread) {
-    		dismissDialog(Constants.DIALOG_SUBMITTING);
+    		removeDialog(Constants.DIALOG_SUBMITTING);
     		if (newlyCreatedThread == null) {
     			Common.showErrorToast(_mUserError, Toast.LENGTH_LONG, SubmitLinkActivity.this);
     		} else {
@@ -538,7 +538,7 @@ public class SubmitLinkActivity extends TabActivity {
 			dialog = new LoginDialog(this, mSettings, true) {
 				@Override
 				public void onLoginChosen(String user, String password) {
-					dismissDialog(Constants.DIALOG_LOGIN);
+					removeDialog(Constants.DIALOG_LOGIN);
     				new MyLoginTask(user, password).execute();
 				}
 			};
@@ -696,7 +696,7 @@ public class SubmitLinkActivity extends TabActivity {
         };
         for (int dialog : myDialogs) {
 	        try {
-	        	dismissDialog(dialog);
+	        	removeDialog(dialog);
 		    } catch (IllegalArgumentException e) {
 		    	// Ignore.
 		    }

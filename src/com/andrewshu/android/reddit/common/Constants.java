@@ -40,6 +40,9 @@ public class Constants {
 	};
 	
     public static final String USER_AGENT_STRING = "reddit is fun (Android)";
+    
+    public static final long MESSAGE_CHECK_MINIMUM_INTERVAL_MILLIS = 5 * 60 * 1000;  // 5 minutes
+    public static final String LAST_MAIL_CHECK_TIME_MILLIS_KEY = "LAST_MAIL_CHECK_TIME_MILLIS_KEY";
 	
 	// 1:subreddit 2:threadId 3:commentId
 	// The following commented-out one is good, but tough to get right, e.g.,
@@ -310,8 +313,10 @@ public class Constants {
     public static final String PREF_MAIL_NOTIFICATION_SERVICE_1DAY = "MAIL_NOTIFICATION_SERVICE_1DAY";
     
     // Reddit's base URL, without trailing slash
-    public static final String REDDIT_BASE_URL = "https://pay.reddit.com";
-    
+    public static final String REDDIT_BASE_URL = "http://www.reddit.com";
+    public static final String REDDIT_SSL_BASE_URL = "https://pay.reddit.com";
+	public static final String REDDIT_LOGIN_URL = "https://ssl.reddit.com/api/login";
+	
     // A short HTML file returned by reddit, so we can get the modhash
     public static final String MODHASH_URL = REDDIT_BASE_URL + "/r";
 }

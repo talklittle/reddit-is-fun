@@ -92,13 +92,12 @@ import com.andrewshu.android.reddit.login.LoginTask;
 import com.andrewshu.android.reddit.mail.InboxActivity;
 import com.andrewshu.android.reddit.mail.PeekEnvelopeTask;
 import com.andrewshu.android.reddit.markdown.MarkdownURL;
-import com.andrewshu.android.reddit.profile.ProfileActivity;
 import com.andrewshu.android.reddit.settings.RedditPreferencesPage;
 import com.andrewshu.android.reddit.settings.RedditSettings;
 import com.andrewshu.android.reddit.things.ThingInfo;
-import com.andrewshu.android.reddit.threads.BitmapManager;
 import com.andrewshu.android.reddit.threads.ThreadsListActivity;
 import com.andrewshu.android.reddit.threads.ThreadsListActivity.ThumbnailOnClickListenerFactory;
+import com.andrewshu.android.reddit.user.ProfileActivity;
 
 
 /**
@@ -116,8 +115,6 @@ public class CommentsListActivity extends ListActivity
     private final Pattern COMMENT_PATH_PATTERN = Pattern.compile(Constants.COMMENT_PATH_PATTERN_STRING);
     private final Pattern COMMENT_CONTEXT_PATTERN = Pattern.compile("context=(\\d+)");
 
-    private final BitmapManager drawableManager = new BitmapManager();
-    
     /** Custom list adapter that fits our threads data into the list. */
     CommentsListAdapter mCommentsAdapter = null;
     ArrayList<ThingInfo> mCommentsList = null;
@@ -125,7 +122,6 @@ public class CommentsListActivity extends ListActivity
     static final Object COMMENT_ADAPTER_LOCK = new Object();
     
     private final HttpClient mClient = Common.getGzipHttpClient();
-    
     
     // Common settings are stored here
     private final RedditSettings mSettings = new RedditSettings();
@@ -194,6 +190,7 @@ public class CommentsListActivity extends ListActivity
         	mThreadTitle = savedInstanceState.getString(Constants.THREAD_TITLE_KEY);
         	mSubreddit = savedInstanceState.getString(Constants.SUBREDDIT_KEY);
         	mThreadId = savedInstanceState.getString(Constants.THREAD_ID_KEY);
+        	mVoteTargetThing = savedInstanceState.getParcelable(Constants.VOTE_TARGET_THING_INFO_KEY);
         	
         	if (mThreadTitle != null) {
         	    setTitle(mThreadTitle + " : " + mSubreddit);
@@ -285,14 +282,15 @@ public class CommentsListActivity extends ListActivity
     protected void onResume() {
     	super.onResume();
 		CookieSyncManager.getInstance().startSync();
-    	int previousTheme = mSettings.getTheme();
+    	
+		int previousTheme = mSettings.getTheme();
     	mSettings.loadRedditPreferences(this, mClient);
     	setRequestedOrientation(mSettings.getRotation());
-    	if (mSettings.getTheme() != previousTheme) {
+    	if (mSettings.getTheme() != previousTheme)
     		resetUI(mCommentsAdapter);
-    	}
 
-    	new PeekEnvelopeTask(this, mClient, mSettings.getMailNotificationStyle()).execute();
+    	if (mSettings.isLoggedIn())
+    		new PeekEnvelopeTask(this, mClient, mSettings.getMailNotificationStyle()).execute();
     }
     
     @Override
@@ -392,8 +390,9 @@ public class CommentsListActivity extends ListActivity
 	            		view = mInflater.inflate(R.layout.threads_list_item, null);
 	            	}
 	            	
-	            	ThreadsListActivity.fillThreadsListItemView(view, item, CommentsListActivity.this,
-	                		mSettings, drawableManager, false, thumbnailOnClickListenerFactory);
+	            	ThreadsListActivity.fillThreadsListItemView(
+	            			position, view, item, CommentsListActivity.this, mClient, mSettings, thumbnailOnClickListenerFactory
+        			);
 	                
 	                // In addition to stuff from ThreadsListActivity,
 	            	// we want to show selftext in CommentsListActivity.
@@ -634,7 +633,7 @@ public class CommentsListActivity extends ListActivity
 	    	if (mCommentsAdapter != null)
 	    		mCommentsAdapter.mIsLoading = true;
     	}
-    	getWindow().setFeatureInt(Window.FEATURE_PROGRESS, 0);
+    	getWindow().setFeatureInt(Window.FEATURE_PROGRESS, Window.PROGRESS_START);
     }
     
     
@@ -651,7 +650,7 @@ public class CommentsListActivity extends ListActivity
     	
     	@Override
     	protected void onPostExecute(Boolean success) {
-    		dismissDialog(Constants.DIALOG_LOGGING_IN);
+    		removeDialog(Constants.DIALOG_LOGGING_IN);
     		if (success) {
     			Toast.makeText(CommentsListActivity.this, "Logged in as "+mUsername, Toast.LENGTH_SHORT).show();
     			// Check mail
@@ -744,7 +743,7 @@ public class CommentsListActivity extends ListActivity
     	
     	@Override
     	public void onPostExecute(String newId) {
-    		dismissDialog(Constants.DIALOG_REPLYING);
+    		removeDialog(Constants.DIALOG_REPLYING);
     		if (newId == null) {
     			Common.showErrorToast(_mUserError, Toast.LENGTH_LONG, CommentsListActivity.this);
     		} else {
@@ -828,7 +827,7 @@ public class CommentsListActivity extends ListActivity
     	
     	@Override
     	public void onPostExecute(String newId) {
-    		dismissDialog(Constants.DIALOG_EDITING);
+    		removeDialog(Constants.DIALOG_EDITING);
     		if (newId == null) {
     			Common.showErrorToast(_mUserError, Toast.LENGTH_LONG, CommentsListActivity.this);
     		} else {
@@ -919,7 +918,7 @@ public class CommentsListActivity extends ListActivity
     	
     	@Override
     	public void onPostExecute(Boolean success) {
-    		dismissDialog(Constants.DIALOG_DELETING);
+    		removeDialog(Constants.DIALOG_DELETING);
     		if (success) {
     			CacheInfo.invalidateCachedThread(getApplicationContext());
     			if (Constants.THREAD_KIND.equals(_mKind)) {
@@ -1212,22 +1211,27 @@ public class CommentsListActivity extends ListActivity
 
         // Login/Logout
     	if (mSettings.isLoggedIn()) {
-	        menu.findItem(R.id.login_logout_menu_id).setTitle(
-	        		String.format(getResources().getString(R.string.logout), mSettings.getUsername()));
+    		menu.findItem(R.id.login_menu_id).setVisible(false);
 	        menu.findItem(R.id.inbox_menu_id).setVisible(true);
 	        menu.findItem(R.id.user_profile_menu_id).setVisible(true);
 	        menu.findItem(R.id.user_profile_menu_id).setTitle(
-	        		String.format(getResources().getString(R.string.user_profile), mSettings.getUsername()));
+	        		String.format(getResources().getString(R.string.user_profile), mSettings.getUsername())
+    		);
+    		menu.findItem(R.id.logout_menu_id).setVisible(true);
+	        menu.findItem(R.id.logout_menu_id).setTitle(
+	        		String.format(getResources().getString(R.string.logout), mSettings.getUsername())
+    		);
     	} else {
-            menu.findItem(R.id.login_logout_menu_id).setTitle(getResources().getString(R.string.login));
+            menu.findItem(R.id.login_menu_id).setVisible(true);
             menu.findItem(R.id.inbox_menu_id).setVisible(false);
 	        menu.findItem(R.id.user_profile_menu_id).setVisible(false);
+            menu.findItem(R.id.logout_menu_id).setVisible(false);
     	}
     	
     	// Edit and delete
     	if (getOpThingInfo() != null) {
 	    	if (mSettings.getUsername() != null && mSettings.getUsername().equalsIgnoreCase(getOpThingInfo().getAuthor())) {
-				if (getOpThingInfo().getSelftext_html() != null)
+				if (getOpThingInfo().isIs_self())
 					menu.findItem(R.id.op_edit_menu_id).setVisible(true);
 				else
 					menu.findItem(R.id.op_edit_menu_id).setVisible(false);
@@ -1288,14 +1292,13 @@ public class CommentsListActivity extends ListActivity
 			Util.overridePendingTransition(mActivity_overridePendingTransition, this,
 					android.R.anim.slide_in_left, android.R.anim.slide_out_right);
 			break;
-    	case R.id.login_logout_menu_id:
-        	if (mSettings.isLoggedIn()) {
-        		Common.doLogout(mSettings, mClient, getApplicationContext());
-        		Toast.makeText(this, "You have been logged out.", Toast.LENGTH_SHORT).show();
-        		getNewDownloadCommentsTask().execute(Constants.DEFAULT_COMMENT_DOWNLOAD_LIMIT);
-        	} else {
-        		showDialog(Constants.DIALOG_LOGIN);
-        	}
+    	case R.id.login_menu_id:
+    		showDialog(Constants.DIALOG_LOGIN);
+    		break;
+    	case R.id.logout_menu_id:
+    		Common.doLogout(mSettings, mClient, getApplicationContext());
+    		Toast.makeText(this, "You have been logged out.", Toast.LENGTH_SHORT).show();
+    		getNewDownloadCommentsTask().execute(Constants.DEFAULT_COMMENT_DOWNLOAD_LIMIT);
             break;
         case R.id.find_next_menu_id:
             if (last_search_string != null && last_search_string.length() > 0)
@@ -1552,7 +1555,7 @@ public class CommentsListActivity extends ListActivity
 		}
 
 		if ( wrap ) {
-			Log.d(TAG, "Continuing search from top...");
+			if (Constants.LOGGING) Log.d(TAG, "Continuing search from top...");
 			if ( getFoundPosition(0, current_position, search_text) ) {
 				mCommentsAdapter.notifyDataSetChanged();
 				return;
@@ -1604,7 +1607,7 @@ public class CommentsListActivity extends ListActivity
     		dialog = new LoginDialog(this, mSettings, false) {
 				@Override
 				public void onLoginChosen(String user, String password) {
-					dismissDialog(Constants.DIALOG_LOGIN);
+					removeDialog(Constants.DIALOG_LOGIN);
     				new MyLoginTask(user, password).execute();
 				}
 			};
@@ -1643,13 +1646,14 @@ public class CommentsListActivity extends ListActivity
     				dialog.cancel();
     			}
     		});
+    		dialog.setCancelable(false);  // disallow the BACK key
     		dialog.setOnCancelListener(new DialogInterface.OnCancelListener() {
 				public void onCancel(DialogInterface dialog) {
 					replyBody.setText("");
 				}
     		});
-    	}
     		break;
+    	}
     		
     	case Constants.DIALOG_EDIT:
     	{
@@ -1682,15 +1686,15 @@ public class CommentsListActivity extends ListActivity
 					replyBody.setText("");
 				}
     		});
-		}
     		break;
+		}
     		
     	case Constants.DIALOG_DELETE:
     		builder = new AlertDialog.Builder(this);
     		builder.setTitle("Really delete this?");
     		builder.setPositiveButton("Yes", new DialogInterface.OnClickListener() {
     			public void onClick(DialogInterface dialog, int item) {
-    				dismissDialog(Constants.DIALOG_DELETE);
+    				removeDialog(Constants.DIALOG_DELETE);
     				new DeleteTask(mDeleteTargetKind).execute(mReplyTargetName);
     			}
     		})
@@ -1721,7 +1725,7 @@ public class CommentsListActivity extends ListActivity
     		builder.setTitle("Really report this?");
     		builder.setPositiveButton("Yes", new DialogInterface.OnClickListener() {
     			public void onClick(DialogInterface dialog, int item) {
-    				dismissDialog(Constants.DIALOG_REPORT);
+    				removeDialog(Constants.DIALOG_REPORT);
     				new ReportTask(mReportTargetName.toString()).execute();
     			}
     		})
@@ -1832,7 +1836,7 @@ public class CommentsListActivity extends ListActivity
     				linkButton.setText(R.string.thread_link_button);
 	    			linkButton.setOnClickListener(new OnClickListener() {
 	    				public void onClick(View v) {
-	    					dismissDialog(Constants.DIALOG_COMMENT_CLICK);
+	    					removeDialog(Constants.DIALOG_COMMENT_CLICK);
 	    					// Launch Intent to goto the URL
 	    					Common.launchBrowser(CommentsListActivity.this, url,
 	    							Util.createThreadUri(getOpThingInfo()).toString(),
@@ -1941,7 +1945,7 @@ public class CommentsListActivity extends ListActivity
         	linkButton.setEnabled(true);
         	linkButton.setOnClickListener(new OnClickListener() {
         		public void onClick(View v) {
-        			dismissDialog(Constants.DIALOG_COMMENT_CLICK);      
+        			removeDialog(Constants.DIALOG_COMMENT_CLICK);      
         			
     	            ArrayAdapter<MarkdownURL> adapter = 
     	                new ArrayAdapter<MarkdownURL>(CommentsListActivity.this, android.R.layout.select_dialog_item, vtUrls) {
@@ -2031,7 +2035,10 @@ public class CommentsListActivity extends ListActivity
         	submitterView.setText(item.getAuthor());
         submissionTimeView.setText(Util.getTimeAgo(item.getCreated_utc()));
         
-    	bodyView.setText(item.getSpannedBody());
+    	if (item.getSpannedBody() != null)
+    		bodyView.setText(item.getSpannedBody());
+    	else
+    		bodyView.setText(item.getBody());
         
         setCommentIndent(view, item.getIndent(), settings);
         
@@ -2069,7 +2076,7 @@ public class CommentsListActivity extends ListActivity
     
     private final CompoundButton.OnCheckedChangeListener voteUpOnCheckedChangeListener = new CompoundButton.OnCheckedChangeListener() {
     	public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
-	    	dismissDialog(Constants.DIALOG_COMMENT_CLICK);
+	    	removeDialog(Constants.DIALOG_COMMENT_CLICK);
 	    	String thingFullname = mVoteTargetThing.getName();
 			if (isChecked)
 				new VoteTask(thingFullname, 1).execute();
@@ -2079,7 +2086,7 @@ public class CommentsListActivity extends ListActivity
     };
     private final CompoundButton.OnCheckedChangeListener voteDownOnCheckedChangeListener = new CompoundButton.OnCheckedChangeListener() {
 	    public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
-	    	dismissDialog(Constants.DIALOG_COMMENT_CLICK);
+	    	removeDialog(Constants.DIALOG_COMMENT_CLICK);
 	    	String thingFullname = mVoteTargetThing.getName();
 			if (isChecked)
 				new VoteTask(thingFullname, -1).execute();
@@ -2090,14 +2097,14 @@ public class CommentsListActivity extends ListActivity
     
     private final OnClickListener replyOnClickListener = new OnClickListener() {
 		public void onClick(View v) {
-			dismissDialog(Constants.DIALOG_COMMENT_CLICK);
+			removeDialog(Constants.DIALOG_COMMENT_CLICK);
 			showDialog(Constants.DIALOG_REPLY);
 		}
 	};
 	
 	private final OnClickListener loginOnClickListener = new OnClickListener() {
 		public void onClick(View v) {
-			dismissDialog(Constants.DIALOG_COMMENT_CLICK);
+			removeDialog(Constants.DIALOG_COMMENT_CLICK);
 			showDialog(Constants.DIALOG_LOGIN);
 		}
 	};
@@ -2129,6 +2136,7 @@ public class CommentsListActivity extends ListActivity
     	state.putString(Constants.SUBREDDIT_KEY, mSubreddit);
     	state.putString(Constants.THREAD_ID_KEY, mThreadId);
     	state.putString(Constants.THREAD_TITLE_KEY, mThreadTitle);
+    	state.putParcelable(Constants.VOTE_TARGET_THING_INFO_KEY, mVoteTargetThing);
     }
     
     /**
@@ -2154,7 +2162,7 @@ public class CommentsListActivity extends ListActivity
         };
         for (int dialog : myDialogs) {
 	        try {
-	        	dismissDialog(dialog);
+	        	removeDialog(dialog);
 		    } catch (IllegalArgumentException e) {
 		    	// Ignore.
 		    }
