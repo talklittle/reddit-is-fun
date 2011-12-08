@@ -172,6 +172,7 @@
 		        android:ellipsize="marquee"
 		        android:textAppearance="?android:attr/textAppearanceSmall"
 		        android:textColor="#888"
+		    	android:visibility="gone"
 		    />
 		    
 	        <TextView android:id="@+id/body"

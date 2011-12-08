@@ -326,14 +326,20 @@ public class CommentsListActivity extends ListActivity
     private boolean isLoadMoreCommentsPosition(int position) {
     	return mCommentsAdapter != null && mCommentsAdapter.getItemViewType(position) == CommentsListAdapter.MORE_ITEM_VIEW_TYPE;
     }
+    private boolean isFlairCommentPosition(int position) {
+    	return mCommentsAdapter != null && mCommentsAdapter.getItemViewType(position) == CommentsListAdapter.FLAIR_COMMENT_ITEM_VIEW_TYPE;
+    }
+  
     
     final class CommentsListAdapter extends ArrayAdapter<ThingInfo> {
     	public static final int OP_ITEM_VIEW_TYPE = 0;
     	public static final int COMMENT_ITEM_VIEW_TYPE = 1;
     	public static final int MORE_ITEM_VIEW_TYPE = 2;
     	public static final int HIDDEN_ITEM_HEAD_VIEW_TYPE = 3;
+    	public static final int FLAIR_COMMENT_ITEM_VIEW_TYPE = 4;
+    	
     	// The number of view types
-    	public static final int VIEW_TYPE_COUNT = 4;
+    	public static final int VIEW_TYPE_COUNT = 5;
     	
     	public boolean mIsLoading = true;
     	
@@ -361,6 +367,8 @@ public class CommentsListActivity extends ListActivity
             	return HIDDEN_ITEM_HEAD_VIEW_TYPE;
             if (item.isLoadMoreCommentsPlaceholder())
             	return MORE_ITEM_VIEW_TYPE;
+            if (item.getAuthor_flair_text() != null)
+            	return FLAIR_COMMENT_ITEM_VIEW_TYPE;
             
             return COMMENT_ITEM_VIEW_TYPE;
         }
@@ -422,7 +430,6 @@ public class CommentsListActivity extends ListActivity
 	            		view = mInflater.inflate(R.layout.comments_list_item_hidden, null);
 	            	}
 	            	TextView votesView = (TextView) view.findViewById(R.id.votes);
-	            	TextView textFlairView = (TextView) view.findViewById(R.id.textFlair);
 		            TextView submitterView = (TextView) view.findViewById(R.id.submitter);
 	                TextView submissionTimeView = (TextView) view.findViewById(R.id.submissionTime);
 		            
@@ -433,11 +440,6 @@ public class CommentsListActivity extends ListActivity
 		            	// so the ListView might try to display the View before "ups" in JSON has been parsed.
 		            	if (Constants.LOGGING) Log.e(TAG, "getView, hidden comment heads", e);
 		            }
-		            
-		            if (item.getAuthor_flair_text() != null && ! "".equals(item.getAuthor_flair_text()))
-		            	textFlairView.setText(item.getAuthor_flair_text() + " ");
-		            else
-		            	textFlairView.setText("");
 		            
 		            if (getOpThingInfo() != null && item.getAuthor().equalsIgnoreCase(getOpThingInfo().getAuthor()))
 		            		submitterView.setText(item.getAuthor() + " [S]");
@@ -467,12 +469,22 @@ public class CommentsListActivity extends ListActivity
 	            	setCommentIndent(view, item.getIndent(), mSettings);
 	            	
 	            } else {  // Regular comment
-	            	// Here view may be passed in for re-use, or we make a new one.
-		            if (view == null) {
-		                view = mInflater.inflate(R.layout.comments_list_item, null);
-		            } else {
-		                view = convertView;
-		            }
+	            	
+		            // Here view may be passed in for re-use, or we make a new one.
+	            	if (isFlairCommentPosition(position)){
+				        if (view == null) {
+				        	view = mInflater.inflate(R.layout.comments_list_item_flair, null);
+				        } else {
+				            view = convertView;
+				        }
+	            	} else {
+				        if (view == null) {
+				            view = mInflater.inflate(R.layout.comments_list_item, null);
+				        } else {
+				            view = convertView;
+				        }
+	            	}
+
 
 					// Sometimes (when in touch mode) the "selection" highlight disappears.
 					// So we make our own persistent highlight. This background color must
@@ -2024,14 +2036,11 @@ public class CommentsListActivity extends ListActivity
         	if (Constants.LOGGING) Log.e(TAG, "getView, normal comment", e);
         }
         
-        if (item.getAuthor_flair_text() != null && ! "".equals(item.getAuthor_flair_text())){
+        if (item.getAuthor_flair_text() != null && ! "".equals(item.getAuthor_flair_text()))
         	textFlairView.setText(item.getAuthor_flair_text() + " ");
-        }
-        else {
+        else
         	textFlairView.setText("");
-        	textFlairView.setHeight(0);
-        }
-        	
+        
         if (item.getSSAuthor() != null)
         	submitterView.setText(item.getSSAuthor());
         else

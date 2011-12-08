@@ -286,7 +286,7 @@ public class ThingInfo implements Serializable, Parcelable {
 	public boolean isLoadMoreCommentsPlaceholder() {
 		return mIsLoadMoreCommentsPlaceholder;
 	}
-	
+
 	public boolean isHiddenCommentHead() {
 		return mIsHiddenCommentHead;
 	}

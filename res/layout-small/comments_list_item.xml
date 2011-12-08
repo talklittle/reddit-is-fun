@@ -159,12 +159,26 @@
 		            
 	    
 	    <!-- Bottom row -->
+	    
+	    	    
+			<TextView android:id="@+id/textFlair"
+		        android:layout_width="wrap_content"
+		        android:layout_height="wrap_content"
+		        
+		        android:layout_below="@id/submitter"
+		        android:layout_marginBottom="5dip"
+		        android:singleLine="true"
+		        android:ellipsize="marquee"
+		        android:textAppearance="?android:attr/textAppearanceMedium"
+		        android:textColor="#888"
+		        android:visibility="gone"
+		    />
 		    
 	        <TextView android:id="@+id/body"
 		        android:layout_width="wrap_content"
 		        android:layout_height="wrap_content"
-		        android:layout_below="@id/submitter"
-		        android:layout_alignLeft="@id/submitter"
+		        android:layout_below="@id/textFlair"
+		        android:layout_alignLeft="@id/textFlair"
 		        android:text="Loading..."
 		        android:textAppearance="?android:attr/textAppearanceLarge"
 		    />
