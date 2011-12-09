@@ -20,45 +20,35 @@
 
 <resources>
 
-    <string name="app_name">reddit is fun</string>
-    
-    <string name="yes">Yes</string>
-    <string name="no">No</string>
-    <string name="quit">Quit</string>
-    <string name="really_quit">Really quit?</string>
-    
-    <string name="noThreads">No threads here</string>
-    <string name="noComments">No comments here</string>
-    <string name="noMessages">Your inbox is empty.</string>
-    <string name="noSubreddits">No subreddits</string>
-    
-    <string name="loading_splash_text">Loading...</string>
-    
-    <string name="pick_subreddit_label">Subreddit name:</string>
-    <string name="pick_subreddit_button">Go</string>
-    <string name="frontpage">reddit front page</string>
-    
-    <string name="subreddit_layout_srtext_text">Android</string>
-    <string name="subreddit_layout_statustext_text"></string>
-    <string name="subreddit_layout_download_text">Download</string>
-    
+	<string name="app_name">reddit is fun</string>
+	<string name="yes">Yes</string>
+	<string name="no">No</string>
+	<string name="quit">Quit</string>
+	<string name="really_quit">Really quit?</string>
+	<string name="noThreads">No threads here</string>
+	<string name="noComments">No comments here</string>
+	<string name="noMessages">Your inbox is empty.</string>
+	<string name="noSubreddits">No subreddits</string>
+	<string name="loading_splash_text">Loading...</string>
+	<string name="pick_subreddit_label">Subreddit name:</string>
+	<string name="pick_subreddit_button">Go</string>
+	<string name="frontpage">reddit front page</string>
+	<string name="subreddit_layout_srtext_text">Android</string>
+	<string name="subreddit_layout_statustext_text"></string>
+	<string name="subreddit_layout_download_text">Download</string>
 	<string name="login_username_label">Username:</string>
 	<string name="login_password_label">Password:</string>
 	<string name="login_button">Login</string>
 	<string name="login_remember_checkbox">Remember me?</string>
-	
 	<string name="vote_up_button">Upvote</string>
 	<string name="vote_down_button">Downvote</string>
-	
 	<string name="thread_link_button">link</string>
 	<string name="thread_comments_button">comments</string>
 	<string name="thread_time_submitter">%1$s by %2$s</string>
-	
 	<string name="comment_links_button">links</string>
 	<string name="comment_reply_button">reply</string>
 	<string name="reply_save_button">save</string>
 	<string name="reply_cancel_button">cancel</string>
-	
 	<string name="compose_destination_text">to:</string>
 	<string name="compose_subject_text">subject:</string>
 	<string name="compose_message_text">message:</string>
@@ -66,12 +56,10 @@
 	<string name="compose_cancel_button">cancel</string>
 	<string name="compose_captcha_text">are you human? (sorry)</string>
 	<string name="compose_captcha_loading">loading CAPTCHA...</string>
-	
 	<string name="comment_hidden">[+]</string>
 	<string name="more_comments">load more comments</string>
 	<string name="next_threads">next</string>
 	<string name="previous_threads">prev</string>
-	
 	<string name="error_voting_toast">Error voting. Please try again.</string>
 	<string name="mail_notification_unscheduled">Reddit mail notification service disabled.</string>
 	<string name="mail_notification_scheduled_5min">Reddit mail set to check every 5 minutes.</string>
@@ -79,7 +67,6 @@
 	<string name="mail_notification_scheduled_1hour">Reddit mail set to check every 1 hour.</string>
 	<string name="mail_notification_scheduled_6hours">Reddit mail set to check every 6 hours.</string>
 	<string name="mail_notification_scheduled_1day">Reddit mail set to check every 24 hours.</string>
-	
 	<string name="submit_title_label">title</string>
 	<string name="submit_url_label">url</string>
 	<string name="submit_text_label">text (optional)</string>
@@ -87,14 +74,11 @@
 	<string name="submit_captcha_label">are you human? (sorry)</string>
 	<string name="submit_captcha_loading">loading CAPTCHA...</string>
 	<string name="submit_button">submit</string>
-	
 	<string name="select_link_title">Select action</string>
-	
 	<string name="inbox_title">%s\'s inbox</string>
-	
-	
-	<!--  === Menus === -->
-	
+
+	<!-- === Menus === -->
+
 	<string name="compose_message">Compose message</string>
 	<string name="dark_theme">Use dark theme</string>
 	<string name="subscribe">+ Frontpage</string>
@@ -104,7 +88,6 @@
 	<string name="login">Login</string>
 	<string name="logout">Logout: %s</string>
 	<string name="menu_preferences">Settings</string>
-
 	<string name="find_brief">Find</string>
 	<string name="find">Find comment</string>
 	<string name="find_box_hint">comment text</string>
@@ -114,7 +97,6 @@
 	<string name="find_new_brief">New</string>
 	<string name="find_next">Find next</string>
 	<string name="find_next_brief">Next</string>
-
 	<string name="op">OP</string>
 	<string name="op_edit">Edit OP</string>
 	<string name="op_delete">Delete thread</string>
@@ -133,99 +115,99 @@
 	<string name="user_profile">%s\'s profile</string>
 	<string name="view_comments">View comments</string>
 	<string name="view_subreddit">View subreddit</string>
-	
-	
+
 	<!-- === Preferences === -->
 	<string name="pref_general_category">General settings</string>
 	<string name="pref_appearance_category">Appearance</string>
 	<string name="pref_mail_category">Reddit mail</string>
-	
 	<string name="pref_homepage">Default starting reddit</string>
 	<string name="pref_homepage_hint">Leave blank to use default</string>
-	
 	<string name="pref_use_external_browser">Use external browser</string>
-	
 	<string name="pref_confirm_quit">Quit confirmation</string>
- 	
+
 	<!-- Settings label -->
 	<string name="pref_theme">Theme</string>
 	<!-- Title of dialog for setting the text size -->
 	<string name="pref_theme_dialogtitle">Theme</string>
 	<!-- Settings text size options; appear in Text size dialog box -->
 	<string-array name="pref_theme_choices">
-        <item>Light</item>
-        <item>Dark</item>
-    </string-array>
+		<item>Light</item>
+		<item>Dark</item>
+	</string-array>
 	<string-array name="pref_theme_values" translatable="false">
-        <item>THEME_LIGHT</item>
-        <item>THEME_DARK</item>
-    </string-array>
-    
-    <string name="pref_text_size">Text size</string>
-    <string name="pref_text_size_dialogtitle">Text size</string>
-    <string-array name="pref_text_size_choices">
-    	<item>Medium</item>
-    	<item>Large</item>
-    	<item>Larger</item>
-    	<item>Huge</item>
-   	</string-array>
-	<string-array name="pref_text_size_values" translatable="false">
-        <item>TEXT_SIZE_MEDIUM</item>
-        <item>TEXT_SIZE_LARGE</item>
-        <item>TEXT_SIZE_LARGER</item>
-        <item>TEXT_SIZE_HUGE</item>
-    </string-array>
-    
-    <string name="pref_show_comment_guide_lines">Comment guide lines</string>
-    <string name="pref_always_show_next_previous">Always show navbar</string>
+		<item>THEME_LIGHT</item>
+		<item>THEME_DARK</item>
+	</string-array>
 
+	<string name="pref_text_size">Text size</string>
+	<string name="pref_text_size_dialogtitle">Text size</string>
+
+	<string-array name="pref_text_size_choices">
+		<item>Medium</item>
+		<item>Large</item>
+		<item>Larger</item>
+		<item>Huge</item>
+	</string-array>
+	<string-array name="pref_text_size_values" translatable="false">
+		<item>TEXT_SIZE_MEDIUM</item>
+		<item>TEXT_SIZE_LARGE</item>
+		<item>TEXT_SIZE_LARGER</item>
+		<item>TEXT_SIZE_HUGE</item>
+	</string-array>
+
+	<string name="pref_show_comment_guide_lines">Comment guide lines</string>
+	<string name="pref_always_show_next_previous">Always show navbar</string>
 	<string name="pref_rotation">Screen rotation</string>
 	<string name="pref_rotation_dialogtitle">Screen rotation</string>
+
 	<string-array name="pref_rotation_choices">
-        <item>System settings (default)</item>
-        <item>Portrait</item>
-        <item>Landscape</item>
-    </string-array>
+		<item>System settings (default)</item>
+		<item>Portrait</item>
+		<item>Landscape</item>
+	</string-array>
 	<string-array name="pref_rotation_values" translatable="false">
-        <item>ROTATION_UNSPECIFIED</item>
-        <item>ROTATION_PORTRAIT</item>
-        <item>ROTATION_LANDSCAPE</item>
-    </string-array>
-	
+		<item>ROTATION_UNSPECIFIED</item>
+		<item>ROTATION_PORTRAIT</item>
+		<item>ROTATION_LANDSCAPE</item>
+	</string-array>
+
 	<string name="pref_mail_notification_style">Mail notification style</string>
 	<string name="pref_mail_notification_style_dialogtitle">Mail notification style</string>
+
 	<string-array name="pref_mail_notification_style_choices">
 		<item>Standard</item>
 		<item>Big envelope</item>
 		<item>Off</item>
 	</string-array>
-    <string-array name="pref_mail_notification_style_values" translatable="false">
-        <item>MAIL_NOTIFICATION_STYLE_DEFAULT</item>
-        <item>MAIL_NOTIFICATION_STYLE_BIG_ENVELOPE</item>
-        <item>MAIL_NOTIFICATION_STYLE_OFF</item>
-    </string-array>
-    
-    <string name="pref_mail_notification_service">Check mail outside app</string>
-    <string name="pref_mail_notification_service_dialogtitle">Check mail outside app</string>
-    <string-array name="pref_mail_notification_service_choices">
-    	<item>Off</item>
-    	<item>Every 5 minutes</item>
-    	<item>Every 30 minutes</item>
-    	<item>Every 1 hour</item>
-    	<item>Every 6 hours</item>
-    	<item>Every 24 hours</item>
-   	</string-array>
-    <string-array name="pref_mail_notification_service_values" translatable="false">
-    	<item>MAIL_NOTIFICATION_SERVICE_OFF</item>
-    	<item>MAIL_NOTIFICATION_SERVICE_5MIN</item>
-    	<item>MAIL_NOTIFICATION_SERVICE_30MIN</item>
-    	<item>MAIL_NOTIFICATION_SERVICE_1HOUR</item>
-    	<item>MAIL_NOTIFICATION_SERVICE_6HOURS</item>
-    	<item>MAIL_NOTIFICATION_SERVICE_1DAY</item>
-   	</string-array>
-   	
-   	<string name="pref_load_thumbnails">Show thumbnails</string>
-   	
-<string name="pref_load_thumbnails_only_wifi">Only on WiFi</string>
-<string name="pref_thumbnail_category">Thumbnail Settings</string>
+	<string-array name="pref_mail_notification_style_values" translatable="false">
+		<item>MAIL_NOTIFICATION_STYLE_DEFAULT</item>
+		<item>MAIL_NOTIFICATION_STYLE_BIG_ENVELOPE</item>
+		<item>MAIL_NOTIFICATION_STYLE_OFF</item>
+	</string-array>
+
+	<string name="pref_mail_notification_service">Check mail outside app</string>
+	<string name="pref_mail_notification_service_dialogtitle">Check mail outside app</string>
+
+	<string-array name="pref_mail_notification_service_choices">
+		<item>Off</item>
+		<item>Every 5 minutes</item>
+		<item>Every 30 minutes</item>
+		<item>Every 1 hour</item>
+		<item>Every 6 hours</item>
+		<item>Every 24 hours</item>
+	</string-array>
+	<string-array name="pref_mail_notification_service_values" translatable="false">
+		<item>MAIL_NOTIFICATION_SERVICE_OFF</item>
+		<item>MAIL_NOTIFICATION_SERVICE_5MIN</item>
+		<item>MAIL_NOTIFICATION_SERVICE_30MIN</item>
+		<item>MAIL_NOTIFICATION_SERVICE_1HOUR</item>
+		<item>MAIL_NOTIFICATION_SERVICE_6HOURS</item>
+		<item>MAIL_NOTIFICATION_SERVICE_1DAY</item>
+	</string-array>
+
+	<string name="pref_load_thumbnails">Show thumbnails</string>
+	<string name="pref_load_thumbnails_only_wifi">Only on WiFi</string>
+	<string name="pref_thumbnail_category">Thumbnail Settings</string>
+	<string name="sort_by_saved">Sort by: saved</string>
+
 </resources>
