@@ -39,8 +39,6 @@ public class Constants {
 		FILENAME_SUBREDDIT_CACHE, FILENAME_THREAD_CACHE, FILENAME_CACHE_INFO
 	};
 	
-    public static final String USER_AGENT_STRING = "reddit is fun (Android)";
-    
     public static final long MESSAGE_CHECK_MINIMUM_INTERVAL_MILLIS = 5 * 60 * 1000;  // 5 minutes
     public static final String LAST_MAIL_CHECK_TIME_MILLIS_KEY = "LAST_MAIL_CHECK_TIME_MILLIS_KEY";
 	

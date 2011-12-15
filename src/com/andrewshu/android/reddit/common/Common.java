@@ -66,6 +66,7 @@ import android.app.PendingIntent;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.content.pm.PackageManager.NameNotFoundException;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.net.Uri;
@@ -579,7 +580,17 @@ public class Common {
                     final HttpRequest request,
                     final HttpContext context
             ) throws HttpException, IOException {
-                request.setHeader("User-Agent", Constants.USER_AGENT_STRING);
+            	RedditIsFunApplication app = RedditIsFunApplication.getApplication();
+            	String version;
+				try {
+					version = app.getPackageManager().getPackageInfo(app.getPackageName(), 0).versionName;
+				} catch (NameNotFoundException e) {
+					Log.e(TAG, "Package name not found.", e);
+					version = "1";
+				}
+            	String userAgent = app.getString(R.string.user_agent, version);
+                request.setHeader("User-Agent", userAgent);
+            	
                 if (!request.containsHeader("Accept-Encoding"))
                     request.addHeader("Accept-Encoding", "gzip");
             }

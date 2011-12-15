@@ -21,6 +21,7 @@
 <resources>
 
     <string name="app_name">reddit is fun</string>
+    <string name="user_agent">reddit is fun (Android) %s</string>
     
     <string name="yes">Yes</string>
     <string name="no">No</string>
