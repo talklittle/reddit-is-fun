@@ -662,7 +662,7 @@ public final class ThreadsListActivity extends ListActivity {
     /**
      * Given a subreddit name string, starts the threadlist-download-thread going.
      * 
-     * @param subreddit The name of a subreddit ("reddit.com", "gaming", etc.)
+     * @param subreddit The name of a subreddit ("android", "gaming", etc.)
      *        If the number of elements in subreddit is >= 2, treat 2nd element as "after" 
      */
     private class MyDownloadThreadsTask extends DownloadThreadsTask {

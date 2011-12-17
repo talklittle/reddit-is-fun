@@ -174,8 +174,8 @@ public class SubmitLinkActivity extends TabActivity {
 	        	final EditText submitLinkReddit = (EditText) findViewById(R.id.submit_link_reddit);
 	        	final EditText submitTextReddit = (EditText) findViewById(R.id.submit_text_reddit);
 	        	submitLinkUrl.setText(url);
-	        	submitLinkReddit.setText("reddit.com");
-        		submitTextReddit.setText("reddit.com");
+	        	submitLinkReddit.setText("");
+        		submitTextReddit.setText("");
         		mSubmitUrl = Constants.REDDIT_BASE_URL + "/submit";
 	        }
         } else {
@@ -196,8 +196,8 @@ public class SubmitLinkActivity extends TabActivity {
         	if (m.matches()) {
         		String subreddit = m.group(1);
         		if (StringUtils.isEmpty(subreddit)) {
-            		submitLinkReddit.setText("reddit.com");
-            		submitTextReddit.setText("reddit.com");
+            		submitLinkReddit.setText("");
+            		submitTextReddit.setText("");
         		} else {
 		        	submitLinkReddit.setText(subreddit);
 		        	submitTextReddit.setText(subreddit);
@@ -675,8 +675,8 @@ public class SubmitLinkActivity extends TabActivity {
 	    				linkSubreddit.setText(newSubreddit);
 		    			textSubreddit.setText(newSubreddit);
     				} else {
-	    				linkSubreddit.setText("reddit.com");
-		    			textSubreddit.setText("reddit.com");
+	    				linkSubreddit.setText("");
+		    			textSubreddit.setText("");
     				}
 	    		}
     		}
