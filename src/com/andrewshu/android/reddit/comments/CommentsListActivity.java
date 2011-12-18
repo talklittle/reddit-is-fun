@@ -1600,9 +1600,7 @@ public class CommentsListActivity extends ListActivity
     		break;
     		
     	case Constants.DIALOG_COMMENT_CLICK:
-    		inflater = (LayoutInflater)this.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
-    		builder = new AlertDialog.Builder(this);
-    		dialog = builder.setView(inflater.inflate(R.layout.comment_click_dialog, null)).create();
+    		dialog = new CommentClickDialog(this);
     		break;
 
     	case Constants.DIALOG_REPLY:

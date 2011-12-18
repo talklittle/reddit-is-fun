@@ -92,6 +92,7 @@ import com.andrewshu.android.reddit.things.ThingInfo;
 import com.andrewshu.android.reddit.things.ThingListing;
 import com.andrewshu.android.reddit.threads.ShowThumbnailsTask;
 import com.andrewshu.android.reddit.threads.ShowThumbnailsTask.ThumbnailLoadAction;
+import com.andrewshu.android.reddit.threads.ThreadClickDialog;
 import com.andrewshu.android.reddit.threads.ThreadsListActivity;
 import com.andrewshu.android.reddit.threads.ThreadsListActivity.ThreadClickDialogOnClickListenerFactory;
 import com.andrewshu.android.reddit.threads.ThreadsListActivity.ThumbnailOnClickListenerFactory;
@@ -1083,9 +1084,7 @@ public final class ProfileActivity extends ListActivity
     		break;
     		
     	case Constants.DIALOG_THREAD_CLICK:
-    		inflater = (LayoutInflater)this.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
-			builder = new AlertDialog.Builder(this);
-			dialog = builder.setView(inflater.inflate(R.layout.thread_click_dialog, null)).create();
+    		dialog = new ThreadClickDialog(this);
 			break;
     		
    		// "Please wait"

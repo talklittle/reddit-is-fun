@@ -1183,9 +1183,7 @@ public final class ThreadsListActivity extends ListActivity {
     		break;
     		
     	case Constants.DIALOG_THREAD_CLICK:
-    		inflater = (LayoutInflater)this.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
-    		builder = new AlertDialog.Builder(this);
-    		dialog = builder.setView(inflater.inflate(R.layout.thread_click_dialog, null)).create();
+    		dialog = new ThreadClickDialog(this);
     		break;
     		
     	case Constants.DIALOG_SORT_BY:
