@@ -39,7 +39,7 @@
             	>
 	            <LinearLayout
 	                android:layout_width="fill_parent"
-	                android:layout_height="fill_parent"
+	                android:layout_height="wrap_content"
 	                android:orientation="vertical"
 	                >
 	                <TextView android:text="@string/submit_title_label"
@@ -63,6 +63,7 @@
 		            <EditText android:id="@+id/submit_link_url"
 		            	android:layout_width="fill_parent"
 		            	android:layout_height="wrap_content"
+		            	android:inputType="textUri"
 		            	/>
 	            	<TextView
 	            		android:text="@string/submit_reddit_label"
@@ -74,6 +75,7 @@
 		            	android:layout_width="fill_parent"
 		            	android:layout_height="wrap_content"
 		            	android:singleLine="true"
+		            	android:inputType="text"
 		            	/>
 	            	<TextView android:id="@+id/submit_link_captcha_label"
 	            		android:text="@string/submit_captcha_label"
@@ -93,6 +95,7 @@
 		            	android:layout_height="wrap_content"
 		            	android:singleLine="true"
 		            	android:visibility="gone"
+		            	android:inputType="text"
 		            	/>
 		            <TextView android:id="@+id/submit_link_captcha_loading"
 		            	android:text="@string/submit_captcha_loading"
@@ -117,7 +120,7 @@
 	        	>
 	            <LinearLayout 
 	                android:layout_width="fill_parent"
-	                android:layout_height="fill_parent"
+	                android:layout_height="wrap_content"
 	                android:orientation="vertical"
 	                >
 	                <TextView
@@ -157,6 +160,7 @@
 		            	android:layout_width="fill_parent"
 		            	android:layout_height="wrap_content"
 		            	android:singleLine="true"
+		            	android:inputType="text"
 		            	/>
 		            <TextView android:id="@+id/submit_text_captcha_label"
 		            	android:text="@string/submit_captcha_label"
@@ -176,6 +180,7 @@
 		            	android:layout_height="wrap_content"
 		            	android:singleLine="true"
 		            	android:visibility="gone"
+		            	android:inputType="text"
 		            	/>
 		            <TextView android:id="@+id/submit_text_captcha_loading"
 		            	android:text="@string/submit_captcha_loading"

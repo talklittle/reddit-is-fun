@@ -27,6 +27,7 @@
         android:layout_height="wrap_content"
         android:layout_gravity="center_horizontal"
         android:src="@drawable/mail_big"
+        android:contentDescription="large orangered envelope"
         />
     
 </FrameLayout>

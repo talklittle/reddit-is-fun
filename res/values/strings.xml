@@ -33,7 +33,7 @@
     <string name="noMessages">Your inbox is empty.</string>
     <string name="noSubreddits">No subreddits</string>
     
-    <string name="loading_splash_text">Loading...</string>
+    <string name="loading_splash_text">Loading…</string>
     
     <string name="pick_subreddit_label">Subreddit name:</string>
     <string name="pick_subreddit_button">Go</string>
@@ -66,7 +66,7 @@
 	<string name="compose_send_button">send</string>
 	<string name="compose_cancel_button">cancel</string>
 	<string name="compose_captcha_text">are you human? (sorry)</string>
-	<string name="compose_captcha_loading">loading CAPTCHA...</string>
+	<string name="compose_captcha_loading">loading CAPTCHA…</string>
 	
 	<string name="comment_hidden">[+]</string>
 	<string name="more_comments">load more comments</string>
@@ -86,7 +86,7 @@
 	<string name="submit_text_label">text (optional)</string>
 	<string name="submit_reddit_label">reddit</string>
 	<string name="submit_captcha_label">are you human? (sorry)</string>
-	<string name="submit_captcha_loading">loading CAPTCHA...</string>
+	<string name="submit_captcha_loading">loading CAPTCHA…</string>
 	<string name="submit_button">submit</string>
 	
 	<string name="select_link_title">Select action</string>

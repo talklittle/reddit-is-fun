@@ -47,6 +47,7 @@
 	    	android:layout_height="fill_parent"
 	    	android:layout_toLeftOf="@id/pick_subreddit_button"
 	    	android:focusable="false"
+	    	android:inputType="text"
 	    	/>
    	</RelativeLayout>
 

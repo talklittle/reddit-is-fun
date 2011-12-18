@@ -106,71 +106,62 @@
 			/>
 	</LinearLayout>
     
-	<LinearLayout android:id="@+id/text_layout"
-		android:orientation="vertical"
-		android:layout_width="fill_parent"
-		android:layout_height="wrap_content"
-		android:layout_weight="1"
-		android:paddingTop="2dip"
-		android:paddingBottom="2dip"
-		>
+	<RelativeLayout
+	    android:layout_width="0dp"
+	    android:layout_height="wrap_content"
+	    android:layout_weight="1"
+	    android:paddingTop="2dip"
+	    android:paddingBottom="2dip"
+	    android:paddingLeft="5dip"
+	    android:paddingRight="5dip">
 
 		<!-- Top row -->
+	
+		<TextView android:id="@+id/submitter"
+	        android:layout_width="wrap_content"
+	        android:layout_height="wrap_content"
+	        android:layout_marginRight="5dip"
+	        
+	        android:singleLine="true"
+	        android:ellipsize="marquee"
+	        android:textAppearance="?android:attr/textAppearanceMedium"
+	        android:textColor="#888"
+	        android:textStyle="bold"
+	    />
+	    
+		<TextView android:id="@+id/votes"
+	        android:layout_width="wrap_content"
+	        android:layout_height="wrap_content"
+	        android:layout_toRightOf="@id/submitter"
+	        android:layout_marginRight="4dip"
+	        
+	      	android:singleLine="true"
+	        android:ellipsize="marquee"
+	        android:textAppearance="?android:attr/textAppearanceMedium"
+	        />
 		
-		<RelativeLayout
-		    android:layout_width="fill_parent"
-		    android:layout_height="wrap_content"
-		    android:paddingLeft="5dip"
-		    android:paddingRight="5dip">
-
-			<TextView android:id="@+id/submitter"
-		        android:layout_width="wrap_content"
-		        android:layout_height="wrap_content"
-		        android:layout_marginRight="5dip"
-		        
-		        android:singleLine="true"
-		        android:ellipsize="marquee"
-		        android:textAppearance="?android:attr/textAppearanceMedium"
-		        android:textColor="#888"
-		        android:textStyle="bold"
-		    />
-		    
-			<TextView android:id="@+id/votes"
-		        android:layout_width="wrap_content"
-		        android:layout_height="wrap_content"
-		        android:layout_toRightOf="@id/submitter"
-		        android:layout_marginRight="4dip"
-		        
-		      	android:singleLine="true"
-		        android:ellipsize="marquee"
-		        android:textAppearance="?android:attr/textAppearanceMedium"
-		        />
-			
-			<TextView android:id="@+id/submissionTime"
-		        android:layout_width="wrap_content"
-		        android:layout_height="wrap_content"
-		        android:layout_toRightOf="@id/votes"
-		        android:layout_alignBaseline="@id/submitter"
-		        
-		        android:singleLine="true"
-		        android:ellipsize="marquee"
-		        android:textAppearance="?android:attr/textAppearanceMedium"
-		    	/>
-		            
-	    
-	    <!-- Bottom row -->
-		    
-	        <TextView android:id="@+id/body"
-		        android:layout_width="wrap_content"
-		        android:layout_height="wrap_content"
-		        android:layout_below="@id/submitter"
-		        android:layout_alignLeft="@id/submitter"
-		        android:text="Loading..."
-		        android:textAppearance="?android:attr/textAppearanceLarge"
-		    />
-		    
-	    </RelativeLayout>
-	    
-    </LinearLayout>
+		<TextView android:id="@+id/submissionTime"
+	        android:layout_width="wrap_content"
+	        android:layout_height="wrap_content"
+	        android:layout_toRightOf="@id/votes"
+	        android:layout_alignBaseline="@id/submitter"
+	        
+	        android:singleLine="true"
+	        android:ellipsize="marquee"
+	        android:textAppearance="?android:attr/textAppearanceMedium"
+	    	/>
+	            
     
+        <!-- Bottom row -->
+	    
+        <TextView android:id="@+id/body"
+	        android:layout_width="wrap_content"
+	        android:layout_height="wrap_content"
+	        android:layout_below="@id/submitter"
+	        android:layout_alignLeft="@id/submitter"
+	        android:textAppearance="?android:attr/textAppearanceLarge"
+	    />
+	    
+    </RelativeLayout>
+	    
 </LinearLayout>
