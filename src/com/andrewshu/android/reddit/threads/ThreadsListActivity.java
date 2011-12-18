@@ -214,20 +214,30 @@ public final class ThreadsListActivity extends ListActivity {
     @Override
     protected void onResume() {
     	super.onResume();
-		CookieSyncManager.getInstance().startSync();
-    	int previousTheme = mSettings.getTheme();
+		int previousTheme = mSettings.getTheme();
+
     	mSettings.loadRedditPreferences(this, mClient);
-    	setRequestedOrientation(mSettings.getRotation());
-    	if (mSettings.getTheme() != previousTheme)
-    		resetUI(mThreadsAdapter);
-    	
-    	updateNextPreviousButtons();
-    	
-    	if (mThreadsAdapter != null)
-    		jumpToThread();
-    	
-    	if (mSettings.isLoggedIn())
-    		new PeekEnvelopeTask(this, mClient, mSettings.getMailNotificationStyle()).execute();
+
+    	if (mSettings.getTheme() != previousTheme) {
+    		relaunchActivity();
+    	}
+    	else {
+	    	CookieSyncManager.getInstance().startSync();
+	    	setRequestedOrientation(mSettings.getRotation());
+	    	
+	    	updateNextPreviousButtons();
+	    	
+	    	if (mThreadsAdapter != null)
+	    		jumpToThread();
+	    	
+	    	if (mSettings.isLoggedIn())
+	    		new PeekEnvelopeTask(this, mClient, mSettings.getMailNotificationStyle()).execute();
+    	}
+    }
+    
+    private void relaunchActivity() {
+    	finish();
+    	startActivity(getIntent());
     }
     
     @Override
@@ -605,7 +615,6 @@ public final class ThreadsListActivity extends ListActivity {
      * @param threadsAdapter A ThreadsListAdapter to use. Pass in null if you want a new empty one created.
      */
     void resetUI(ThreadsListAdapter threadsAdapter) {
-    	setTheme(mSettings.getTheme());
     	setContentView(R.layout.threads_list_content);
         registerForContextMenu(getListView());
         
@@ -1127,7 +1136,7 @@ public final class ThreadsListActivity extends ListActivity {
     		break;
         case R.id.light_dark_menu_id:
     		mSettings.setTheme(Util.getInvertedTheme(mSettings.getTheme()));
-    		resetUI(mThreadsAdapter);
+    		relaunchActivity();
     		break;
         case R.id.inbox_menu_id:
         	Intent inboxIntent = new Intent(getApplicationContext(), InboxActivity.class);

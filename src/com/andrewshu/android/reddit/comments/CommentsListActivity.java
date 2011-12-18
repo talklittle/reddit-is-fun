@@ -281,16 +281,25 @@ public class CommentsListActivity extends ListActivity
     @Override
     protected void onResume() {
     	super.onResume();
-		CookieSyncManager.getInstance().startSync();
-    	
 		int previousTheme = mSettings.getTheme();
+		
     	mSettings.loadRedditPreferences(this, mClient);
-    	setRequestedOrientation(mSettings.getRotation());
-    	if (mSettings.getTheme() != previousTheme)
-    		resetUI(mCommentsAdapter);
 
-    	if (mSettings.isLoggedIn())
-    		new PeekEnvelopeTask(this, mClient, mSettings.getMailNotificationStyle()).execute();
+    	if (mSettings.getTheme() != previousTheme) {
+    		relaunchActivity();
+    	}
+    	else {
+	    	CookieSyncManager.getInstance().startSync();
+	    	setRequestedOrientation(mSettings.getRotation());
+	
+	    	if (mSettings.isLoggedIn())
+	    		new PeekEnvelopeTask(this, mClient, mSettings.getMailNotificationStyle()).execute();
+    	}
+    }
+    
+    private void relaunchActivity() {
+    	finish();
+    	startActivity(getIntent());
     }
     
     @Override
@@ -446,16 +455,6 @@ public class CommentsListActivity extends ListActivity
 	            		view = mInflater.inflate(R.layout.more_comments_view, null);
 	            	}
 
-		            // Set colors based on theme
-//	            	final TextView moreCommentsText = (TextView) view.findViewById(R.id.more_comments_text);
-//	            	if (Util.isLightTheme(mSettings.theme)) {
-//		            	view.setBackgroundResource(R.color.light_light_gray);
-//		            	moreCommentsText.setBackgroundResource(R.color.white);
-//		            } else {
-//		            	view.setBackgroundResource(R.color.dark_dark_gray);
-//		            	moreCommentsText.setBackgroundResource(android.R.color.background_dark);
-//		            }
-
 	            	setCommentIndent(view, item.getIndent(), mSettings);
 	            	
 	            } else {  // Regular comment
@@ -568,7 +567,6 @@ public class CommentsListActivity extends ListActivity
     void resetUI(CommentsListAdapter commentsAdapter) {
     	int firstVisiblePosition = getListView().getFirstVisiblePosition();
     	
-    	setTheme(mSettings.getTheme());
     	setContentView(R.layout.comments_list_content);
         registerForContextMenu(getListView());
 
@@ -1327,11 +1325,7 @@ public class CommentsListActivity extends ListActivity
     		break;
     	case R.id.light_dark_menu_id:
     		mSettings.setTheme(Util.getInvertedTheme(mSettings.getTheme()));
-    		resetUI(mCommentsAdapter);
-    		if (mCommentsAdapter != null) {
-    			markSubmitterComments();
-    			mCommentsAdapter.notifyDataSetChanged();
-    		}
+    		relaunchActivity();
     		break;
         case R.id.inbox_menu_id:
         	Intent inboxIntent = new Intent(getApplicationContext(), InboxActivity.class);
