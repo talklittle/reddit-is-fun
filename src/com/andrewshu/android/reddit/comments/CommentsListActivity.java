@@ -1600,7 +1600,7 @@ public class CommentsListActivity extends ListActivity
     		break;
     		
     	case Constants.DIALOG_COMMENT_CLICK:
-    		dialog = new CommentClickDialog(this);
+    		dialog = new CommentClickDialog(this, R.style.NoTitleDialog);
     		break;
 
     	case Constants.DIALOG_REPLY:

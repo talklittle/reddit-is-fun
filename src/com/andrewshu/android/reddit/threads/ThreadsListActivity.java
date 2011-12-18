@@ -1183,7 +1183,7 @@ public final class ThreadsListActivity extends ListActivity {
     		break;
     		
     	case Constants.DIALOG_THREAD_CLICK:
-    		dialog = new ThreadClickDialog(this);
+    		dialog = new ThreadClickDialog(this, R.style.NoTitleDialog);
     		break;
     		
     	case Constants.DIALOG_SORT_BY:
