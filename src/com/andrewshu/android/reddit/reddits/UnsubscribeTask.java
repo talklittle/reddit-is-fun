@@ -24,6 +24,7 @@ import android.widget.Toast;
 import com.andrewshu.android.reddit.common.CacheInfo;
 import com.andrewshu.android.reddit.common.Common;
 import com.andrewshu.android.reddit.common.Constants;
+import com.andrewshu.android.reddit.common.RedditIsFunHttpClientFactory;
 import com.andrewshu.android.reddit.common.util.Util;
 import com.andrewshu.android.reddit.settings.RedditSettings;
 
@@ -36,7 +37,7 @@ public class UnsubscribeTask extends AsyncTask<Void, Void, Boolean> {
 	private RedditSettings mSettings;
 	private Context mContext;
 	
-	private final HttpClient mClient = Common.getGzipHttpClient();
+	private final HttpClient mClient = RedditIsFunHttpClientFactory.getGzipHttpClient();
 
 	public UnsubscribeTask(String mSubreddit, Context context, RedditSettings mSettings) {
 		// TODO Auto-generated constructor stub

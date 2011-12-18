@@ -72,6 +72,7 @@ import com.andrewshu.android.reddit.comments.CommentsListActivity;
 import com.andrewshu.android.reddit.common.CacheInfo;
 import com.andrewshu.android.reddit.common.Common;
 import com.andrewshu.android.reddit.common.Constants;
+import com.andrewshu.android.reddit.common.RedditIsFunHttpClientFactory;
 import com.andrewshu.android.reddit.common.tasks.HideTask;
 import com.andrewshu.android.reddit.common.tasks.SaveTask;
 import com.andrewshu.android.reddit.common.tasks.VoteTask;
@@ -109,7 +110,7 @@ public final class ThreadsListActivity extends ListActivity {
     private ArrayList<ThingInfo> mThreadsList = null;
     private static final Object THREAD_ADAPTER_LOCK = new Object();
 
-    private final HttpClient mClient = Common.getGzipHttpClient();
+    private final HttpClient mClient = RedditIsFunHttpClientFactory.getGzipHttpClient();
 	
    
     private final RedditSettings mSettings = new RedditSettings();

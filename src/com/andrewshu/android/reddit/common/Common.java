@@ -28,10 +28,8 @@ import java.util.regex.Pattern;
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpException;
 import org.apache.http.HttpResponse;
-import org.apache.http.client.CookieStore;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.HttpGet;
-import org.apache.http.impl.client.DefaultHttpClient;
 import org.codehaus.jackson.JsonNode;
 import org.codehaus.jackson.map.ObjectMapper;
 import org.codehaus.jackson.node.ArrayNode;
@@ -75,8 +73,6 @@ public class Common {
 	
 	private static final String TAG = "Common";
 	
-	private static final DefaultHttpClient mGzipHttpClient = RedditIsFunHttpClientFactory.createGzipHttpClient();
-	private static final CookieStore mCookieStore = mGzipHttpClient.getCookieStore();
 	// 1:subreddit 2:threadId 3:commentId
 	private static final Pattern COMMENT_LINK = Pattern.compile(Constants.COMMENT_PATH_PATTERN_STRING);
 	private static final Pattern REDDIT_LINK = Pattern.compile(Constants.REDDIT_PATH_PATTERN_STRING);
@@ -189,7 +185,7 @@ public class Common {
     static void clearCookies(RedditSettings settings, HttpClient client, Context context) {
         settings.setRedditSessionCookie(null);
 
-        Common.getCookieStore().clear();
+        RedditIsFunHttpClientFactory.getCookieStore().clear();
         CookieSyncManager.getInstance().sync();
         
         SharedPreferences sessionPrefs = PreferenceManager.getDefaultSharedPreferences(context);
@@ -502,19 +498,7 @@ public class Common {
     	return mObjectMapper;
     }
     
-	/**
-	 * http://hc.apache.org/httpcomponents-client/examples.html
-	 * @return a Gzip-enabled DefaultHttpClient
-	 */
-	public static HttpClient getGzipHttpClient() {
-		return mGzipHttpClient;
-	}
-	
-	public static CookieStore getCookieStore() {
-		return mCookieStore;
-	}
-	
-    public static void logDLong(String tag, String msg) {
+	public static void logDLong(String tag, String msg) {
 		int c;
 		boolean done = false;
 		StringBuilder sb = new StringBuilder();

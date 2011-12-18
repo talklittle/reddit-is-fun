@@ -61,6 +61,7 @@ import com.andrewshu.android.reddit.R;
 import com.andrewshu.android.reddit.common.CacheInfo;
 import com.andrewshu.android.reddit.common.Common;
 import com.andrewshu.android.reddit.common.Constants;
+import com.andrewshu.android.reddit.common.RedditIsFunHttpClientFactory;
 import com.andrewshu.android.reddit.common.util.CollectionUtils;
 import com.andrewshu.android.reddit.common.util.Util;
 import com.andrewshu.android.reddit.settings.RedditSettings;
@@ -75,7 +76,7 @@ public final class PickSubredditActivity extends ListActivity {
     private final Pattern MY_SUBREDDITS_INNER = Pattern.compile("<a(.*?)/r/(.*?)>(.+?)</a>");
 
 	private RedditSettings mSettings = new RedditSettings();
-	private HttpClient mClient = Common.getGzipHttpClient();
+	private HttpClient mClient = RedditIsFunHttpClientFactory.getGzipHttpClient();
 	
 	private PickSubredditAdapter mSubredditsAdapter;
 	private ArrayList<String> mSubredditsList;

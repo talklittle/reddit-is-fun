@@ -21,7 +21,7 @@ package com.andrewshu.android.reddit.mail;
 
 import org.apache.http.client.HttpClient;
 
-import com.andrewshu.android.reddit.common.Common;
+import com.andrewshu.android.reddit.common.RedditIsFunHttpClientFactory;
 import com.andrewshu.android.reddit.settings.RedditSettings;
 
 import android.app.AlarmManager;
@@ -47,7 +47,7 @@ import android.os.SystemClock;
 public class EnvelopeService extends Service {
     NotificationManager mNM;
     private RedditSettings mSettings = new RedditSettings();
-    private HttpClient mClient = Common.getGzipHttpClient();
+    private HttpClient mClient = RedditIsFunHttpClientFactory.getGzipHttpClient();
 
     @Override
     public void onCreate() {

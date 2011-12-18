@@ -17,6 +17,7 @@ import org.apache.http.protocol.HTTP;
 
 import com.andrewshu.android.reddit.common.Common;
 import com.andrewshu.android.reddit.common.Constants;
+import com.andrewshu.android.reddit.common.RedditIsFunHttpClientFactory;
 import com.andrewshu.android.reddit.common.util.StringUtils;
 import com.andrewshu.android.reddit.settings.RedditSettings;
 import com.andrewshu.android.reddit.things.ThingInfo;
@@ -36,7 +37,7 @@ public class SaveTask extends AsyncTask<Void, Void, Boolean> {
 	private RedditSettings mSettings;
 	private Context mContext;
 	
-	private final HttpClient mClient = Common.getGzipHttpClient();
+	private final HttpClient mClient = RedditIsFunHttpClientFactory.getGzipHttpClient();
 	
 	public SaveTask(boolean mSave, ThingInfo mVoteTargetThreadInfo, 
 								RedditSettings mSettings, Context mContext){

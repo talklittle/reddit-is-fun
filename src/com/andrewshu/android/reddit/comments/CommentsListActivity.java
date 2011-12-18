@@ -82,6 +82,7 @@ import com.andrewshu.android.reddit.R;
 import com.andrewshu.android.reddit.common.CacheInfo;
 import com.andrewshu.android.reddit.common.Common;
 import com.andrewshu.android.reddit.common.Constants;
+import com.andrewshu.android.reddit.common.RedditIsFunHttpClientFactory;
 import com.andrewshu.android.reddit.common.tasks.HideTask;
 import com.andrewshu.android.reddit.common.tasks.SaveTask;
 import com.andrewshu.android.reddit.common.util.CollectionUtils;
@@ -121,7 +122,7 @@ public class CommentsListActivity extends ListActivity
     // Lock used when modifying the mCommentsAdapter
     static final Object COMMENT_ADAPTER_LOCK = new Object();
     
-    private final HttpClient mClient = Common.getGzipHttpClient();
+    private final HttpClient mClient = RedditIsFunHttpClientFactory.getGzipHttpClient();
     
     // Common settings are stored here
     private final RedditSettings mSettings = new RedditSettings();

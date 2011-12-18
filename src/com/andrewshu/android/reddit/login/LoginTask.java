@@ -24,6 +24,7 @@ import org.codehaus.jackson.JsonToken;
 import com.andrewshu.android.reddit.common.CacheInfo;
 import com.andrewshu.android.reddit.common.Common;
 import com.andrewshu.android.reddit.common.Constants;
+import com.andrewshu.android.reddit.common.RedditIsFunHttpClientFactory;
 import com.andrewshu.android.reddit.common.util.StringUtils;
 import com.andrewshu.android.reddit.settings.RedditSettings;
 
@@ -101,7 +102,7 @@ public class LoginTask extends AsyncTask<Void, Void, Boolean> {
         	
         	if (Constants.LOGGING) Common.logDLong(TAG, line);
         	
-        	if (Common.getCookieStore().getCookies().isEmpty())
+        	if (RedditIsFunHttpClientFactory.getCookieStore().getCookies().isEmpty())
         		throw new HttpException("Failed to login: No cookies");
         	
         	final JsonFactory jsonFactory = new JsonFactory();
@@ -133,7 +134,7 @@ public class LoginTask extends AsyncTask<Void, Void, Boolean> {
         	settings.setModhash(jp.getText());
 
         	// Could grab cookie from JSON too, but it lacks expiration date and stuff. So grab from HttpClient.
-			List<Cookie> cookies = Common.getCookieStore().getCookies();
+			List<Cookie> cookies = RedditIsFunHttpClientFactory.getCookieStore().getCookies();
         	for (Cookie c : cookies) {
         		if (c.getName().equals("reddit_session")) {
         			settings.setRedditSessionCookie(c);

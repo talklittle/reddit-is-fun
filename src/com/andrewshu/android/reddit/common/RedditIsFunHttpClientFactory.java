@@ -14,6 +14,8 @@ import org.apache.http.HttpRequestInterceptor;
 import org.apache.http.HttpResponse;
 import org.apache.http.HttpResponseInterceptor;
 import org.apache.http.HttpVersion;
+import org.apache.http.client.CookieStore;
+import org.apache.http.client.HttpClient;
 import org.apache.http.conn.ClientConnectionManager;
 import org.apache.http.conn.scheme.PlainSocketFactory;
 import org.apache.http.conn.scheme.Scheme;
@@ -40,6 +42,9 @@ public class RedditIsFunHttpClientFactory {
 	
 	private static final String TAG = "RedditIsFunHttpClientFactory";
 	
+	private static final DefaultHttpClient mGzipHttpClient = createGzipHttpClient();
+	private static final CookieStore mCookieStore = mGzipHttpClient.getCookieStore();
+
 	// Default connection and socket timeout of 60 seconds.  Tweak to taste.
 	private static final int SOCKET_OPERATION_TIMEOUT = 60 * 1000;
 
@@ -134,5 +139,15 @@ public class RedditIsFunHttpClientFactory {
             return -1;
         }
     }
+	/**
+	 * http://hc.apache.org/httpcomponents-client/examples.html
+	 * @return a Gzip-enabled DefaultHttpClient
+	 */
+	public static HttpClient getGzipHttpClient() {
+		return mGzipHttpClient;
+	}
+	public static CookieStore getCookieStore() {
+		return mCookieStore;
+	}
 
 }

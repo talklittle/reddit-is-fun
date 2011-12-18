@@ -69,6 +69,7 @@ import com.andrewshu.android.reddit.captcha.CaptchaDownloadTask;
 import com.andrewshu.android.reddit.comments.CommentsListActivity;
 import com.andrewshu.android.reddit.common.Common;
 import com.andrewshu.android.reddit.common.Constants;
+import com.andrewshu.android.reddit.common.RedditIsFunHttpClientFactory;
 import com.andrewshu.android.reddit.common.util.StringUtils;
 import com.andrewshu.android.reddit.common.util.Util;
 import com.andrewshu.android.reddit.login.LoginDialog;
@@ -92,7 +93,7 @@ public class SubmitLinkActivity extends TabActivity {
 	TabHost mTabHost;
 	
 	private RedditSettings mSettings = new RedditSettings();
-	private final HttpClient mClient = Common.getGzipHttpClient();
+	private final HttpClient mClient = RedditIsFunHttpClientFactory.getGzipHttpClient();
 
 	private String mSubmitUrl;
 	

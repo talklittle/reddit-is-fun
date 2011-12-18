@@ -32,8 +32,8 @@ import android.util.Log;
 import android.webkit.CookieSyncManager;
 
 import com.andrewshu.android.reddit.R;
-import com.andrewshu.android.reddit.common.Common;
 import com.andrewshu.android.reddit.common.Constants;
+import com.andrewshu.android.reddit.common.RedditIsFunHttpClientFactory;
 import com.andrewshu.android.reddit.common.util.StringUtils;
 import com.andrewshu.android.reddit.common.util.Util;
 
@@ -182,7 +182,7 @@ public class RedditSettings {
         	else
         		redditSessionCookie.setExpiryDate(null);
         	this.setRedditSessionCookie(redditSessionCookie);
-    		Common.getCookieStore().addCookie(redditSessionCookie);
+    		RedditIsFunHttpClientFactory.getCookieStore().addCookie(redditSessionCookie);
     		try {
     			CookieSyncManager.getInstance().sync();
     		} catch (IllegalStateException ex) {

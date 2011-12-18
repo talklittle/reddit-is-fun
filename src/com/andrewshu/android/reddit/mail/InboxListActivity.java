@@ -89,6 +89,7 @@ import com.andrewshu.android.reddit.comments.CommentsListActivity;
 import com.andrewshu.android.reddit.common.Common;
 import com.andrewshu.android.reddit.common.Constants;
 import com.andrewshu.android.reddit.common.ProgressInputStream;
+import com.andrewshu.android.reddit.common.RedditIsFunHttpClientFactory;
 import com.andrewshu.android.reddit.common.util.Assert;
 import com.andrewshu.android.reddit.common.util.StringUtils;
 import com.andrewshu.android.reddit.common.util.Util;
@@ -120,7 +121,7 @@ public final class InboxListActivity extends ListActivity
     private static final Object MESSAGE_ADAPTER_LOCK = new Object();
     
     
-    private final HttpClient mClient = Common.getGzipHttpClient();
+    private final HttpClient mClient = RedditIsFunHttpClientFactory.getGzipHttpClient();
     
     
     // Common settings are stored here
