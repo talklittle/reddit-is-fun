@@ -63,6 +63,7 @@ public class RedditIsFunHttpClientFactory {
 		        HttpParams params = getParams();
 				HttpConnectionParams.setConnectionTimeout(params, SOCKET_OPERATION_TIMEOUT);
 				HttpConnectionParams.setSoTimeout(params, SOCKET_OPERATION_TIMEOUT);
+				HttpConnectionParams.setSocketBufferSize(params, 8192);
 		        return new ThreadSafeClientConnManager(params, registry);
 		    }
 		    
