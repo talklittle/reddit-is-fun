@@ -54,6 +54,7 @@ public class BrowserActivity extends Activity {
 		settings.setPluginsEnabled(true);
 		settings.setJavaScriptEnabled(true);
 		settings.setUseWideViewPort(true);
+		settings.setDomStorageEnabled(true);
 		
     	// HACK: set background color directly for android 2.0
         if (Util.isLightTheme(mSettings.getTheme()))
