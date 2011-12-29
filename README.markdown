@@ -50,6 +50,7 @@ Contributors
 * sztomi
 * joe0185
 * gebner
+* kushou
 
 
 [license]: http://github.com/talklittle/reddit-is-fun/blob/master/COPYING
