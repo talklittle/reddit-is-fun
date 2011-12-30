@@ -103,18 +103,21 @@
 		    <FrameLayout
 		        android:layout_width="wrap_content"
 		        android:layout_height="wrap_content"
+		        android:layout_gravity="center"
 		        >
 		        <ImageView android:id="@+id/vote_up_image"
-		            android:layout_width="8dip"
+		            android:layout_width="wrap_content"
 		            android:layout_height="8dip"
+		            android:paddingRight="5dip"
 		            android:src="@drawable/vote_up_red"
 		            android:visibility="gone"
 		            android:contentDescription="@string/vote_up_image_content_description"
 		            />
 		            
 		        <ImageView android:id="@+id/vote_down_image"
-		            android:layout_width="8dip"
+		            android:layout_width="wrap_content"
 		            android:layout_height="8dip"
+		            android:paddingRight="5dip"
 		            android:src="@drawable/vote_down_blue"
 		            android:visibility="gone"
 		            android:contentDescription="@string/vote_down_image_content_description"
