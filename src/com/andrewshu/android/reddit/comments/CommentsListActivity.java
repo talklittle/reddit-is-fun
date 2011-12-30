@@ -2020,35 +2020,18 @@ public class CommentsListActivity extends ListActivity
         
         setCommentIndent(view, item.getIndent(), settings);
         
-        if ("[deleted]".equals(item.getAuthor())) {
-        	voteUpView.setVisibility(View.INVISIBLE);
-        	voteDownView.setVisibility(View.INVISIBLE);
-        }
-        // Set the up and down arrow colors based on whether user likes
-        else if (settings.isLoggedIn()) {
-        	voteUpView.setVisibility(View.VISIBLE);
-        	voteDownView.setVisibility(View.VISIBLE);
-        	if (item.getLikes() == null) {
-        		voteUpView.setImageResource(R.drawable.vote_up_gray);
-        		voteDownView.setImageResource(R.drawable.vote_down_gray);
-//        		votesView.setTextColor(res.getColor(R.color.gray));
-        	} else if (item.getLikes() == true) {
-        		voteUpView.setImageResource(R.drawable.vote_up_red);
-        		voteDownView.setImageResource(R.drawable.vote_down_gray);
-//        		votesView.setTextColor(res.getColor(R.color.arrow_red));
-        	} else {
-        		voteUpView.setImageResource(R.drawable.vote_up_gray);
-        		voteDownView.setImageResource(R.drawable.vote_down_blue);
-//        		votesView.setTextColor(res.getColor(R.color.arrow_blue));
-        	}
-        } else {
-        	voteUpView.setVisibility(View.VISIBLE);
-        	voteDownView.setVisibility(View.VISIBLE);
-        	voteUpView.setImageResource(R.drawable.vote_up_gray);
-    		voteDownView.setImageResource(R.drawable.vote_down_gray);
-//    		votesView.setTextColor(res.getColor(R.color.gray));
-        }
-
+        if (item.getLikes() == null || "[deleted]".equals(item.getAuthor())) {
+        	voteUpView.setVisibility(View.GONE);
+        	voteDownView.setVisibility(View.GONE);
+    	}
+        else if (Boolean.TRUE.equals(item.getLikes())) {
+    		voteUpView.setVisibility(View.VISIBLE);
+    		voteDownView.setVisibility(View.GONE);
+    	}
+        else if (Boolean.FALSE.equals(item.getLikes())) {
+    		voteUpView.setVisibility(View.GONE);
+    		voteDownView.setVisibility(View.VISIBLE);
+    	}
     }
 
     

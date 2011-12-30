@@ -81,87 +81,86 @@
     	android:layout_marginRight="4dp"
     	/>
 
-	<!-- Left section -->
-	<LinearLayout android:id="@+id/vote_layout"
-		android:orientation="vertical"
-		android:layout_width="wrap_content"
-		android:layout_height="wrap_content"
-		>
-	    <ImageView android:id="@+id/vote_up_image"
-			android:layout_width="8dip"
-			android:layout_height="8dip"
-			android:layout_marginLeft="2dip"
-			android:layout_marginRight="2dip"
-			android:layout_marginTop="4dip"
-			android:src="@drawable/vote_up_gray"
-			/>
-			
-		<ImageView android:id="@+id/vote_down_image"
-			android:layout_width="8dip"
-			android:layout_height="8dip"
-			android:layout_marginTop="2dip"
-			android:layout_marginLeft="2dip"
-			android:layout_marginRight="2dip"
-			android:src="@drawable/vote_down_gray"
-			/>
-	</LinearLayout>
-    
-	<RelativeLayout
+	<LinearLayout
 	    android:layout_width="0dp"
 	    android:layout_height="wrap_content"
 	    android:layout_weight="1"
 	    android:paddingTop="2dip"
 	    android:paddingBottom="2dip"
 	    android:paddingLeft="5dip"
-	    android:paddingRight="5dip">
+	    android:paddingRight="5dip"
+	    android:orientation="vertical"
+	    >
 
 		<!-- Top row -->
-	
-		<TextView android:id="@+id/submitter"
-	        android:layout_width="wrap_content"
-	        android:layout_height="wrap_content"
-	        android:layout_marginRight="5dip"
-	        
-	        android:singleLine="true"
-	        android:ellipsize="marquee"
-	        android:textAppearance="?android:attr/textAppearanceMedium"
-	        android:textColor="#888"
-	        android:textStyle="bold"
-	    />
-	    
-		<TextView android:id="@+id/votes"
-	        android:layout_width="wrap_content"
-	        android:layout_height="wrap_content"
-	        android:layout_toRightOf="@id/submitter"
-	        android:layout_marginRight="4dip"
-	        
-	      	android:singleLine="true"
-	        android:ellipsize="marquee"
-	        android:textAppearance="?android:attr/textAppearanceMedium"
-	        />
 		
-		<TextView android:id="@+id/submissionTime"
-	        android:layout_width="wrap_content"
-	        android:layout_height="wrap_content"
-	        android:layout_toRightOf="@id/votes"
-	        android:layout_alignBaseline="@id/submitter"
-	        
-	        android:singleLine="true"
-	        android:ellipsize="marquee"
-	        android:textAppearance="?android:attr/textAppearanceMedium"
-	    	/>
-	            
+		<LinearLayout
+		    android:orientation="horizontal"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            >
+	
+		    <FrameLayout
+		        android:layout_width="wrap_content"
+		        android:layout_height="wrap_content"
+		        >
+		        <ImageView android:id="@+id/vote_up_image"
+		            android:layout_width="8dip"
+		            android:layout_height="8dip"
+		            android:src="@drawable/vote_up_red"
+		            android:visibility="gone"
+		            android:contentDescription="@string/vote_up_image_content_description"
+		            />
+		            
+		        <ImageView android:id="@+id/vote_down_image"
+		            android:layout_width="8dip"
+		            android:layout_height="8dip"
+		            android:src="@drawable/vote_down_blue"
+		            android:visibility="gone"
+		            android:contentDescription="@string/vote_down_image_content_description"
+		            />
+		    </FrameLayout>
+		    
+			<TextView android:id="@+id/submitter"
+		        android:layout_width="wrap_content"
+		        android:layout_height="wrap_content"
+		        android:layout_marginRight="5dip"
+		        
+		        android:singleLine="true"
+		        android:ellipsize="marquee"
+		        android:textAppearance="?android:attr/textAppearanceMedium"
+		        android:textColor="#888"
+		        android:textStyle="bold"
+		    />
+		    
+			<TextView android:id="@+id/votes"
+		        android:layout_width="wrap_content"
+		        android:layout_height="wrap_content"
+		        android:layout_marginRight="4dip"
+		        
+		      	android:singleLine="true"
+		        android:ellipsize="marquee"
+		        android:textAppearance="?android:attr/textAppearanceMedium"
+		        />
+			
+			<TextView android:id="@+id/submissionTime"
+		        android:layout_width="wrap_content"
+		        android:layout_height="wrap_content"
+		        
+		        android:singleLine="true"
+		        android:ellipsize="marquee"
+		        android:textAppearance="?android:attr/textAppearanceMedium"
+		    	/>
+		</LinearLayout>
     
         <!-- Bottom row -->
 	    
         <TextView android:id="@+id/body"
 	        android:layout_width="wrap_content"
 	        android:layout_height="wrap_content"
-	        android:layout_below="@id/submitter"
-	        android:layout_alignLeft="@id/submitter"
 	        android:textAppearance="?android:attr/textAppearanceLarge"
 	    />
 	    
-    </RelativeLayout>
+    </LinearLayout>
 	    
 </LinearLayout>
