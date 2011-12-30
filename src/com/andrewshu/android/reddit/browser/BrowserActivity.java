@@ -182,12 +182,6 @@ public class BrowserActivity extends Activity {
     
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
-//        if (!mCanChord) {
-//            // The user has already fired a shortcut with this hold down of the
-//            // menu key.
-//            return false;
-//        }
-        
         switch (item.getItemId()) {
         
         case R.id.open_browser_menu_id:
@@ -195,6 +189,10 @@ public class BrowserActivity extends Activity {
     			break;
     		Common.launchBrowser(this, mUri.toString(), null, false, true, true);
     		break;
+        
+        case R.id.close_browser_menu_id:
+        	finish();
+        	break;
         
         case R.id.view_comments_menu_id:
         	if (mThreadUrl == null)
@@ -204,7 +202,7 @@ public class BrowserActivity extends Activity {
 			intent.putExtra(Constants.EXTRA_NUM_COMMENTS, Constants.DEFAULT_COMMENT_DOWNLOAD_LIMIT);
 			startActivity(intent);
         	break;
-        
+        	
         default:
     		throw new IllegalArgumentException("Unexpected action value "+item.getItemId());
     	}

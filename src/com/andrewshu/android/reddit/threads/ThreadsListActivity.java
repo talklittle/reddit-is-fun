@@ -1171,7 +1171,6 @@ public final class ThreadsListActivity extends ListActivity {
     	Dialog dialog;
     	ProgressDialog pdialog;
     	AlertDialog.Builder builder;
-    	LayoutInflater inflater;
     	
     	switch (id) {
     	case Constants.DIALOG_LOGIN:
