@@ -74,6 +74,8 @@
 	<string name="previous_threads">prev</string>
 	
 	<string name="error_voting_toast">Error voting. Please try again.</string>
+	<string name="error_unsupported_link_toast">Unsupported reddit URL. Try opening in the web browser instead.</string>
+	
 	<string name="mail_notification_unscheduled">Reddit mail notification service disabled.</string>
 	<string name="mail_notification_scheduled_5min">Reddit mail set to check every 5 minutes.</string>
 	<string name="mail_notification_scheduled_30min">Reddit mail set to check every 30 minutes.</string>

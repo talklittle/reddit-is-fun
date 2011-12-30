@@ -54,7 +54,7 @@ import com.andrewshu.android.reddit.threads.ShowThumbnailsTask.ThumbnailLoadActi
 public class DownloadCommentsTask extends AsyncTask<Integer, Long, Boolean>
 		implements PropertyChangeListener {
 	
-	private static final String TAG = "CommentsListActivity.DownloadCommentsTask";
+	private static final String TAG = "DownloadCommentsTask";
 	
     private final ObjectMapper mObjectMapper = Common.getObjectMapper();
     private final Markdown markdown = new Markdown();
