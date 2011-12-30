@@ -52,6 +52,23 @@ public class InboxActivity extends TabActivity {
         getTabHost().setCurrentTab(0);
 	}
 	
+	@Override
+	protected void onResume() {
+		super.onResume();
+		int previousTheme = mSettings.getTheme();
+
+    	mSettings.loadRedditPreferences(this, mClient);
+
+    	if (mSettings.getTheme() != previousTheme) {
+    		relaunchActivity();
+    	}
+	}
+	
+	private void relaunchActivity() {
+		finish();
+		startActivity(getIntent());
+	}
+	
 	private void addInboxTab(String whichInbox) {
         Intent inboxIntent = new Intent(getApplicationContext(), InboxListActivity.class);
         inboxIntent.putExtra(Constants.WHICH_INBOX_KEY, whichInbox);
