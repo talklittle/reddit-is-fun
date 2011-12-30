@@ -237,16 +237,10 @@ public class CommentsListActivity extends ListActivity
 	            		mSubreddit = m.group(1);
 	        			mThreadId = m.group(2);
 	        			jumpToCommentId = m.group(3);
-	        		} else {
-	        			Log.i(TAG, "unparsable comment path: " + commentPath);
-	        			Toast.makeText(this, R.string.error_unsupported_link_toast, Toast.LENGTH_LONG).show();
-	        			Common.launchBrowser(this, data.toString(), null, false, true, true);
-	        			finish();
-	        			return;
 	        		}
         		}
         	} else {
-    			if (Constants.LOGGING) Log.e(TAG, "Quitting because of null comment path.");
+    			if (Constants.LOGGING) Log.e(TAG, "Quitting because of bad comment path.");
     			finish();
     			return;
     		}
