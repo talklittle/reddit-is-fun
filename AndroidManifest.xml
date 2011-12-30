@@ -26,6 +26,7 @@
 
     <uses-permission android:name="android.permission.INTERNET" />
 	<uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+	<uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
 	
     <uses-sdk android:minSdkVersion="4" android:targetSdkVersion="10" />
 
@@ -78,5 +79,11 @@
 	    <activity android:name=".settings.RedditPreferencesPage"></activity>
 	    <activity android:name=".browser.BrowserActivity" android:configChanges="keyboardHidden|orientation"></activity>
 	    <service android:name=".mail.EnvelopeService" android:label="@string/pref_mail_notification_service"></service>
+	    
+	    <receiver android:name=".mail.BootAlarmSetter">
+            <intent-filter>
+                <action android:name="android.intent.action.BOOT_COMPLETED" />
+            </intent-filter>
+        </receiver>
 	</application>
 </manifest> 
