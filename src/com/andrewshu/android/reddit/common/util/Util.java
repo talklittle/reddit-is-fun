@@ -76,7 +76,8 @@ public class Util {
 		html = bodyConverted.append(html.substring(preEndIndex + 6)).toString();
 		
 		// Handle <li>
-		html = html.replaceAll("<li>", "* ").replaceAll("</li>", "<br>");
+		html = html.replaceAll("<li>(<p>)?", "&#8226; ")
+		           .replaceAll("(</p>)?</li>", "<br>");
 		
 		// Handle <strong> and <em>, which are normally <b> and <i> respectively, but reversed in Android.
 		// ANDROID BUG: http://code.google.com/p/android/issues/detail?id=3473
