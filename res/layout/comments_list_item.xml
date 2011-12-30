@@ -109,7 +109,7 @@
 		            android:layout_width="wrap_content"
 		            android:layout_height="8dip"
 		            android:paddingRight="5dip"
-		            android:src="@drawable/vote_up_red"
+		            android:src="@drawable/vote_up_comment_red"
 		            android:visibility="gone"
 		            android:contentDescription="@string/vote_up_image_content_description"
 		            />
@@ -118,7 +118,7 @@
 		            android:layout_width="wrap_content"
 		            android:layout_height="8dip"
 		            android:paddingRight="5dip"
-		            android:src="@drawable/vote_down_blue"
+		            android:src="@drawable/vote_down_comment_blue"
 		            android:visibility="gone"
 		            android:contentDescription="@string/vote_down_image_content_description"
 		            />
