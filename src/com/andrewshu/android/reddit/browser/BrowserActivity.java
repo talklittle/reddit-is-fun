@@ -55,6 +55,7 @@ public class BrowserActivity extends Activity {
 		settings.setJavaScriptEnabled(true);
 		settings.setUseWideViewPort(true);
 		settings.setDomStorageEnabled(true);
+		settings.setLoadWithOverviewMode(true);
 		
     	// HACK: set background color directly for android 2.0
         if (Util.isLightTheme(mSettings.getTheme()))
@@ -62,7 +63,6 @@ public class BrowserActivity extends Activity {
 
 		// use transparent background while loading
 		webview.setBackgroundColor(0);
-		webview.setInitialScale(50);
 		webview.setWebViewClient(new WebViewClient() {
 		    @Override
 		    public boolean shouldOverrideUrlLoading(WebView view, String url) {
