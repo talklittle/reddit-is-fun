@@ -357,7 +357,7 @@ public final class ThreadsListActivity extends ListActivity {
             
             // Set the values of the Views for the ThreadsListItem
             fillThreadsListItemView(
-            		position, view, item, ThreadsListActivity.this, mClient, mSettings, thumbnailOnClickListenerFactory
+            		position, view, item, ThreadsListActivity.this, mClient, mSettings, mThumbnailOnClickListenerFactory
     		);
             
             return view;
@@ -1247,7 +1247,7 @@ public final class ThreadsListActivity extends ListActivity {
     	case Constants.DIALOG_THREAD_CLICK:
     		if (mVoteTargetThing == null)
     			break;
-    		fillThreadClickDialog(dialog, mVoteTargetThing, mSettings, threadClickDialogOnClickListenerFactory);
+    		fillThreadClickDialog(dialog, mVoteTargetThing, mSettings, mThreadClickDialogOnClickListenerFactory);
     		break;
     		
     	case Constants.DIALOG_SORT_BY:
@@ -1356,24 +1356,22 @@ public final class ThreadsListActivity extends ListActivity {
 		}
 	};
 	
-	private final ThumbnailOnClickListenerFactory thumbnailOnClickListenerFactory
+	private final ThumbnailOnClickListenerFactory mThumbnailOnClickListenerFactory
 			= new ThumbnailOnClickListenerFactory() {
-		public OnClickListener getThumbnailOnClickListener(String jumpToId, String url, String threadUrl, Context context) {
-			final String fJumpToId = jumpToId;
-			final String fUrl = url;
-			final String fThreadUrl = threadUrl;
+		@Override
+		public OnClickListener getThumbnailOnClickListener(final String jumpToId, final String url, final String threadUrl, final Activity activity) {
 			return new OnClickListener() {
 				public void onClick(View v) {
-					ThreadsListActivity.this.mJumpToThreadId = fJumpToId;
-					Common.launchBrowser(ThreadsListActivity.this, fUrl, fThreadUrl,
-							false, false, ThreadsListActivity.this.mSettings.isUseExternalBrowser());
+					ThreadsListActivity.this.mJumpToThreadId = jumpToId;
+					Common.launchBrowser(activity, url, threadUrl, false, false, mSettings.isUseExternalBrowser());
 				}
 			};
 		}
 	};
 	
-	private final ThreadClickDialogOnClickListenerFactory threadClickDialogOnClickListenerFactory
+	private final ThreadClickDialogOnClickListenerFactory mThreadClickDialogOnClickListenerFactory
 			= new ThreadClickDialogOnClickListenerFactory() {
+		@Override
 		public OnClickListener getLoginOnClickListener() {
 			return new OnClickListener() {
 				public void onClick(View v) {
@@ -1382,6 +1380,7 @@ public final class ThreadsListActivity extends ListActivity {
 				}
 			};
 		}
+		@Override
 		public OnClickListener getLinkOnClickListener(ThingInfo thingInfo, boolean useExternalBrowser) {
 			final ThingInfo info = thingInfo;
     		final boolean fUseExternalBrowser = useExternalBrowser;
@@ -1395,6 +1394,7 @@ public final class ThreadsListActivity extends ListActivity {
 				}
 			};
     	}
+		@Override
 		public OnClickListener getCommentsOnClickListener(ThingInfo thingInfo) {
 			final ThingInfo info = thingInfo;
 			return new OnClickListener() {
@@ -1411,6 +1411,7 @@ public final class ThreadsListActivity extends ListActivity {
 				}
 			};
 		}
+		@Override
 		public CompoundButton.OnCheckedChangeListener getVoteUpOnCheckedChangeListener(ThingInfo thingInfo) {
 			final ThingInfo info = thingInfo;
 			return new CompoundButton.OnCheckedChangeListener() {
@@ -1424,6 +1425,7 @@ public final class ThreadsListActivity extends ListActivity {
 				}
 		    };
 		}
+		@Override
 	    public CompoundButton.OnCheckedChangeListener getVoteDownOnCheckedChangeListener(ThingInfo thingInfo) {
 	    	final ThingInfo info = thingInfo;
 	    	return new CompoundButton.OnCheckedChangeListener() {
@@ -1438,19 +1440,6 @@ public final class ThreadsListActivity extends ListActivity {
 		    };
 	    }
 	};
-	
-	public interface ThumbnailOnClickListenerFactory {
-		public OnClickListener getThumbnailOnClickListener(String jumpToId, String url, String threadUrl, Context context);
-	}
-	
-	public interface ThreadClickDialogOnClickListenerFactory {
-		public OnClickListener getLoginOnClickListener();
-		public OnClickListener getLinkOnClickListener(ThingInfo thingInfo, boolean useExternalBrowser);
-		public OnClickListener getCommentsOnClickListener(ThingInfo thingInfo);
-		public CompoundButton.OnCheckedChangeListener getVoteUpOnCheckedChangeListener(ThingInfo thingInfo);
-		public CompoundButton.OnCheckedChangeListener getVoteDownOnCheckedChangeListener(ThingInfo thingInfo);
-	}
-
 	
 	@Override
     protected void onSaveInstanceState(Bundle state) {

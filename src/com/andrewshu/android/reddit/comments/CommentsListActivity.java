@@ -97,7 +97,7 @@ import com.andrewshu.android.reddit.settings.RedditPreferencesPage;
 import com.andrewshu.android.reddit.settings.RedditSettings;
 import com.andrewshu.android.reddit.things.ThingInfo;
 import com.andrewshu.android.reddit.threads.ThreadsListActivity;
-import com.andrewshu.android.reddit.threads.ThreadsListActivity.ThumbnailOnClickListenerFactory;
+import com.andrewshu.android.reddit.threads.ThumbnailOnClickListenerFactory;
 import com.andrewshu.android.reddit.user.ProfileActivity;
 
 
@@ -401,8 +401,13 @@ public class CommentsListActivity extends ListActivity
 	            	}
 	            	
 	            	ThreadsListActivity.fillThreadsListItemView(
-	            			position, view, item, CommentsListActivity.this, mClient, mSettings, thumbnailOnClickListenerFactory
+	            			position, view, item, CommentsListActivity.this, mClient, mSettings, mThumbnailOnClickListenerFactory
         			);
+	            	if (item.isIs_self()) {
+	            		View thumbnail = view.findViewById(R.id.thumbnail);
+	            		if (thumbnail != null)
+	            			thumbnail.setVisibility(View.GONE);
+	            	}
 	                
 	                // In addition to stuff from ThreadsListActivity,
 	            	// we want to show selftext in CommentsListActivity.
@@ -2078,10 +2083,15 @@ public class CommentsListActivity extends ListActivity
 		}
 	};
 	
-	private final ThumbnailOnClickListenerFactory thumbnailOnClickListenerFactory
+	private final ThumbnailOnClickListenerFactory mThumbnailOnClickListenerFactory
 			= new ThumbnailOnClickListenerFactory() {
-		public OnClickListener getThumbnailOnClickListener(String jumpToId, String url, String threadUrl, Context context) {
-			return null;
+		@Override
+		public OnClickListener getThumbnailOnClickListener(final String jumpToId, final String url, final String threadUrl, final Activity activity) {
+			return new OnClickListener() {
+				public void onClick(View v) {
+					Common.launchBrowser(activity, url, threadUrl, false, false, mSettings.isUseExternalBrowser());
+				}
+			};
 		}
 	};
 

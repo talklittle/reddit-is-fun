@@ -94,9 +94,9 @@ import com.andrewshu.android.reddit.things.ThingListing;
 import com.andrewshu.android.reddit.threads.ShowThumbnailsTask;
 import com.andrewshu.android.reddit.threads.ShowThumbnailsTask.ThumbnailLoadAction;
 import com.andrewshu.android.reddit.threads.ThreadClickDialog;
+import com.andrewshu.android.reddit.threads.ThreadClickDialogOnClickListenerFactory;
 import com.andrewshu.android.reddit.threads.ThreadsListActivity;
-import com.andrewshu.android.reddit.threads.ThreadsListActivity.ThreadClickDialogOnClickListenerFactory;
-import com.andrewshu.android.reddit.threads.ThreadsListActivity.ThumbnailOnClickListenerFactory;
+import com.andrewshu.android.reddit.threads.ThumbnailOnClickListenerFactory;
 
 /**
  * Activity to view user submissions and comments.
@@ -326,7 +326,7 @@ public final class ProfileActivity extends ListActivity
 	            }
 	            
 	            ThreadsListActivity.fillThreadsListItemView(
-	            		position, view, item, ProfileActivity.this, mClient, mSettings, thumbnailOnClickListenerFactory
+	            		position, view, item, ProfileActivity.this, mClient, mSettings, mThumbnailOnClickListenerFactory
         		);
             }
             
@@ -1138,8 +1138,7 @@ public final class ProfileActivity extends ListActivity
     		break;
     		
     	case Constants.DIALOG_THREAD_CLICK:
-    		ThreadsListActivity.fillThreadClickDialog(dialog, mVoteTargetThingInfo, mSettings,
-    				threadClickDialogOnClickListenerFactory);
+    		ThreadsListActivity.fillThreadClickDialog(dialog, mVoteTargetThingInfo, mSettings, mThreadClickDialogOnClickListenerFactory);
     		break;
     		
 		default:
@@ -1159,24 +1158,22 @@ public final class ProfileActivity extends ListActivity
 		}
 	};
 	
-	private final ThumbnailOnClickListenerFactory thumbnailOnClickListenerFactory
+	private final ThumbnailOnClickListenerFactory mThumbnailOnClickListenerFactory
 			= new ThumbnailOnClickListenerFactory() {
-		public OnClickListener getThumbnailOnClickListener(String jumpToId, String url, String threadUrl, Context context) {
-//			final String fJumpToId = jumpToId;
-			final String fUrl = url;
-			final String fThreadUrl = threadUrl;
+		@Override
+		public OnClickListener getThumbnailOnClickListener(final String jumpToId, final String url, final String threadUrl, final Activity activity) {
 			return new OnClickListener() {
 				public void onClick(View v) {
-//					ProfileActivity.this.mJumpToThreadId = fJumpToId;
-					Common.launchBrowser(ProfileActivity.this, fUrl, fThreadUrl,
-							false, false, ProfileActivity.this.mSettings.isUseExternalBrowser());
+//					mJumpToThreadId = jumpToId;
+					Common.launchBrowser(activity, url, threadUrl, false, false, mSettings.isUseExternalBrowser());
 				}
 			};
 		}
 	};
 	
-	private final ThreadClickDialogOnClickListenerFactory threadClickDialogOnClickListenerFactory
+	private final ThreadClickDialogOnClickListenerFactory mThreadClickDialogOnClickListenerFactory
 			= new ThreadClickDialogOnClickListenerFactory() {
+		@Override
 		public OnClickListener getLoginOnClickListener() {
 			return new OnClickListener() {
 				public void onClick(View v) {
@@ -1185,6 +1182,7 @@ public final class ProfileActivity extends ListActivity
 				}
 			};
 		}
+		@Override
 		public OnClickListener getLinkOnClickListener(ThingInfo thingInfo, boolean useExternalBrowser) {
 			final ThingInfo info = thingInfo;
 			final boolean fUseExternalBrowser = useExternalBrowser;
@@ -1198,6 +1196,7 @@ public final class ProfileActivity extends ListActivity
 				}
 			};
 		}
+		@Override
 		public OnClickListener getCommentsOnClickListener(ThingInfo thingInfo) {
 			final ThingInfo info = thingInfo;
 			return new OnClickListener() {
@@ -1214,6 +1213,7 @@ public final class ProfileActivity extends ListActivity
 				}
 			};
 		}
+		@Override
 		public CompoundButton.OnCheckedChangeListener getVoteUpOnCheckedChangeListener(ThingInfo thingInfo) {
 			final ThingInfo info = thingInfo;
 			return new CompoundButton.OnCheckedChangeListener() {
@@ -1227,6 +1227,7 @@ public final class ProfileActivity extends ListActivity
 				}
 		    };
 		}
+		@Override
 		public CompoundButton.OnCheckedChangeListener getVoteDownOnCheckedChangeListener(ThingInfo thingInfo) {
 			final ThingInfo info = thingInfo;
 			return new CompoundButton.OnCheckedChangeListener() {
