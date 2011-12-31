@@ -2025,18 +2025,20 @@ public class CommentsListActivity extends ListActivity
         
         setCommentIndent(view, item.getIndent(), settings);
         
-        if (item.getLikes() == null || "[deleted]".equals(item.getAuthor())) {
-        	voteUpView.setVisibility(View.GONE);
-        	voteDownView.setVisibility(View.GONE);
-    	}
-        else if (Boolean.TRUE.equals(item.getLikes())) {
-    		voteUpView.setVisibility(View.VISIBLE);
-    		voteDownView.setVisibility(View.GONE);
-    	}
-        else if (Boolean.FALSE.equals(item.getLikes())) {
-    		voteUpView.setVisibility(View.GONE);
-    		voteDownView.setVisibility(View.VISIBLE);
-    	}
+        if (voteUpView != null && voteDownView != null) {
+	        if (item.getLikes() == null || "[deleted]".equals(item.getAuthor())) {
+	        	voteUpView.setVisibility(View.GONE);
+	        	voteDownView.setVisibility(View.GONE);
+	    	}
+	        else if (Boolean.TRUE.equals(item.getLikes())) {
+	    		voteUpView.setVisibility(View.VISIBLE);
+	    		voteDownView.setVisibility(View.GONE);
+	    	}
+	        else if (Boolean.FALSE.equals(item.getLikes())) {
+	    		voteUpView.setVisibility(View.GONE);
+	    		voteDownView.setVisibility(View.VISIBLE);
+	    	}
+        }
     }
 
     

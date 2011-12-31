@@ -81,39 +81,14 @@
     	android:layout_marginRight="4dp"
     	/>
 
-	<!-- Left section -->
 	<LinearLayout
-		android:orientation="vertical"
-		android:layout_width="wrap_content"
-		android:layout_height="wrap_content"
-		>
-	    <ImageView android:id="@+id/vote_up_image"
-			android:layout_width="16dip"
-			android:layout_height="8dip"
-			android:layout_marginLeft="2dip"
-			android:layout_marginRight="2dip"
-			android:layout_marginTop="4dip"
-			android:src="@drawable/vote_up_gray"
-			android:visibility="invisible"
-			/>
-			
-		<ImageView android:id="@+id/vote_down_image"
-			android:layout_width="16dip"
-			android:layout_height="8dip"
-			android:layout_marginTop="2dip"
-			android:layout_marginLeft="2dip"
-			android:layout_marginRight="2dip"
-			android:src="@drawable/vote_down_gray"
-			android:visibility="invisible"
-			/>
-	</LinearLayout>
-    
-	<RelativeLayout
 	    android:layout_width="0dp"
 	    android:layout_height="wrap_content"
 	    android:layout_weight="1"
 	    android:paddingLeft="5dip"
-	    android:paddingRight="5dip">
+	    android:paddingRight="5dip"
+	    android:orientation="horizontal"
+	    >
 
 		<!-- Top row -->
 	
@@ -132,7 +107,6 @@
 		<TextView android:id="@+id/votes"
 	        android:layout_width="wrap_content"
 	        android:layout_height="wrap_content"
-	        android:layout_toRightOf="@id/submitter"
 	        android:layout_marginRight="4dip"
 	        
 	      	android:singleLine="true"
@@ -144,8 +118,6 @@
 		<TextView android:id="@+id/submissionTime"
 	        android:layout_width="wrap_content"
 	        android:layout_height="wrap_content"
-	        android:layout_toRightOf="@id/votes"
-	        android:layout_alignBaseline="@id/submitter"
 	        
 	        android:singleLine="true"
 	        android:ellipsize="marquee"
@@ -156,28 +128,12 @@
 	    <TextView android:text="@string/comment_hidden"
 	    	android:layout_width="wrap_content"
 	    	android:layout_height="wrap_content"
-	    	android:layout_toRightOf="@id/submissionTime"
-	        android:layout_alignBaseline="@id/submitter"
 	        android:layout_marginLeft="4dip"
 	    	android:singleLine="true"
 	        android:textAppearance="?android:attr/textAppearanceSmall"
 	        android:textStyle="bold"
 	    	/>
     
-	    <!-- Bottom row -->
-		<!-- 		    
-        <TextView android:id="@+id/body"
-	        android:layout_width="wrap_content"
-	        android:layout_height="wrap_content"
-	        android:layout_below="@id/submitter"
-	        android:layout_alignLeft="@id/submitter"
-	        android:layout_marginRight="5dip"
-	        android:text="Loading..."
-	        android:textSize="12sp"
-			android:autoLink="all"
-			android:linksClickable="false"
-	    />
-	    -->
-    </RelativeLayout>
+    </LinearLayout>
 	    
 </LinearLayout>
