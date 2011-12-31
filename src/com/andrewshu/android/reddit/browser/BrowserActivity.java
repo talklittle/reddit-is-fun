@@ -1,5 +1,7 @@
 package com.andrewshu.android.reddit.browser;
 
+import java.lang.reflect.Method;
+
 import android.app.Activity;
 import android.content.Intent;
 import android.net.Uri;
@@ -36,7 +38,23 @@ public class BrowserActivity extends Activity {
     // Common settings are stored here
     private final RedditSettings mSettings = new RedditSettings();
     
-	
+    // WebSettings available on Android 2.1 (API level 7)
+    private static Method mWebSettings_setDomStorageEnabled;
+    private static Method mWebSettings_setLoadWithOverviewMode;
+    
+    static {
+        initCompatibility();
+    };
+
+    private static void initCompatibility() {
+        try {
+        	mWebSettings_setDomStorageEnabled = WebSettings.class.getMethod("setDomStorageEnabled", new Class[] { Boolean.TYPE } );
+        } catch (NoSuchMethodException nsme) {}
+        try {
+        	mWebSettings_setLoadWithOverviewMode = WebSettings.class.getMethod("setLoadWithOverviewMode", new Class[] { Boolean.TYPE } );
+        } catch (NoSuchMethodException nsme) {}
+    }
+    
 	@Override
 	public void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
@@ -54,8 +72,8 @@ public class BrowserActivity extends Activity {
 		settings.setPluginsEnabled(true);
 		settings.setJavaScriptEnabled(true);
 		settings.setUseWideViewPort(true);
-		settings.setDomStorageEnabled(true);
-		settings.setLoadWithOverviewMode(true);
+		trySetDomStorageEnabled(settings);
+		trySetLoadWithOverviewMode(settings);
 		
     	// HACK: set background color directly for android 2.0
         if (Util.isLightTheme(mSettings.getTheme()))
@@ -112,6 +130,29 @@ public class BrowserActivity extends Activity {
 			if (Constants.LOGGING) Log.d(TAG, "Loading url " + mUri.toString());
 			webview.loadUrl(mUri.toString());
 		}
+	}
+	
+	private void trySetDomStorageEnabled(WebSettings settings) {
+		if (mWebSettings_setDomStorageEnabled != null) {
+			try {
+				mWebSettings_setDomStorageEnabled.invoke(settings, true);
+			} catch (Exception ex) {
+				Log.e(TAG, "trySetDomStorageEnabled", ex);
+			}
+		}
+	}
+	
+	private void trySetLoadWithOverviewMode(WebSettings settings) {
+		if (mWebSettings_setLoadWithOverviewMode != null) {
+			try {
+				mWebSettings_setLoadWithOverviewMode.invoke(settings, true);
+				return;
+			} catch (Exception ex) {
+				Log.e(TAG, "trySetLoadWithOverviewMode", ex);
+			}
+		}
+		// if that method didn't work, do this instead for old devices
+		webview.setInitialScale(50);
 	}
 	
 	@Override
