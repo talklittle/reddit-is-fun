@@ -111,7 +111,7 @@
 		            android:paddingRight="5dip"
 		            android:src="@drawable/vote_up_red"
 		            android:visibility="gone"
-		            android:contentDescription="@string/vote_up_image_content_description"
+		            android:contentDescription="@string/vote_up_arrow_content_description"
 		            />
 		            
 		        <ImageView android:id="@+id/vote_down_image"
@@ -120,7 +120,7 @@
 		            android:paddingRight="5dip"
 		            android:src="@drawable/vote_down_blue"
 		            android:visibility="gone"
-		            android:contentDescription="@string/vote_down_image_content_description"
+		            android:contentDescription="@string/vote_down_arrow_content_description"
 		            />
 		    </FrameLayout>
 		    

@@ -51,6 +51,7 @@
 				android:layout_marginRight="12dip"
 				android:layout_marginTop="4dip"
 				android:src="@drawable/vote_up_gray"
+				android:contentDescription="@string/vote_up_arrow_content_description"
 				/>
 				
 			<TextView android:id="@+id/votes"
@@ -73,6 +74,7 @@
 				android:layout_marginRight="12dip"
 				android:layout_below="@id/votes"
 				android:src="@drawable/vote_down_gray"
+				android:contentDescription="@string/vote_down_arrow_content_description"
 				/>
 		    
 	    </RelativeLayout>

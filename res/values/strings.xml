@@ -233,8 +233,8 @@
     
     
     <!-- === I18N Content Descriptions === -->
-    <string name="vote_up_image_content_description">upvoted</string>
-    <string name="vote_down_image_content_description">downvoted</string>
+    <string name="vote_up_arrow_content_description">upvote arrow</string>
+    <string name="vote_down_arrow_content_description">downvote arrow</string>
     
     
 </resources>
