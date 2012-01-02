@@ -42,6 +42,7 @@ import android.app.PendingIntent;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.database.Cursor;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.net.Uri;
@@ -411,6 +412,8 @@ public class Common {
     public static void launchBrowser(Context context, String url, String threadUrl,
     		boolean requireNewTask, boolean bypassParser, boolean useExternalBrowser) {
     	
+    	Browser.updateVisitedHistory(context.getContentResolver(), url, true);
+    	
     	Uri uri = Uri.parse(url);
     	
     	if (!bypassParser) {
@@ -457,7 +460,6 @@ public class Common {
 	    			if (requireNewTask)
 	    				intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
 	    			context.startActivity(intent);
-	    			return;
 	    		} else {
 		    		// Assume it points to a thread aka CommentsList
 	    			CacheInfo.invalidateCachedThread(context);
@@ -493,6 +495,23 @@ public class Common {
 			context.startActivity(browser);
     	}
 	}
+    
+    public static boolean isClicked(Context context, String url) {
+		Cursor cursor = context.getContentResolver().query(
+				Browser.BOOKMARKS_URI,
+				Browser.HISTORY_PROJECTION,
+				Browser.HISTORY_PROJECTION[Browser.HISTORY_PROJECTION_URL_INDEX] + "=?",
+				new String[]{ url },
+				null
+		);
+		if (cursor != null) {
+	        boolean isClicked = cursor.moveToFirst();  // returns true if cursor is not empty
+	        cursor.close();
+	        return isClicked;
+		} else {
+			return false;
+		}
+    }
     
     public static ObjectMapper getObjectMapper() {
     	return mObjectMapper;

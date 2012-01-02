@@ -333,37 +333,41 @@ public class DownloadCommentsTask extends AsyncTask<Integer, Long, Boolean>
 		}
 	}
 	
-	private void parseOP(ThingInfo data) {
-		mOpThingInfo = data;
-		mOpThingInfo.setIndent(0);
+	private void parseOP(final ThingInfo data) {
+		data.setIndent(0);
+		data.setClicked(Common.isClicked(mActivity, data.getUrl()));
+		
 		mActivity.runOnUiThread(new Runnable() {
 			@Override
 			public void run() {
 				synchronized (CommentsListActivity.COMMENT_ADAPTER_LOCK) {
-					mActivity.mCommentsList.add(0, mOpThingInfo);
+					mActivity.mCommentsList.add(0, data);
 				}
 			}
 		});
 
-		if (mOpThingInfo.isIs_self() && mOpThingInfo.getSelftext_html() != null) {
+		if (data.isIs_self() && data.getSelftext_html() != null) {
 			// HTML to Spanned
-			String unescapedHtmlSelftext = Html.fromHtml(mOpThingInfo.getSelftext_html()).toString();
+			String unescapedHtmlSelftext = Html.fromHtml(data.getSelftext_html()).toString();
 			Spanned selftext = Html.fromHtml(Util.convertHtmlTags(unescapedHtmlSelftext));
 			
     		// remove last 2 newline characters
 			if (selftext.length() > 2)
-				mOpThingInfo.setSpannedSelftext(selftext.subSequence(0, selftext.length()-2));
+				data.setSpannedSelftext(selftext.subSequence(0, selftext.length()-2));
 			else
-				mOpThingInfo.setSpannedSelftext("");
+				data.setSpannedSelftext("");
 
 			// Get URLs from markdown
-			markdown.getURLs(mOpThingInfo.getSelftext(), mOpThingInfo.getUrls());
+			markdown.getURLs(data.getSelftext(), data.getUrls());
 		}
+		
 		// We might not have a title if we've intercepted a plain link to a thread.
-		mThreadTitle = mOpThingInfo.getTitle();
+		mThreadTitle = data.getTitle();
 		mActivity.setThreadTitle(mThreadTitle);
-		mSubreddit = mOpThingInfo.getSubreddit();
-		mThreadId = mOpThingInfo.getId();
+		mSubreddit = data.getSubreddit();
+		mThreadId = data.getId();
+		
+		mOpThingInfo = data;
 	}
 	
 	/**

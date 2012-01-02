@@ -718,7 +718,9 @@ public final class ProfileActivity extends ListActivity
 	   						ti.setSpannedBody("");
 	   					_mThingInfos.add(ti);
     				} else if (Constants.THREAD_KIND.equals(tiContainer.getKind())) {
-    					_mThingInfos.add(tiContainer.getData());
+    					ThingInfo ti = tiContainer.getData();
+    					ti.setClicked(Common.isClicked(ProfileActivity.this, ti.getUrl()));
+    					_mThingInfos.add(ti);
     				}
     			}
     		} catch (Exception ex) {
@@ -1161,11 +1163,19 @@ public final class ProfileActivity extends ListActivity
 	private final ThumbnailOnClickListenerFactory mThumbnailOnClickListenerFactory
 			= new ThumbnailOnClickListenerFactory() {
 		@Override
-		public OnClickListener getThumbnailOnClickListener(final String jumpToId, final String url, final String threadUrl, final Activity activity) {
+		public OnClickListener getThumbnailOnClickListener(final ThingInfo threadThingInfo, final Activity activity) {
 			return new OnClickListener() {
 				public void onClick(View v) {
 //					mJumpToThreadId = jumpToId;
-					Common.launchBrowser(activity, url, threadUrl, false, false, mSettings.isUseExternalBrowser());
+					threadThingInfo.setClicked(true);
+					Common.launchBrowser(
+							activity,
+							threadThingInfo.getUrl(),
+							Util.createThreadUri(threadThingInfo).toString(),
+							false,
+							false,
+							mSettings.isUseExternalBrowser()
+					);
 				}
 			};
 		}

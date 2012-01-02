@@ -18,6 +18,7 @@ import android.os.AsyncTask;
 import android.util.Log;
 
 import com.andrewshu.android.reddit.common.CacheInfo;
+import com.andrewshu.android.reddit.common.Common;
 import com.andrewshu.android.reddit.common.Constants;
 import com.andrewshu.android.reddit.common.ProgressInputStream;
 import com.andrewshu.android.reddit.common.util.StringUtils;
@@ -237,6 +238,7 @@ public abstract class DownloadThreadsTask extends AsyncTask<Void, Long, Boolean>
 				// Only add entries that are threads. kind="t3"
 				if (Constants.THREAD_KIND.equals(tiContainer.getKind())) {
 					ThingInfo ti = tiContainer.getData();
+					ti.setClicked(Common.isClicked(mContext, ti.getUrl()));
 					mThingInfos.add(ti);
 				}
 			}

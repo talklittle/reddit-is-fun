@@ -410,7 +410,6 @@ public final class ThreadsListActivity extends ListActivity {
         		0, domainLen+2, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
 
         if (Util.isLightTheme(settings.getTheme())) {
-        	// FIXME: This doesn't work persistently, since "clicked" is not delivered to reddit.com
             if (item.isClicked()) {
             	ForegroundColorSpan fcs = new ForegroundColorSpan(res.getColor(R.color.purple));
             	titleSS.setSpan(fcs, 0, titleLen, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
@@ -421,6 +420,10 @@ public final class ThreadsListActivity extends ListActivity {
             domainSS.setSpan(new ForegroundColorSpan(res.getColor(R.color.gray_50)),
             		0, domainLen+2, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
         } else {
+            if (item.isClicked()) {
+            	ForegroundColorSpan fcs = new ForegroundColorSpan(res.getColor(R.color.gray_50));
+            	titleSS.setSpan(fcs, 0, titleLen, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
+            }
         	domainSS.setSpan(new ForegroundColorSpan(res.getColor(R.color.gray_75)),
             		0, domainLen+2, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
         }
@@ -464,8 +467,7 @@ public final class ThreadsListActivity extends ListActivity {
         		thumbnailContainer.setVisibility(View.VISIBLE);
         		
             	if (item.getUrl() != null) {
-            		OnClickListener thumbnailOnClickListener = thumbnailOnClickListenerFactory.getThumbnailOnClickListener(
-        					item.getId(), item.getUrl(), Util.createThreadUri(item).toString(), activity);
+            		OnClickListener thumbnailOnClickListener = thumbnailOnClickListenerFactory.getThumbnailOnClickListener(item, activity);
             		if (thumbnailOnClickListener != null) {
 		            	thumbnailFrame.setOnClickListener(thumbnailOnClickListener);
             		}
@@ -988,6 +990,7 @@ public final class ThreadsListActivity extends ListActivity {
 			return true;
 			
 		case Constants.OPEN_IN_BROWSER_CONTEXT_ITEM:
+			_item.setClicked(true);
 			Common.launchBrowser(this, _item.getUrl(), Util.createThreadUri(_item).toString(), false, true, true);
 			return true;
 			
@@ -1353,11 +1356,19 @@ public final class ThreadsListActivity extends ListActivity {
 	private final ThumbnailOnClickListenerFactory mThumbnailOnClickListenerFactory
 			= new ThumbnailOnClickListenerFactory() {
 		@Override
-		public OnClickListener getThumbnailOnClickListener(final String jumpToId, final String url, final String threadUrl, final Activity activity) {
+		public OnClickListener getThumbnailOnClickListener(final ThingInfo threadThingInfo, final Activity activity) {
 			return new OnClickListener() {
 				public void onClick(View v) {
-					ThreadsListActivity.this.mJumpToThreadId = jumpToId;
-					Common.launchBrowser(activity, url, threadUrl, false, false, mSettings.isUseExternalBrowser());
+					mJumpToThreadId = threadThingInfo.getId();
+					threadThingInfo.setClicked(true);
+					Common.launchBrowser(
+							activity,
+							threadThingInfo.getUrl(),
+							Util.createThreadUri(threadThingInfo).toString(),
+							false,
+							false,
+							mSettings.isUseExternalBrowser()
+					);
 				}
 			};
 		}
@@ -1375,60 +1386,57 @@ public final class ThreadsListActivity extends ListActivity {
 			};
 		}
 		@Override
-		public OnClickListener getLinkOnClickListener(ThingInfo thingInfo, boolean useExternalBrowser) {
-			final ThingInfo info = thingInfo;
-    		final boolean fUseExternalBrowser = useExternalBrowser;
+		public OnClickListener getLinkOnClickListener(final ThingInfo thingInfo, final boolean useExternalBrowser) {
     		return new OnClickListener() {
 				public void onClick(View v) {
 					removeDialog(Constants.DIALOG_THREAD_CLICK);
-					// Launch Intent to goto the URL
-					Common.launchBrowser(ThreadsListActivity.this, info.getUrl(),
-							Util.createThreadUri(info).toString(),
-							false, false, fUseExternalBrowser);
+					thingInfo.setClicked(true);
+					Common.launchBrowser(ThreadsListActivity.this, thingInfo.getUrl(),
+							Util.createThreadUri(thingInfo).toString(),
+							false, false, useExternalBrowser);
 				}
 			};
     	}
 		@Override
-		public OnClickListener getCommentsOnClickListener(ThingInfo thingInfo) {
-			final ThingInfo info = thingInfo;
+		public OnClickListener getCommentsOnClickListener(final ThingInfo thingInfo) {
 			return new OnClickListener() {
 				public void onClick(View v) {
 					removeDialog(Constants.DIALOG_THREAD_CLICK);
-					// Launch an Intent for CommentsListActivity
+
 					CacheInfo.invalidateCachedThread(ThreadsListActivity.this);
+					
+					// Launch an Intent for CommentsListActivity
 					Intent i = new Intent(ThreadsListActivity.this, CommentsListActivity.class);
-					i.setData(Util.createThreadUri(info));
-					i.putExtra(Constants.EXTRA_SUBREDDIT, info.getSubreddit());
-					i.putExtra(Constants.EXTRA_TITLE, info.getTitle());
-					i.putExtra(Constants.EXTRA_NUM_COMMENTS, Integer.valueOf(info.getNum_comments()));
+					i.setData(Util.createThreadUri(thingInfo));
+					i.putExtra(Constants.EXTRA_SUBREDDIT, thingInfo.getSubreddit());
+					i.putExtra(Constants.EXTRA_TITLE, thingInfo.getTitle());
+					i.putExtra(Constants.EXTRA_NUM_COMMENTS, Integer.valueOf(thingInfo.getNum_comments()));
 					startActivity(i);
 				}
 			};
 		}
 		@Override
-		public CompoundButton.OnCheckedChangeListener getVoteUpOnCheckedChangeListener(ThingInfo thingInfo) {
-			final ThingInfo info = thingInfo;
+		public CompoundButton.OnCheckedChangeListener getVoteUpOnCheckedChangeListener(final ThingInfo thingInfo) {
 			return new CompoundButton.OnCheckedChangeListener() {
 		    	public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
 		    		removeDialog(Constants.DIALOG_THREAD_CLICK);
 			    	if (isChecked) {
-						new MyVoteTask(info, 1, info.getSubreddit()).execute();
+						new MyVoteTask(thingInfo, 1, thingInfo.getSubreddit()).execute();
 					} else {
-						new MyVoteTask(info, 0, info.getSubreddit()).execute();
+						new MyVoteTask(thingInfo, 0, thingInfo.getSubreddit()).execute();
 					}
 				}
 		    };
 		}
 		@Override
-	    public CompoundButton.OnCheckedChangeListener getVoteDownOnCheckedChangeListener(ThingInfo thingInfo) {
-	    	final ThingInfo info = thingInfo;
+	    public CompoundButton.OnCheckedChangeListener getVoteDownOnCheckedChangeListener(final ThingInfo thingInfo) {
 	    	return new CompoundButton.OnCheckedChangeListener() {
 		        public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
 			    	removeDialog(Constants.DIALOG_THREAD_CLICK);
 					if (isChecked) {
-						new MyVoteTask(info, -1, info.getSubreddit()).execute();
+						new MyVoteTask(thingInfo, -1, thingInfo.getSubreddit()).execute();
 					} else {
-						new MyVoteTask(info, 0, info.getSubreddit()).execute();
+						new MyVoteTask(thingInfo, 0, thingInfo.getSubreddit()).execute();
 					}
 				}
 		    };
