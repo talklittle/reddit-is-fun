@@ -404,9 +404,9 @@ public class CommentsListActivity extends ListActivity
 	            			position, view, item, CommentsListActivity.this, mClient, mSettings, mThumbnailOnClickListenerFactory
         			);
 	            	if (item.isIs_self()) {
-	            		View thumbnail = view.findViewById(R.id.thumbnail);
-	            		if (thumbnail != null)
-	            			thumbnail.setVisibility(View.GONE);
+	            		View thumbnailContainer = view.findViewById(R.id.thumbnail_view);
+	            		if (thumbnailContainer != null)
+	            			thumbnailContainer.setVisibility(View.GONE);
 	            	}
 	                
 	                // In addition to stuff from ThreadsListActivity,
