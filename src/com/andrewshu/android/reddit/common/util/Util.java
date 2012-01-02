@@ -460,7 +460,7 @@ public class Util {
      * @return original uri if no mobile version of uri is known
      */
     public static Uri optimizeMobileUri(Uri uri) {
-    	if (isWikipediaUri(uri)) {
+    	if (isNonMobileWikipediaUri(uri)) {
     		uri = createMobileWikpediaUri(uri);
     	}
     	return uri;
@@ -469,7 +469,7 @@ public class Util {
     /**
      * @return if uri points to a non-mobile wikpedia uri.
      */
-    static boolean isWikipediaUri(Uri uri) {
+    static boolean isNonMobileWikipediaUri(Uri uri) {
     	if (uri == null) return false;
     	String host = uri.getHost();
     	return host != null && host.endsWith(".wikipedia.org") && !host.contains(".m.wikipedia.org");
@@ -487,6 +487,12 @@ public class Util {
     	if (uri == null) return false;
     	String host = uri.getHost();
     	return host != null && host.endsWith(".youtube.com");
+    }
+    
+    public static boolean isAndroidMarketUri(Uri uri) {
+    	if (uri == null) return false;
+    	String host = uri.getHost();
+    	return host != null && host.equals("market.android.com");
     }
     
 }
