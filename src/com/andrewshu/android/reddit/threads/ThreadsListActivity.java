@@ -61,6 +61,7 @@ import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.CheckBox;
 import android.widget.CompoundButton;
+import android.widget.FrameLayout;
 import android.widget.ImageView;
 import android.widget.ListView;
 import android.widget.ProgressBar;
@@ -383,8 +384,9 @@ public final class ThreadsListActivity extends ListActivity {
 //        TextView submissionTimeView = (TextView) view.findViewById(R.id.submissionTime);
         ImageView voteUpView = (ImageView) view.findViewById(R.id.vote_up_image);
         ImageView voteDownView = (ImageView) view.findViewById(R.id.vote_down_image);
-        ImageView thumbnailView = (ImageView) view.findViewById(R.id.thumbnail);
-        View dividerView = view.findViewById(R.id.divider);
+        View thumbnailContainer = view.findViewById(R.id.thumbnail_view);
+        FrameLayout thumbnailFrame = (FrameLayout) view.findViewById(R.id.thumbnail_frame);
+        ImageView thumbnailImageView = (ImageView) view.findViewById(R.id.thumbnail);
         ProgressBar indeterminateProgressBar = (ProgressBar) view.findViewById(R.id.indeterminate_progress);
         
         // Set the title and domain using a SpannableStringBuilder
@@ -457,52 +459,44 @@ public final class ThreadsListActivity extends ListActivity {
         }
         
         // Thumbnails open links
-        if (thumbnailView != null) {
+        if (thumbnailContainer != null) {
         	if (Common.shouldLoadThumbnails(activity, settings)) {
-        		dividerView.setVisibility(View.VISIBLE);
-        		thumbnailView.setVisibility(View.VISIBLE);
-        		indeterminateProgressBar.setVisibility(View.GONE);
+        		thumbnailContainer.setVisibility(View.VISIBLE);
         		
             	if (item.getUrl() != null) {
             		OnClickListener thumbnailOnClickListener = thumbnailOnClickListenerFactory.getThumbnailOnClickListener(
         					item.getId(), item.getUrl(), Util.createThreadUri(item).toString(), activity);
             		if (thumbnailOnClickListener != null) {
-		            	thumbnailView.setOnClickListener(thumbnailOnClickListener);
-		            	indeterminateProgressBar.setOnClickListener(thumbnailOnClickListener);
+		            	thumbnailFrame.setOnClickListener(thumbnailOnClickListener);
             		}
             	}
             	
             	// Show thumbnail based on ThingInfo
             	if ("default".equals(item.getThumbnail()) || "self".equals(item.getThumbnail()) || StringUtils.isEmpty(item.getThumbnail())) {
         			indeterminateProgressBar.setVisibility(View.GONE);
-            		thumbnailView.setVisibility(View.VISIBLE);
-            		thumbnailView.setImageResource(R.drawable.go_arrow);
+            		thumbnailImageView.setVisibility(View.VISIBLE);
+            		thumbnailImageView.setImageResource(R.drawable.go_arrow);
             	}
             	else {
+            		indeterminateProgressBar.setVisibility(View.GONE);
+            		thumbnailImageView.setVisibility(View.VISIBLE);
             		if (item.getThumbnailBitmap() != null) {
-	        			indeterminateProgressBar.setVisibility(View.GONE);
-	            		thumbnailView.setVisibility(View.VISIBLE);
-	            		thumbnailView.setImageBitmap(item.getThumbnailBitmap());
+	            		thumbnailImageView.setImageBitmap(item.getThumbnailBitmap());
             		}
             		else {
-            			thumbnailView.setImageBitmap(null);
-            			new ShowThumbnailsTask(activity, client, R.drawable.go_arrow).execute(new ThumbnailLoadAction(item, thumbnailView, position));
+            			thumbnailImageView.setImageBitmap(null);
+            			new ShowThumbnailsTask(activity, client, R.drawable.go_arrow).execute(new ThumbnailLoadAction(item, thumbnailImageView, position));
             		}
             	}
             	
             	// Set thumbnail background based on current theme
-            	if (Util.isLightTheme(settings.getTheme())) {
-            		thumbnailView.setBackgroundResource(R.drawable.thumbnail_background_light);
-            		indeterminateProgressBar.setBackgroundResource(R.drawable.thumbnail_background_light);
-            	} else {
-            		thumbnailView.setBackgroundResource(R.drawable.thumbnail_background_dark);
-            		indeterminateProgressBar.setBackgroundResource(R.drawable.thumbnail_background_dark);
-            	}
+            	if (Util.isLightTheme(settings.getTheme()))
+            		thumbnailFrame.setBackgroundResource(R.drawable.thumbnail_background_light);
+            	else
+            		thumbnailFrame.setBackgroundResource(R.drawable.thumbnail_background_dark);
         	} else {
         		// if thumbnails disabled, hide thumbnail icon
-        		dividerView.setVisibility(View.GONE);
-        		thumbnailView.setVisibility(View.GONE);
-        		indeterminateProgressBar.setVisibility(View.GONE);
+        		thumbnailContainer.setVisibility(View.GONE);
         	}
         }
     }

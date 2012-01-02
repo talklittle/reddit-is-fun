@@ -112,7 +112,6 @@
 		        android:layout_width="wrap_content"
 		        android:layout_height="wrap_content"
 		        android:layout_toRightOf="@id/nsfw"
-		        android:layout_toLeftOf="@id/thumbnail_view"
 		        android:layout_below="@id/title"
 		        android:layout_alignBaseline="@id/nsfw"
 		        android:layout_alignWithParentIfMissing="true"

@@ -82,12 +82,11 @@
 		<RelativeLayout
 		    android:layout_width="fill_parent"
 		    android:layout_height="wrap_content"
-		    android:paddingLeft="5dip"
-		    android:paddingRight="5dip">
+		    android:paddingLeft="5dip">
 		    
 		    <LinearLayout android:id="@+id/thumbnail_view"
 			  	android:layout_width="wrap_content"
-  				android:layout_height="fill_parent"
+  				android:layout_height="wrap_content"
   				android:layout_alignParentRight="true"
   				android:orientation="horizontal">
   				
@@ -98,28 +97,33 @@
 					android:layout_marginBottom="5dip"
   					android:background="@drawable/divider_vertical_dark"
   				/>
-  				
-			    <com.andrewshu.android.reddit.threads.DontPressWithParentImageView
-			    	android:id="@+id/thumbnail"
-			        android:layout_width="?android:attr/listPreferredItemHeight"
-			        android:layout_height="?android:attr/listPreferredItemHeight"
-			        android:layout_gravity="center"
-			        android:layout_marginTop="5dip"
-			        android:layout_marginBottom="5dip"
-			        android:src="@drawable/go_arrow"
-			        android:scaleType="fitCenter"
-		    	/>
+				
+				<com.andrewshu.android.reddit.threads.DontPressWithParentFrameLayout
+				    android:id="@+id/thumbnail_frame"
+				    android:layout_width="?android:attr/listPreferredItemHeight"
+				    android:layout_height="fill_parent"
+                    android:paddingTop="5dp"
+                    android:paddingBottom="5dp"
+				    >
+				    <ImageView android:id="@+id/thumbnail"
+				        android:layout_width="?android:attr/listPreferredItemHeight"
+				        android:layout_height="?android:attr/listPreferredItemHeight"
+				        android:layout_gravity="center"
+                        android:paddingRight="5dp"
+				        android:src="@drawable/go_arrow"
+				        android:scaleType="fitCenter"
+				        android:contentDescription="@string/thumbnail_content_description"
+			    	/>
+			    	
+			    	<ProgressBar android:id="@+id/indeterminate_progress"
+			    		android:layout_width="?android:attr/listPreferredItemHeight"
+				        android:layout_height="?android:attr/listPreferredItemHeight"
+                        android:paddingRight="5dp"
+				        android:indeterminate="true"
+				        android:visibility="gone"
+				        />
+		    	</com.andrewshu.android.reddit.threads.DontPressWithParentFrameLayout>
 		    	
-		    	<ProgressBar android:id="@+id/indeterminate_progress"
-		    		android:layout_width="?android:attr/listPreferredItemHeight"
-			        android:layout_height="?android:attr/listPreferredItemHeight"
-			        android:layout_gravity="center"
-			        android:layout_marginTop="5dip"
-			        android:layout_marginBottom="5dip"
-			        android:indeterminate="true"
-			        android:visibility="gone"
-			        />
-			        
 	    	</LinearLayout>
     	
 		    

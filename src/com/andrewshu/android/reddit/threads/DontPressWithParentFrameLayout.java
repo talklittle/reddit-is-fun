@@ -19,15 +19,15 @@ package com.andrewshu.android.reddit.threads;
 import android.content.Context;
 import android.util.AttributeSet;
 import android.view.View;
-import android.widget.ImageView;
+import android.widget.FrameLayout;
 
 /**
  * Special class to to allow the parent to be pressed without being pressed itself.
  * This way the line of a tab can be pressed, but the image itself is not.
  */
-public class DontPressWithParentImageView extends ImageView {
+public class DontPressWithParentFrameLayout extends FrameLayout {
 
-    public DontPressWithParentImageView(Context context, AttributeSet attrs) {
+    public DontPressWithParentFrameLayout(Context context, AttributeSet attrs) {
         super(context, attrs);
     }
 
