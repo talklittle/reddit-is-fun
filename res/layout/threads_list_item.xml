@@ -30,20 +30,21 @@
     android:layout_height="wrap_content"
     android:orientation="vertical"
     android:minHeight="?android:attr/listPreferredItemHeight"
-    android:paddingTop="2dip"
-    android:paddingBottom="2dip"
     >
 
 	<LinearLayout
-		android:layout_width="wrap_content"
+		android:layout_width="fill_parent"
 		android:layout_height="wrap_content"
 		android:orientation="horizontal"
+		android:baselineAligned="false"
 		>
+		
 		<RelativeLayout android:id="@+id/threads_list_left_section"
-		    android:layout_width="fill_parent"
+		    android:layout_width="wrap_content"
 		    android:layout_height="wrap_content"
+		    android:paddingTop="2dip"
+		    android:paddingBottom="2dip"
 		    >
-	
 		    <ImageView android:id="@+id/vote_up_image"
 				android:layout_width="16dip"
 				android:layout_height="8dip"
@@ -76,56 +77,18 @@
 				android:src="@drawable/vote_down_gray"
 				android:contentDescription="@string/vote_down_arrow_content_description"
 				/>
-		    
 	    </RelativeLayout>
 	
-		<RelativeLayout
-		    android:layout_width="fill_parent"
+		<LinearLayout
+		    android:layout_width="0dp"
 		    android:layout_height="wrap_content"
-		    android:paddingLeft="5dip">
-		    
-		    <LinearLayout android:id="@+id/thumbnail_view"
-			  	android:layout_width="wrap_content"
-  				android:layout_height="wrap_content"
-  				android:layout_alignParentRight="true"
-  				android:orientation="horizontal">
-  				
-				<View android:id="@+id/divider"
-					android:layout_width="1px"
-					android:layout_height="?android:attr/listPreferredItemHeight"
-					android:layout_marginTop="5dip"
-					android:layout_marginBottom="5dip"
-  					android:background="@drawable/divider_vertical_dark"
-  				/>
-				
-				<com.andrewshu.android.reddit.threads.DontPressWithParentFrameLayout
-				    android:id="@+id/thumbnail_frame"
-				    android:layout_width="?android:attr/listPreferredItemHeight"
-				    android:layout_height="fill_parent"
-                    android:paddingTop="5dp"
-                    android:paddingBottom="5dp"
-				    >
-				    <ImageView android:id="@+id/thumbnail"
-				        android:layout_width="?android:attr/listPreferredItemHeight"
-				        android:layout_height="?android:attr/listPreferredItemHeight"
-				        android:layout_gravity="center"
-                        android:paddingRight="5dp"
-				        android:src="@drawable/go_arrow"
-				        android:scaleType="fitCenter"
-				        android:contentDescription="@string/thumbnail_content_description"
-			    	/>
-			    	
-			    	<ProgressBar android:id="@+id/indeterminate_progress"
-			    		android:layout_width="?android:attr/listPreferredItemHeight"
-				        android:layout_height="?android:attr/listPreferredItemHeight"
-                        android:paddingRight="5dp"
-				        android:indeterminate="true"
-				        android:visibility="gone"
-				        />
-		    	</com.andrewshu.android.reddit.threads.DontPressWithParentFrameLayout>
-		    	
-	    	</LinearLayout>
-    	
+		    android:layout_weight="1"
+		    android:minHeight="?android:attr/listPreferredItemHeight"
+		    android:paddingTop="2dip"
+		    android:paddingBottom="2dip"
+		    android:paddingLeft="5dip"
+		    android:orientation="vertical"
+		    >
 		    
 			<!-- Top row -->
 		
@@ -133,45 +96,40 @@
 		        android:layout_width="wrap_content"
 		        android:layout_height="wrap_content"
 		        android:layout_marginBottom="1dip"
-		        android:layout_alignParentLeft="true"
-		        android:layout_toLeftOf="@id/thumbnail_view"
 		        android:textAppearance="?android:attr/textAppearanceLarge"
 		    />
 		    
 		    <!-- Next row -->
 		    
-		    <TextView android:id="@+id/nsfw"
-		  		android:layout_width="wrap_content"
-		        android:layout_height="wrap_content"
-		        android:layout_below="@id/title"
-		        android:layout_alignLeft="@id/title"
-		        android:layout_marginRight="5dip"
-		        android:textAppearance="?android:attr/textAppearanceSmall"
-		        android:text="nsfw"
-		        android:textColor="#f00"
-		    />
-		    
-	        <TextView android:id="@+id/numCommentsSubreddit"
+		    <LinearLayout
 		        android:layout_width="wrap_content"
 		        android:layout_height="wrap_content"
-		        android:layout_toRightOf="@id/nsfw"
-		        android:layout_toLeftOf="@id/thumbnail_view"
-		        android:layout_below="@id/title"
-		        android:layout_alignBaseline="@id/nsfw"
-		        android:layout_alignWithParentIfMissing="true"
-		        android:layout_marginRight="5dip"
-		        android:layout_gravity="left"
-		        android:text="0 comments"
-		        android:textAppearance="?android:attr/textAppearanceSmall"
-		    />
+		        android:orientation="horizontal"
+		        >
+			    <TextView android:id="@+id/nsfw"
+			  		android:layout_width="wrap_content"
+			        android:layout_height="wrap_content"
+			        android:layout_marginRight="5dip"
+			        android:textAppearance="?android:attr/textAppearanceSmall"
+			        android:text="nsfw"
+			        android:textColor="@color/red"
+			    />
+			    
+		        <TextView android:id="@+id/numCommentsSubreddit"
+			        android:layout_width="wrap_content"
+			        android:layout_height="wrap_content"
+			        android:layout_marginRight="5dip"
+			        android:layout_gravity="left"
+			        android:text="0 comments"
+			        android:textAppearance="?android:attr/textAppearanceSmall"
+			    />
+	        </LinearLayout>
 		
 			<!-- A bottommost row used for OP posts in commentslist -->		
 		
 			<TextView android:id="@+id/submissionTime_submitter"
 		        android:layout_width="wrap_content"
 		        android:layout_height="wrap_content"
-				android:layout_below="@id/numCommentsSubreddit"
-			    android:layout_alignLeft="@id/title"
 			    android:layout_marginRight="4dip"
 			    android:text="very recently"
 		        android:visibility="gone"
@@ -180,7 +138,48 @@
 		        android:ellipsize="marquee"
 		        android:textAppearance="?android:attr/textAppearanceSmall"
 		    />
-		</RelativeLayout>
+		</LinearLayout>
+		
+		<LinearLayout android:id="@+id/thumbnail_view"
+            android:layout_width="wrap_content"
+            android:layout_height="fill_parent"
+            android:orientation="horizontal">
+            
+            <View android:id="@+id/divider"
+                android:layout_width="1px"
+                android:layout_height="?android:attr/listPreferredItemHeight"
+                android:layout_marginTop="5dip"
+                android:layout_marginBottom="5dip"
+                android:background="@drawable/divider_vertical_dark"
+            />
+            
+            <com.andrewshu.android.reddit.threads.DontPressWithParentFrameLayout
+                android:id="@+id/thumbnail_frame"
+                android:layout_width="?android:attr/listPreferredItemHeight"
+                android:layout_height="fill_parent"
+                android:paddingTop="5dp"
+                android:paddingBottom="5dp"
+                >
+                <ImageView android:id="@+id/thumbnail"
+                    android:layout_width="?android:attr/listPreferredItemHeight"
+                    android:layout_height="?android:attr/listPreferredItemHeight"
+                    android:paddingRight="5dp"
+                    android:src="@drawable/go_arrow"
+                    android:scaleType="fitCenter"
+                    android:contentDescription="@string/thumbnail_content_description"
+                />
+                
+                <ProgressBar android:id="@+id/indeterminate_progress"
+                    android:layout_width="?android:attr/listPreferredItemHeight"
+                    android:layout_height="?android:attr/listPreferredItemHeight"
+                    android:paddingRight="5dp"
+                    android:indeterminate="true"
+                    android:visibility="gone"
+                    />
+            </com.andrewshu.android.reddit.threads.DontPressWithParentFrameLayout>
+            
+        </LinearLayout>
+		
 	</LinearLayout>
 	
     <TextView android:id="@+id/selftext"
