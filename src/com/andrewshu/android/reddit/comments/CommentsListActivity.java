@@ -1827,8 +1827,7 @@ public class CommentsListActivity extends ListActivity
 	    			linkButton.setOnClickListener(new OnClickListener() {
 	    				public void onClick(View v) {
 	    					removeDialog(Constants.DIALOG_COMMENT_CLICK);
-	    					getOpThingInfo().setClicked(true);
-	    					mCommentsAdapter.notifyDataSetChanged();
+	    					setLinkClicked(getOpThingInfo());
 	    					Common.launchBrowser(CommentsListActivity.this, url,
 	    							Util.createThreadUri(getOpThingInfo()).toString(),
 	    							false, false, mSettings.isUseExternalBrowser());
@@ -2092,8 +2091,7 @@ public class CommentsListActivity extends ListActivity
 		public OnClickListener getThumbnailOnClickListener(final ThingInfo threadThingInfo, final Activity activity) {
 			return new OnClickListener() {
 				public void onClick(View v) {
-					threadThingInfo.setClicked(true);
-					mCommentsAdapter.notifyDataSetChanged();
+					setLinkClicked(threadThingInfo);
 					Common.launchBrowser(
 							activity,
 							threadThingInfo.getUrl(),
@@ -2106,6 +2104,11 @@ public class CommentsListActivity extends ListActivity
 			};
 		}
 	};
+	
+	private void setLinkClicked(ThingInfo threadThingInfo) {
+		threadThingInfo.setClicked(true);
+		mCommentsAdapter.notifyDataSetChanged();
+	}
 
 
     

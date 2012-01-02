@@ -1149,6 +1149,11 @@ public final class ProfileActivity extends ListActivity
     	}
     }
     
+    private void setLinkClicked(ThingInfo threadThingInfo) {
+		threadThingInfo.setClicked(true);
+		mThingsAdapter.notifyDataSetChanged();
+    }
+    
 	private final OnClickListener downloadAfterOnClickListener = new OnClickListener() {
 		public void onClick(View v) {
 			new DownloadProfileTask(mUsername, mAfter, null, mCount).execute();
@@ -1167,8 +1172,7 @@ public final class ProfileActivity extends ListActivity
 			return new OnClickListener() {
 				public void onClick(View v) {
 //					mJumpToThreadId = jumpToId;
-					threadThingInfo.setClicked(true);
-					mThingsAdapter.notifyDataSetChanged();
+					setLinkClicked(threadThingInfo);
 					Common.launchBrowser(
 							activity,
 							threadThingInfo.getUrl(),

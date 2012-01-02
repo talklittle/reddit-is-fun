@@ -990,8 +990,7 @@ public final class ThreadsListActivity extends ListActivity {
 			return true;
 			
 		case Constants.OPEN_IN_BROWSER_CONTEXT_ITEM:
-			_item.setClicked(true);
-			mThreadsAdapter.notifyDataSetChanged();
+			setLinkClicked(_item);
 			Common.launchBrowser(this, _item.getUrl(), Util.createThreadUri(_item).toString(), false, true, true);
 			return true;
 			
@@ -1361,8 +1360,7 @@ public final class ThreadsListActivity extends ListActivity {
 			return new OnClickListener() {
 				public void onClick(View v) {
 					mJumpToThreadId = threadThingInfo.getId();
-					threadThingInfo.setClicked(true);
-					mThreadsAdapter.notifyDataSetChanged();
+					setLinkClicked(threadThingInfo);
 					Common.launchBrowser(
 							activity,
 							threadThingInfo.getUrl(),
@@ -1392,8 +1390,7 @@ public final class ThreadsListActivity extends ListActivity {
     		return new OnClickListener() {
 				public void onClick(View v) {
 					removeDialog(Constants.DIALOG_THREAD_CLICK);
-					thingInfo.setClicked(true);
-					mThreadsAdapter.notifyDataSetChanged();
+					setLinkClicked(thingInfo);
 					Common.launchBrowser(ThreadsListActivity.this, thingInfo.getUrl(),
 							Util.createThreadUri(thingInfo).toString(),
 							false, false, useExternalBrowser);
@@ -1445,6 +1442,11 @@ public final class ThreadsListActivity extends ListActivity {
 		    };
 	    }
 	};
+	
+	private void setLinkClicked(ThingInfo threadThingInfo) {
+		threadThingInfo.setClicked(true);
+		mThreadsAdapter.notifyDataSetChanged();
+	}
 	
 	@Override
     protected void onSaveInstanceState(Bundle state) {
