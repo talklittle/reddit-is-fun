@@ -1828,6 +1828,7 @@ public class CommentsListActivity extends ListActivity
 	    				public void onClick(View v) {
 	    					removeDialog(Constants.DIALOG_COMMENT_CLICK);
 	    					getOpThingInfo().setClicked(true);
+	    					mCommentsAdapter.notifyDataSetChanged();
 	    					Common.launchBrowser(CommentsListActivity.this, url,
 	    							Util.createThreadUri(getOpThingInfo()).toString(),
 	    							false, false, mSettings.isUseExternalBrowser());
@@ -2092,6 +2093,7 @@ public class CommentsListActivity extends ListActivity
 			return new OnClickListener() {
 				public void onClick(View v) {
 					threadThingInfo.setClicked(true);
+					mCommentsAdapter.notifyDataSetChanged();
 					Common.launchBrowser(
 							activity,
 							threadThingInfo.getUrl(),

@@ -1168,6 +1168,7 @@ public final class ProfileActivity extends ListActivity
 				public void onClick(View v) {
 //					mJumpToThreadId = jumpToId;
 					threadThingInfo.setClicked(true);
+					mThingsAdapter.notifyDataSetChanged();
 					Common.launchBrowser(
 							activity,
 							threadThingInfo.getUrl(),

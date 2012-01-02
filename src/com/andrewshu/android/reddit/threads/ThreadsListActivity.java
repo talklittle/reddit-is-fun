@@ -991,6 +991,7 @@ public final class ThreadsListActivity extends ListActivity {
 			
 		case Constants.OPEN_IN_BROWSER_CONTEXT_ITEM:
 			_item.setClicked(true);
+			mThreadsAdapter.notifyDataSetChanged();
 			Common.launchBrowser(this, _item.getUrl(), Util.createThreadUri(_item).toString(), false, true, true);
 			return true;
 			
@@ -1361,6 +1362,7 @@ public final class ThreadsListActivity extends ListActivity {
 				public void onClick(View v) {
 					mJumpToThreadId = threadThingInfo.getId();
 					threadThingInfo.setClicked(true);
+					mThreadsAdapter.notifyDataSetChanged();
 					Common.launchBrowser(
 							activity,
 							threadThingInfo.getUrl(),
@@ -1391,6 +1393,7 @@ public final class ThreadsListActivity extends ListActivity {
 				public void onClick(View v) {
 					removeDialog(Constants.DIALOG_THREAD_CLICK);
 					thingInfo.setClicked(true);
+					mThreadsAdapter.notifyDataSetChanged();
 					Common.launchBrowser(ThreadsListActivity.this, thingInfo.getUrl(),
 							Util.createThreadUri(thingInfo).toString(),
 							false, false, useExternalBrowser);
