@@ -535,16 +535,11 @@ public class DownloadCommentsTask extends AsyncTask<Integer, Long, Boolean>
 		markdown.getURLs(comment.getBody(), comment.getUrls());
 	}
 	
-	private void refreshDeferredCommentIfVisible(final int commentIndex) {
-		mActivity.runOnUiThread(new Runnable() {
-			@Override
-			public void run() {
-    			if (isPositionVisibleUI(commentIndex)) {
-    				refreshCommentUI(commentIndex);
-    				mActivity.getListView().setSelection(mJumpToCommentFoundIndex);
-    			}
-			}
-		});
+	private void refreshDeferredCommentIfVisibleUI(final int commentIndex) {
+		if (isPositionVisibleUI(commentIndex)) {
+			refreshCommentUI(commentIndex);
+			mActivity.getListView().setSelection(mJumpToCommentFoundIndex);
+		}
 	}
 	
 	/**
@@ -693,7 +688,7 @@ public class DownloadCommentsTask extends AsyncTask<Integer, Long, Boolean>
 		@Override
 		public void onProgressUpdate(Integer... commentsToShow) {
 			for (Integer commentIndex : commentsToShow) {
-				refreshDeferredCommentIfVisible(commentIndex);
+				refreshDeferredCommentIfVisibleUI(commentIndex);
 			}
 		}
 	}
