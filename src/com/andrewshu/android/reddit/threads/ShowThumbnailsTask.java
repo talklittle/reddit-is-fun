@@ -69,7 +69,7 @@ public class ShowThumbnailsTask extends AsyncTask<ThumbnailLoadAction, Thumbnail
 			SoftReference<Bitmap> ref;
 			Bitmap bitmap;
 			
-			ref = cache.get(thingInfo);
+			ref = cache.get(thingInfo.getThumbnail());
 			if (ref != null) {
 				bitmap = ref.get();
 				if (bitmap != null) {
@@ -79,6 +79,7 @@ public class ShowThumbnailsTask extends AsyncTask<ThumbnailLoadAction, Thumbnail
 			}
 			
 			bitmap = readBitmapFromNetwork(thingInfo.getThumbnail());
+			
 			ref = new SoftReference<Bitmap>(bitmap);
 			cache.put(thingInfo.getThumbnail(), ref);
 			thingInfo.setThumbnailBitmap(ref.get());
@@ -135,20 +136,28 @@ public class ShowThumbnailsTask extends AsyncTask<ThumbnailLoadAction, Thumbnail
 			imageView = thumbnailLoadAction.imageView;
 		}
 		else {
-			View v = mActivity.getListView().getChildAt(thumbnailLoadAction.threadIndex);
-			if (v != null) {
-				View thumbnailImageView = v.findViewById(R.id.thumbnail);
-				if (thumbnailImageView != null) {
-					imageView = (ImageView) thumbnailImageView;
+			if (isCurrentlyOnScreenUI(thumbnailLoadAction.threadIndex)) {
+				View v = mActivity.getListView().getChildAt(thumbnailLoadAction.threadIndex);
+				if (v != null) {
+					View thumbnailImageView = v.findViewById(R.id.thumbnail);
+					if (thumbnailImageView != null) {
+						imageView = (ImageView) thumbnailImageView;
+					}
 				}
 			}
 		}
 		if (imageView != null) {
-			if (thumbnailLoadAction.thingInfo.getThumbnailBitmap() != null)
-				imageView.setImageBitmap(thumbnailLoadAction.thingInfo.getThumbnailBitmap());
-			else if (thumbnailLoadAction.thingInfo.getThumbnailResource() != null)
-				imageView.setImageResource(thumbnailLoadAction.thingInfo.getThumbnailResource());
+			ThingInfo thingInfo = thumbnailLoadAction.thingInfo;
+			if (thingInfo.getThumbnailBitmap() != null)
+				imageView.setImageBitmap(thingInfo.getThumbnailBitmap());
+			else if (thingInfo.getThumbnailResource() != null)
+				imageView.setImageResource(thingInfo.getThumbnailResource());
 		}
+	}
+	
+	private boolean isCurrentlyOnScreenUI(int position) {
+		return position >= mActivity.getListView().getFirstVisiblePosition() &&
+				position <= mActivity.getListView().getLastVisiblePosition();
 	}
 	
 }
