@@ -149,9 +149,7 @@ public class ProcessCommentsTask extends AsyncTask<Void, Integer, Void> {
 		if (v != null) {
 			View bodyTextView = v.findViewById(R.id.body);
 			if (bodyTextView != null) {
-				synchronized (CommentsListActivity.COMMENT_ADAPTER_LOCK) {
-					((TextView) bodyTextView).setText(mActivity.mCommentsList.get(commentIndex).getSpannedBody());
-				}
+				((TextView) bodyTextView).setText(mActivity.mCommentsList.get(commentIndex).getSpannedBody());
 			}
 		}
     }
@@ -161,13 +159,11 @@ public class ProcessCommentsTask extends AsyncTask<Void, Integer, Void> {
 		if (v != null) {
 			View submitterTextView = v.findViewById(R.id.submitter);
 			if (submitterTextView != null) {
-				synchronized (CommentsListActivity.COMMENT_ADAPTER_LOCK) {
-					ThingInfo comment = mActivity.mCommentsList.get(commentIndex);
-					if (comment.getSSAuthor() != null)
-						((TextView) submitterTextView).setText(comment.getSSAuthor());
-					else
-						((TextView) submitterTextView).setText(comment.getAuthor());
-				}
+				ThingInfo comment = mActivity.mCommentsList.get(commentIndex);
+				if (comment.getSSAuthor() != null)
+					((TextView) submitterTextView).setText(comment.getSSAuthor());
+				else
+					((TextView) submitterTextView).setText(comment.getAuthor());
 			}
 		}
     }

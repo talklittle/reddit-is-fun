@@ -52,8 +52,8 @@ import com.andrewshu.android.reddit.threads.ShowThumbnailsTask.ThumbnailLoadActi
 public class DownloadCommentsTask extends AsyncTask<Integer, Long, Boolean>
 		implements PropertyChangeListener {
 	
-	private static final String TAG = "CommentsListActivity.DownloadCommentsTask";
 	
+	private static final String TAG = "CommentsListActivity.DownloadCommentsTask";
     private final ObjectMapper mObjectMapper = Common.getObjectMapper();
     private final Markdown markdown = new Markdown();
 
@@ -224,10 +224,8 @@ public class DownloadCommentsTask extends AsyncTask<Integer, Long, Boolean>
     }
 	
 	private void replaceCommentsAtPositionUI(final Collection<ThingInfo> comments, final int position) {
-		synchronized (CommentsListActivity.COMMENT_ADAPTER_LOCK) {
-			mActivity.mCommentsList.remove(position);
-			mActivity.mCommentsList.addAll(position, comments);
-		}
+		mActivity.mCommentsList.remove(position);
+		mActivity.mCommentsList.addAll(position, comments);
 		mActivity.mCommentsAdapter.notifyDataSetChanged();
 	}
 	
@@ -319,9 +317,7 @@ public class DownloadCommentsTask extends AsyncTask<Integer, Long, Boolean>
 		mActivity.runOnUiThread(new Runnable() {
 			@Override
 			public void run() {
-				synchronized (CommentsListActivity.COMMENT_ADAPTER_LOCK) {
-					mActivity.mCommentsList.add(0, data);
-				}
+				mActivity.mCommentsList.add(0, data);
 			}
 		});
 
@@ -444,9 +440,7 @@ public class DownloadCommentsTask extends AsyncTask<Integer, Long, Boolean>
      * Call from UI Thread
      */
     private void insertCommentsUI() {
-		synchronized (CommentsListActivity.COMMENT_ADAPTER_LOCK) {
-			mActivity.mCommentsList.addAll(mDeferredAppendList);
-		}
+		mActivity.mCommentsList.addAll(mDeferredAppendList);
 		mActivity.mCommentsAdapter.notifyDataSetChanged();
     }
 	
@@ -489,8 +483,11 @@ public class DownloadCommentsTask extends AsyncTask<Integer, Long, Boolean>
 		}
 		
 		if (isInsertingEntireThread()) {
-    		// Initialize mCommentsList and mCommentsAdapter
-			mActivity.resetUI(null);
+			if (mActivity.mCommentsAdapter != null)
+				mActivity.mCommentsAdapter.clear();
+			else
+				mActivity.resetUI(null);
+			
     		// Do loading screen when loading new thread; otherwise when "loading more comments" don't show it
 			mActivity.enableLoadingScreen();
 		}

@@ -119,8 +119,6 @@ public class CommentsListActivity extends ListActivity
     /** Custom list adapter that fits our threads data into the list. */
     CommentsListAdapter mCommentsAdapter = null;
     ArrayList<ThingInfo> mCommentsList = null;
-    // Lock used when modifying the mCommentsAdapter
-    static final Object COMMENT_ADAPTER_LOCK = new Object();
     
     private final HttpClient mClient = RedditIsFunHttpClientFactory.getGzipHttpClient();
     
@@ -575,20 +573,18 @@ public class CommentsListActivity extends ListActivity
     	findViewById(R.id.loading_light).setVisibility(View.GONE);
     	findViewById(R.id.loading_dark).setVisibility(View.GONE);
     	
-        synchronized (COMMENT_ADAPTER_LOCK) {
-	    	if (commentsAdapter == null) {
-	    		// Reset the list to be empty.
-	    		mCommentsList = new ArrayList<ThingInfo>();
-	            mCommentsAdapter = new CommentsListAdapter(this, mCommentsList);
-	            setListAdapter(mCommentsAdapter);
-	    	} else if (mCommentsAdapter != commentsAdapter) {
-	    		mCommentsAdapter = commentsAdapter;
-	    		setListAdapter(commentsAdapter);
-	    	}
-	        
-	        mCommentsAdapter.mIsLoading = false;
-	        mCommentsAdapter.notifyDataSetChanged();  // Just in case
+    	if (commentsAdapter == null) {
+    		// Reset the list to be empty.
+    		mCommentsList = new ArrayList<ThingInfo>();
+            mCommentsAdapter = new CommentsListAdapter(this, mCommentsList);
+            setListAdapter(mCommentsAdapter);
+    	} else if (mCommentsAdapter != commentsAdapter) {
+    		mCommentsAdapter = commentsAdapter;
+    		setListAdapter(commentsAdapter);
     	}
+        
+        mCommentsAdapter.mIsLoading = false;
+        mCommentsAdapter.notifyDataSetChanged();  // Just in case
         getListView().setDivider(null);
         Common.updateListDrawables(this, mSettings.getTheme());
     }
@@ -608,14 +604,12 @@ public class CommentsListActivity extends ListActivity
         	fcs = new ForegroundColorSpan(getResources().getColor(R.color.pale_blue));
         authorSS.setSpan(fcs, 0, authorSS.length(), Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
 	
-        synchronized (COMMENT_ADAPTER_LOCK) {
-    		for (int i = 0; i < mCommentsAdapter.getCount(); i++) {
-    			ThingInfo ci = mCommentsAdapter.getItem(i);
-    			// if it's the OP, mark his name
-    			if (getOpThingInfo().getAuthor().equalsIgnoreCase(ci.getAuthor()))
-    	            ci.setSSAuthor(authorSS);
-    		}
-    	}
+		for (int i = 0; i < mCommentsAdapter.getCount(); i++) {
+			ThingInfo ci = mCommentsAdapter.getItem(i);
+			// if it's the OP, mark his name
+			if (getOpThingInfo().getAuthor().equalsIgnoreCase(ci.getAuthor()))
+	            ci.setSSAuthor(authorSS);
+		}
     }
     
     void enableLoadingScreen() {
@@ -626,10 +620,8 @@ public class CommentsListActivity extends ListActivity
     		findViewById(R.id.loading_light).setVisibility(View.GONE);
     		findViewById(R.id.loading_dark).setVisibility(View.VISIBLE);
     	}
-    	synchronized (COMMENT_ADAPTER_LOCK) {
-	    	if (mCommentsAdapter != null)
-	    		mCommentsAdapter.mIsLoading = true;
-    	}
+    	if (mCommentsAdapter != null)
+    		mCommentsAdapter.mIsLoading = true;
     	getWindow().setFeatureInt(Window.FEATURE_PROGRESS, Window.PROGRESS_START);
     }
     
@@ -1387,11 +1379,9 @@ public class CommentsListActivity extends ListActivity
     		menu.add(0, Constants.DIALOG_SHOW_COMMENT, Menu.NONE, "Show comment");
     		menu.add(0, Constants.DIALOG_GOTO_PARENT, Menu.NONE, "Go to parent");
     	} else {
-    		synchronized (COMMENT_ADAPTER_LOCK) {
-	    		if (mSettings.getUsername() != null && mSettings.getUsername().equalsIgnoreCase(item.getAuthor())) {
-	    			menu.add(0, Constants.DIALOG_EDIT, Menu.NONE, "Edit");
-	    			menu.add(0, Constants.DIALOG_DELETE, Menu.NONE, "Delete");
-	    		}
+    		if (mSettings.getUsername() != null && mSettings.getUsername().equalsIgnoreCase(item.getAuthor())) {
+    			menu.add(0, Constants.DIALOG_EDIT, Menu.NONE, "Edit");
+    			menu.add(0, Constants.DIALOG_DELETE, Menu.NONE, "Delete");
     		}
     		menu.add(0, Constants.DIALOG_HIDE_COMMENT, Menu.NONE, "Hide comment");
 //    		if (mSettings.isLoggedIn())
@@ -1448,14 +1438,12 @@ public class CommentsListActivity extends ListActivity
     		return true;
     		
     	case Constants.DIALOG_GOTO_PARENT:
-    		synchronized (COMMENT_ADAPTER_LOCK) {
-    			int myIndent = mCommentsAdapter.getItem(rowId).getIndent();
-	    		int parentRowId;
-	    		for (parentRowId = rowId - 1; parentRowId >= 0; parentRowId--)
-	    			if (mCommentsAdapter.getItem(parentRowId).getIndent() < myIndent)
-	    				break;
-	    		getListView().setSelection(parentRowId);
-    		}
+			int myIndent = mCommentsAdapter.getItem(rowId).getIndent();
+    		int parentRowId;
+    		for (parentRowId = rowId - 1; parentRowId >= 0; parentRowId--)
+    			if (mCommentsAdapter.getItem(parentRowId).getIndent() < myIndent)
+    				break;
+    		getListView().setSelection(parentRowId);
     		return true;
     		
     	case Constants.DIALOG_VIEW_PROFILE:
@@ -1465,26 +1453,20 @@ public class CommentsListActivity extends ListActivity
     		return true;
     		
     	case Constants.DIALOG_EDIT:
-    		synchronized (COMMENT_ADAPTER_LOCK) {
-	    		mReplyTargetName = mCommentsAdapter.getItem(rowId).getName();
-	    		mEditTargetBody = mCommentsAdapter.getItem(rowId).getBody();
-    		}
+    		mReplyTargetName = mCommentsAdapter.getItem(rowId).getName();
+    		mEditTargetBody = mCommentsAdapter.getItem(rowId).getBody();
     		showDialog(Constants.DIALOG_EDIT);
     		return true;
     		
     	case Constants.DIALOG_DELETE:
-    		synchronized (COMMENT_ADAPTER_LOCK) {
-    			mReplyTargetName = mCommentsAdapter.getItem(rowId).getName();
-    		}
+			mReplyTargetName = mCommentsAdapter.getItem(rowId).getName();
     		// It must be a comment, since the OP selftext is reached via options menu, not context menu
     		mDeleteTargetKind = Constants.COMMENT_KIND;
     		showDialog(Constants.DIALOG_DELETE);
     		return true;
     		
     	case Constants.DIALOG_REPORT:
-    		synchronized (COMMENT_ADAPTER_LOCK) {
-    			mReportTargetName = mCommentsAdapter.getItem(rowId).getName();
-    		}
+			mReportTargetName = mCommentsAdapter.getItem(rowId).getName();
     		showDialog(Constants.DIALOG_REPORT);
     		return true;
     		
@@ -1494,46 +1476,42 @@ public class CommentsListActivity extends ListActivity
     }
     
     private void hideComment(int rowId) {
-    	synchronized (COMMENT_ADAPTER_LOCK) {
-    		ThingInfo headComment = mCommentsAdapter.getItem(rowId);
-	    	int myIndent = headComment.getIndent();
-	    	headComment.setHiddenCommentHead(true);
-	    	
-	    	// Hide everything after the row.
-	    	for (int i = rowId + 1; i < mCommentsAdapter.getCount(); i++) {
-	    		ThingInfo ci = mCommentsAdapter.getItem(i);
-	    		if (ci.getIndent() <= myIndent)
-	    			break;
-	    		ci.setHiddenCommentDescendant(true);
-	    	}
-	    	mCommentsAdapter.notifyDataSetChanged();
+		ThingInfo headComment = mCommentsAdapter.getItem(rowId);
+    	int myIndent = headComment.getIndent();
+    	headComment.setHiddenCommentHead(true);
+    	
+    	// Hide everything after the row.
+    	for (int i = rowId + 1; i < mCommentsAdapter.getCount(); i++) {
+    		ThingInfo ci = mCommentsAdapter.getItem(i);
+    		if (ci.getIndent() <= myIndent)
+    			break;
+    		ci.setHiddenCommentDescendant(true);
     	}
+    	mCommentsAdapter.notifyDataSetChanged();
     }
     
     private void showComment(int rowId) {
-    	synchronized (COMMENT_ADAPTER_LOCK) {
-    		ThingInfo headComment = mCommentsAdapter.getItem(rowId);
-    		headComment.setHiddenCommentHead(false);
-	    	int stopIndent = headComment.getIndent();
-	    	int skipIndentAbove = -1;
-	    	for (int i = rowId + 1; i < mCommentsAdapter.getCount(); i++) {
-	    		ThingInfo ci = mCommentsAdapter.getItem(i);
-	    		int ciIndent = ci.getIndent();
-	    		if (ciIndent <= stopIndent)
-	    			break;
-	    		if (skipIndentAbove != -1 && ciIndent > skipIndentAbove)
-	    			continue;
+		ThingInfo headComment = mCommentsAdapter.getItem(rowId);
+		headComment.setHiddenCommentHead(false);
+    	int stopIndent = headComment.getIndent();
+    	int skipIndentAbove = -1;
+    	for (int i = rowId + 1; i < mCommentsAdapter.getCount(); i++) {
+    		ThingInfo ci = mCommentsAdapter.getItem(i);
+    		int ciIndent = ci.getIndent();
+    		if (ciIndent <= stopIndent)
+    			break;
+    		if (skipIndentAbove != -1 && ciIndent > skipIndentAbove)
+    			continue;
 
-	    		ci.setHiddenCommentDescendant(false);
-	    		
-	    		// skip nested hidden comments (e.g. you collapsed child first, then root. now expanding root, but don't expand child) 
-	    		if (ci.isHiddenCommentHead())
-	    			skipIndentAbove = ci.getIndent();
-	    		else
-		    		skipIndentAbove = -1;
-	    	}
-	    	mCommentsAdapter.notifyDataSetChanged();
+    		ci.setHiddenCommentDescendant(false);
+    		
+    		// skip nested hidden comments (e.g. you collapsed child first, then root. now expanding root, but don't expand child) 
+    		if (ci.isHiddenCommentHead())
+    			skipIndentAbove = ci.getIndent();
+    		else
+	    		skipIndentAbove = -1;
     	}
+    	mCommentsAdapter.notifyDataSetChanged();
     }
 
 	private void findCommentText(String search_text, boolean wrap, boolean next) {
