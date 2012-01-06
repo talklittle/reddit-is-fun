@@ -490,9 +490,7 @@ public class DownloadCommentsTask extends AsyncTask<Integer, Long, Boolean>
 		
 		if (isInsertingEntireThread()) {
     		// Initialize mCommentsList and mCommentsAdapter
-    		synchronized (CommentsListActivity.COMMENT_ADAPTER_LOCK) {
-    			mActivity.resetUI(null);
-    		}
+			mActivity.resetUI(null);
     		// Do loading screen when loading new thread; otherwise when "loading more comments" don't show it
 			mActivity.enableLoadingScreen();
 		}

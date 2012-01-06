@@ -29,6 +29,9 @@
         android:layout_width="fill_parent"
         android:layout_height="fill_parent"
         android:orientation="vertical">
+        
+    <include layout="@layout/loading_light" />
+    <include layout="@layout/loading_dark" />
     
     <RelativeLayout
     	android:layout_width="fill_parent"

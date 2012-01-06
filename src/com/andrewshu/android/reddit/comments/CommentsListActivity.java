@@ -182,6 +182,7 @@ public class CommentsListActivity extends ListActivity
         requestWindowFeature(Window.FEATURE_INDETERMINATE_PROGRESS);
     	
         setContentView(R.layout.comments_list_content);
+        registerForContextMenu(getListView());
         
         if (savedInstanceState != null) {
         	mReplyTargetName = savedInstanceState.getString(Constants.REPLY_TARGET_NAME_KEY);
@@ -571,27 +572,25 @@ public class CommentsListActivity extends ListActivity
      * @param commentsAdapter A new CommentsListAdapter to use. Pass in null to create a new empty one.
      */
     void resetUI(CommentsListAdapter commentsAdapter) {
-    	int firstVisiblePosition = getListView().getFirstVisiblePosition();
+    	findViewById(R.id.loading_light).setVisibility(View.GONE);
+    	findViewById(R.id.loading_dark).setVisibility(View.GONE);
     	
-    	setContentView(R.layout.comments_list_content);
-        registerForContextMenu(getListView());
-
         synchronized (COMMENT_ADAPTER_LOCK) {
 	    	if (commentsAdapter == null) {
 	    		// Reset the list to be empty.
 	    		mCommentsList = new ArrayList<ThingInfo>();
 	            mCommentsAdapter = new CommentsListAdapter(this, mCommentsList);
-	    	} else {
+	            setListAdapter(mCommentsAdapter);
+	    	} else if (mCommentsAdapter != commentsAdapter) {
 	    		mCommentsAdapter = commentsAdapter;
+	    		setListAdapter(commentsAdapter);
 	    	}
-	        setListAdapter(mCommentsAdapter);
+	        
 	        mCommentsAdapter.mIsLoading = false;
 	        mCommentsAdapter.notifyDataSetChanged();  // Just in case
     	}
         getListView().setDivider(null);
         Common.updateListDrawables(this, mSettings.getTheme());
-        
-        getListView().setSelection(firstVisiblePosition);
     }
     
     /**
@@ -621,9 +620,11 @@ public class CommentsListActivity extends ListActivity
     
     void enableLoadingScreen() {
     	if (Util.isLightTheme(mSettings.getTheme())) {
-    		setContentView(R.layout.loading_light);
+    		findViewById(R.id.loading_light).setVisibility(View.VISIBLE);
+    		findViewById(R.id.loading_dark).setVisibility(View.GONE);
     	} else {
-    		setContentView(R.layout.loading_dark);
+    		findViewById(R.id.loading_light).setVisibility(View.GONE);
+    		findViewById(R.id.loading_dark).setVisibility(View.VISIBLE);
     	}
     	synchronized (COMMENT_ADAPTER_LOCK) {
 	    	if (mCommentsAdapter != null)

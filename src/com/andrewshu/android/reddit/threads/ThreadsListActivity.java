@@ -161,6 +161,9 @@ public final class ThreadsListActivity extends ListActivity {
         setTheme(mSettings.getTheme());
         requestWindowFeature(Window.FEATURE_PROGRESS);
         requestWindowFeature(Window.FEATURE_INDETERMINATE_PROGRESS);
+        
+        setContentView(R.layout.threads_list_content);
+        registerForContextMenu(getListView());
     	
 		if (savedInstanceState != null) {
         	if (Constants.LOGGING) Log.d(TAG, "using savedInstanceState");
@@ -612,10 +615,10 @@ public final class ThreadsListActivity extends ListActivity {
      * @param threadsAdapter A ThreadsListAdapter to use. Pass in null if you want a new empty one created.
      */
     void resetUI(ThreadsListAdapter threadsAdapter) {
-    	setContentView(R.layout.threads_list_content);
-        registerForContextMenu(getListView());
-        
-        if (mSettings.isAlwaysShowNextPrevious()) {
+    	findViewById(R.id.loading_light).setVisibility(View.GONE);
+    	findViewById(R.id.loading_dark).setVisibility(View.GONE);
+
+    	if (mSettings.isAlwaysShowNextPrevious()) {
         	// Set mNextPreviousView to null; we can use findViewById(R.id.next_previous_layout).
         	mNextPreviousView = null;
         } else {
@@ -643,9 +646,11 @@ public final class ThreadsListActivity extends ListActivity {
     
     private void enableLoadingScreen() {
     	if (Util.isLightTheme(mSettings.getTheme())) {
-    		setContentView(R.layout.loading_light);
+        	findViewById(R.id.loading_light).setVisibility(View.VISIBLE);
+        	findViewById(R.id.loading_dark).setVisibility(View.GONE);
     	} else {
-    		setContentView(R.layout.loading_dark);
+        	findViewById(R.id.loading_light).setVisibility(View.GONE);
+        	findViewById(R.id.loading_dark).setVisibility(View.VISIBLE);
     	}
     	synchronized (THREAD_ADAPTER_LOCK) {
 	    	if (mThreadsAdapter != null)

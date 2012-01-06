@@ -137,7 +137,11 @@ public final class PickSubredditActivity extends ListActivity {
     	requestWindowFeature(Window.FEATURE_PROGRESS);
     	requestWindowFeature(Window.FEATURE_INDETERMINATE_PROGRESS);
     	
-    	resetUI(null);
+    	setTheme(mSettings.getTheme());
+    	setContentView(R.layout.pick_subreddit_view);
+        registerForContextMenu(getListView());
+
+        resetUI(null);
         
     	mSubredditsList = cacheSubredditsList(mSubredditsList);
     	
@@ -178,10 +182,9 @@ public final class PickSubredditActivity extends ListActivity {
     }
 
     void resetUI(PickSubredditAdapter adapter) {
-    	setTheme(mSettings.getTheme());
-    	setContentView(R.layout.pick_subreddit_view);
-        registerForContextMenu(getListView());
-
+    	findViewById(R.id.loading_light).setVisibility(View.GONE);
+    	findViewById(R.id.loading_dark).setVisibility(View.GONE);
+    	
     	synchronized (ADAPTER_LOCK) {
 	    	if (adapter == null) {
 	            // Reset the list to be empty.
@@ -238,9 +241,11 @@ public final class PickSubredditActivity extends ListActivity {
     
     private void enableLoadingScreen() {
     	if (Util.isLightTheme(mSettings.getTheme())) {
-    		setContentView(R.layout.loading_light);
+        	findViewById(R.id.loading_light).setVisibility(View.VISIBLE);
+        	findViewById(R.id.loading_dark).setVisibility(View.GONE);
     	} else {
-    		setContentView(R.layout.loading_dark);
+        	findViewById(R.id.loading_light).setVisibility(View.GONE);
+        	findViewById(R.id.loading_dark).setVisibility(View.VISIBLE);
     	}
     	synchronized (ADAPTER_LOCK) {
 	    	if (mSubredditsAdapter != null)

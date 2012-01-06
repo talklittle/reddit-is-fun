@@ -30,6 +30,9 @@
         android:layout_height="fill_parent"
         >
         
+    <include layout="@layout/loading_light" />
+    <include layout="@layout/loading_dark" />
+        
     <LinearLayout android:id="@+id/karma_layout"
     	android:layout_width="fill_parent"
     	android:layout_height="wrap_content"

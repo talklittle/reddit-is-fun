@@ -178,6 +178,7 @@ public final class ProfileActivity extends ListActivity
         requestWindowFeature(Window.FEATURE_INDETERMINATE_PROGRESS);
         
         setContentView(R.layout.profile_list_content);
+        registerForContextMenu(getListView());
         
 		if (savedInstanceState != null) {
         	if (Constants.LOGGING) Log.d(TAG, "using savedInstanceState");
@@ -419,11 +420,10 @@ public final class ProfileActivity extends ListActivity
      * @param messagesAdapter A MessagesListAdapter to use. Pass in null if you want a new empty one created.
      */
     void resetUI(ThingsListAdapter messagesAdapter) {
-    	setTheme(mSettings.getTheme());
-    	setContentView(R.layout.profile_list_content);
-        registerForContextMenu(getListView());
+    	findViewById(R.id.loading_light).setVisibility(View.GONE);
+    	findViewById(R.id.loading_dark).setVisibility(View.GONE);
 
-        if (mSettings.isAlwaysShowNextPrevious()) {
+    	if (mSettings.isAlwaysShowNextPrevious()) {
         	// Set mNextPreviousView to null; we can use findViewById(R.id.next_previous_layout).
         	mNextPreviousView = null;
         } else {
@@ -453,9 +453,11 @@ public final class ProfileActivity extends ListActivity
     
     private void enableLoadingScreen() {
     	if (Util.isLightTheme(mSettings.getTheme())) {
-    		setContentView(R.layout.loading_light);
+        	findViewById(R.id.loading_light).setVisibility(View.VISIBLE);
+        	findViewById(R.id.loading_dark).setVisibility(View.GONE);
     	} else {
-    		setContentView(R.layout.loading_dark);
+        	findViewById(R.id.loading_light).setVisibility(View.GONE);
+        	findViewById(R.id.loading_dark).setVisibility(View.VISIBLE);
     	}
     	synchronized (MESSAGE_ADAPTER_LOCK) {
 	    	if (mThingsAdapter != null)

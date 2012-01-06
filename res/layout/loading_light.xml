@@ -27,6 +27,7 @@
 
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
 		xmlns:app="http://schemas.android.com/apk/res/com.andrewshu.android.reddit"
+		android:id="@+id/loading_light"
 		android:layout_width="fill_parent"
         android:layout_height="fill_parent"
         android:gravity="center_vertical"
@@ -54,28 +55,4 @@
         android:text="@string/loading_splash_text"
 	    />
 	    
-	<ListView android:id="@android:id/list"
-        android:layout_width="0dip"
-        android:layout_height="0dip"
-		android:visibility="gone"
-		/>
-	<ScrollView android:id="@android:id/empty"
-        android:layout_width="0dip"
-        android:layout_height="0dip"
-        android:visibility="gone"
-    >
-        <TextView android:id="@+id/emptyText"
-            android:layout_width="fill_parent"
-            android:layout_height="wrap_content"
-            android:text="@string/noThreads"
-            android:textSize="20sp"
-            android:textColor="?android:attr/textColorSecondary"
-            android:paddingLeft="10dip"
-            android:paddingRight="10dip"
-            android:paddingTop="10dip"
-            android:lineSpacingMultiplier="0.92"
-        />
-    </ScrollView>
-
-		
 </LinearLayout>
