@@ -134,7 +134,7 @@ public class Common {
         		return;
         	View nextPreviousBorder = act.findViewById(R.id.next_previous_border_top);
         	
-			if (shouldShow && nextPreviousView.getVisibility() != View.VISIBLE) {
+			if (shouldShow) {
 		    	if (nextPreviousView != null && nextPreviousBorder != null) {
 			    	if (Util.isLightTheme(settings.getTheme())) {
 			    		nextPreviousView.setBackgroundResource(R.color.white);
@@ -147,7 +147,7 @@ public class Common {
 				// update the "next 25" and "prev 25" buttons
 		    	nextButton = (Button) act.findViewById(R.id.next_button);
 		    	previousButton = (Button) act.findViewById(R.id.previous_button);
-			} else if (!shouldShow && nextPreviousView.getVisibility() == View.VISIBLE) {
+			} else {
 				nextPreviousView.setVisibility(View.GONE);
 	    	}
     	}
