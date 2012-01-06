@@ -145,7 +145,8 @@ public class ProcessCommentsTask extends AsyncTask<Void, Integer, Void> {
     }
     
     private void refreshCommentBodyTextViewUI(int commentIndex) {
-		View v = mActivity.getListView().getChildAt(commentIndex);
+    	int positionOnScreen = commentIndex - mActivity.getListView().getFirstVisiblePosition();
+		View v = mActivity.getListView().getChildAt(positionOnScreen);
 		if (v != null) {
 			View bodyTextView = v.findViewById(R.id.body);
 			if (bodyTextView != null) {
@@ -155,7 +156,8 @@ public class ProcessCommentsTask extends AsyncTask<Void, Integer, Void> {
     }
 
     private void refreshCommentSubmitterUI(int commentIndex) {
-		View v = mActivity.getListView().getChildAt(commentIndex);
+    	int positionOnScreen = commentIndex - mActivity.getListView().getFirstVisiblePosition();
+		View v = mActivity.getListView().getChildAt(positionOnScreen);
 		if (v != null) {
 			View submitterTextView = v.findViewById(R.id.submitter);
 			if (submitterTextView != null) {

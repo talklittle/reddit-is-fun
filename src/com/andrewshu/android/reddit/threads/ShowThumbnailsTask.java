@@ -137,7 +137,8 @@ public class ShowThumbnailsTask extends AsyncTask<ThumbnailLoadAction, Thumbnail
 		}
 		else {
 			if (isCurrentlyOnScreenUI(thumbnailLoadAction.threadIndex)) {
-				View v = mActivity.getListView().getChildAt(thumbnailLoadAction.threadIndex);
+				int positionOnScreen = thumbnailLoadAction.threadIndex - mActivity.getListView().getFirstVisiblePosition();
+				View v = mActivity.getListView().getChildAt(positionOnScreen);
 				if (v != null) {
 					View thumbnailImageView = v.findViewById(R.id.thumbnail);
 					if (thumbnailImageView != null) {
