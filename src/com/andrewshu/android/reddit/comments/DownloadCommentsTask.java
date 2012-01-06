@@ -287,13 +287,13 @@ public class DownloadCommentsTask extends AsyncTask<Integer, Long, Boolean>
 			if (isInsertingEntireThread()) {
 				parseOP(threadThingListing.getData());
 				insertedCommentIndex = 0;  // we just inserted the OP into position 0
+				
+				// at this point we've started displaying comments, so disable the loading screen
+				disableLoadingScreenKeepProgress();
 			}
 			else {
 				insertedCommentIndex = mPositionOffset - 1;  // -1 because we +1 for the first comment
 			}
-			
-			// at this point we've started displaying comments, so disable the loading screen
-			disableLoadingScreenKeepProgress();
 			
 			// listings[1] is a comment Listing for the comments
 			// Go through the children and get the ThingInfos
