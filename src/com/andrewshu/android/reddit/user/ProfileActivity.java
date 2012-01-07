@@ -1215,7 +1215,7 @@ public final class ProfileActivity extends ListActivity
 					// Launch Intent to goto the URL
 					Common.launchBrowser(ProfileActivity.this, info.getUrl(),
 							Util.createThreadUri(info).toString(),
-							false, false, fUseExternalBrowser, false);
+							false, false, fUseExternalBrowser, mSettings.isSaveHistory());
 				}
 			};
 		}

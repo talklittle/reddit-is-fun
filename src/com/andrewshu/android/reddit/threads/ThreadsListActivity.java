@@ -1001,7 +1001,7 @@ public final class ThreadsListActivity extends ListActivity {
 			
 		case Constants.OPEN_IN_BROWSER_CONTEXT_ITEM:
 			setLinkClicked(_item);
-			Common.launchBrowser(this, _item.getUrl(), Util.createThreadUri(_item).toString(), false, true, true, false);
+			Common.launchBrowser(this, _item.getUrl(), Util.createThreadUri(_item).toString(), false, true, true, mSettings.isSaveHistory());
 			return true;
 			
 		case Constants.SAVE_CONTEXT_ITEM:
@@ -1140,7 +1140,7 @@ public final class ThreadsListActivity extends ListActivity {
     			url = Constants.REDDIT_BASE_URL;
     		else
         		url = new StringBuilder(Constants.REDDIT_BASE_URL + "/r/").append(mSubreddit).toString();
-    		Common.launchBrowser(this, url, null, false, true, true, false);
+    		Common.launchBrowser(this, url, null, false, true, true, mSettings.isSaveHistory());
     		break;
         case R.id.light_dark_menu_id:
     		mSettings.setTheme(Util.getInvertedTheme(mSettings.getTheme()));
@@ -1404,7 +1404,7 @@ public final class ThreadsListActivity extends ListActivity {
 					setLinkClicked(thingInfo);
 					Common.launchBrowser(ThreadsListActivity.this, thingInfo.getUrl(),
 							Util.createThreadUri(thingInfo).toString(),
-							false, false, useExternalBrowser, false);
+							false, false, useExternalBrowser, mSettings.isSaveHistory());
 				}
 			};
     	}
