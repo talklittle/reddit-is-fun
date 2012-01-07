@@ -412,7 +412,11 @@ public class Common {
     public static void launchBrowser(Context context, String url, String threadUrl,
     		boolean requireNewTask, boolean bypassParser, boolean useExternalBrowser) {
     	
-    	Browser.updateVisitedHistory(context.getContentResolver(), url, true);
+    	try {
+    		Browser.updateVisitedHistory(context.getContentResolver(), url, true);
+    	} catch (Exception ex) {
+    		if (Constants.LOGGING) Log.i(TAG, "Browser.updateVisitedHistory error", ex);
+    	}
     	
     	Uri uri = Uri.parse(url);
     	
