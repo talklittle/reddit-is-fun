@@ -228,7 +228,7 @@ public class BrowserActivity extends Activity {
         case R.id.open_browser_menu_id:
     		if (mUri == null)
     			break;
-    		Common.launchBrowser(this, mUri.toString(), null, false, true, true);
+    		Common.launchBrowser(this, mUri.toString(), null, false, true, true, false);
     		break;
         
         case R.id.close_browser_menu_id:

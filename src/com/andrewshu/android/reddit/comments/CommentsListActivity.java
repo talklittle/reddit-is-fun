@@ -1310,7 +1310,7 @@ public class CommentsListActivity extends ListActivity
     	case R.id.open_browser_menu_id:
     		String url = new StringBuilder(Constants.REDDIT_BASE_URL + "/r/")
 				.append(mSubreddit).append("/comments/").append(mThreadId).toString();
-    		Common.launchBrowser(this, url, url, false, true, true);
+    		Common.launchBrowser(this, url, url, false, true, true, false);
     		break;
     	case R.id.op_delete_menu_id:
     		mReplyTargetName = getOpThingInfo().getName();
@@ -1809,7 +1809,8 @@ public class CommentsListActivity extends ListActivity
 	    					setLinkClicked(getOpThingInfo());
 	    					Common.launchBrowser(CommentsListActivity.this, url,
 	    							Util.createThreadUri(getOpThingInfo()).toString(),
-	    							false, false, mSettings.isUseExternalBrowser());
+	    							false, false, mSettings.isUseExternalBrowser(),
+	    							mSettings.isSaveHistory());
 	    				}
 	    			});
 	    			linkButton.setEnabled(true);
@@ -1952,7 +1953,8 @@ public class CommentsListActivity extends ListActivity
     	                    if (which >= 0) {
     	                        Common.launchBrowser(CommentsListActivity.this, urls.get(which),
     	                        		Util.createThreadUri(getOpThingInfo()).toString(),
-    	                        		false, false, mSettings.isUseExternalBrowser());
+    	                        		false, false, mSettings.isUseExternalBrowser(),
+    	                        		mSettings.isSaveHistory());
     	                    }
     	                }
     	            };
@@ -2077,7 +2079,8 @@ public class CommentsListActivity extends ListActivity
 							Util.createThreadUri(threadThingInfo).toString(),
 							false,
 							false,
-							mSettings.isUseExternalBrowser()
+							mSettings.isUseExternalBrowser(),
+							mSettings.isSaveHistory()
 					);
 				}
 			};

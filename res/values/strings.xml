@@ -149,6 +149,8 @@
 	
 	<string name="pref_confirm_quit">Quit confirmation</string>
  	
+	<string name="pref_save_history">Save browser history</string>
+ 	
 	<!-- Settings label -->
 	<string name="pref_theme">Theme</string>
 	<!-- Title of dialog for setting the text size -->
