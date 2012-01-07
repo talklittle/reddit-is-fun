@@ -416,13 +416,18 @@ public final class InboxListActivity extends ListActivity
     	findViewById(R.id.loading_dark).setVisibility(View.GONE);
 
     	if (mSettings.isAlwaysShowNextPrevious()) {
-        	// Set mNextPreviousView to null; we can use findViewById(R.id.next_previous_layout).
-        	mNextPreviousView = null;
-        } else {
-            // If we are not using the persistent navbar, then show as ListView footer instead
-	        LayoutInflater inflater = (LayoutInflater) getSystemService(Context.LAYOUT_INFLATER_SERVICE);
-	        mNextPreviousView = inflater.inflate(R.layout.next_previous_list_item, null);
-	        getListView().addFooterView(mNextPreviousView);
+    		if (mNextPreviousView != null) {
+    			getListView().removeFooterView(mNextPreviousView);
+    			mNextPreviousView = null;
+    		}
+    	} else {
+    		findViewById(R.id.next_previous_layout).setVisibility(View.GONE);
+    		if (getListView().getFooterViewsCount() == 0) {
+	            // If we are not using the persistent navbar, then show as ListView footer instead
+		        LayoutInflater inflater = (LayoutInflater) getSystemService(Context.LAYOUT_INFLATER_SERVICE);
+		        mNextPreviousView = inflater.inflate(R.layout.next_previous_list_item, null);
+		        getListView().addFooterView(mNextPreviousView);
+    		}
         }
 
         synchronized (MESSAGE_ADAPTER_LOCK) {
