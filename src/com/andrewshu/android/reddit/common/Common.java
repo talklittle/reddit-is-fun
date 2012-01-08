@@ -410,10 +410,13 @@ public class Common {
      * @param useExternalBrowser
      */
     public static void launchBrowser(Context context, String url, String threadUrl,
-    		boolean requireNewTask, boolean bypassParser, boolean useExternalBrowser) {
+			boolean requireNewTask, boolean bypassParser, boolean useExternalBrowser,
+			boolean saveHistory) {
     	
     	try {
-    		Browser.updateVisitedHistory(context.getContentResolver(), url, true);
+			if (saveHistory) {
+				Browser.updateVisitedHistory(context.getContentResolver(), url, true);
+			}
     	} catch (Exception ex) {
     		if (Constants.LOGGING) Log.i(TAG, "Browser.updateVisitedHistory error", ex);
     	}

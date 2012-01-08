@@ -1186,7 +1186,8 @@ public final class ProfileActivity extends ListActivity
 							Util.createThreadUri(threadThingInfo).toString(),
 							false,
 							false,
-							mSettings.isUseExternalBrowser()
+							mSettings.isUseExternalBrowser(),
+							mSettings.isSaveHistory()
 					);
 				}
 			};
@@ -1214,7 +1215,7 @@ public final class ProfileActivity extends ListActivity
 					// Launch Intent to goto the URL
 					Common.launchBrowser(ProfileActivity.this, info.getUrl(),
 							Util.createThreadUri(info).toString(),
-							false, false, fUseExternalBrowser);
+							false, false, fUseExternalBrowser, mSettings.isSaveHistory());
 				}
 			};
 		}
