@@ -38,6 +38,10 @@
 			android:key="confirm_quit"
 			android:title="@string/pref_confirm_quit" />
 			
+		<CheckBoxPreference
+			android:key="save_history"
+			android:title="@string/pref_save_history" />
+			
 	</PreferenceCategory>
 	
 	<PreferenceCategory android:title="@string/pref_appearance_category">

@@ -281,6 +281,7 @@ public class Constants {
     public static final String PREF_HOMEPAGE = "homepage";
     public static final String PREF_USE_EXTERNAL_BROWSER = "use_external_browser";
     public static final String PREF_CONFIRM_QUIT = "confirm_quit";
+    public static final String PREF_SAVE_HISTORY = "save_history";
     public static final String PREF_ALWAYS_SHOW_NEXT_PREVIOUS = "always_show_next_previous";
     public static final String PREF_COMMENTS_SORT_BY_URL = "sort_by_url";
     public static final String PREF_THEME = "theme";
