@@ -1140,7 +1140,7 @@ public final class ThreadsListActivity extends ListActivity {
     			url = Constants.REDDIT_BASE_URL;
     		else
         		url = new StringBuilder(Constants.REDDIT_BASE_URL + "/r/").append(mSubreddit).toString();
-    		Common.launchBrowser(this, url, null, false, true, true, mSettings.isSaveHistory());
+    		Common.launchBrowser(this, url, null, false, true, true, false);
     		break;
         case R.id.light_dark_menu_id:
     		mSettings.setTheme(Util.getInvertedTheme(mSettings.getTheme()));

@@ -207,7 +207,7 @@ public class RedditSettings {
     	// Show confirmation dialog when backing out of root Activity
         this.setConfirmQuit(sessionPrefs.getBoolean(Constants.PREF_CONFIRM_QUIT, true));
 
-    	// Show confirmation dialog when backing out of root Activity
+        // Save reddit history to Browser history
         this.setSaveHistory(sessionPrefs.getBoolean(Constants.PREF_SAVE_HISTORY, true));
         
     	// Whether to always show the next/previous buttons, or only at bottom of list
