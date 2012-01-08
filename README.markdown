@@ -51,6 +51,7 @@ Contributors
 * joe0185
 * gebner
 * kushou
+* haroldb
 
 
 [license]: http://github.com/talklittle/reddit-is-fun/blob/master/COPYING
