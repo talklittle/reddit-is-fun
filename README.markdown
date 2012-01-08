@@ -52,6 +52,7 @@ Contributors
 * gebner
 * kushou
 * haroldb
+* megamark16
 
 
 [license]: http://github.com/talklittle/reddit-is-fun/blob/master/COPYING
