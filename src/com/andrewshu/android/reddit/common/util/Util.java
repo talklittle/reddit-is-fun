@@ -486,7 +486,7 @@ public class Util {
     public static boolean isYoutubeUri(Uri uri) {
     	if (uri == null) return false;
     	String host = uri.getHost();
-    	return host != null && host.endsWith(".youtube.com");
+    	return host != null && (host.endsWith(".youtube.com") || host.equals("youtu.be"));
     }
     
     public static boolean isAndroidMarketUri(Uri uri) {
