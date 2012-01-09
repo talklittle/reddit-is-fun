@@ -23,14 +23,15 @@ import java.util.Collections;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import com.andrewshu.android.reddit.common.Constants;
-import com.andrewshu.android.reddit.common.util.Util;
-
 import android.text.SpannableString;
 import android.text.SpannableStringBuilder;
 import android.text.Spanned;
 import android.text.style.ForegroundColorSpan;
 import android.util.Log;
+
+import com.andrewshu.android.reddit.common.Constants;
+import com.andrewshu.android.reddit.common.util.Util;
+
 import dk.brics.automaton.AutomatonMatcher;
 import dk.brics.automaton.RegExp;
 import dk.brics.automaton.RunAutomaton;
@@ -210,7 +211,7 @@ public class Markdown {
         	String linkText = am.group();
         	String url = Util.absolutePathToURL(am.group());
 	        if (Constants.LOGGING) Log.d(TAG, "pos="+am.start() + " linkText="+linkText + " url="+url);
-        	urls.add(new MarkdownURL(am.start(), url, am.group()));
+        	urls.add(new MarkdownURL(am.start(), url, null));
         }
         // Don't autolink emails for now. Neither does reddit.com
 //        m = autoLinkEmail.matcher(ssb);
@@ -243,7 +244,7 @@ public class Markdown {
         while (am.find()) {
         	String subreddit = am.group();
         	if (Constants.LOGGING) Log.d(TAG, "pos="+am.start() + " subreddit="+subreddit);
-        	urls.add(new MarkdownURL(am.start(), Util.absolutePathToURL(subreddit), null));
+    		urls.add(new MarkdownURL(am.start(), Util.absolutePathToURL(subreddit), subreddit));
         }
         return txt;
     }
