@@ -45,6 +45,7 @@ import android.app.ProgressDialog;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
+import android.content.pm.PackageManager.NameNotFoundException;
 import android.graphics.Color;
 import android.graphics.drawable.Drawable;
 import android.net.Uri;
@@ -1902,12 +1903,10 @@ public class CommentsListActivity extends ListActivity
      */
     private void linkToEmbeddedURLs(Button linkButton) {
 		final ArrayList<String> urls = new ArrayList<String>();
-		final ArrayList<String> anchorTexts = new ArrayList<String>();
 		final ArrayList<MarkdownURL> vtUrls = mVoteTargetThing.getUrls();
 		int urlsCount = vtUrls.size();
 		for (int i = 0; i < urlsCount; i++) {
 			urls.add(vtUrls.get(i).url);
-			anchorTexts.add(vtUrls.get(i).anchorText);
 		}
 		if (urlsCount == 0) {
 			linkButton.setEnabled(false);
@@ -1920,29 +1919,40 @@ public class CommentsListActivity extends ListActivity
     	            ArrayAdapter<MarkdownURL> adapter = 
     	                new ArrayAdapter<MarkdownURL>(CommentsListActivity.this, android.R.layout.select_dialog_item, vtUrls) {
     	                public View getView(int position, View convertView, ViewGroup parent) {
-    	                    View v = super.getView(position, convertView, parent);
-    	                    try {
-    	                        String url = getItem(position).url;
-    	                        String anchorText = getItem(position).anchorText;
-    	                        TextView tv = (TextView) v;
-    	                        Drawable d = getPackageManager().getActivityIcon(new Intent(Intent.ACTION_VIEW, Uri.parse(url)));
-    	                        if (d != null) {
-    	                            d.setBounds(0, 0, d.getIntrinsicHeight(), d.getIntrinsicHeight());
-    	                            tv.setCompoundDrawablePadding(10);
-    	                            tv.setCompoundDrawables(d, null, null, null);
-    	                        }
-    	                        final String telPrefix = "tel:";
-    	                        if (url.startsWith(telPrefix)) {
-    	                            url = PhoneNumberUtils.formatNumber(url.substring(telPrefix.length()));
-    	                        }
-								if (anchorText != null)
-									tv.setText(Html.fromHtml(anchorText + "<br /><small>" + url + "</small>"));
-								else
-									tv.setText(Html.fromHtml(url));
-    	                    } catch (android.content.pm.PackageManager.NameNotFoundException ex) {
-    	                        ;
+    	                	TextView tv;
+    	                    if (convertView == null) {
+    	                        tv = (TextView) ((LayoutInflater)getSystemService(Context.LAYOUT_INFLATER_SERVICE))
+    	                        		.inflate(android.R.layout.select_dialog_item, null);
+    	                    } else {
+    	                        tv = (TextView) convertView;
     	                    }
-    	                    return v;
+
+	                        String url = getItem(position).url;
+	                        String anchorText = getItem(position).anchorText;
+	                        if (Constants.LOGGING) Log.d(TAG, "links url="+url + " anchorText="+anchorText);
+	                        
+	                        Drawable d = null;
+							try {
+								d = getPackageManager().getActivityIcon(new Intent(Intent.ACTION_VIEW, Uri.parse(url)));
+							} catch (NameNotFoundException ignore) {
+							}
+	                        if (d != null) {
+	                            d.setBounds(0, 0, d.getIntrinsicHeight(), d.getIntrinsicHeight());
+	                            tv.setCompoundDrawablePadding(10);
+	                            tv.setCompoundDrawables(d, null, null, null);
+	                        }
+	                        
+	                        final String telPrefix = "tel:";
+	                        if (url.startsWith(telPrefix)) {
+	                            url = PhoneNumberUtils.formatNumber(url.substring(telPrefix.length()));
+	                        }
+	                        
+							if (anchorText != null)
+								tv.setText(Html.fromHtml("<span>" + anchorText + "</span><br /><small>" + url + "</small>"));
+							else
+								tv.setText(Html.fromHtml(url));
+							
+    	                    return tv;
     	                }
     	            };
 

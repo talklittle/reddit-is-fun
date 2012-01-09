@@ -75,6 +75,8 @@ public class Markdown {
     
     static final RunAutomaton autoLinkUrlAutomaton = new RunAutomaton(new RegExp("((https?|ftp):([^'\"> \t\r\n])+)", RegExp.NONE).toAutomaton());
 //    static final Pattern autoLinkEmail = Pattern.compile("<([-.\\w]+\\@[-a-z0-9]+(\\.[-a-z0-9]+)*\\.[a-z]+)>");
+    
+    static final RunAutomaton subredditAutomaton = new RunAutomaton(new RegExp("/[rR]/[a-zA-Z0-9]+/?", RegExp.NONE).toAutomaton());
 	
     /**
      * @param txt input
@@ -100,6 +102,9 @@ public class Markdown {
         // doAnchors originally called from runBlockGamut -> formParagraphs -> runSpanGamut 
         txt = doAnchorURLs(txt, urls);
         txt = doAutoLinkURLs(txt, urls);
+        txt = doAutoLinkSubredditURLs(txt, urls);
+        
+        Collections.sort(urls);
     }
     
     /**
@@ -108,6 +113,7 @@ public class Markdown {
 	* @param txt - input in markdown format
 	* @return HTML block corresponding to txt passed in.
 	*/
+    @Deprecated
     public SpannableStringBuilder markdown(String txt, SpannableStringBuilder ssb, ArrayList<MarkdownURL> urls) {
     	if (txt == null) {
             txt = "";
@@ -163,7 +169,7 @@ public class Markdown {
 	        String title = m.group(6);
 	        int linkTextLength = linkText.length();
 	        
-	        if (Constants.LOGGING) Log.d(TAG, "linkText="+linkText + " url="+url + " title="+ title);
+	        if (Constants.LOGGING) Log.d(TAG, "pos="+(start + anchorStart) + " linkText="+linkText + " url="+url + " title="+ title);
 	        
 	        // protect emphasis (* and _) within urls
 //	        url = url.replaceAll("\\*", CHAR_PROTECTOR.encode("*"));
@@ -181,10 +187,6 @@ public class Markdown {
 //	            result.append("\"");
 //	        }
 	        
-	        // Replace whole anchor thing with just linkText, colored different color
-	        SpannableString ss = new SpannableString(linkText);
-	        ForegroundColorSpan fcs = new ForegroundColorSpan(Constants.MARKDOWN_LINK_COLOR);
-        	ss.setSpan(fcs, 0, linkTextLength, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
         	txt = new StringBuilder(txt.substring(0, start + anchorStart))
         		.append(linkText)
         		.append(txt.substring(start + anchorEnd, txt.length()))
@@ -205,7 +207,10 @@ public class Markdown {
         // Colorize URLs
         AutomatonMatcher am = autoLinkUrlAutomaton.newMatcher(txt);
         while (am.find()) {
-        	urls.add(new MarkdownURL(am.start(), Util.absolutePathToURL(am.group()), null));
+        	String linkText = am.group();
+        	String url = Util.absolutePathToURL(am.group());
+	        if (Constants.LOGGING) Log.d(TAG, "pos="+am.start() + " linkText="+linkText + " url="+url);
+        	urls.add(new MarkdownURL(am.start(), url, am.group()));
         }
         // Don't autolink emails for now. Neither does reddit.com
 //        m = autoLinkEmail.matcher(ssb);
@@ -228,6 +233,21 @@ public class Markdown {
         return txt;
     }
     
+    /**
+     * @param txt input text
+     * @param urls Out URLs from subreddit references
+     * @return txt, unchanged
+     */
+    private String doAutoLinkSubredditURLs(String txt, ArrayList<MarkdownURL> urls) {
+        AutomatonMatcher am = subredditAutomaton.newMatcher(txt);
+        while (am.find()) {
+        	String subreddit = am.group();
+        	if (Constants.LOGGING) Log.d(TAG, "pos="+am.start() + " subreddit="+subreddit);
+        	urls.add(new MarkdownURL(am.start(), Util.absolutePathToURL(subreddit), null));
+        }
+        return txt;
+    }
+    
 	
 	/** Adapted from MarkdownJ. Convert links, return URL */
     private SpannableStringBuilder doAnchors(SpannableStringBuilder ssb, ArrayList<MarkdownURL> urls) {
@@ -247,7 +267,7 @@ public class Markdown {
 	        String title = m.group(6);
 	        int linkTextLength = linkText.length();
 	        
-	        if (Constants.LOGGING) Log.d(TAG, "linkText="+linkText + " url="+url + " title="+ title);
+	        if (Constants.LOGGING) Log.d(TAG, "pos="+am.start() + " linkText="+linkText + " url="+url + " title="+ title);
 	        
 	        // protect emphasis (* and _) within urls
 //	        url = url.replaceAll("\\*", CHAR_PROTECTOR.encode("*"));
