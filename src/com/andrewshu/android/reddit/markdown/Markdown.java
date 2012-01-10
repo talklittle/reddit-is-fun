@@ -20,6 +20,8 @@ package com.andrewshu.android.reddit.markdown;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Map;
+import java.util.TreeMap;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -99,11 +101,15 @@ public class Markdown {
         txt.replaceAll("^[ ]+$", "");
         
         urls.clear();
-
+        
+        TreeMap<Integer, Integer> startToEndOffsetMap = new TreeMap<Integer, Integer>();
+        
         // doAnchors originally called from runBlockGamut -> formParagraphs -> runSpanGamut 
-        txt = doAnchorURLs(txt, urls);
-        txt = doAutoLinkURLs(txt, urls);
-        txt = doAutoLinkSubredditURLs(txt, urls);
+        txt = doAnchorURLs(txt, urls, startToEndOffsetMap);
+        txt = doAutoLinkURLs(txt, urls, startToEndOffsetMap);
+        txt = doAutoLinkSubredditURLs(txt, urls, startToEndOffsetMap);
+        
+        startToEndOffsetMap.clear();
         
         Collections.sort(urls);
     }
@@ -148,12 +154,30 @@ public class Markdown {
         return ssb;
     }
     
+    private boolean isOverlapping(int start, int end, TreeMap<Integer, Integer> startToEndOffsetMap) {
+    	for (Map.Entry<Integer, Integer> startEnd : startToEndOffsetMap.entrySet()) {
+    		int entryStart = startEnd.getKey();
+    		int entryEnd = startEnd.getValue();
+    		if (entryStart <= start && entryEnd > start)
+    			return true;
+    		else if (entryStart >= start && entryEnd <= end)
+    			return true;
+    		else if (entryStart >= end)
+    			return false;
+    	}
+    	return false;
+    }
+    
+    private void saveStartAndEnd(int start, int end, TreeMap<Integer, Integer> startToEndOffsetMap) {
+    	startToEndOffsetMap.put(start, end);
+    }
+    
     /**
      * @param txt input text
      * @param urls Out URLs from anchors
      * @return updated text with anchors replaced
      */
-    private String doAnchorURLs(String txt, ArrayList<MarkdownURL> urls) {
+    private String doAnchorURLs(String txt, ArrayList<MarkdownURL> urls, TreeMap<Integer, Integer> startToEndOffsetMap) {
     	// Inline-style links: [link text](url "optional title")
         AutomatonMatcher am = inlineLinkAutomaton.newMatcher(txt);
         // The offset into the entire original string 
@@ -175,7 +199,12 @@ public class Markdown {
 	        // protect emphasis (* and _) within urls
 //	        url = url.replaceAll("\\*", CHAR_PROTECTOR.encode("*"));
 //	        url = url.replaceAll("_", CHAR_PROTECTOR.encode("_"));
-	        urls.add(new MarkdownURL(start + anchorStart, Util.absolutePathToURL(url), linkText));
+	        
+	        if (!isOverlapping(start + anchorStart, start + anchorStart + linkTextLength, startToEndOffsetMap)) {
+	        	saveStartAndEnd(start + anchorStart, start + anchorStart + linkTextLength, startToEndOffsetMap);
+	        	urls.add(new MarkdownURL(start + anchorStart, Util.absolutePathToURL(url), linkText));
+	        }
+	        	
 //	        StringBuffer result = new StringBuffer();
 	        // TODO: Show title (if any) alongside url in popup menu
 //	        if (title != null) {
@@ -204,14 +233,17 @@ public class Markdown {
      * @param urls Out URLs from autolinks
      * @return txt, unchanged
      */
-    private String doAutoLinkURLs(String txt, ArrayList<MarkdownURL> urls) {
+    private String doAutoLinkURLs(String txt, ArrayList<MarkdownURL> urls, TreeMap<Integer, Integer> startToEndOffsetMap) {
         // Colorize URLs
         AutomatonMatcher am = autoLinkUrlAutomaton.newMatcher(txt);
         while (am.find()) {
         	String linkText = am.group();
         	String url = Util.absolutePathToURL(am.group());
 	        if (Constants.LOGGING) Log.d(TAG, "pos="+am.start() + " linkText="+linkText + " url="+url);
-        	urls.add(new MarkdownURL(am.start(), url, null));
+	        if (!isOverlapping(am.start(), am.start() + linkText.length(), startToEndOffsetMap)) {
+	        	saveStartAndEnd(am.start(), am.start() + linkText.length(), startToEndOffsetMap);
+	        	urls.add(new MarkdownURL(am.start(), url, null));
+	        }
         }
         // Don't autolink emails for now. Neither does reddit.com
 //        m = autoLinkEmail.matcher(ssb);
@@ -239,12 +271,15 @@ public class Markdown {
      * @param urls Out URLs from subreddit references
      * @return txt, unchanged
      */
-    private String doAutoLinkSubredditURLs(String txt, ArrayList<MarkdownURL> urls) {
+    private String doAutoLinkSubredditURLs(String txt, ArrayList<MarkdownURL> urls, TreeMap<Integer, Integer> startToEndOffsetMap) {
         AutomatonMatcher am = subredditAutomaton.newMatcher(txt);
         while (am.find()) {
         	String subreddit = am.group();
         	if (Constants.LOGGING) Log.d(TAG, "pos="+am.start() + " subreddit="+subreddit);
-    		urls.add(new MarkdownURL(am.start(), Util.absolutePathToURL(subreddit), subreddit));
+	        if (!isOverlapping(am.start(), am.start() + subreddit.length(), startToEndOffsetMap)) {
+	        	saveStartAndEnd(am.start(), am.start() + subreddit.length(), startToEndOffsetMap);
+	        	urls.add(new MarkdownURL(am.start(), Util.absolutePathToURL(subreddit), subreddit));
+	        }
         }
         return txt;
     }
