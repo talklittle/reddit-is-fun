@@ -1119,10 +1119,10 @@ public final class ThreadsListActivity extends ListActivity {
     		break;
     	case R.id.logout_menu_id:
 			if (mSettings.isConfirmQuitOrLogout()) {
-				// Ask the user if they want to quit
+				// Ask the user if they want to logout
 				new AlertDialog.Builder(this)
 						.setIcon(android.R.drawable.ic_dialog_alert)
-						.setTitle(R.string.quit)
+						.setTitle(R.string.confirm_logout_title)
 						.setMessage(R.string.confirm_logout)
 						.setPositiveButton(R.string.yes,
 								new DialogInterface.OnClickListener() {
