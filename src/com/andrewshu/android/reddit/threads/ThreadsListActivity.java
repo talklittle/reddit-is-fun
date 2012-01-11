@@ -289,7 +289,7 @@ public final class ThreadsListActivity extends ListActivity {
     @Override
     public boolean onKeyDown(int keyCode, KeyEvent event) {
         //Handle the back button
-        if(mSettings.isConfirmQuit() && keyCode == KeyEvent.KEYCODE_BACK && isTaskRoot()) {
+        if(mSettings.isConfirmQuitOrLogout() && keyCode == KeyEvent.KEYCODE_BACK && isTaskRoot()) {
             //Ask the user if they want to quit
             new AlertDialog.Builder(this)
             .setIcon(android.R.drawable.ic_dialog_alert)
@@ -1118,10 +1118,23 @@ public final class ThreadsListActivity extends ListActivity {
     		showDialog(Constants.DIALOG_LOGIN);
     		break;
     	case R.id.logout_menu_id:
-    		Common.doLogout(mSettings, mClient, getApplicationContext());
-    		Toast.makeText(this, "You have been logged out.", Toast.LENGTH_SHORT).show();
-    		new MyDownloadThreadsTask(mSubreddit).execute();
-    		break;
+			if (mSettings.isConfirmQuitOrLogout()) {
+				// Ask the user if they want to quit
+				new AlertDialog.Builder(this)
+						.setIcon(android.R.drawable.ic_dialog_alert)
+						.setTitle(R.string.quit)
+						.setMessage(R.string.confirm_logout)
+						.setPositiveButton(R.string.yes,
+								new DialogInterface.OnClickListener() {
+									public void onClick(DialogInterface dialog,
+											int which) {
+										ThreadsListActivity.this.logout();
+									}
+								}).setNegativeButton(R.string.no, null).show();
+			} else {
+				logout();
+			}
+			break;
     	case R.id.refresh_menu_id:
     		CacheInfo.invalidateCachedSubreddit(getApplicationContext());
     		new MyDownloadThreadsTask(mSubreddit).execute();
@@ -1172,6 +1185,13 @@ public final class ThreadsListActivity extends ListActivity {
     	
         return true;
     }
+    
+	private void logout() {
+		Common.doLogout(mSettings, mClient, getApplicationContext());
+		Toast.makeText(this, "You have been logged out.", Toast.LENGTH_SHORT)
+				.show();
+		new MyDownloadThreadsTask(mSubreddit).execute();
+	}
 
     @Override
     protected Dialog onCreateDialog(int id) {

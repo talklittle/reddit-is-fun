@@ -52,7 +52,7 @@ public class RedditSettings {
 	private String homepage = Constants.FRONTPAGE_STRING;
 	private boolean useExternalBrowser = false;
 	private boolean showCommentGuideLines = true;
-	private boolean confirmQuit = true;
+	private boolean confirmQuitOrLogout = true;
 	private boolean saveHistory = true;
 	private boolean alwaysShowNextPrevious = true;
 	
@@ -135,7 +135,7 @@ public class RedditSettings {
     	editor.putBoolean(Constants.PREF_USE_EXTERNAL_BROWSER, this.useExternalBrowser);
 
     	// Show confirmation dialog when backing out of root Activity
-    	editor.putBoolean(Constants.PREF_CONFIRM_QUIT, this.confirmQuit);
+    	editor.putBoolean(Constants.PREF_CONFIRM_QUIT, this.confirmQuitOrLogout);
 
     	// Save reddit history to Browser history
     	editor.putBoolean(Constants.PREF_SAVE_HISTORY, this.saveHistory);
@@ -205,7 +205,7 @@ public class RedditSettings {
         this.setUseExternalBrowser(sessionPrefs.getBoolean(Constants.PREF_USE_EXTERNAL_BROWSER, false));
 
     	// Show confirmation dialog when backing out of root Activity
-        this.setConfirmQuit(sessionPrefs.getBoolean(Constants.PREF_CONFIRM_QUIT, true));
+        this.setConfirmQuitOrLogout(sessionPrefs.getBoolean(Constants.PREF_CONFIRM_QUIT, true));
 
         // Save reddit history to Browser history
         this.setSaveHistory(sessionPrefs.getBoolean(Constants.PREF_SAVE_HISTORY, true));
@@ -290,16 +290,16 @@ public class RedditSettings {
 		this.showCommentGuideLines = showCommentGuideLines;
 	}
 
-	public boolean isConfirmQuit() {
-		return confirmQuit;
+	public boolean isConfirmQuitOrLogout() {
+		return confirmQuitOrLogout;
 	}
 
 	public boolean isSaveHistory() {
 		return saveHistory;
 	}
 
-	public void setConfirmQuit(boolean confirmQuit) {
-		this.confirmQuit = confirmQuit;
+	public void setConfirmQuitOrLogout(boolean confirmQuitOrLogout) {
+		this.confirmQuitOrLogout = confirmQuitOrLogout;
 	}
 
 	public void setSaveHistory(boolean saveHistory) {
