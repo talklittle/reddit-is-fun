@@ -504,13 +504,20 @@ public class Common {
 	}
     
     public static boolean isClicked(Context context, String url) {
-		Cursor cursor = context.getContentResolver().query(
-				Browser.BOOKMARKS_URI,
-				Browser.HISTORY_PROJECTION,
-				Browser.HISTORY_PROJECTION[Browser.HISTORY_PROJECTION_URL_INDEX] + "=?",
-				new String[]{ url },
-				null
-		);
+    	Cursor cursor;
+    	try {
+			cursor = context.getContentResolver().query(
+					Browser.BOOKMARKS_URI,
+					Browser.HISTORY_PROJECTION,
+					Browser.HISTORY_PROJECTION[Browser.HISTORY_PROJECTION_URL_INDEX] + "=?",
+					new String[]{ url },
+					null
+			);
+    	} catch (Exception ex) {
+    		if (Constants.LOGGING) Log.w(TAG, "Error querying Android Browser for history; manually revoked permission?", ex);
+    		return false;
+    	}
+    	
 		if (cursor != null) {
 	        boolean isClicked = cursor.moveToFirst();  // returns true if cursor is not empty
 	        cursor.close();
