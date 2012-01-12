@@ -34,7 +34,7 @@
 
     <supports-screens />
     
-    <application android:icon="@drawable/icon" android:label="@string/app_name" android:name=".RedditIsFunApplication">
+    <application android:icon="@drawable/icon" android:label="@string/app_name" android:name=".RedditIsFunApplication" android:backupAgent=".SettingsBackupAgent">
         <activity android:name=".threads.ThreadsListActivity"
                   android:label="@string/app_name">
             <intent-filter>
@@ -87,5 +87,7 @@
                 <action android:name="android.intent.action.BOOT_COMPLETED" />
             </intent-filter>
         </receiver>
+        
+	    <meta-data android:name="com.google.android.backup.api_key" android:value=""/>
 	</application>
 </manifest> 

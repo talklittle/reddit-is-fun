@@ -25,6 +25,7 @@ import org.apache.http.client.HttpClient;
 import org.apache.http.cookie.Cookie;
 import org.apache.http.impl.cookie.BasicClientCookie;
 
+import android.app.backup.BackupManager;
 import android.content.Context;
 import android.content.SharedPreferences;
 import android.preference.PreferenceManager;
@@ -166,6 +167,9 @@ public class RedditSettings {
     	editor.putString(Constants.PREF_MAIL_NOTIFICATION_SERVICE, this.mailNotificationService);
 
     	editor.commit();
+    	
+    	//request a backup
+    	new BackupManager(context).dataChanged();
     }
     
     public void loadRedditPreferences(Context context, HttpClient client) {

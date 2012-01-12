@@ -20,6 +20,7 @@
 package com.andrewshu.android.reddit.settings;
 
 import android.app.NotificationManager;
+import android.app.backup.BackupManager;
 import android.content.Context;
 import android.content.SharedPreferences;
 import android.os.Bundle;
@@ -97,6 +98,9 @@ public class RedditPreferencesPage extends PreferenceActivity
     }
 
     public boolean onPreferenceChange(Preference pref, Object objValue) {
+    	//request a backup of the changed data
+    	new BackupManager(this).dataChanged();
+    	
 //        if (pref.getKey().equals(BrowserSettings.PREF_EXTRAS_RESET_DEFAULTS)) {
 //            Boolean value = (Boolean) objValue;
 //            if (value.booleanValue() == true) {
