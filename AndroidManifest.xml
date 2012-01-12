@@ -87,5 +87,7 @@
                 <action android:name="android.intent.action.BOOT_COMPLETED" />
             </intent-filter>
         </receiver>
+        
+	    <meta-data android:name="com.google.android.backup.api_key" android:value="AEdPqrEAAAAIrd4RnBA8kUYJJVB22mBqXZPhyj0-SFigY4SqxA" />
 	</application>
 </manifest> 
