@@ -19,6 +19,7 @@
 
 package com.andrewshu.android.reddit.settings;
 
+import android.app.AlertDialog;
 import android.app.NotificationManager;
 import android.app.backup.BackupManager;
 import android.content.Context;
@@ -86,6 +87,9 @@ public class RedditPreferencesPage extends PreferenceActivity
         		.equals(Constants.PREF_MAIL_NOTIFICATION_STYLE_OFF)) {
         	e.setEnabled(false);
         }
+        
+        e = findPreference(Constants.PREF_USE_BACKUP_SERVICE);
+        e.setOnPreferenceChangeListener(this);
         
     }
     
@@ -157,10 +161,21 @@ public class RedditPreferencesPage extends PreferenceActivity
                         Toast.LENGTH_LONG).show();
         	}
         	return true;
+        } else if(pref.getKey().equals(Constants.PREF_USE_BACKUP_SERVICE)) {
+        	if(Boolean.TRUE.equals(objValue))
+	        	new AlertDialog.Builder(this)
+		        	.setIcon(android.R.drawable.ic_dialog_alert)
+					.setTitle(R.string.pref_use_backup_service)
+					.setMessage(R.string.pref_use_backup_service_message)
+					.setNeutralButton(android.R.string.ok, null)
+					.show();
+        	
+        	return true;
         }
         return false;
     }
     
+    @Override
     public boolean onPreferenceClick(Preference pref) {
 //        if (pref.getKey().equals(BrowserSettings.PREF_GEARS_SETTINGS)) {
 //            List<Plugin> loadedPlugins = WebView.getPluginList().getList();

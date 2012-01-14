@@ -152,6 +152,10 @@
 	<string name="pref_confirm_quit">Quit/logout confirmation</string>
  	
 	<string name="pref_save_history">Save browsing history</string>
+	
+	<string name="pref_use_backup_service">Backup Settings</string>
+	<string name="pref_use_backup_service_summary">Stores your Reddit is Fun settings in the cloud.</string>
+	<string name="pref_use_backup_service_message">All of your Reddit is Fun settings, except for your Reddit credentials, will be backed-up using the Android Backup Service.</string>
  	
 	<!-- Settings label -->
 	<string name="pref_theme">Theme</string>
