@@ -46,6 +46,7 @@ import android.text.style.TextAppearanceSpan;
 import android.util.Log;
 import android.view.ContextMenu;
 import android.view.ContextMenu.ContextMenuInfo;
+import android.view.ContextThemeWrapper;
 import android.view.KeyEvent;
 import android.view.LayoutInflater;
 import android.view.Menu;
@@ -291,7 +292,7 @@ public final class ThreadsListActivity extends ListActivity {
         //Handle the back button
         if(mSettings.isConfirmQuitOrLogout() && keyCode == KeyEvent.KEYCODE_BACK && isTaskRoot()) {
             //Ask the user if they want to quit
-            new AlertDialog.Builder(this, mSettings.getDialogTheme())
+            new AlertDialog.Builder(new ContextThemeWrapper(this, mSettings.getDialogTheme()))
             .setIcon(android.R.drawable.ic_dialog_alert)
             .setTitle(R.string.quit)
             .setMessage(R.string.really_quit)
@@ -1120,7 +1121,7 @@ public final class ThreadsListActivity extends ListActivity {
     	case R.id.logout_menu_id:
 			if (mSettings.isConfirmQuitOrLogout()) {
 				// Ask the user if they want to logout
-				new AlertDialog.Builder(this, mSettings.getDialogTheme())
+				new AlertDialog.Builder(new ContextThemeWrapper(this, mSettings.getDialogTheme()))
 						.setIcon(android.R.drawable.ic_dialog_alert)
 						.setTitle(R.string.confirm_logout_title)
 						.setMessage(R.string.confirm_logout)
@@ -1130,7 +1131,10 @@ public final class ThreadsListActivity extends ListActivity {
 											int which) {
 										ThreadsListActivity.this.logout();
 									}
-								}).setNegativeButton(R.string.no, null).show();
+								}
+						)
+						.setNegativeButton(R.string.no, null)
+						.show();
 			} else {
 				logout();
 			}
@@ -1218,28 +1222,28 @@ public final class ThreadsListActivity extends ListActivity {
     		break;
     		
     	case Constants.DIALOG_SORT_BY:
-    		builder = new AlertDialog.Builder(this, mSettings.getDialogTheme());
+    		builder = new AlertDialog.Builder(new ContextThemeWrapper(this, mSettings.getDialogTheme()));
     		builder.setTitle("Sort by:");
     		builder.setSingleChoiceItems(Constants.ThreadsSort.SORT_BY_CHOICES,
     				getSelectedSortBy(), sortByOnClickListener);
     		dialog = builder.create();
     		break;
     	case Constants.DIALOG_SORT_BY_NEW:
-    		builder = new AlertDialog.Builder(this, mSettings.getDialogTheme());
+    		builder = new AlertDialog.Builder(new ContextThemeWrapper(this, mSettings.getDialogTheme()));
     		builder.setTitle("what's new");
     		builder.setSingleChoiceItems(Constants.ThreadsSort.SORT_BY_NEW_CHOICES,
     				getSelectedSortByNew(), sortByNewOnClickListener);
     		dialog = builder.create();
     		break;
     	case Constants.DIALOG_SORT_BY_CONTROVERSIAL:
-    		builder = new AlertDialog.Builder(this, mSettings.getDialogTheme());
+    		builder = new AlertDialog.Builder(new ContextThemeWrapper(this, mSettings.getDialogTheme()));
     		builder.setTitle("most controversial");
     		builder.setSingleChoiceItems(Constants.ThreadsSort.SORT_BY_CONTROVERSIAL_CHOICES,
     				getSelectedSortByControversial(), sortByControversialOnClickListener);
     		dialog = builder.create();
     		break;
     	case Constants.DIALOG_SORT_BY_TOP:
-    		builder = new AlertDialog.Builder(this, mSettings.getDialogTheme());
+    		builder = new AlertDialog.Builder(new ContextThemeWrapper(this, mSettings.getDialogTheme()));
     		builder.setTitle("top scoring");
     		builder.setSingleChoiceItems(Constants.ThreadsSort.SORT_BY_TOP_CHOICES,
     				getSelectedSortByTop(), sortByTopOnClickListener);
@@ -1248,7 +1252,7 @@ public final class ThreadsListActivity extends ListActivity {
 
     	// "Please wait"
     	case Constants.DIALOG_LOGGING_IN:
-    		pdialog = new ProgressDialog(this, mSettings.getDialogTheme());
+    		pdialog = new ProgressDialog(new ContextThemeWrapper(this, mSettings.getDialogTheme()));
     		pdialog.setMessage("Logging in...");
     		pdialog.setIndeterminate(true);
     		pdialog.setCancelable(false);

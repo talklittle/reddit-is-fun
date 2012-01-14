@@ -59,6 +59,7 @@ import android.text.style.ForegroundColorSpan;
 import android.util.Log;
 import android.view.ContextMenu;
 import android.view.ContextMenu.ContextMenuInfo;
+import android.view.ContextThemeWrapper;
 import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuInflater;
@@ -1663,7 +1664,7 @@ public class CommentsListActivity extends ListActivity
 		}
     		
     	case Constants.DIALOG_DELETE:
-    		builder = new AlertDialog.Builder(this, mSettings.getDialogTheme());
+    		builder = new AlertDialog.Builder(new ContextThemeWrapper(this, mSettings.getDialogTheme()));
     		builder.setTitle("Really delete this?");
     		builder.setPositiveButton("Yes", new DialogInterface.OnClickListener() {
     			public void onClick(DialogInterface dialog, int item) {
@@ -1680,7 +1681,7 @@ public class CommentsListActivity extends ListActivity
     		break;
     		
     	case Constants.DIALOG_SORT_BY:
-    		builder = new AlertDialog.Builder(this, mSettings.getDialogTheme());
+    		builder = new AlertDialog.Builder(new ContextThemeWrapper(this, mSettings.getDialogTheme()));
     		builder.setTitle("Sort by:");
 			int selectedSortBy = -1;
 			for (int i = 0; i < Constants.CommentsSort.SORT_BY_URL_CHOICES.length; i++) {
@@ -1694,7 +1695,7 @@ public class CommentsListActivity extends ListActivity
     		break;
     		
     	case Constants.DIALOG_REPORT:
-    		builder = new AlertDialog.Builder(this, mSettings.getDialogTheme());
+    		builder = new AlertDialog.Builder(new ContextThemeWrapper(this, mSettings.getDialogTheme()));
     		builder.setTitle("Really report this?");
     		builder.setPositiveButton("Yes", new DialogInterface.OnClickListener() {
     			public void onClick(DialogInterface dialog, int item) {
@@ -1712,28 +1713,28 @@ public class CommentsListActivity extends ListActivity
     		
    		// "Please wait"
     	case Constants.DIALOG_DELETING:
-    		pdialog = new ProgressDialog(this, mSettings.getDialogTheme());
+    		pdialog = new ProgressDialog(new ContextThemeWrapper(this, mSettings.getDialogTheme()));
     		pdialog.setMessage("Deleting...");
     		pdialog.setIndeterminate(true);
     		pdialog.setCancelable(false);
     		dialog = pdialog;
     		break;
     	case Constants.DIALOG_EDITING:
-    		pdialog = new ProgressDialog(this, mSettings.getDialogTheme());
+    		pdialog = new ProgressDialog(new ContextThemeWrapper(this, mSettings.getDialogTheme()));
     		pdialog.setMessage("Submitting edit...");
     		pdialog.setIndeterminate(true);
     		pdialog.setCancelable(false);
     		dialog = pdialog;
     		break;
     	case Constants.DIALOG_LOGGING_IN:
-    		pdialog = new ProgressDialog(this, mSettings.getDialogTheme());
+    		pdialog = new ProgressDialog(new ContextThemeWrapper(this, mSettings.getDialogTheme()));
     		pdialog.setMessage("Logging in...");
     		pdialog.setIndeterminate(true);
     		pdialog.setCancelable(false);
     		dialog = pdialog;
     		break;
     	case Constants.DIALOG_REPLYING:
-    		pdialog = new ProgressDialog(this, mSettings.getDialogTheme());
+    		pdialog = new ProgressDialog(new ContextThemeWrapper(this, mSettings.getDialogTheme()));
     		pdialog.setMessage("Sending reply...");
     		pdialog.setIndeterminate(true);
     		pdialog.setCancelable(false);
@@ -1746,7 +1747,7 @@ public class CommentsListActivity extends ListActivity
     		final EditText find_box = (EditText) content.findViewById(R.id.input_find_box);
 //    		final CheckBox wrap_box = (CheckBox) content.findViewById(R.id.find_wrap_checkbox);
 
-    		builder = new AlertDialog.Builder(this, mSettings.getDialogTheme());
+    		builder = new AlertDialog.Builder(new ContextThemeWrapper(this, mSettings.getDialogTheme()));
     		builder.setView(content);
     		builder.setTitle(R.string.find)
     		.setPositiveButton(R.string.find, new DialogInterface.OnClickListener() {
@@ -1959,7 +1960,7 @@ public class CommentsListActivity extends ListActivity
     	                }
     	            };
 
-    	            AlertDialog.Builder b = new AlertDialog.Builder(CommentsListActivity.this, mSettings.getDialogTheme());
+    	            AlertDialog.Builder b = new AlertDialog.Builder(new ContextThemeWrapper(CommentsListActivity.this, mSettings.getDialogTheme()));
 
     	            DialogInterface.OnClickListener click = new DialogInterface.OnClickListener() {
     	                public final void onClick(DialogInterface dialog, int which) {

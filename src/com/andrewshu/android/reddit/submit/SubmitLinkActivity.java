@@ -48,6 +48,7 @@ import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.util.Log;
+import android.view.ContextThemeWrapper;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
@@ -547,14 +548,14 @@ public class SubmitLinkActivity extends TabActivity {
 
        	// "Please wait"
     	case Constants.DIALOG_LOGGING_IN:
-    		pdialog = new ProgressDialog(this, mSettings.getDialogTheme());
+    		pdialog = new ProgressDialog(new ContextThemeWrapper(this, mSettings.getDialogTheme()));
     		pdialog.setMessage("Logging in...");
     		pdialog.setIndeterminate(true);
     		pdialog.setCancelable(false);
     		dialog = pdialog;
     		break;
 		case Constants.DIALOG_SUBMITTING:
-			pdialog = new ProgressDialog(this, mSettings.getDialogTheme());
+			pdialog = new ProgressDialog(new ContextThemeWrapper(this, mSettings.getDialogTheme()));
     		pdialog.setMessage("Submitting...");
     		pdialog.setIndeterminate(true);
     		pdialog.setCancelable(false);

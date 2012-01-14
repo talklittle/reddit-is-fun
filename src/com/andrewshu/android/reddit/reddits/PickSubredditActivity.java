@@ -43,6 +43,7 @@ import android.content.Intent;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.util.Log;
+import android.view.ContextThemeWrapper;
 import android.view.KeyEvent;
 import android.view.LayoutInflater;
 import android.view.MenuItem;
@@ -432,7 +433,7 @@ public final class PickSubredditActivity extends ListActivity {
     	switch (id) {
 	    	// "Please wait"
 		case Constants.DIALOG_LOADING_REDDITS_LIST:
-			pdialog = new ProgressDialog(this, mSettings.getDialogTheme());
+			pdialog = new ProgressDialog(new ContextThemeWrapper(this, mSettings.getDialogTheme()));
 			pdialog.setMessage("Loading your reddits...");
 			pdialog.setIndeterminate(true);
 			pdialog.setCancelable(false);
