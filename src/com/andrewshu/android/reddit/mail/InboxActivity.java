@@ -206,7 +206,7 @@ public class InboxActivity extends TabActivity {
     		pdialog = new ProgressDialog(new ContextThemeWrapper(this, mSettings.getDialogTheme()));
     		pdialog.setMessage("Composing message...");
     		pdialog.setIndeterminate(true);
-    		pdialog.setCancelable(false);
+    		pdialog.setCancelable(true);
     		dialog = pdialog;
     		break;
     	default:

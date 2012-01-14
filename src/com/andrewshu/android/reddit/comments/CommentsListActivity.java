@@ -1716,28 +1716,28 @@ public class CommentsListActivity extends ListActivity
     		pdialog = new ProgressDialog(new ContextThemeWrapper(this, mSettings.getDialogTheme()));
     		pdialog.setMessage("Deleting...");
     		pdialog.setIndeterminate(true);
-    		pdialog.setCancelable(false);
+    		pdialog.setCancelable(true);
     		dialog = pdialog;
     		break;
     	case Constants.DIALOG_EDITING:
     		pdialog = new ProgressDialog(new ContextThemeWrapper(this, mSettings.getDialogTheme()));
     		pdialog.setMessage("Submitting edit...");
     		pdialog.setIndeterminate(true);
-    		pdialog.setCancelable(false);
+    		pdialog.setCancelable(true);
     		dialog = pdialog;
     		break;
     	case Constants.DIALOG_LOGGING_IN:
     		pdialog = new ProgressDialog(new ContextThemeWrapper(this, mSettings.getDialogTheme()));
     		pdialog.setMessage("Logging in...");
     		pdialog.setIndeterminate(true);
-    		pdialog.setCancelable(false);
+    		pdialog.setCancelable(true);
     		dialog = pdialog;
     		break;
     	case Constants.DIALOG_REPLYING:
     		pdialog = new ProgressDialog(new ContextThemeWrapper(this, mSettings.getDialogTheme()));
     		pdialog.setMessage("Sending reply...");
     		pdialog.setIndeterminate(true);
-    		pdialog.setCancelable(false);
+    		pdialog.setCancelable(true);
     		dialog = pdialog;
     		break;
     	case Constants.DIALOG_FIND:
