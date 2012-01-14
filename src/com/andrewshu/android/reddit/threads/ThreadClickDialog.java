@@ -29,6 +29,8 @@ public class ThreadClickDialog extends Dialog {
 		if (display.getOrientation() == Configuration.ORIENTATION_LANDSCAPE)
 			params.height = LayoutParams.FILL_PARENT;
 		getWindow().setAttributes((android.view.WindowManager.LayoutParams) params);
+		
+		setCanceledOnTouchOutside(true);
 	}
 
 }
