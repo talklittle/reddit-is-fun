@@ -1021,6 +1021,9 @@ public final class ProfileActivity extends ListActivity
     	case R.id.refresh_menu_id:
 			new DownloadProfileTask(mUsername).execute(Constants.DEFAULT_COMMENT_DOWNLOAD_LIMIT);
 			break;
+    	case android.R.id.home:
+    		Common.goHome(this);
+    		break;
     	}
     	
     	return true;

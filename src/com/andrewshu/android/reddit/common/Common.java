@@ -562,4 +562,12 @@ public class Common {
     	}
     	return subreddit_id;
     }
+
+    /** http://developer.android.com/guide/topics/ui/actionbar.html#Home */
+    public static void goHome(Activity activity) {
+    	// app icon in action bar clicked; go home
+        Intent intent = new Intent(activity, ThreadsListActivity.class);
+        intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
+        activity.startActivity(intent);
+    }
 }

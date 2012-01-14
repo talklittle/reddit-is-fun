@@ -45,6 +45,7 @@ import android.os.Bundle;
 import android.util.Log;
 import android.view.KeyEvent;
 import android.view.LayoutInflater;
+import android.view.MenuItem;
 import android.view.View;
 import android.view.View.OnClickListener;
 import android.view.View.OnKeyListener;
@@ -423,6 +424,7 @@ public final class PickSubredditActivity extends ListActivity {
         }
     }
     
+    @Override
     protected Dialog onCreateDialog(int id) {
     	Dialog dialog;
     	ProgressDialog pdialog;
@@ -440,6 +442,20 @@ public final class PickSubredditActivity extends ListActivity {
 			throw new IllegalArgumentException("Unexpected dialog id "+id);
     	}
     	return dialog;
+    }
+    
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+    	switch (item.getItemId()) {
+
+    	case android.R.id.home:
+    		Common.goHome(this);
+    		break;
+
+    	default:
+    		throw new IllegalArgumentException("Unexpected action value "+item.getItemId());
+    	}
+    	return true;
     }
     
     @Override

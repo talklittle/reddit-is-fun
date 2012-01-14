@@ -1339,6 +1339,9 @@ public class CommentsListActivity extends ListActivity
             Intent prefsIntent = new Intent(getApplicationContext(), RedditPreferencesPage.class);
             startActivity(prefsIntent);
             break;
+    	case android.R.id.home:
+    		Common.goHome(this);
+    		break;
 
     	default:
     		throw new IllegalArgumentException("Unexpected action value "+item.getItemId());

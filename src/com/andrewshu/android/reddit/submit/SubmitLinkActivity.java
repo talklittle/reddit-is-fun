@@ -651,6 +651,9 @@ public class SubmitLinkActivity extends TabActivity {
     	case R.id.update_captcha_menu_id:
     		new MyCaptchaCheckRequiredTask().execute();
     		break;
+    	case android.R.id.home:
+    		Common.goHome(this);
+    		break;
     	default:
     		throw new IllegalArgumentException("Unexpected action value "+item.getItemId());
     	}

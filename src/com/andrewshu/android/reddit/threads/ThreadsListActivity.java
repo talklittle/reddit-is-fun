@@ -1178,7 +1178,11 @@ public final class ThreadsListActivity extends ListActivity {
     	case R.id.unsubscribe_menu_id:
     		CacheInfo.invalidateCachedSubreddit(getApplicationContext());
     		new UnsubscribeTask(mSubreddit, getApplicationContext(), mSettings).execute();
-    		break;    		
+    		break;
+    	case android.R.id.home:
+    		Common.goHome(this);
+    		break;
+    		
     	default:
     		throw new IllegalArgumentException("Unexpected action value "+item.getItemId());
     	}

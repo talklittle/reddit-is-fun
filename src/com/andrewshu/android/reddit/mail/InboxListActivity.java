@@ -1107,6 +1107,9 @@ public final class InboxListActivity extends ListActivity
     	case R.id.refresh_menu_id:
 			new DownloadMessagesTask(mWhichInbox).execute(Constants.DEFAULT_COMMENT_DOWNLOAD_LIMIT);
 			break;
+    	case android.R.id.home:
+    		Common.goHome(this);
+    		break;
     	}
     	
     	return true;

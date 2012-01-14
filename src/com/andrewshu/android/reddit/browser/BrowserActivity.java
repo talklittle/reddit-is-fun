@@ -244,6 +244,10 @@ public class BrowserActivity extends Activity {
 			startActivity(intent);
         	break;
         	
+    	case android.R.id.home:
+    		Common.goHome(this);
+    		break;
+        	
         default:
     		throw new IllegalArgumentException("Unexpected action value "+item.getItemId());
     	}
