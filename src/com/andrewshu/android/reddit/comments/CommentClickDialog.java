@@ -9,11 +9,12 @@ import android.view.ViewGroup.LayoutParams;
 import android.view.WindowManager;
 
 import com.andrewshu.android.reddit.R;
+import com.andrewshu.android.reddit.settings.RedditSettings;
 
 public class CommentClickDialog extends Dialog {
 
-	public CommentClickDialog(Context context, int theme) {
-		super(context, theme);
+	public CommentClickDialog(Context context, RedditSettings settings) {
+		super(context, settings.getDialogNoTitleTheme());
 	}
 	
 	@Override

@@ -432,7 +432,7 @@ public final class PickSubredditActivity extends ListActivity {
     	switch (id) {
 	    	// "Please wait"
 		case Constants.DIALOG_LOADING_REDDITS_LIST:
-			pdialog = new ProgressDialog(this);
+			pdialog = new ProgressDialog(this, mSettings.getDialogTheme());
 			pdialog.setMessage("Loading your reddits...");
 			pdialog.setIndeterminate(true);
 			pdialog.setCancelable(false);

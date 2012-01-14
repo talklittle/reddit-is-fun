@@ -1135,7 +1135,7 @@ public final class InboxListActivity extends ListActivity
     		break;
     		
     	case Constants.DIALOG_REPLY:
-    		dialog = new Dialog(this);
+    		dialog = new Dialog(this, mSettings.getDialogTheme());
     		dialog.setContentView(R.layout.compose_reply_dialog);
     		final EditText replyBody = (EditText) dialog.findViewById(R.id.body);
     		final Button replySaveButton = (Button) dialog.findViewById(R.id.reply_save_button);
@@ -1159,7 +1159,7 @@ public final class InboxListActivity extends ListActivity
     		break;
     	case Constants.DIALOG_COMPOSE:
     		inflater = (LayoutInflater) getSystemService(Context.LAYOUT_INFLATER_SERVICE);
-    		builder = new AlertDialog.Builder(this);
+    		builder = new AlertDialog.Builder(this, mSettings.getDialogTheme());
     		layout = inflater.inflate(R.layout.compose_dialog, null);
     		dialog = builder.setView(layout).create();
     		final Dialog composeDialog = dialog;
@@ -1205,21 +1205,21 @@ public final class InboxListActivity extends ListActivity
     		
    		// "Please wait"
     	case Constants.DIALOG_LOGGING_IN:
-    		pdialog = new ProgressDialog(this);
+    		pdialog = new ProgressDialog(this, mSettings.getDialogTheme());
     		pdialog.setMessage("Logging in...");
     		pdialog.setIndeterminate(true);
     		pdialog.setCancelable(false);
     		dialog = pdialog;
     		break;
     	case Constants.DIALOG_REPLYING:
-    		pdialog = new ProgressDialog(this);
+    		pdialog = new ProgressDialog(this, mSettings.getDialogTheme());
     		pdialog.setMessage("Sending reply...");
     		pdialog.setIndeterminate(true);
     		pdialog.setCancelable(false);
     		dialog = pdialog;
     		break;   		
     	case Constants.DIALOG_COMPOSING:
-    		pdialog = new ProgressDialog(this);
+    		pdialog = new ProgressDialog(this, mSettings.getDialogTheme());
     		pdialog.setMessage("Composing message...");
     		pdialog.setIndeterminate(true);
     		pdialog.setCancelable(false);

@@ -18,6 +18,18 @@
  * along with "reddit is fun".  If not, see <http://www.gnu.org/licenses/>.
 -->
 <resources>
+    
+    <style name="Reddit_Light_Dialog" parent="@android:style/Theme.Holo.Light.Dialog" />
+    <style name="Reddit_Light_Dialog_NoTitle" parent="@style/Reddit_Light_Dialog">
+        <item name="android:windowNoTitle">true</item>
+    </style>
+    
+    <style name="Reddit_Dark_Dialog" parent="@android:style/Theme.Holo.Dialog">
+        <item name="android:textColor">@color/white</item>
+    </style>
+    <style name="Reddit_Dark_Dialog_NoTitle" parent="@style/Reddit_Dark_Dialog">
+        <item name="android:windowNoTitle">true</item>
+    </style>
 	
 	<style name="Reddit_Light_Medium" parent="@android:style/Theme.Holo.Light">
 		<item name="android:listSelector">@drawable/list_selector_blue</item>
@@ -118,10 +130,6 @@
 	</style>
 	<style name="TextAppearance_Huge.Large" parent="@android:style/TextAppearance.Large">
 		<item name="android:textSize">22sp</item>
-	</style>
-	
-	<style name="NoTitleDialog" parent="@android:style/Theme.Holo.Dialog">
-	    <item name="android:windowNoTitle">true</item>
 	</style>
 	
 </resources>

@@ -547,14 +547,14 @@ public class SubmitLinkActivity extends TabActivity {
 
        	// "Please wait"
     	case Constants.DIALOG_LOGGING_IN:
-    		pdialog = new ProgressDialog(this);
+    		pdialog = new ProgressDialog(this, mSettings.getDialogTheme());
     		pdialog.setMessage("Logging in...");
     		pdialog.setIndeterminate(true);
     		pdialog.setCancelable(false);
     		dialog = pdialog;
     		break;
 		case Constants.DIALOG_SUBMITTING:
-			pdialog = new ProgressDialog(this);
+			pdialog = new ProgressDialog(this, mSettings.getDialogTheme());
     		pdialog.setMessage("Submitting...");
     		pdialog.setIndeterminate(true);
     		pdialog.setCancelable(false);

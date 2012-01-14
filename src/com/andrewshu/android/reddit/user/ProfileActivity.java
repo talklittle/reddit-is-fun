@@ -1050,7 +1050,7 @@ public final class ProfileActivity extends ListActivity
     		
     	case Constants.DIALOG_COMPOSE:
     		inflater = (LayoutInflater) getSystemService(Context.LAYOUT_INFLATER_SERVICE);
-    		builder = new AlertDialog.Builder(this);
+    		builder = new AlertDialog.Builder(this, mSettings.getDialogTheme());
     		layout = inflater.inflate(R.layout.compose_dialog, null);
     		final EditText composeDestination = (EditText) layout.findViewById(R.id.compose_destination_input);
     		final EditText composeSubject = (EditText) layout.findViewById(R.id.compose_subject_input);
@@ -1097,26 +1097,26 @@ public final class ProfileActivity extends ListActivity
     		break;
     		
     	case Constants.DIALOG_THREAD_CLICK:
-    		dialog = new ThreadClickDialog(this, R.style.NoTitleDialog);
+    		dialog = new ThreadClickDialog(this, mSettings);
 			break;
     		
    		// "Please wait"
     	case Constants.DIALOG_LOGGING_IN:
-    		pdialog = new ProgressDialog(this);
+    		pdialog = new ProgressDialog(this, mSettings.getDialogTheme());
     		pdialog.setMessage("Logging in...");
     		pdialog.setIndeterminate(true);
     		pdialog.setCancelable(false);
     		dialog = pdialog;
     		break;
     	case Constants.DIALOG_REPLYING:
-    		pdialog = new ProgressDialog(this);
+    		pdialog = new ProgressDialog(this, mSettings.getDialogTheme());
     		pdialog.setMessage("Sending reply...");
     		pdialog.setIndeterminate(true);
     		pdialog.setCancelable(false);
     		dialog = pdialog;
     		break;   		
     	case Constants.DIALOG_COMPOSING:
-    		pdialog = new ProgressDialog(this);
+    		pdialog = new ProgressDialog(this, mSettings.getDialogTheme());
     		pdialog.setMessage("Composing message...");
     		pdialog.setIndeterminate(true);
     		pdialog.setCancelable(false);

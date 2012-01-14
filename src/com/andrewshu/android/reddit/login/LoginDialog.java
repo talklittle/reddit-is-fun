@@ -21,7 +21,7 @@ public abstract class LoginDialog extends Dialog {
 	private final EditText loginPasswordInput;
 
 	public LoginDialog(final Activity activity, RedditSettings settings, boolean finishActivityIfCanceled) {
-		super(activity);
+		super(activity, settings.getDialogTheme());
 		mActivity = activity;
 		mSettings = settings;
 		

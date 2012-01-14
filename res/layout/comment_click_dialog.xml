@@ -24,6 +24,7 @@
               android:layout_width="fill_parent"
               android:layout_height="wrap_content"
               android:padding="30dip"
+              
               >
     <!-- Show title and URL if this is the OP -->
     <TextView android:id="@+id/title"
@@ -32,7 +33,6 @@
    		android:layout_alignParentTop="true"
    		android:layout_marginBottom="5dip"
    		android:textSize="14sp"
-   		android:textColor="@color/white"
    		android:maxLines="3"
    		/>
    	
@@ -44,7 +44,6 @@
    		android:singleLine="true"
    		android:ellipsize="marquee"
    		android:textSize="9sp"
-   		android:textColor="@color/white"
    		android:visibility="invisible"
    		/>
    	
@@ -59,7 +58,6 @@
         android:singleLine="true"
         android:ellipsize="marquee"
         android:textSize="10sp"
-        android:textColor="@color/white"
     />
    	
    		
