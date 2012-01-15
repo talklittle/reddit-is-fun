@@ -32,8 +32,6 @@
     </style>
 	
 	<style name="Reddit_Light_Medium" parent="@android:style/Theme.Holo.Light">
-		<item name="android:listSelector">@drawable/list_selector_blue</item>
-		<item name="android:cacheColorHint">@color/white</item>
 		<item name="android:textAppearanceSmall">@style/TextAppearance_Medium.Small</item>
 		<item name="android:textAppearanceMedium">@style/TextAppearance_Medium.Medium</item>
 		<item name="android:textAppearanceLarge">@style/TextAppearance_Medium.Large</item>
@@ -47,8 +45,6 @@
 	</style>
 	
 	<style name="Reddit_Light_Large" parent="@android:style/Theme.Holo.Light">
-		<item name="android:listSelector">@drawable/list_selector_blue</item>
-		<item name="android:cacheColorHint">@color/white</item>
 		<item name="android:textAppearanceSmall">@style/TextAppearance_Large.Small</item>
 		<item name="android:textAppearanceMedium">@style/TextAppearance_Large.Medium</item>
 		<item name="android:textAppearanceLarge">@style/TextAppearance_Large.Large</item>
@@ -62,16 +58,12 @@
 	</style>
 	
 	<style name="Reddit_Light_Larger" parent="@android:style/Theme.Holo.Light">
-		<item name="android:listSelector">@drawable/list_selector_blue</item>
-		<item name="android:cacheColorHint">@color/white</item>
 		<item name="android:textAppearanceSmall">@style/TextAppearance_Larger.Small</item>
 		<item name="android:textAppearanceMedium">@style/TextAppearance_Larger.Medium</item>
 		<item name="android:textAppearanceLarge">@style/TextAppearance_Larger.Large</item>
 	</style>
 	
 	<style name="Reddit_Light_Huge" parent="@android:style/Theme.Holo.Light">
-		<item name="android:listSelector">@drawable/list_selector_blue</item>
-		<item name="android:cacheColorHint">@color/white</item>
 		<item name="android:textAppearanceSmall">@style/TextAppearance_Huge.Small</item>
 		<item name="android:textAppearanceMedium">@style/TextAppearance_Huge.Medium</item>
 		<item name="android:textAppearanceLarge">@style/TextAppearance_Huge.Large</item>

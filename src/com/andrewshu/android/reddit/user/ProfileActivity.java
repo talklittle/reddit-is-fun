@@ -490,7 +490,7 @@ public final class ProfileActivity extends ListActivity
     	if (karmaLayout != null && karmaLayoutBorder != null) {
     		karmaLayout.setVisibility(View.VISIBLE);
 	    	if (Util.isLightTheme(mSettings.getTheme())) {
-	       		karmaLayout.setBackgroundResource(R.color.white);
+	       		karmaLayout.setBackgroundResource(android.R.color.background_light);
 	       		karmaLayoutBorder.setBackgroundResource(R.color.black);
 	    	} else {
 	       		karmaLayoutBorder.setBackgroundResource(R.color.white);

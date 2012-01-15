@@ -112,9 +112,8 @@ public class Common {
 	public static void updateListDrawables(ListActivity la, int theme) {
 		ListView lv = la.getListView();
 		if (Util.isLightTheme(theme)) {
+			lv.setBackgroundResource(android.R.color.background_light);
     		lv.setSelector(R.drawable.list_selector_blue);
-        	// HACK: set background color directly for android 2.0
-        	lv.setBackgroundResource(R.color.white);
     	} else /* if (Common.isDarkTheme(theme)) */ {
     		lv.setSelector(android.R.drawable.list_selector_background);
     	}
@@ -137,7 +136,7 @@ public class Common {
 			if (shouldShow) {
 		    	if (nextPreviousView != null && nextPreviousBorder != null) {
 			    	if (Util.isLightTheme(settings.getTheme())) {
-			    		nextPreviousView.setBackgroundResource(R.color.white);
+			    		nextPreviousView.setBackgroundResource(android.R.color.background_light);
 			       		nextPreviousBorder.setBackgroundResource(R.color.black);
 			    	} else {
 			       		nextPreviousBorder.setBackgroundResource(R.color.white);
