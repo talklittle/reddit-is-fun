@@ -220,6 +220,16 @@ public final class ThreadsListActivity extends ListActivity {
     @Override
     protected void onResume() {
     	super.onResume();
+    	
+        // SOPA blackout: Jan 18, 2012 from 8am-8pm EST (1300-0100 UTC)
+    	long timeMillis = System.currentTimeMillis();
+        if (timeMillis >= 1326891600000L && timeMillis <= 1326934800000L) {
+        	Toast.makeText(this, "Let's Protest SOPA", Toast.LENGTH_LONG).show();
+        	Common.launchBrowser(this, "http://www.reddit.com", null, false, true, false, false);
+        	finish();
+        	return;
+        }
+        
 		int previousTheme = mSettings.getTheme();
 
     	mSettings.loadRedditPreferences(this, mClient);
