@@ -79,7 +79,10 @@
 	        </intent-filter>
 	    </activity>
 	    <activity android:name=".settings.RedditPreferencesPage"></activity>
-	    <activity android:name=".browser.BrowserActivity" android:configChanges="keyboardHidden|orientation"></activity>
+	    <activity android:name=".browser.BrowserActivity"
+	              android:configChanges="keyboardHidden|orientation"
+	              android:hardwareAccelerated="true">
+	    </activity>
 	    <service android:name=".mail.EnvelopeService" android:label="@string/pref_mail_notification_service"></service>
 	    
 	    <receiver android:name=".mail.BootAlarmSetter">
