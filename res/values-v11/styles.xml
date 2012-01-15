@@ -19,13 +19,17 @@
 -->
 <resources>
     
-    <style name="Reddit_Light_Dialog" parent="@android:style/Theme.Holo.Light.Dialog" />
+    <color name="reddit_light_dialog_text_color">@color/black</color>
+    <style name="Reddit_Light_Dialog" parent="@android:style/Theme.Holo.Light.Dialog">
+        <item name="android:textColor">@color/reddit_light_dialog_text_color</item>
+    </style>
     <style name="Reddit_Light_Dialog_NoTitle" parent="@style/Reddit_Light_Dialog">
         <item name="android:windowNoTitle">true</item>
     </style>
     
+    <color name="reddit_dark_dialog_text_color">@color/white</color>
     <style name="Reddit_Dark_Dialog" parent="@android:style/Theme.Holo.Dialog">
-        <item name="android:textColor">@color/white</item>
+        <item name="android:textColor">@color/reddit_dark_dialog_text_color</item>
     </style>
     <style name="Reddit_Dark_Dialog_NoTitle" parent="@style/Reddit_Dark_Dialog">
         <item name="android:windowNoTitle">true</item>

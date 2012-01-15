@@ -49,6 +49,7 @@ import com.andrewshu.android.reddit.captcha.CaptchaDownloadTask;
 import com.andrewshu.android.reddit.common.Common;
 import com.andrewshu.android.reddit.common.Constants;
 import com.andrewshu.android.reddit.common.RedditIsFunHttpClientFactory;
+import com.andrewshu.android.reddit.common.util.Util;
 import com.andrewshu.android.reddit.settings.RedditSettings;
 import com.andrewshu.android.reddit.things.ThingInfo;
 
@@ -155,6 +156,15 @@ public class InboxActivity extends TabActivity {
     		layout = inflater.inflate(R.layout.compose_dialog, null);
     		dialog = builder.setView(layout).create();
     		final Dialog composeDialog = dialog;
+    		
+    		setTextColorFromTheme(
+    				(TextView) layout.findViewById(R.id.compose_destination_textview),
+    				(TextView) layout.findViewById(R.id.compose_subject_textview),
+    				(TextView) layout.findViewById(R.id.compose_message_textview),
+    				(TextView) layout.findViewById(R.id.compose_captcha_textview),
+    				(TextView) layout.findViewById(R.id.compose_captcha_loading)
+			);
+    		
     		final EditText composeDestination = (EditText) layout.findViewById(R.id.compose_destination_input);
     		final EditText composeSubject = (EditText) layout.findViewById(R.id.compose_subject_input);
     		final EditText composeText = (EditText) layout.findViewById(R.id.compose_text_input);
@@ -164,23 +174,10 @@ public class InboxActivity extends TabActivity {
     		composeSendButton.setOnClickListener(new OnClickListener() {
 				public void onClick(View v) {
 		    		ThingInfo thingInfo = new ThingInfo();
-		    		// reddit.com performs these sanity checks too.
-		    		if ("".equals(composeDestination.getText().toString().trim())) {
-		    			Toast.makeText(InboxActivity.this, "please enter a username", Toast.LENGTH_LONG).show();
+		    		
+		    		if (!validateInputFields(composeDestination, composeSubject, composeText, composeCaptcha))
 		    			return;
-		    		}
-		    		if ("".equals(composeSubject.getText().toString().trim())) {
-		    			Toast.makeText(InboxActivity.this, "please enter a subject", Toast.LENGTH_LONG).show();
-		    			return;
-		    		}
-		    		if ("".equals(composeText.getText().toString().trim())) {
-		    			Toast.makeText(InboxActivity.this, "you need to enter a message", Toast.LENGTH_LONG).show();
-		    			return;
-		    		}
-		    		if (composeCaptcha.getVisibility() == View.VISIBLE && "".equals(composeCaptcha.getText().toString().trim())) {
-		    			Toast.makeText(InboxActivity.this, "", Toast.LENGTH_LONG).show();
-		    			return;
-		    		}
+		    		
 		    		thingInfo.setDest(composeDestination.getText().toString().trim());
 		    		thingInfo.setSubject(composeSubject.getText().toString().trim());
 		    		new MyMessageComposeTask(
@@ -224,7 +221,43 @@ public class InboxActivity extends TabActivity {
     	}
     }
     
-    private class MyMessageComposeTask extends MessageComposeTask {
+    private void setTextColorFromTheme(TextView... textViews) {
+    	int color;
+    	if (Util.isLightTheme(mSettings.getTheme()))
+    		color = getResources().getColor(R.color.reddit_light_dialog_text_color);
+    	else
+    		color = getResources().getColor(R.color.reddit_dark_dialog_text_color);
+    	for (TextView textView : textViews)
+    		textView.setTextColor(color);
+    }
+    
+    private boolean validateInputFields(
+    		final EditText composeDestination,
+			final EditText composeSubject,
+			final EditText composeText,
+			final EditText composeCaptcha
+	) {
+		// reddit.com performs these sanity checks too.
+		if ("".equals(composeDestination.getText().toString().trim())) {
+			Toast.makeText(InboxActivity.this, "please enter a username", Toast.LENGTH_LONG).show();
+			return false;
+		}
+		if ("".equals(composeSubject.getText().toString().trim())) {
+			Toast.makeText(InboxActivity.this, "please enter a subject", Toast.LENGTH_LONG).show();
+			return false;
+		}
+		if ("".equals(composeText.getText().toString().trim())) {
+			Toast.makeText(InboxActivity.this, "you need to enter a message", Toast.LENGTH_LONG).show();
+			return false;
+		}
+		if (composeCaptcha.getVisibility() == View.VISIBLE && "".equals(composeCaptcha.getText().toString().trim())) {
+			Toast.makeText(InboxActivity.this, "", Toast.LENGTH_LONG).show();
+			return false;
+		}
+		return true;
+	}
+
+	private class MyMessageComposeTask extends MessageComposeTask {
     	
     	public MyMessageComposeTask(Dialog dialog,
 				ThingInfo targetThingInfo, String captcha, String captchaIden,
