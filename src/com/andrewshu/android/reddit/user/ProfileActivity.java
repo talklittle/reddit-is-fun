@@ -79,6 +79,7 @@ import com.andrewshu.android.reddit.comments.CommentsListActivity;
 import com.andrewshu.android.reddit.common.CacheInfo;
 import com.andrewshu.android.reddit.common.Common;
 import com.andrewshu.android.reddit.common.Constants;
+import com.andrewshu.android.reddit.common.FormValidation;
 import com.andrewshu.android.reddit.common.ProgressInputStream;
 import com.andrewshu.android.reddit.common.RedditIsFunHttpClientFactory;
 import com.andrewshu.android.reddit.common.tasks.VoteTask;
@@ -1053,6 +1054,17 @@ public final class ProfileActivity extends ListActivity
     		inflater = (LayoutInflater) getSystemService(Context.LAYOUT_INFLATER_SERVICE);
     		builder = new AlertDialog.Builder(new ContextThemeWrapper(this, mSettings.getDialogTheme()));
     		layout = inflater.inflate(R.layout.compose_dialog, null);
+    		
+    		Common.setTextColorFromTheme(
+    				mSettings.getTheme(),
+    				getResources(),
+    				(TextView) layout.findViewById(R.id.compose_destination_textview),
+    				(TextView) layout.findViewById(R.id.compose_subject_textview),
+    				(TextView) layout.findViewById(R.id.compose_message_textview),
+    				(TextView) layout.findViewById(R.id.compose_captcha_textview),
+    				(TextView) layout.findViewById(R.id.compose_captcha_loading)
+			);
+
     		final EditText composeDestination = (EditText) layout.findViewById(R.id.compose_destination_input);
     		final EditText composeSubject = (EditText) layout.findViewById(R.id.compose_subject_input);
     		final EditText composeText = (EditText) layout.findViewById(R.id.compose_text_input);
@@ -1066,23 +1078,10 @@ public final class ProfileActivity extends ListActivity
     		composeSendButton.setOnClickListener(new OnClickListener() {
 				public void onClick(View v) {
 		    		ThingInfo hi = new ThingInfo();
-		    		// reddit.com performs these sanity checks too.
-		    		if ("".equals(composeDestination.getText().toString().trim())) {
-		    			Toast.makeText(ProfileActivity.this, "please enter a username", Toast.LENGTH_LONG).show();
+		    		
+		    		if (!FormValidation.validateComposeMessageInputFields(ProfileActivity.this, composeDestination, composeSubject, composeText, composeCaptcha))
 		    			return;
-		    		}
-		    		if ("".equals(composeSubject.getText().toString().trim())) {
-		    			Toast.makeText(ProfileActivity.this, "please enter a subject", Toast.LENGTH_LONG).show();
-		    			return;
-		    		}
-		    		if ("".equals(composeText.getText().toString().trim())) {
-		    			Toast.makeText(ProfileActivity.this, "you need to enter a message", Toast.LENGTH_LONG).show();
-		    			return;
-		    		}
-		    		if (composeCaptcha.getVisibility() == View.VISIBLE && "".equals(composeCaptcha.getText().toString().trim())) {
-		    			Toast.makeText(ProfileActivity.this, "", Toast.LENGTH_LONG).show();
-		    			return;
-		    		}
+
 		    		hi.setDest(composeDestination.getText().toString().trim());
 		    		hi.setSubject(composeSubject.getText().toString().trim());
 		    		new MyMessageComposeTask(composeDialog, hi, composeCaptcha.getText().toString().trim())

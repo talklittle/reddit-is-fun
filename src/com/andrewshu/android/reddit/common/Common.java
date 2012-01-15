@@ -42,6 +42,7 @@ import android.app.PendingIntent;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.content.res.Resources;
 import android.database.Cursor;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
@@ -180,6 +181,17 @@ public class Common {
 	    	}
     	}
     }
+    
+    public static void setTextColorFromTheme(int theme, Resources resources, TextView... textViews) {
+    	int color;
+    	if (Util.isLightTheme(theme))
+    		color = resources.getColor(R.color.reddit_light_dialog_text_color);
+    	else
+    		color = resources.getColor(R.color.reddit_dark_dialog_text_color);
+    	for (TextView textView : textViews)
+    		textView.setTextColor(color);
+    }
+    
     
 	
     static void clearCookies(RedditSettings settings, HttpClient client, Context context) {

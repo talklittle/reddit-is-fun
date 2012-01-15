@@ -48,8 +48,8 @@ import com.andrewshu.android.reddit.captcha.CaptchaCheckRequiredTask;
 import com.andrewshu.android.reddit.captcha.CaptchaDownloadTask;
 import com.andrewshu.android.reddit.common.Common;
 import com.andrewshu.android.reddit.common.Constants;
+import com.andrewshu.android.reddit.common.FormValidation;
 import com.andrewshu.android.reddit.common.RedditIsFunHttpClientFactory;
-import com.andrewshu.android.reddit.common.util.Util;
 import com.andrewshu.android.reddit.settings.RedditSettings;
 import com.andrewshu.android.reddit.things.ThingInfo;
 
@@ -157,7 +157,9 @@ public class InboxActivity extends TabActivity {
     		dialog = builder.setView(layout).create();
     		final Dialog composeDialog = dialog;
     		
-    		setTextColorFromTheme(
+    		Common.setTextColorFromTheme(
+    				mSettings.getTheme(),
+    				getResources(),
     				(TextView) layout.findViewById(R.id.compose_destination_textview),
     				(TextView) layout.findViewById(R.id.compose_subject_textview),
     				(TextView) layout.findViewById(R.id.compose_message_textview),
@@ -175,7 +177,7 @@ public class InboxActivity extends TabActivity {
 				public void onClick(View v) {
 		    		ThingInfo thingInfo = new ThingInfo();
 		    		
-		    		if (!validateInputFields(composeDestination, composeSubject, composeText, composeCaptcha))
+		    		if (!FormValidation.validateComposeMessageInputFields(InboxActivity.this, composeDestination, composeSubject, composeText, composeCaptcha))
 		    			return;
 		    		
 		    		thingInfo.setDest(composeDestination.getText().toString().trim());
@@ -221,42 +223,6 @@ public class InboxActivity extends TabActivity {
     	}
     }
     
-    private void setTextColorFromTheme(TextView... textViews) {
-    	int color;
-    	if (Util.isLightTheme(mSettings.getTheme()))
-    		color = getResources().getColor(R.color.reddit_light_dialog_text_color);
-    	else
-    		color = getResources().getColor(R.color.reddit_dark_dialog_text_color);
-    	for (TextView textView : textViews)
-    		textView.setTextColor(color);
-    }
-    
-    private boolean validateInputFields(
-    		final EditText composeDestination,
-			final EditText composeSubject,
-			final EditText composeText,
-			final EditText composeCaptcha
-	) {
-		// reddit.com performs these sanity checks too.
-		if ("".equals(composeDestination.getText().toString().trim())) {
-			Toast.makeText(InboxActivity.this, "please enter a username", Toast.LENGTH_LONG).show();
-			return false;
-		}
-		if ("".equals(composeSubject.getText().toString().trim())) {
-			Toast.makeText(InboxActivity.this, "please enter a subject", Toast.LENGTH_LONG).show();
-			return false;
-		}
-		if ("".equals(composeText.getText().toString().trim())) {
-			Toast.makeText(InboxActivity.this, "you need to enter a message", Toast.LENGTH_LONG).show();
-			return false;
-		}
-		if (composeCaptcha.getVisibility() == View.VISIBLE && "".equals(composeCaptcha.getText().toString().trim())) {
-			Toast.makeText(InboxActivity.this, "", Toast.LENGTH_LONG).show();
-			return false;
-		}
-		return true;
-	}
-
 	private class MyMessageComposeTask extends MessageComposeTask {
     	
     	public MyMessageComposeTask(Dialog dialog,
