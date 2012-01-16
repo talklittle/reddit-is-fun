@@ -48,6 +48,7 @@ import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.util.Log;
+import android.view.ContextThemeWrapper;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
@@ -547,17 +548,17 @@ public class SubmitLinkActivity extends TabActivity {
 
        	// "Please wait"
     	case Constants.DIALOG_LOGGING_IN:
-    		pdialog = new ProgressDialog(this);
+    		pdialog = new ProgressDialog(new ContextThemeWrapper(this, mSettings.getDialogTheme()));
     		pdialog.setMessage("Logging in...");
     		pdialog.setIndeterminate(true);
-    		pdialog.setCancelable(false);
+    		pdialog.setCancelable(true);
     		dialog = pdialog;
     		break;
 		case Constants.DIALOG_SUBMITTING:
-			pdialog = new ProgressDialog(this);
+			pdialog = new ProgressDialog(new ContextThemeWrapper(this, mSettings.getDialogTheme()));
     		pdialog.setMessage("Submitting...");
     		pdialog.setIndeterminate(true);
-    		pdialog.setCancelable(false);
+    		pdialog.setCancelable(true);
     		dialog = pdialog;
     		break;
 		default:
@@ -650,6 +651,9 @@ public class SubmitLinkActivity extends TabActivity {
     		break;
     	case R.id.update_captcha_menu_id:
     		new MyCaptchaCheckRequiredTask().execute();
+    		break;
+    	case android.R.id.home:
+    		Common.goHome(this);
     		break;
     	default:
     		throw new IllegalArgumentException("Unexpected action value "+item.getItemId());

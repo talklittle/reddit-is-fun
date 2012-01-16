@@ -63,7 +63,6 @@
    		android:layout_marginLeft="120dip"
    		android:layout_marginBottom="5dip"
    		android:textSize="14sp"
-   		android:textColor="@color/white"
    		android:maxLines="3"
    		/>
    	
@@ -75,7 +74,6 @@
    		android:singleLine="true"
    		android:ellipsize="marquee"
    		android:textSize="9sp"
-   		android:textColor="@color/white"
    		/>
    	
    	
@@ -89,7 +87,6 @@
         android:singleLine="true"
         android:ellipsize="marquee"
         android:textSize="10sp"
-        android:textColor="@color/white"
     />
     
     

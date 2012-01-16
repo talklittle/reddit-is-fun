@@ -53,6 +53,7 @@ Contributors
 * kushou
 * haroldb
 * megamark16
+* wesleywiser
 
 
 [license]: http://github.com/talklittle/reddit-is-fun/blob/master/COPYING

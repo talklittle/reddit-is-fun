@@ -9,11 +9,12 @@ import android.view.ViewGroup.LayoutParams;
 import android.view.WindowManager;
 
 import com.andrewshu.android.reddit.R;
+import com.andrewshu.android.reddit.settings.RedditSettings;
 
 public class CommentClickDialog extends Dialog {
 
-	public CommentClickDialog(Context context, int theme) {
-		super(context, theme);
+	public CommentClickDialog(Context context, RedditSettings settings) {
+		super(context, settings.getDialogNoTitleTheme());
 	}
 	
 	@Override
@@ -28,7 +29,9 @@ public class CommentClickDialog extends Dialog {
 		params.width = LayoutParams.FILL_PARENT;
 		if (display.getOrientation() == Configuration.ORIENTATION_LANDSCAPE)
 			params.height = LayoutParams.FILL_PARENT;
-		getWindow().setAttributes((android.view.WindowManager.LayoutParams) params); 
+		getWindow().setAttributes((android.view.WindowManager.LayoutParams) params);
+		
+		setCanceledOnTouchOutside(true);
 	}
 
 }

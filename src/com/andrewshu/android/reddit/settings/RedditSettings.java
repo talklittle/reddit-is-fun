@@ -241,6 +241,20 @@ public class RedditSettings {
         this.setMailNotificationStyle(sessionPrefs.getString(Constants.PREF_MAIL_NOTIFICATION_STYLE, Constants.PREF_MAIL_NOTIFICATION_STYLE_DEFAULT));
         this.setMailNotificationService(sessionPrefs.getString(Constants.PREF_MAIL_NOTIFICATION_SERVICE, Constants.PREF_MAIL_NOTIFICATION_SERVICE_OFF));
     }
+    
+    public int getDialogTheme() {
+    	if (Util.isLightTheme(theme))
+    		return R.style.Reddit_Light_Dialog;
+    	else
+    		return R.style.Reddit_Dark_Dialog;
+    }
+    
+    public int getDialogNoTitleTheme() {
+    	if (Util.isLightTheme(theme))
+    		return R.style.Reddit_Light_Dialog_NoTitle;
+    	else
+    		return R.style.Reddit_Dark_Dialog_NoTitle;
+    }
 
 	public boolean isLoggedIn() {
 		return username != null;

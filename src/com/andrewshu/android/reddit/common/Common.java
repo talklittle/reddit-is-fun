@@ -504,13 +504,20 @@ public class Common {
 	}
     
     public static boolean isClicked(Context context, String url) {
-		Cursor cursor = context.getContentResolver().query(
-				Browser.BOOKMARKS_URI,
-				Browser.HISTORY_PROJECTION,
-				Browser.HISTORY_PROJECTION[Browser.HISTORY_PROJECTION_URL_INDEX] + "=?",
-				new String[]{ url },
-				null
-		);
+    	Cursor cursor;
+    	try {
+			cursor = context.getContentResolver().query(
+					Browser.BOOKMARKS_URI,
+					Browser.HISTORY_PROJECTION,
+					Browser.HISTORY_PROJECTION[Browser.HISTORY_PROJECTION_URL_INDEX] + "=?",
+					new String[]{ url },
+					null
+			);
+    	} catch (Exception ex) {
+    		if (Constants.LOGGING) Log.w(TAG, "Error querying Android Browser for history; manually revoked permission?", ex);
+    		return false;
+    	}
+    	
 		if (cursor != null) {
 	        boolean isClicked = cursor.moveToFirst();  // returns true if cursor is not empty
 	        cursor.close();
@@ -554,5 +561,13 @@ public class Common {
     		subreddit_id = children.get(0).get("data").get("subreddit_id").getTextValue();
     	}
     	return subreddit_id;
+    }
+
+    /** http://developer.android.com/guide/topics/ui/actionbar.html#Home */
+    public static void goHome(Activity activity) {
+    	// app icon in action bar clicked; go home
+        Intent intent = new Intent(activity, ThreadsListActivity.class);
+        intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
+        activity.startActivity(intent);
     }
 }

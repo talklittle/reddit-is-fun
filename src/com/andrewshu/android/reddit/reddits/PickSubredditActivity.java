@@ -43,8 +43,10 @@ import android.content.Intent;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.util.Log;
+import android.view.ContextThemeWrapper;
 import android.view.KeyEvent;
 import android.view.LayoutInflater;
+import android.view.MenuItem;
 import android.view.View;
 import android.view.View.OnClickListener;
 import android.view.View.OnKeyListener;
@@ -423,6 +425,7 @@ public final class PickSubredditActivity extends ListActivity {
         }
     }
     
+    @Override
     protected Dialog onCreateDialog(int id) {
     	Dialog dialog;
     	ProgressDialog pdialog;
@@ -430,16 +433,30 @@ public final class PickSubredditActivity extends ListActivity {
     	switch (id) {
 	    	// "Please wait"
 		case Constants.DIALOG_LOADING_REDDITS_LIST:
-			pdialog = new ProgressDialog(this);
+			pdialog = new ProgressDialog(new ContextThemeWrapper(this, mSettings.getDialogTheme()));
 			pdialog.setMessage("Loading your reddits...");
 			pdialog.setIndeterminate(true);
-			pdialog.setCancelable(false);
+			pdialog.setCancelable(true);
 			dialog = pdialog;
 			break;
 		default:
 			throw new IllegalArgumentException("Unexpected dialog id "+id);
     	}
     	return dialog;
+    }
+    
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+    	switch (item.getItemId()) {
+
+    	case android.R.id.home:
+    		Common.goHome(this);
+    		break;
+
+    	default:
+    		throw new IllegalArgumentException("Unexpected action value "+item.getItemId());
+    	}
+    	return true;
     }
     
     @Override

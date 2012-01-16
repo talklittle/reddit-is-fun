@@ -20,8 +20,8 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
       package="com.andrewshu.android.reddit"
       
-      android:versionCode="81"
-      android:versionName="1.2.2a"
+      android:versionCode="82"
+      android:versionName="1.2.2b"
       >
 
     <uses-permission android:name="android.permission.INTERNET" />
@@ -30,11 +30,11 @@
 	<uses-permission android:name="com.android.browser.permission.READ_HISTORY_BOOKMARKS" />
     <uses-permission android:name="com.android.browser.permission.WRITE_HISTORY_BOOKMARKS" />
 	
-    <uses-sdk android:minSdkVersion="4" android:targetSdkVersion="10" />
+    <uses-sdk android:minSdkVersion="4" android:targetSdkVersion="11" />
 
     <supports-screens />
     
-    <application android:icon="@drawable/icon" android:label="@string/app_name" android:name=".RedditIsFunApplication" android:backupAgent=".SettingsBackupAgent">
+    <application android:icon="@drawable/icon" android:label="@string/app_name" android:name=".RedditIsFunApplication" android:backupAgent=".settings.SettingsBackupAgent">
         <activity android:name=".threads.ThreadsListActivity"
                   android:label="@string/app_name">
             <intent-filter>
@@ -87,7 +87,7 @@
                 <action android:name="android.intent.action.BOOT_COMPLETED" />
             </intent-filter>
         </receiver>
-        
-	    <meta-data android:name="com.google.android.backup.api_key" android:value=""/>
+
+	    <meta-data android:name="com.google.android.backup.api_key" android:value="AEdPqrEAAAAIrd4RnBA8kUYJJVB22mBqXZPhyj0-SFigY4SqxA"/>
 	</application>
 </manifest> 

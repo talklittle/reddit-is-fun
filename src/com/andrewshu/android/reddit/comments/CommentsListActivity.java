@@ -45,6 +45,7 @@ import android.app.ProgressDialog;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
+import android.content.pm.PackageManager.NameNotFoundException;
 import android.graphics.Color;
 import android.graphics.drawable.Drawable;
 import android.net.Uri;
@@ -58,6 +59,7 @@ import android.text.style.ForegroundColorSpan;
 import android.util.Log;
 import android.view.ContextMenu;
 import android.view.ContextMenu.ContextMenuInfo;
+import android.view.ContextThemeWrapper;
 import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuInflater;
@@ -1338,6 +1340,9 @@ public class CommentsListActivity extends ListActivity
             Intent prefsIntent = new Intent(getApplicationContext(), RedditPreferencesPage.class);
             startActivity(prefsIntent);
             break;
+    	case android.R.id.home:
+    		Common.goHome(this);
+    		break;
 
     	default:
     		throw new IllegalArgumentException("Unexpected action value "+item.getItemId());
@@ -1585,12 +1590,12 @@ public class CommentsListActivity extends ListActivity
     		break;
     		
     	case Constants.DIALOG_COMMENT_CLICK:
-    		dialog = new CommentClickDialog(this, R.style.NoTitleDialog);
+    		dialog = new CommentClickDialog(this, mSettings);
     		break;
 
     	case Constants.DIALOG_REPLY:
     	{
-    		dialog = new Dialog(this);
+    		dialog = new Dialog(this, mSettings.getDialogTheme());
     		dialog.setContentView(R.layout.compose_reply_dialog);
     		final EditText replyBody = (EditText) dialog.findViewById(R.id.body);
     		final Button replySaveButton = (Button) dialog.findViewById(R.id.reply_save_button);
@@ -1626,7 +1631,7 @@ public class CommentsListActivity extends ListActivity
     		
     	case Constants.DIALOG_EDIT:
     	{
-    		dialog = new Dialog(this);
+    		dialog = new Dialog(this, mSettings.getDialogTheme());
     		dialog.setContentView(R.layout.compose_reply_dialog);
     		final EditText replyBody = (EditText) dialog.findViewById(R.id.body);
     		final Button replySaveButton = (Button) dialog.findViewById(R.id.reply_save_button);
@@ -1659,7 +1664,7 @@ public class CommentsListActivity extends ListActivity
 		}
     		
     	case Constants.DIALOG_DELETE:
-    		builder = new AlertDialog.Builder(this);
+    		builder = new AlertDialog.Builder(new ContextThemeWrapper(this, mSettings.getDialogTheme()));
     		builder.setTitle("Really delete this?");
     		builder.setPositiveButton("Yes", new DialogInterface.OnClickListener() {
     			public void onClick(DialogInterface dialog, int item) {
@@ -1676,7 +1681,7 @@ public class CommentsListActivity extends ListActivity
     		break;
     		
     	case Constants.DIALOG_SORT_BY:
-    		builder = new AlertDialog.Builder(this);
+    		builder = new AlertDialog.Builder(new ContextThemeWrapper(this, mSettings.getDialogTheme()));
     		builder.setTitle("Sort by:");
 			int selectedSortBy = -1;
 			for (int i = 0; i < Constants.CommentsSort.SORT_BY_URL_CHOICES.length; i++) {
@@ -1690,7 +1695,7 @@ public class CommentsListActivity extends ListActivity
     		break;
     		
     	case Constants.DIALOG_REPORT:
-    		builder = new AlertDialog.Builder(this);
+    		builder = new AlertDialog.Builder(new ContextThemeWrapper(this, mSettings.getDialogTheme()));
     		builder.setTitle("Really report this?");
     		builder.setPositiveButton("Yes", new DialogInterface.OnClickListener() {
     			public void onClick(DialogInterface dialog, int item) {
@@ -1708,31 +1713,31 @@ public class CommentsListActivity extends ListActivity
     		
    		// "Please wait"
     	case Constants.DIALOG_DELETING:
-    		pdialog = new ProgressDialog(this);
+    		pdialog = new ProgressDialog(new ContextThemeWrapper(this, mSettings.getDialogTheme()));
     		pdialog.setMessage("Deleting...");
     		pdialog.setIndeterminate(true);
-    		pdialog.setCancelable(false);
+    		pdialog.setCancelable(true);
     		dialog = pdialog;
     		break;
     	case Constants.DIALOG_EDITING:
-    		pdialog = new ProgressDialog(this);
+    		pdialog = new ProgressDialog(new ContextThemeWrapper(this, mSettings.getDialogTheme()));
     		pdialog.setMessage("Submitting edit...");
     		pdialog.setIndeterminate(true);
-    		pdialog.setCancelable(false);
+    		pdialog.setCancelable(true);
     		dialog = pdialog;
     		break;
     	case Constants.DIALOG_LOGGING_IN:
-    		pdialog = new ProgressDialog(this);
+    		pdialog = new ProgressDialog(new ContextThemeWrapper(this, mSettings.getDialogTheme()));
     		pdialog.setMessage("Logging in...");
     		pdialog.setIndeterminate(true);
-    		pdialog.setCancelable(false);
+    		pdialog.setCancelable(true);
     		dialog = pdialog;
     		break;
     	case Constants.DIALOG_REPLYING:
-    		pdialog = new ProgressDialog(this);
+    		pdialog = new ProgressDialog(new ContextThemeWrapper(this, mSettings.getDialogTheme()));
     		pdialog.setMessage("Sending reply...");
     		pdialog.setIndeterminate(true);
-    		pdialog.setCancelable(false);
+    		pdialog.setCancelable(true);
     		dialog = pdialog;
     		break;
     	case Constants.DIALOG_FIND:
@@ -1742,7 +1747,7 @@ public class CommentsListActivity extends ListActivity
     		final EditText find_box = (EditText) content.findViewById(R.id.input_find_box);
 //    		final CheckBox wrap_box = (CheckBox) content.findViewById(R.id.find_wrap_checkbox);
 
-    		builder = new AlertDialog.Builder(this);
+    		builder = new AlertDialog.Builder(new ContextThemeWrapper(this, mSettings.getDialogTheme()));
     		builder.setView(content);
     		builder.setTitle(R.string.find)
     		.setPositiveButton(R.string.find, new DialogInterface.OnClickListener() {
@@ -1902,12 +1907,10 @@ public class CommentsListActivity extends ListActivity
      */
     private void linkToEmbeddedURLs(Button linkButton) {
 		final ArrayList<String> urls = new ArrayList<String>();
-		final ArrayList<String> anchorTexts = new ArrayList<String>();
 		final ArrayList<MarkdownURL> vtUrls = mVoteTargetThing.getUrls();
 		int urlsCount = vtUrls.size();
 		for (int i = 0; i < urlsCount; i++) {
 			urls.add(vtUrls.get(i).url);
-			anchorTexts.add(vtUrls.get(i).anchorText);
 		}
 		if (urlsCount == 0) {
 			linkButton.setEnabled(false);
@@ -1920,33 +1923,44 @@ public class CommentsListActivity extends ListActivity
     	            ArrayAdapter<MarkdownURL> adapter = 
     	                new ArrayAdapter<MarkdownURL>(CommentsListActivity.this, android.R.layout.select_dialog_item, vtUrls) {
     	                public View getView(int position, View convertView, ViewGroup parent) {
-    	                    View v = super.getView(position, convertView, parent);
-    	                    try {
-    	                        String url = getItem(position).url;
-    	                        String anchorText = getItem(position).anchorText;
-    	                        TextView tv = (TextView) v;
-    	                        Drawable d = getPackageManager().getActivityIcon(new Intent(Intent.ACTION_VIEW, Uri.parse(url)));
-    	                        if (d != null) {
-    	                            d.setBounds(0, 0, d.getIntrinsicHeight(), d.getIntrinsicHeight());
-    	                            tv.setCompoundDrawablePadding(10);
-    	                            tv.setCompoundDrawables(d, null, null, null);
-    	                        }
-    	                        final String telPrefix = "tel:";
-    	                        if (url.startsWith(telPrefix)) {
-    	                            url = PhoneNumberUtils.formatNumber(url.substring(telPrefix.length()));
-    	                        }
-								if (anchorText != null)
-									tv.setText(Html.fromHtml(anchorText + "<br /><small>" + url + "</small>"));
-								else
-									tv.setText(Html.fromHtml(url));
-    	                    } catch (android.content.pm.PackageManager.NameNotFoundException ex) {
-    	                        ;
+    	                	TextView tv;
+    	                    if (convertView == null) {
+    	                        tv = (TextView) ((LayoutInflater)getSystemService(Context.LAYOUT_INFLATER_SERVICE))
+    	                        		.inflate(android.R.layout.select_dialog_item, null);
+    	                    } else {
+    	                        tv = (TextView) convertView;
     	                    }
-    	                    return v;
+
+	                        String url = getItem(position).url;
+	                        String anchorText = getItem(position).anchorText;
+	                        if (Constants.LOGGING) Log.d(TAG, "links url="+url + " anchorText="+anchorText);
+	                        
+	                        Drawable d = null;
+							try {
+								d = getPackageManager().getActivityIcon(new Intent(Intent.ACTION_VIEW, Uri.parse(url)));
+							} catch (NameNotFoundException ignore) {
+							}
+	                        if (d != null) {
+	                            d.setBounds(0, 0, d.getIntrinsicHeight(), d.getIntrinsicHeight());
+	                            tv.setCompoundDrawablePadding(10);
+	                            tv.setCompoundDrawables(d, null, null, null);
+	                        }
+	                        
+	                        final String telPrefix = "tel:";
+	                        if (url.startsWith(telPrefix)) {
+	                            url = PhoneNumberUtils.formatNumber(url.substring(telPrefix.length()));
+	                        }
+	                        
+							if (anchorText != null)
+								tv.setText(Html.fromHtml("<span>" + anchorText + "</span><br /><small>" + url + "</small>"));
+							else
+								tv.setText(Html.fromHtml(url));
+							
+    	                    return tv;
     	                }
     	            };
 
-    	            AlertDialog.Builder b = new AlertDialog.Builder(CommentsListActivity.this);
+    	            AlertDialog.Builder b = new AlertDialog.Builder(new ContextThemeWrapper(CommentsListActivity.this, mSettings.getDialogTheme()));
 
     	            DialogInterface.OnClickListener click = new DialogInterface.OnClickListener() {
     	                public final void onClick(DialogInterface dialog, int which) {

@@ -9,11 +9,12 @@ import android.view.ViewGroup.LayoutParams;
 import android.view.WindowManager;
 
 import com.andrewshu.android.reddit.R;
+import com.andrewshu.android.reddit.settings.RedditSettings;
 
 public class ThreadClickDialog extends Dialog {
 
-	public ThreadClickDialog(Context context, int theme) {
-		super(context, theme);
+	public ThreadClickDialog(Context context, RedditSettings settings) {
+		super(context, settings.getDialogNoTitleTheme());
 	}
 
 	@Override
@@ -29,6 +30,8 @@ public class ThreadClickDialog extends Dialog {
 		if (display.getOrientation() == Configuration.ORIENTATION_LANDSCAPE)
 			params.height = LayoutParams.FILL_PARENT;
 		getWindow().setAttributes((android.view.WindowManager.LayoutParams) params);
+		
+		setCanceledOnTouchOutside(true);
 	}
 
 }

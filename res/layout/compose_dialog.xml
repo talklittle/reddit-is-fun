@@ -35,7 +35,6 @@
 		        android:layout_width="wrap_content"
 		        android:layout_height="wrap_content"
 		        android:text="@string/compose_destination_text"
-		        android:textColor="@color/white"
 		        android:layout_alignParentTop="true"
 		        android:layout_alignParentLeft="true"
 		        />
@@ -50,7 +49,6 @@
 		        android:layout_width="wrap_content"
 		        android:layout_height="wrap_content"
 		        android:text="@string/compose_subject_text"
-		        android:textColor="@color/white"
 		        android:layout_below="@id/compose_destination_input"
 		        android:layout_alignParentLeft="true"
 		        />	
@@ -66,7 +64,6 @@
 		        android:layout_width="wrap_content"
 		        android:layout_height="wrap_content"
 		        android:text="@string/compose_message_text"
-		        android:textColor="@color/white"
 		        android:layout_below="@id/compose_subject_input"
 		        android:layout_alignParentLeft="true"
 		        />
@@ -81,7 +78,6 @@
 			/>
 			<TextView android:id="@+id/compose_captcha_textview"
             	android:text="@string/compose_captcha_text"
-            	android:textColor="@color/white"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_below="@id/compose_text_input"
@@ -105,7 +101,6 @@
             	/>
             <TextView android:id="@+id/compose_captcha_loading"
             	android:text="@string/compose_captcha_loading"
-            	android:textColor="@color/white"
             	android:layout_width="wrap_content"
             	android:layout_height="wrap_content"
             	android:layout_below="@id/compose_text_input"

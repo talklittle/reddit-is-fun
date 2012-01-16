@@ -532,8 +532,10 @@ public class DownloadCommentsTask extends AsyncTask<Integer, Long, Boolean>
 			if (mThreadTitle != null)
 				mActivity.setTitle(mThreadTitle + " : " + mSubreddit);
 		} else {
-			if (!isCancelled())
+			if (!isCancelled()) {
 				Common.showErrorToast("Error downloading comments. Please try again.", Toast.LENGTH_LONG, mActivity);
+				mActivity.resetUI(null);
+			}
 		}
 
 		synchronized (mCurrentDownloadCommentsTaskLock) {
