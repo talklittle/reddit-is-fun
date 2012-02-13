@@ -44,6 +44,7 @@
             </intent-filter>
             <intent-filter>
                 <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
                 <category android:name="android.intent.category.BROWSABLE" />
                 <data android:scheme="http" android:host="www.reddit.com" android:pathPattern="/r/.*/" />
                 <data android:scheme="http" android:host="redd.it" android:pathPattern="/" />
@@ -57,8 +58,14 @@
 	            <data android:scheme="http" android:host="www.reddit.com" android:pathPattern="/r/.*/comments/.*" />
 	            <data android:scheme="http" android:host="www.reddit.com" android:pathPrefix="/comments/" />
 	            <data android:scheme="http" android:host="www.reddit.com" android:pathPrefix="/tb/" />
-	            <data android:scheme="http" android:host="redd.it" android:pathPattern="/..*" />
 	        </intent-filter>
+            <!-- Separate filter because when added to above filter, the host is ignored -->
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="http" android:host="redd.it" android:pathPattern="/..*" />
+            </intent-filter>
 	    </activity>
 	    <activity android:name=".reddits.PickSubredditActivity"></activity>
 	    <activity android:name=".submit.SubmitLinkActivity">
