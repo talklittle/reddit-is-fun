@@ -54,6 +54,7 @@ Contributors
 * haroldb
 * megamark16
 * wesleywiser
+* blazeroni
 
 
 [license]: http://github.com/talklittle/reddit-is-fun/blob/master/COPYING
