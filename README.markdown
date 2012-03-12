@@ -8,8 +8,8 @@ Android Market QR Codes
 
 Free
 
-![reddit is fun QR
-Code](http://chart.apis.google.com/chart?cht=qr&chs=120x120&chl=market%3A%2F%2Fdetails%3Fid%3Dcom.andrewshu.android.reddit
+![Diode QR
+Code](http://chart.apis.google.com/chart?cht=qr&chs=120x120&chl=market%3A%2F%2Fdetails%3Fid%3Din.shick.diode
  "Scan with a QR Code reader")
 
 Contributors
