@@ -18,7 +18,7 @@
  * along with "reddit is fun".  If not, see <http://www.gnu.org/licenses/>.
 -->
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-      package="com.andrewshu.android.reddit"
+      package="in.shick.diode"
       
       android:versionCode="83"
       android:versionName="1.3.0"

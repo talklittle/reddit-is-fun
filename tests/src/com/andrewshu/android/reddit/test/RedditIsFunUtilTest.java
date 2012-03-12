@@ -1,11 +1,11 @@
-package com.andrewshu.android.reddit.test;
+package in.shick.diode.test;
 
 import java.lang.reflect.Array;
 import java.util.Arrays;
 
-import com.andrewshu.android.reddit.Constants;
-import com.andrewshu.android.reddit.Util;
-import com.andrewshu.android.reddit.R;
+import in.shick.diode.Constants;
+import in.shick.diode.Util;
+import in.shick.diode.R;
 
 import junit.framework.TestCase;
 

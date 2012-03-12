@@ -1,9 +1,7 @@
-reddit is fun
+Diode
 =============
 
-Android app to read reddit.com. Original code by Andrew Shu (talklittle). [Licensed under GPLv3][license].
-
-[![Pledgie Badge](http://www.pledgie.com/campaigns/10469.png?skin_name=chrome)][pledgie]
+Android app to read reddit.com. Forked by Michael Shick to keep a GPL version in the Market. Original code by Andrew Shu (talklittle). [Licensed under GPLv3][license].
 
 Android Market QR Codes
 -----------------------
@@ -13,12 +11,6 @@ Free
 ![reddit is fun QR
 Code](http://chart.apis.google.com/chart?cht=qr&chs=120x120&chl=market%3A%2F%2Fdetails%3Fid%3Dcom.andrewshu.android.reddit
  "Scan with a QR Code reader")
-
-$1.99 Widgets version (not GPL)
-
-![reddit is fun donation QR
-Code](http://chart.apis.google.com/chart?cht=qr&chs=120x120&chl=market%3A%2F%2Fdetails%3Fid%3Dcom.andrewshu.android.redditdonation
-"Scan with a QR Code reader; $1.99 Widgets version")
 
 Contributors
 ------------
