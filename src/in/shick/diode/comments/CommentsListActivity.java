@@ -466,10 +466,10 @@ public class CommentsListActivity extends ListActivity
 	            	
 	            } else {  // Regular comment
 	            	// Here view may be passed in for re-use, or we make a new one.
-		            if (view == null) {
-		                view = mInflater.inflate(R.layout.comments_list_item, null);
-		            } else {
-		                view = convertView;
+                    if (view == null) {
+                        view = mInflater.inflate(R.layout.comments_list_item, null);
+                    } else {
+                        view = convertView;
 		            }
 
 					// Sometimes (when in touch mode) the "selection" highlight disappears.
@@ -1993,6 +1993,7 @@ public class CommentsListActivity extends ListActivity
         // Set the values of the Views for the CommentsListItem
         
         TextView votesView = (TextView) view.findViewById(R.id.votes);
+        TextView textFlairView = (TextView) view.findViewById(R.id.textFlair);
         TextView submitterView = (TextView) view.findViewById(R.id.submitter);
         TextView bodyView = (TextView) view.findViewById(R.id.body);
         
@@ -2020,6 +2021,11 @@ public class CommentsListActivity extends ListActivity
         
         setCommentIndent(view, item.getIndent(), settings);
         
+        if (!StringUtils.isEmpty(item.getAuthor_flair_text())) {
+            textFlairView.setText(item.getAuthor_flair_text());
+            textFlairView.setVisibility(View.VISIBLE);
+        }
+
         if (voteUpView != null && voteDownView != null) {
 	        if (item.getLikes() == null || "[deleted]".equals(item.getAuthor())) {
 	        	voteUpView.setVisibility(View.GONE);

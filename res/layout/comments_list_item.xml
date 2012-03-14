@@ -154,10 +154,22 @@
 		        android:ellipsize="marquee"
 		        android:textAppearance="?android:attr/textAppearanceSmall"
 		    	/>
+
+            <TextView android:id="@+id/textFlair"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+
+                android:layout_marginLeft="5dip"
+                android:singleLine="true"
+                android:ellipsize="marquee"
+                android:textAppearance="?android:attr/textAppearanceSmall"
+                android:textColor="@color/gray_50"
+                android:visibility="gone"
+                />
+
 		</LinearLayout>
     
 	    <!-- Bottom row -->
-	    
         <TextView android:id="@+id/body"
 	        android:layout_width="wrap_content"
 	        android:layout_height="wrap_content"
