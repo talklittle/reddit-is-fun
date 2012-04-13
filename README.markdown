@@ -15,6 +15,7 @@ Code](http://chart.apis.google.com/chart?cht=qr&chs=120x120&chl=market%3A%2F%2Fd
 Contributors
 ------------
 
+* v00d00
 * ulfada
 * choofins
 * jc4p
@@ -49,5 +50,4 @@ Contributors
 * blazeroni
 
 
-[license]: http://github.com/talklittle/reddit-is-fun/blob/master/COPYING
-[pledgie]: http://www.pledgie.com/campaigns/10469
+[license]: http://www.gnu.org/licenses/gpl.html
