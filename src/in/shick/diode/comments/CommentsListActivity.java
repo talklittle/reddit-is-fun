@@ -2020,11 +2020,10 @@ public class CommentsListActivity extends ListActivity
     		bodyView.setText(item.getBody());
         
         setCommentIndent(view, item.getIndent(), settings);
-        
-        if (!StringUtils.isEmpty(item.getAuthor_flair_text())) {
-            textFlairView.setText(item.getAuthor_flair_text());
-            textFlairView.setVisibility(View.VISIBLE);
-        }
+
+        boolean hasFlair = !StringUtils.isEmpty(item.getAuthor_flair_text());
+        textFlairView.setVisibility(hasFlair ? View.VISIBLE : View.GONE);
+        textFlairView.setText(item.getAuthor_flair_text());
 
         if (voteUpView != null && voteDownView != null) {
 	        if (item.getLikes() == null || "[deleted]".equals(item.getAuthor())) {
