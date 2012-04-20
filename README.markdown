@@ -15,6 +15,7 @@ Code](http://chart.apis.google.com/chart?cht=qr&chs=120x120&chl=market%3A%2F%2Fd
 Contributors
 ------------
 
+* veeti
 * v00d00
 * ulfada
 * choofins

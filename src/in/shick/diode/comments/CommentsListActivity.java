@@ -1,5 +1,5 @@
 /*
- * Copyright 2009 Andrew Shu
+ * Copyright 2009 Andrew Shu, 2012 veeti
  *
  * This file is part of "diode".
  *
