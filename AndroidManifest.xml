@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
- * Copyright 2009 Andrew Shu
+ * Copyright 2009 Andrew Shu, 2012 Michael Shick
  *
  * This file is part of "diode".
  *
@@ -20,8 +20,9 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
       package="in.shick.diode"
       
-      android:versionCode="2"
-      android:versionName="1.0.1"
+      android:versionCode="3"
+      android:versionName="1.0.2"
+      android:installLocation="auto"
       >
 
     <uses-permission android:name="android.permission.INTERNET" />
