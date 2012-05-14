@@ -2,24 +2,24 @@
 <!--
  * Copyright 2009 Andrew Shu
  *
- * This file is part of "reddit is fun".
+ * This file is part of "diode".
  *
- * "reddit is fun" is free software: you can redistribute it and/or modify
+ * "diode" is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
  *
- * "reddit is fun" is distributed in the hope that it will be useful,
+ * "diode" is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with "reddit is fun".  If not, see <http://www.gnu.org/licenses/>.
+ * along with "diode".  If not, see <http://www.gnu.org/licenses/>.
 -->
 <!--
 /*
- * reddit is fun
+ * diode
  *
  * by talklittle
  */
@@ -154,10 +154,22 @@
 		        android:ellipsize="marquee"
 		        android:textAppearance="?android:attr/textAppearanceSmall"
 		    	/>
+
+            <TextView android:id="@+id/textFlair"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+
+                android:layout_marginLeft="5dip"
+                android:singleLine="true"
+                android:ellipsize="marquee"
+                android:textAppearance="?android:attr/textAppearanceSmall"
+                android:textColor="@color/gray_50"
+                android:visibility="gone"
+                />
+
 		</LinearLayout>
     
 	    <!-- Bottom row -->
-	    
         <TextView android:id="@+id/body"
 	        android:layout_width="wrap_content"
 	        android:layout_height="wrap_content"
