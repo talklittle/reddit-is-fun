@@ -59,7 +59,8 @@ public class RedditSettings {
 	private int threadDownloadLimit = Constants.DEFAULT_THREAD_DOWNLOAD_LIMIT;
 	private String commentsSortByUrl = Constants.CommentsSort.SORT_BY_BEST_URL;
 	
-    
+    private boolean showNSFW = false;
+	
 	// --- Themes ---
 	private int theme = R.style.Reddit_Light_Medium;
 	private int rotation = -1;  // -1 means unspecified
@@ -154,6 +155,7 @@ public class RedditSettings {
     	// Comment guide lines
     	editor.putBoolean(Constants.PREF_SHOW_COMMENT_GUIDE_LINES, this.showCommentGuideLines);
     	
+    	
     	// Rotation
     	editor.putString(Constants.PREF_ROTATION, RedditSettings.Rotation.toString(this.rotation));
     	
@@ -164,7 +166,10 @@ public class RedditSettings {
     	// Notifications
     	editor.putString(Constants.PREF_MAIL_NOTIFICATION_STYLE, this.mailNotificationStyle);
     	editor.putString(Constants.PREF_MAIL_NOTIFICATION_SERVICE, this.mailNotificationService);
-
+    	
+    	// Show NSFW
+    	
+    	editor.putBoolean(Constants.PREF_SHOW_NSFW, this.showNSFW);
     	editor.commit();
     }
     
@@ -233,9 +238,13 @@ public class RedditSettings {
         // Thumbnails on Wifi
         this.setLoadThumbnailsOnlyWifi(sessionPrefs.getBoolean(Constants.PREF_LOAD_THUMBNAILS_ONLY_WIFI, false));
         
+        
+        // NSFW
+        this.setShowNSFW(sessionPrefs.getBoolean(Constants.PREF_SHOW_NSFW, Constants.PREF_SHOW_NSFW_DEFAULT));
         // Notifications
         this.setMailNotificationStyle(sessionPrefs.getString(Constants.PREF_MAIL_NOTIFICATION_STYLE, Constants.PREF_MAIL_NOTIFICATION_STYLE_DEFAULT));
         this.setMailNotificationService(sessionPrefs.getString(Constants.PREF_MAIL_NOTIFICATION_SERVICE, Constants.PREF_MAIL_NOTIFICATION_SERVICE_OFF));
+        
     }
     
     public int getDialogTheme() {
@@ -391,5 +400,10 @@ public class RedditSettings {
 	public void setMailNotificationService(String mailNotificationService) {
 		this.mailNotificationService = mailNotificationService;
 	}
-
+	public boolean getShowNSFW() {
+			return this.showNSFW;
+	}
+	public void setShowNSFW(boolean b){
+		this.showNSFW = b;
+	}
 }

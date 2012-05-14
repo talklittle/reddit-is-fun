@@ -86,6 +86,8 @@ public class RedditPreferencesPage extends PreferenceActivity
         	e.setEnabled(false);
         }
         
+        
+        
     }
     
     @Override
@@ -112,7 +114,9 @@ public class RedditPreferencesPage extends PreferenceActivity
     	} else if (pref.getKey().equals(Constants.PREF_TEXT_SIZE)) {
             pref.setSummary(getVisualTextSizeName((String) objValue));
             return true;
-    	} else if (pref.getKey().equals(Constants.PREF_ROTATION)) {
+    
+    	}else if (pref.getKey().equals(Constants.PREF_ROTATION)) {
+    	
             pref.setSummary(getVisualRotationName((String) objValue));
             return true;
         } else if (pref.getKey().equals(Constants.PREF_MAIL_NOTIFICATION_STYLE)) {

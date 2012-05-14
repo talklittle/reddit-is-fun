@@ -22,6 +22,7 @@ import com.andrewshu.android.reddit.common.Common;
 import com.andrewshu.android.reddit.common.Constants;
 import com.andrewshu.android.reddit.common.ProgressInputStream;
 import com.andrewshu.android.reddit.common.util.StringUtils;
+import com.andrewshu.android.reddit.settings.RedditSettings;
 import com.andrewshu.android.reddit.things.Listing;
 import com.andrewshu.android.reddit.things.ListingData;
 import com.andrewshu.android.reddit.things.ThingInfo;
@@ -50,7 +51,7 @@ public abstract class DownloadThreadsTask extends AsyncTask<Void, Long, Boolean>
 	protected String mLastAfter = null;
 	protected String mLastBefore = null;
 	protected int mLastCount = 0;
-	
+	protected RedditSettings mSettings = new RedditSettings();
 	protected String mUserError = "Error retrieving subreddit info.";
 	// Progress bar
 	protected long mContentLength = 0;
@@ -68,6 +69,7 @@ public abstract class DownloadThreadsTask extends AsyncTask<Void, Long, Boolean>
 	public DownloadThreadsTask(Context context, HttpClient client, ObjectMapper om,
 			String sortByUrl, String sortByUrlExtra,
 			String subreddit, String after, String before, int count) {
+        mSettings.loadRedditPreferences(context, null);
 		mContext = context;
 		mClient = client;
 		mOm = om;
@@ -239,7 +241,9 @@ public abstract class DownloadThreadsTask extends AsyncTask<Void, Long, Boolean>
 				if (Constants.THREAD_KIND.equals(tiContainer.getKind())) {
 					ThingInfo ti = tiContainer.getData();
 					ti.setClicked(Common.isClicked(mContext, ti.getUrl()));
-					mThingInfos.add(ti);
+					if(mSettings.getShowNSFW() || !ti.isOver_18()) {
+						mThingInfos.add(ti);
+					}
 				}
 			}
 		} catch (Exception ex) {
