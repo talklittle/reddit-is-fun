@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+ * Copyright 2009 Andrew Shu
+ *
+ * This file is part of "reddit is fun".
+ *
+ * "reddit is fun" is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * "reddit is fun" is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with "reddit is fun".  If not, see <http://www.gnu.org/licenses/>.
+-->
+
+<menu xmlns:android="http://schemas.android.com/apk/res/android">
+    <group android:id="@+id/MAIN_MENU">
+        <item android:id="@+id/op_subreddit_menu_id" android:title="@string/view_subreddit" android:icon="@drawable/ic_menu_back" />
+
+        <!-- These 2 are mutually exclusive -->
+        <item android:id="@+id/login_menu_id" android:title="@string/login" android:icon="@drawable/ic_menu_login" />
+        <item android:id="@+id/user_profile_menu_id" android:title="@string/user_profile" android:icon="@drawable/ic_menu_friendslist" />
+
+        <item android:id="@+id/refresh_menu_id" android:title="@string/refresh" android:icon="@drawable/ic_menu_refresh" android:alphabeticShortcut="r" />
+        <item android:id="@+id/op_menu_id" android:title="@string/op" android:icon="@android:drawable/ic_menu_view" />
+        <item android:id="@+id/sort_by_menu_id" android:icon="@android:drawable/ic_menu_sort_by_size" android:alphabeticShortcut="s" />
+
+        <!-- More starts here -->
+	    
+	    <item android:id="@+id/find_base_id" android:title="@string/find" android:icon="@android:drawable/ic_menu_search" android:titleCondensed="@string/find_brief">
+	        <menu>
+	            <item android:id="@+id/find_menu_id" android:title="@string/find_new" android:alphabeticShortcut="f" android:titleCondensed="@string/find_new_brief" />
+	            <item android:id="@+id/find_next_menu_id" android:alphabeticShortcut="n" android:title="@string/find_next" android:titleCondensed="@string/find_next_brief" />
+	        </menu>
+	    </item>
+        <item android:id="@+id/op_edit_menu_id" android:title="@string/op_edit" android:visible="false" />
+        <item android:id="@+id/op_delete_menu_id" android:title="@string/op_delete" android:visible="false" />
+        <item android:id="@+id/light_dark_menu_id" />
+        <item android:id="@+id/open_browser_menu_id" android:title="@string/open_browser" />
+        <item android:id="@+id/inbox_menu_id" android:title="@string/inbox" />
+	    <item android:id="@+id/logout_menu_id" android:title="@string/logout" />
+        <item android:id="@+id/preferences_menu_id" android:title="@string/menu_preferences" android:alphabeticShortcut="p" />
+    </group>
+
+    <!-- these items are toggled in and out of @+id/light_dark_menu_id -->
+    <item android:id="@+id/light_menu_id" android:title="@string/light_theme" android:visible="false" />
+    <item android:id="@+id/dark_menu_id" android:title="@string/dark_theme" android:visible="false" />
+    <!-- these items are toggled in and out of @+id/sort_by_menu_id -->
+	<item android:id="@+id/sort_by_best_menu_id" android:title="@string/sort_by_best" android:visible="false" />
+    <item android:id="@+id/sort_by_hot_menu_id" android:title="@string/sort_by_hot" android:visible="false" />
+    <item android:id="@+id/sort_by_new_menu_id" android:title="@string/sort_by_new" android:visible="false" />
+    <item android:id="@+id/sort_by_controversial_menu_id" android:title="@string/sort_by_controversial" android:visible="false" />
+    <item android:id="@+id/sort_by_top_menu_id" android:title="@string/sort_by_top" android:visible="false" />
+    <item android:id="@+id/sort_by_old_menu_id" android:title="@string/sort_by_old" android:visible="false" />
+</menu>
+ 

@@ -1,0 +1,141 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+ * Copyright 2009 Andrew Shu
+ *
+ * This file is part of "reddit is fun".
+ *
+ * "reddit is fun" is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * "reddit is fun" is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with "reddit is fun".  If not, see <http://www.gnu.org/licenses/>.
+-->
+<!--
+/*
+ * reddit is fun
+ *
+ * by talklittle
+ */
+-->
+
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="fill_parent"
+    android:layout_height="wrap_content"
+    android:orientation="horizontal"
+    android:paddingTop="4dp"
+    android:paddingBottom="4dp"
+    >
+    
+    <!-- Comment Indentation: set background color to desired line color -->
+    <View android:id="@+id/left_indent1"
+    	android:layout_width="1dp"
+    	android:layout_height="fill_parent"
+    	android:layout_marginLeft="5dp"
+    	android:layout_marginRight="4dp"
+    	/>
+    <View android:id="@+id/left_indent2"
+    	android:layout_width="1dp"
+    	android:layout_height="fill_parent"
+    	android:layout_marginLeft="5dp"
+    	android:layout_marginRight="4dp"
+    	/>
+    <View android:id="@+id/left_indent3"
+    	android:layout_width="1dp"
+    	android:layout_height="fill_parent"
+    	android:layout_marginLeft="5dp"
+    	android:layout_marginRight="4dp"
+    	/>
+    <View android:id="@+id/left_indent4"
+    	android:layout_width="1dp"
+    	android:layout_height="fill_parent"
+    	android:layout_marginLeft="5dp"
+    	android:layout_marginRight="4dp"
+    	/>
+    <View android:id="@+id/left_indent5"
+    	android:layout_width="1dp"
+    	android:layout_height="fill_parent"
+    	android:layout_marginLeft="5dp"
+    	android:layout_marginRight="4dp"
+    	/>
+    <View android:id="@+id/left_indent6"
+    	android:layout_width="1dp"
+    	android:layout_height="fill_parent"
+    	android:layout_marginLeft="5dp"
+    	android:layout_marginRight="4dp"
+    	/>
+    <View android:id="@+id/left_indent7"
+    	android:layout_width="1dp"
+    	android:layout_height="fill_parent"
+    	android:layout_marginLeft="5dp"
+    	android:layout_marginRight="4dp"
+    	/>
+    <View android:id="@+id/left_indent8"
+    	android:layout_width="1dp"
+    	android:layout_height="fill_parent"
+    	android:layout_marginLeft="5dp"
+    	android:layout_marginRight="4dp"
+    	/>
+
+	<LinearLayout
+	    android:layout_width="0dp"
+	    android:layout_height="wrap_content"
+	    android:layout_weight="1"
+	    android:paddingLeft="5dip"
+	    android:paddingRight="5dip"
+	    android:orientation="horizontal"
+	    >
+
+		<!-- Top row -->
+	
+	    <TextView android:id="@+id/submitter"
+	        android:layout_width="wrap_content"
+	        android:layout_height="wrap_content"
+	        android:layout_marginRight="5dip"
+	        
+	        android:singleLine="true"
+	        android:ellipsize="marquee"
+	        android:textAppearance="?android:attr/textAppearanceSmall"
+	        android:textColor="#888"
+	        android:textStyle="italic"
+	    />
+	    
+		<TextView android:id="@+id/votes"
+	        android:layout_width="wrap_content"
+	        android:layout_height="wrap_content"
+	        android:layout_marginRight="4dip"
+	        
+	      	android:singleLine="true"
+	        android:ellipsize="marquee"
+	        android:textAppearance="?android:attr/textAppearanceSmall"
+	        android:textStyle="italic"
+	        />
+		
+		<TextView android:id="@+id/submissionTime"
+	        android:layout_width="wrap_content"
+	        android:layout_height="wrap_content"
+	        
+	        android:singleLine="true"
+	        android:ellipsize="marquee"
+	        android:textAppearance="?android:attr/textAppearanceSmall"
+	        android:textStyle="italic"
+	    	/>
+	    
+	    <TextView android:text="@string/comment_hidden"
+	    	android:layout_width="wrap_content"
+	    	android:layout_height="wrap_content"
+	        android:layout_marginLeft="4dip"
+	    	android:singleLine="true"
+	        android:textAppearance="?android:attr/textAppearanceSmall"
+	        android:textStyle="bold"
+	    	/>
+    
+    </LinearLayout>
+	    
+</LinearLayout>

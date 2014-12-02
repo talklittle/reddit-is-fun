@@ -1,0 +1,137 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+ * Copyright 2009 Andrew Shu
+ *
+ * This file is part of "reddit is fun".
+ *
+ * "reddit is fun" is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * "reddit is fun" is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with "reddit is fun".  If not, see <http://www.gnu.org/licenses/>.
+-->
+<resources>
+    
+    <!-- Old Android versions didn't have Dialog.Light -->
+    <color name="reddit_light_dialog_text_color">@color/white</color>
+    <style name="Reddit_Light_Dialog" parent="@android:style/Theme.Dialog">
+        <item name="android:textColor">@color/reddit_light_dialog_text_color</item>
+    </style>
+    <style name="Reddit_Light_Dialog_NoTitle" parent="@style/Reddit_Light_Dialog">
+        <item name="android:windowNoTitle">true</item>
+    </style>
+    
+    <color name="reddit_dark_dialog_text_color">@color/white</color>
+    <style name="Reddit_Dark_Dialog" parent="@android:style/Theme.Dialog">
+        <item name="android:textColor">@color/reddit_dark_dialog_text_color</item>
+    </style>
+    <style name="Reddit_Dark_Dialog_NoTitle" parent="@style/Reddit_Dark_Dialog">
+        <item name="android:windowNoTitle">true</item>
+    </style>
+    	
+	<style name="Reddit_Light_Medium" parent="@android:style/Theme.Light">
+		<item name="android:listSelector">@drawable/list_selector_blue</item>
+		<item name="android:textAppearanceSmall">@style/TextAppearance_Medium.Small</item>
+		<item name="android:textAppearanceMedium">@style/TextAppearance_Medium.Medium</item>
+		<item name="android:textAppearanceLarge">@style/TextAppearance_Medium.Large</item>
+	</style>
+	
+	<style name="Reddit_Dark_Medium" parent="@android:style/Theme">
+		<item name="android:textAppearanceSmall">@style/TextAppearance_Medium.Small</item>
+		<item name="android:textAppearanceMedium">@style/TextAppearance_Medium.Medium</item>
+		<item name="android:textAppearanceLarge">@style/TextAppearance_Medium.Large</item>
+		<item name="android:windowBackground">@color/black</item>
+	</style>
+	
+	<style name="Reddit_Light_Large" parent="@android:style/Theme.Light">
+		<item name="android:listSelector">@drawable/list_selector_blue</item>
+		<item name="android:textAppearanceSmall">@style/TextAppearance_Large.Small</item>
+		<item name="android:textAppearanceMedium">@style/TextAppearance_Large.Medium</item>
+		<item name="android:textAppearanceLarge">@style/TextAppearance_Large.Large</item>
+	</style>
+	
+	<style name="Reddit_Dark_Large" parent="@android:style/Theme">
+		<item name="android:textAppearanceSmall">@style/TextAppearance_Large.Small</item>
+		<item name="android:textAppearanceMedium">@style/TextAppearance_Large.Medium</item>
+		<item name="android:textAppearanceLarge">@style/TextAppearance_Large.Large</item>
+		<item name="android:windowBackground">@color/black</item>
+	</style>
+	
+	<style name="Reddit_Light_Larger" parent="@android:style/Theme.Light">
+		<item name="android:listSelector">@drawable/list_selector_blue</item>
+		<item name="android:textAppearanceSmall">@style/TextAppearance_Larger.Small</item>
+		<item name="android:textAppearanceMedium">@style/TextAppearance_Larger.Medium</item>
+		<item name="android:textAppearanceLarge">@style/TextAppearance_Larger.Large</item>
+	</style>
+	
+	<style name="Reddit_Light_Huge" parent="@android:style/Theme.Light">
+		<item name="android:listSelector">@drawable/list_selector_blue</item>
+		<item name="android:textAppearanceSmall">@style/TextAppearance_Huge.Small</item>
+		<item name="android:textAppearanceMedium">@style/TextAppearance_Huge.Medium</item>
+		<item name="android:textAppearanceLarge">@style/TextAppearance_Huge.Large</item>
+	</style>
+	
+	<style name="Reddit_Dark_Larger" parent="@android:style/Theme">
+		<item name="android:textAppearanceSmall">@style/TextAppearance_Larger.Small</item>
+		<item name="android:textAppearanceMedium">@style/TextAppearance_Larger.Medium</item>
+		<item name="android:textAppearanceLarge">@style/TextAppearance_Larger.Large</item>
+		<item name="android:windowBackground">@color/black</item>
+	</style>
+	
+	<style name="Reddit_Dark_Huge" parent="@android:style/Theme">
+		<item name="android:textAppearanceSmall">@style/TextAppearance_Huge.Small</item>
+		<item name="android:textAppearanceMedium">@style/TextAppearance_Huge.Medium</item>
+		<item name="android:textAppearanceLarge">@style/TextAppearance_Huge.Large</item>
+		<item name="android:windowBackground">@color/black</item>
+	</style>
+	
+	<!-- TextAppearance for different font size settings -->
+	<style name="TextAppearance_Medium.Small" parent="@android:style/TextAppearance.Small">
+		<item name="android:textSize">10sp</item>
+	</style>
+	<style name="TextAppearance_Medium.Medium" parent="@android:style/TextAppearance.Medium">
+		<item name="android:textSize">12sp</item>
+	</style>
+	<style name="TextAppearance_Medium.Large" parent="@android:style/TextAppearance.Large">
+		<item name="android:textSize">14sp</item>
+	</style>
+	
+	<style name="TextAppearance_Large.Small" parent="@android:style/TextAppearance.Small">
+		<item name="android:textSize">12sp</item>
+	</style>
+	<style name="TextAppearance_Large.Medium" parent="@android:style/TextAppearance.Medium">
+		<item name="android:textSize">13sp</item>
+	</style>
+	<style name="TextAppearance_Large.Large" parent="@android:style/TextAppearance.Large">
+		<item name="android:textSize">14sp</item>
+	</style>
+	
+	<style name="TextAppearance_Larger.Small" parent="@android:style/TextAppearance.Small">
+		<item name="android:textSize">14sp</item>
+	</style>
+	<style name="TextAppearance_Larger.Medium" parent="@android:style/TextAppearance.Medium">
+		<item name="android:textSize">15sp</item>
+	</style>
+	<style name="TextAppearance_Larger.Large" parent="@android:style/TextAppearance.Large">
+		<item name="android:textSize">16sp</item>
+	</style>
+	
+	<style name="TextAppearance_Huge.Small" parent="@android:style/TextAppearance.Small">
+		<item name="android:textSize">18sp</item>
+	</style>
+	<style name="TextAppearance_Huge.Medium" parent="@android:style/TextAppearance.Medium">
+		<item name="android:textSize">20sp</item>
+	</style>
+	<style name="TextAppearance_Huge.Large" parent="@android:style/TextAppearance.Large">
+		<item name="android:textSize">22sp</item>
+	</style>
+	
+</resources>
+

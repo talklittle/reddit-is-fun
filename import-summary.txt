@@ -1,0 +1,314 @@
+ECLIPSE ANDROID PROJECT IMPORT SUMMARY
+======================================
+
+Ignored Files:
+--------------
+The following files were *not* copied into the new Gradle project; you
+should evaluate whether these are still needed in your project and if
+so manually move them:
+
+* .gitignore
+* .idea/
+* .idea/.name
+* .idea/compiler.xml
+* .idea/copyright/
+* .idea/copyright/profiles_settings.xml
+* .idea/encodings.xml
+* .idea/misc.xml
+* .idea/modules.xml
+* .idea/scopes/
+* .idea/scopes/scope_settings.xml
+* .idea/vcs.xml
+* .idea/workspace.xml
+* COPYING
+* README.markdown
+* app/
+* app/build.gradle
+* app/libs/
+* app/libs/automaton.jar
+* app/libs/jackson-core-asl-1.8.5.jar
+* app/libs/jackson-mapper-asl-1.8.5.jar
+* app/proguard.cfg
+* app/src/
+* app/src/androidTest/
+* app/src/androidTest/java/
+* app/src/androidTest/java/com/
+* app/src/androidTest/java/com/andrewshu/
+* app/src/androidTest/java/com/andrewshu/android/
+* app/src/androidTest/java/com/andrewshu/android/reddit/
+* app/src/androidTest/java/com/andrewshu/android/reddit/test/
+* app/src/androidTest/java/com/andrewshu/android/reddit/test/RedditIsFunUtilTest.java
+* app/src/androidTest/res/
+* app/src/androidTest/res/drawable-hdpi/
+* app/src/androidTest/res/drawable-hdpi/icon.png
+* app/src/androidTest/res/drawable-ldpi/
+* app/src/androidTest/res/drawable-ldpi/icon.png
+* app/src/androidTest/res/drawable-mdpi/
+* app/src/androidTest/res/drawable-mdpi/icon.png
+* app/src/androidTest/res/layout/
+* app/src/androidTest/res/layout/main.xml
+* app/src/androidTest/res/values/
+* app/src/androidTest/res/values/strings.xml
+* app/src/main/
+* app/src/main/AndroidManifest.xml
+* app/src/main/java/
+* app/src/main/java/com/
+* app/src/main/java/com/andrewshu/
+* app/src/main/java/com/andrewshu/android/
+* app/src/main/java/com/andrewshu/android/reddit/
+* app/src/main/java/com/andrewshu/android/reddit/RedditIsFunApplication.java
+* app/src/main/java/com/andrewshu/android/reddit/browser/
+* app/src/main/java/com/andrewshu/android/reddit/browser/BrowserActivity.java
+* app/src/main/java/com/andrewshu/android/reddit/browser/WebViewFixed.java
+* app/src/main/java/com/andrewshu/android/reddit/captcha/
+* app/src/main/java/com/andrewshu/android/reddit/captcha/CaptchaCheckRequiredTask.java
+* app/src/main/java/com/andrewshu/android/reddit/captcha/CaptchaDownloadTask.java
+* app/src/main/java/com/andrewshu/android/reddit/captcha/CaptchaException.java
+* app/src/main/java/com/andrewshu/android/reddit/comments/
+* app/src/main/java/com/andrewshu/android/reddit/comments/CommentClickDialog.java
+* app/src/main/java/com/andrewshu/android/reddit/comments/CommentsListActivity.java
+* app/src/main/java/com/andrewshu/android/reddit/comments/DownloadCommentsTask.java
+* app/src/main/java/com/andrewshu/android/reddit/comments/ProcessCommentsTask.java
+* app/src/main/java/com/andrewshu/android/reddit/common/
+* app/src/main/java/com/andrewshu/android/reddit/common/CacheInfo.java
+* app/src/main/java/com/andrewshu/android/reddit/common/Common.java
+* app/src/main/java/com/andrewshu/android/reddit/common/Constants.java
+* app/src/main/java/com/andrewshu/android/reddit/common/FormValidation.java
+* app/src/main/java/com/andrewshu/android/reddit/common/ProgressInputStream.java
+* app/src/main/java/com/andrewshu/android/reddit/common/RedditIsFunHttpClientFactory.java
+* app/src/main/java/com/andrewshu/android/reddit/common/RestJsonClient.java
+* app/src/main/java/com/andrewshu/android/reddit/common/tasks/
+* app/src/main/java/com/andrewshu/android/reddit/common/tasks/HideTask.java
+* app/src/main/java/com/andrewshu/android/reddit/common/tasks/SaveTask.java
+* app/src/main/java/com/andrewshu/android/reddit/common/tasks/VoteTask.java
+* app/src/main/java/com/andrewshu/android/reddit/common/util/
+* app/src/main/java/com/andrewshu/android/reddit/common/util/Assert.java
+* app/src/main/java/com/andrewshu/android/reddit/common/util/CollectionUtils.java
+* app/src/main/java/com/andrewshu/android/reddit/common/util/StringUtils.java
+* app/src/main/java/com/andrewshu/android/reddit/common/util/Util.java
+* app/src/main/java/com/andrewshu/android/reddit/login/
+* app/src/main/java/com/andrewshu/android/reddit/login/LoginDialog.java
+* app/src/main/java/com/andrewshu/android/reddit/login/LoginTask.java
+* app/src/main/java/com/andrewshu/android/reddit/mail/
+* app/src/main/java/com/andrewshu/android/reddit/mail/BootAlarmSetter.java
+* app/src/main/java/com/andrewshu/android/reddit/mail/EnvelopeService.java
+* app/src/main/java/com/andrewshu/android/reddit/mail/InboxActivity.java
+* app/src/main/java/com/andrewshu/android/reddit/mail/InboxListActivity.java
+* app/src/main/java/com/andrewshu/android/reddit/mail/MessageComposeTask.java
+* app/src/main/java/com/andrewshu/android/reddit/mail/PeekEnvelopeTask.java
+* app/src/main/java/com/andrewshu/android/reddit/markdown/
+* app/src/main/java/com/andrewshu/android/reddit/markdown/Markdown.java
+* app/src/main/java/com/andrewshu/android/reddit/markdown/MarkdownURL.java
+* app/src/main/java/com/andrewshu/android/reddit/reddits/
+* app/src/main/java/com/andrewshu/android/reddit/reddits/PickSubredditActivity.java
+* app/src/main/java/com/andrewshu/android/reddit/reddits/SubscribeTask.java
+* app/src/main/java/com/andrewshu/android/reddit/reddits/UnsubscribeTask.java
+* app/src/main/java/com/andrewshu/android/reddit/settings/
+* app/src/main/java/com/andrewshu/android/reddit/settings/RedditPreferencesPage.java
+* app/src/main/java/com/andrewshu/android/reddit/settings/RedditSettings.java
+* app/src/main/java/com/andrewshu/android/reddit/submit/
+* app/src/main/java/com/andrewshu/android/reddit/submit/SubmitLinkActivity.java
+* app/src/main/java/com/andrewshu/android/reddit/things/
+* app/src/main/java/com/andrewshu/android/reddit/things/Listing.java
+* app/src/main/java/com/andrewshu/android/reddit/things/ListingData.java
+* app/src/main/java/com/andrewshu/android/reddit/things/ThingInfo.java
+* app/src/main/java/com/andrewshu/android/reddit/things/ThingListing.java
+* app/src/main/java/com/andrewshu/android/reddit/threads/
+* app/src/main/java/com/andrewshu/android/reddit/threads/DontPressWithParentFrameLayout.java
+* app/src/main/java/com/andrewshu/android/reddit/threads/DownloadThreadsTask.java
+* app/src/main/java/com/andrewshu/android/reddit/threads/ShowThumbnailsTask.java
+* app/src/main/java/com/andrewshu/android/reddit/threads/ThreadClickDialog.java
+* app/src/main/java/com/andrewshu/android/reddit/threads/ThreadClickDialogOnClickListenerFactory.java
+* app/src/main/java/com/andrewshu/android/reddit/threads/ThreadsListActivity.java
+* app/src/main/java/com/andrewshu/android/reddit/threads/ThumbnailOnClickListenerFactory.java
+* app/src/main/java/com/andrewshu/android/reddit/user/
+* app/src/main/java/com/andrewshu/android/reddit/user/MeTask.java
+* app/src/main/java/com/andrewshu/android/reddit/user/ProfileActivity.java
+* app/src/main/java/com/andrewshu/android/reddit/user/UserInfo.java
+* app/src/main/java/com/andrewshu/android/reddit/user/UserInfoParser.java
+* app/src/main/java/com/andrewshu/android/reddit/user/UserListing.java
+* app/src/main/res/
+* app/src/main/res/drawable-hdpi/
+* app/src/main/res/drawable-hdpi/go_arrow.png
+* app/src/main/res/drawable-hdpi/ic_menu_alien.png
+* app/src/main/res/drawable-hdpi/ic_menu_back.png
+* app/src/main/res/drawable-hdpi/ic_menu_browser.png
+* app/src/main/res/drawable-hdpi/ic_menu_close_clear_cancel.png
+* app/src/main/res/drawable-hdpi/ic_menu_compose.png
+* app/src/main/res/drawable-hdpi/ic_menu_friendslist.png
+* app/src/main/res/drawable-hdpi/ic_menu_login.png
+* app/src/main/res/drawable-hdpi/ic_menu_refresh.png
+* app/src/main/res/drawable-hdpi/ic_menu_start_conversation.png
+* app/src/main/res/drawable-hdpi/icon.png
+* app/src/main/res/drawable-hdpi/list_selector_background_disabled.9.png
+* app/src/main/res/drawable-hdpi/list_selector_background_focus.9.png
+* app/src/main/res/drawable-hdpi/list_selector_background_longpress.9.png
+* app/src/main/res/drawable-hdpi/list_selector_background_pressed.9.png
+* app/src/main/res/drawable-ldpi/
+* app/src/main/res/drawable-ldpi/ic_menu_back.png
+* app/src/main/res/drawable-ldpi/ic_menu_close_clear_cancel.png
+* app/src/main/res/drawable-ldpi/ic_menu_compose.png
+* app/src/main/res/drawable-ldpi/ic_menu_friendslist.png
+* app/src/main/res/drawable-ldpi/ic_menu_login.png
+* app/src/main/res/drawable-ldpi/ic_menu_refresh.png
+* app/src/main/res/drawable-ldpi/ic_menu_start_conversation.png
+* app/src/main/res/drawable-ldpi/icon.png
+* app/src/main/res/drawable-ldpi/vote_down_blue.png
+* app/src/main/res/drawable-ldpi/vote_down_gray.png
+* app/src/main/res/drawable-ldpi/vote_up_gray.png
+* app/src/main/res/drawable-ldpi/vote_up_red.png
+* app/src/main/res/drawable-mdpi/
+* app/src/main/res/drawable-mdpi/go_arrow.png
+* app/src/main/res/drawable-mdpi/ic_menu_alien.png
+* app/src/main/res/drawable-mdpi/ic_menu_back.png
+* app/src/main/res/drawable-mdpi/ic_menu_browser.png
+* app/src/main/res/drawable-mdpi/ic_menu_close_clear_cancel.png
+* app/src/main/res/drawable-mdpi/ic_menu_compose.png
+* app/src/main/res/drawable-mdpi/ic_menu_friendslist.png
+* app/src/main/res/drawable-mdpi/ic_menu_login.png
+* app/src/main/res/drawable-mdpi/ic_menu_refresh.png
+* app/src/main/res/drawable-mdpi/ic_menu_start_conversation.png
+* app/src/main/res/drawable-mdpi/icon.png
+* app/src/main/res/drawable-mdpi/list_selector_background_disabled.9.png
+* app/src/main/res/drawable-mdpi/list_selector_background_longpress.9.png
+* app/src/main/res/drawable-mdpi/list_selector_background_pressed.9.png
+* app/src/main/res/drawable-mdpi/vote_down_blue.png
+* app/src/main/res/drawable-mdpi/vote_down_blue_big.PNG
+* app/src/main/res/drawable-mdpi/vote_down_blue_focus_big.PNG
+* app/src/main/res/drawable-mdpi/vote_down_comment_blue.png
+* app/src/main/res/drawable-mdpi/vote_down_gray.png
+* app/src/main/res/drawable-mdpi/vote_down_gray_big.PNG
+* app/src/main/res/drawable-mdpi/vote_down_gray_focus_big.PNG
+* app/src/main/res/drawable-mdpi/vote_up_comment_red.png
+* app/src/main/res/drawable-mdpi/vote_up_gray.png
+* app/src/main/res/drawable-mdpi/vote_up_gray_big.png
+* app/src/main/res/drawable-mdpi/vote_up_gray_focus_big.png
+* app/src/main/res/drawable-mdpi/vote_up_red.png
+* app/src/main/res/drawable-mdpi/vote_up_red_big.PNG
+* app/src/main/res/drawable-mdpi/vote_up_red_focus_big.PNG
+* app/src/main/res/drawable-xhdpi/
+* app/src/main/res/drawable-xhdpi/icon.png
+* app/src/main/res/drawable/
+* app/src/main/res/drawable/divider_vertical_dark.png
+* app/src/main/res/drawable/list_selector_background_transition.xml
+* app/src/main/res/drawable/list_selector_blue.xml
+* app/src/main/res/drawable/list_selector_blue_longpress.9.png
+* app/src/main/res/drawable/list_selector_blue_pressed.png
+* app/src/main/res/drawable/list_selector_blue_transition.xml
+* app/src/main/res/drawable/mail.png
+* app/src/main/res/drawable/mail_big.png
+* app/src/main/res/drawable/mailgray.png
+* app/src/main/res/drawable/reddit_alien.png
+* app/src/main/res/drawable/selftext_border.9.png
+* app/src/main/res/drawable/thumbnail_background_dark.xml
+* app/src/main/res/drawable/thumbnail_background_light.xml
+* app/src/main/res/drawable/vote_down_big_statelist.xml
+* app/src/main/res/drawable/vote_up_big_statelist.xml
+* app/src/main/res/layout-land/
+* app/src/main/res/layout-land/comment_click_dialog.xml
+* app/src/main/res/layout-land/compose_reply_dialog.xml
+* app/src/main/res/layout-land/login_dialog.xml
+* app/src/main/res/layout-land/thread_click_dialog.xml
+* app/src/main/res/layout-small-land/
+* app/src/main/res/layout-small-land/comment_click_dialog.xml
+* app/src/main/res/layout-small-land/thread_click_dialog.xml
+* app/src/main/res/layout-small/
+* app/src/main/res/layout-small/comments_list_item.xml
+* app/src/main/res/layout-small/thread_click_dialog.xml
+* app/src/main/res/layout-small/threads_list_item.xml
+* app/src/main/res/layout/
+* app/src/main/res/layout/big_envelope_notification.xml
+* app/src/main/res/layout/browser.xml
+* app/src/main/res/layout/comment_click_dialog.xml
+* app/src/main/res/layout/comments_list_content.xml
+* app/src/main/res/layout/comments_list_item.xml
+* app/src/main/res/layout/comments_list_item_hidden.xml
+* app/src/main/res/layout/compose_dialog.xml
+* app/src/main/res/layout/compose_reply_dialog.xml
+* app/src/main/res/layout/dialog_find.xml
+* app/src/main/res/layout/error_toast.xml
+* app/src/main/res/layout/inbox_list_content.xml
+* app/src/main/res/layout/inbox_list_item.xml
+* app/src/main/res/layout/loading_dark.xml
+* app/src/main/res/layout/loading_light.xml
+* app/src/main/res/layout/login_dialog.xml
+* app/src/main/res/layout/markhelp_view.xml
+* app/src/main/res/layout/more_comments_view.xml
+* app/src/main/res/layout/next_previous_list_item.xml
+* app/src/main/res/layout/pick_subreddit_view.xml
+* app/src/main/res/layout/profile_list_content.xml
+* app/src/main/res/layout/submit_link_main.xml
+* app/src/main/res/layout/thread_click_dialog.xml
+* app/src/main/res/layout/threads_list_content.xml
+* app/src/main/res/layout/threads_list_item.xml
+* app/src/main/res/layout/zero_size_layout.xml
+* app/src/main/res/menu/
+* app/src/main/res/menu/browser.xml
+* app/src/main/res/menu/comments.xml
+* app/src/main/res/menu/inbox.xml
+* app/src/main/res/menu/profile.xml
+* app/src/main/res/menu/submit_link.xml
+* app/src/main/res/menu/subreddit.xml
+* app/src/main/res/values-v11/
+* app/src/main/res/values-v11/styles.xml
+* app/src/main/res/values/
+* app/src/main/res/values/colors.xml
+* app/src/main/res/values/strings.xml
+* app/src/main/res/values/styles.xml
+* app/src/main/res/xml/
+* app/src/main/res/xml/reddit_preferences.xml
+* build.gradle
+* build.properties
+* dev/
+* dev/Launcher.svg
+* dev/alien_head.svg
+* dev/alien_head_black.svg
+* dev/go_arrow_48x48.xcf
+* dev/go_arrow_72x72.xcf
+* dev/mail.svg
+* dev/screen1.png
+* dev/screen2.png
+* gradle/
+* gradle/wrapper/
+* gradle/wrapper/gradle-wrapper.jar
+* gradle/wrapper/gradle-wrapper.properties
+* gradlew
+* gradlew.bat
+* libs-dependencies/
+* libs-dependencies/joda-time-1.6.2.jar
+* libs-dependencies/jsr311-api-0.8.jar
+* libs-dependencies/stax2-api-3.0.0.jar
+* settings.gradle
+* tests/
+* tests/default.properties
+* tests/proguard.cfg
+
+Moved Files:
+------------
+Android Gradle projects use a different directory structure than ADT
+Eclipse projects. Here's how the projects were restructured:
+
+* AndroidManifest.xml => app/src/main/AndroidManifest.xml
+* libs/automaton.jar => app/libs/automaton.jar
+* libs/jackson-core-asl-1.8.5.jar => app/libs/jackson-core-asl-1.8.5.jar
+* libs/jackson-mapper-asl-1.8.5.jar => app/libs/jackson-mapper-asl-1.8.5.jar
+* proguard.cfg => app/proguard.cfg
+* res/ => app/src/main/res/
+* src/ => app/src/main/java/
+* tests/res/ => app/src/androidTest/res/
+* tests/src/ => app/src/androidTest/java/
+
+Next Steps:
+-----------
+You can now build the project. The Gradle project needs network
+connectivity to download dependencies.
+
+Bugs:
+-----
+If for some reason your project does not build, and you determine that
+it is due to a bug or limitation of the Eclipse to Gradle importer,
+please file a bug at http://b.android.com with category
+Component-Tools.
+
+(This import summary is for your information only, and can be deleted
+after import once you are satisfied with the results.)

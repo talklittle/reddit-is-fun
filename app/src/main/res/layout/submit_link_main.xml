@@ -1,0 +1,202 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+ * Copyright 2009 Andrew Shu
+ *
+ * This file is part of "reddit is fun".
+ *
+ * "reddit is fun" is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * "reddit is fun" is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with "reddit is fun".  If not, see <http://www.gnu.org/licenses/>.
+-->
+<TabHost xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@android:id/tabhost"
+    android:layout_width="fill_parent"
+    android:layout_height="fill_parent">
+    <LinearLayout
+        android:orientation="vertical"
+        android:layout_width="fill_parent"
+        android:layout_height="fill_parent">
+        <TabWidget
+            android:id="@android:id/tabs"
+            android:layout_width="fill_parent"
+            android:layout_height="wrap_content" />
+        <FrameLayout
+            android:id="@android:id/tabcontent"
+            android:layout_width="fill_parent"
+            android:layout_height="fill_parent">
+            <ScrollView android:id="@+id/submit_link_view"
+            	android:layout_width="fill_parent"
+            	android:layout_height="fill_parent"
+            	>
+	            <LinearLayout
+	                android:layout_width="fill_parent"
+	                android:layout_height="wrap_content"
+	                android:orientation="vertical"
+	                >
+	                <TextView android:text="@string/submit_title_label"
+		                android:layout_width="wrap_content"
+		                android:layout_height="wrap_content"
+		                android:padding="4dip"
+		                />
+		            <EditText android:id="@+id/submit_link_title"
+		            	android:layout_width="fill_parent"
+		            	android:layout_height="wrap_content"
+		            	android:minLines="3"
+		            	android:inputType="text|textMultiLine|textCapSentences"
+		            	android:gravity="top|left"
+		            	/>
+					<TextView
+						android:text="@string/submit_url_label"
+		                android:layout_width="wrap_content"
+		                android:layout_height="wrap_content"
+		                android:padding="4dip"
+		                />
+		            <EditText android:id="@+id/submit_link_url"
+		            	android:layout_width="fill_parent"
+		            	android:layout_height="wrap_content"
+		            	android:inputType="textUri"
+		            	/>
+	            	<TextView
+	            		android:text="@string/submit_reddit_label"
+		                android:layout_width="wrap_content"
+		                android:layout_height="wrap_content"
+		                android:padding="4dip"
+		                />
+		            <EditText android:id="@+id/submit_link_reddit"
+		            	android:layout_width="fill_parent"
+		            	android:layout_height="wrap_content"
+		            	android:singleLine="true"
+		            	android:inputType="text"
+		            	/>
+	            	<TextView android:id="@+id/submit_link_captcha_label"
+	            		android:text="@string/submit_captcha_label"
+		                android:layout_width="wrap_content"
+		                android:layout_height="wrap_content"
+		                android:padding="4dip"
+		                android:visibility="gone"
+		                />
+		            <ImageView android:id="@+id/submit_link_captcha_image"
+		                android:layout_width="wrap_content"
+		                android:layout_height="wrap_content"
+		                android:padding="4dip"
+		                android:visibility="gone"
+		                />
+		            <EditText android:id="@+id/submit_link_captcha"
+		            	android:layout_width="fill_parent"
+		            	android:layout_height="wrap_content"
+		            	android:singleLine="true"
+		            	android:visibility="gone"
+		            	android:inputType="text"
+		            	/>
+		            <TextView android:id="@+id/submit_link_captcha_loading"
+		            	android:text="@string/submit_captcha_loading"
+		            	android:layout_width="wrap_content"
+		            	android:layout_height="wrap_content"
+		            	android:padding="4dip"
+		            	/>
+		            <!-- Hide the submit button until we know if captcha is needed -->
+		            <Button android:id="@+id/submit_link_button"
+		            	android:layout_width="wrap_content"
+		            	android:layout_height="wrap_content"
+		            	android:text="@string/submit_button"
+		            	android:visibility="gone"
+		            	/>
+	                
+	            </LinearLayout>
+            </ScrollView>
+	            
+	        <ScrollView android:id="@+id/submit_text_view"
+	        	android:layout_width="fill_parent"
+	        	android:layout_height="fill_parent"
+	        	>
+	            <LinearLayout 
+	                android:layout_width="fill_parent"
+	                android:layout_height="wrap_content"
+	                android:orientation="vertical"
+	                >
+	                <TextView
+	                	android:text="@string/submit_title_label"
+		                android:layout_width="wrap_content"
+		                android:layout_height="wrap_content"
+		                android:padding="4dip"
+		                />
+		            <EditText android:id="@+id/submit_text_title"
+		            	android:layout_width="fill_parent"
+		            	android:layout_height="wrap_content"
+		            	android:minLines="3"
+		            	android:inputType="text|textMultiLine|textCapSentences"
+		            	android:gravity="top|left"
+		            	/>
+					<TextView
+						android:text="@string/submit_text_label"
+		                android:layout_width="wrap_content"
+		                android:layout_height="wrap_content"
+		                android:padding="4dip"
+		                />
+		            <EditText android:id="@+id/submit_text_text"
+		            	android:layout_width="fill_parent"
+		            	android:layout_height="wrap_content"
+		            	android:minLines="6"
+		            	android:inputType="text|textMultiLine|textCapSentences"
+		            	android:gravity="top|left"
+		            	android:textAppearance="?android:attr/textAppearanceSmall"
+		            	/>
+	            	<TextView
+	            		android:text="@string/submit_reddit_label"
+		                android:layout_width="wrap_content"
+		                android:layout_height="wrap_content"
+		                android:padding="4dip"
+		                />
+		            <EditText android:id="@+id/submit_text_reddit"
+		            	android:layout_width="fill_parent"
+		            	android:layout_height="wrap_content"
+		            	android:singleLine="true"
+		            	android:inputType="text"
+		            	/>
+		            <TextView android:id="@+id/submit_text_captcha_label"
+		            	android:text="@string/submit_captcha_label"
+		                android:layout_width="wrap_content"
+		                android:layout_height="wrap_content"
+		                android:padding="4dip"
+		                android:visibility="gone"
+		                />
+		            <ImageView android:id="@+id/submit_text_captcha_image"
+		                android:layout_width="wrap_content"
+		                android:layout_height="wrap_content"
+		                android:padding="4dip"
+		                android:visibility="gone"
+		                />
+		            <EditText android:id="@+id/submit_text_captcha"
+		            	android:layout_width="fill_parent"
+		            	android:layout_height="wrap_content"
+		            	android:singleLine="true"
+		            	android:visibility="gone"
+		            	android:inputType="text"
+		            	/>
+		            <TextView android:id="@+id/submit_text_captcha_loading"
+		            	android:text="@string/submit_captcha_loading"
+		            	android:layout_width="wrap_content"
+		            	android:layout_height="wrap_content"
+		            	android:padding="4dip"
+		            	/>
+	            	<!-- Hide the submit button until we know if captcha is needed -->
+		            <Button android:id="@+id/submit_text_button"
+		            	android:layout_width="wrap_content"
+		            	android:layout_height="wrap_content"
+		            	android:text="@string/submit_button"
+		            	android:visibility="gone"
+		            	/>
+	            </LinearLayout>
+            </ScrollView>
+    	</FrameLayout>
+    </LinearLayout>
+</TabHost>
