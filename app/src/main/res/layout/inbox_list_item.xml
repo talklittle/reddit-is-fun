@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+ * Copyright 2009 Andrew Shu
+ *
+ * This file is part of "reddit is fun".
+ *
+ * "reddit is fun" is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * "reddit is fun" is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with "reddit is fun".  If not, see <http://www.gnu.org/licenses/>.
+-->
+<!--
+/*
+ * reddit is fun
+ *
+ * by talklittle
+ */
+-->
+
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="fill_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:padding="4dip"
+    >
+    
+    <!-- Use Spans to make this nice -->
+  	<TextView android:id="@+id/from_info"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginRight="5dip"
+        android:singleLine="true"
+        android:textAppearance="?android:attr/textAppearanceSmall"
+    />
+    
+	<TextView android:id="@+id/subject"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="4dip"
+      	android:textAppearance="?android:attr/textAppearanceMedium"
+      	android:textStyle="bold"
+        />
+	
+	<TextView android:id="@+id/body"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Loading..."
+        android:textAppearance="?android:attr/textAppearanceMedium"
+		android:autoLink="all"
+		android:linksClickable="false"
+    />
+	    
+</LinearLayout>

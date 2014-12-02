@@ -1,0 +1,195 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+ * Copyright 2009 Andrew Shu
+ *
+ * This file is part of "reddit is fun".
+ *
+ * "reddit is fun" is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * "reddit is fun" is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with "reddit is fun".  If not, see <http://www.gnu.org/licenses/>.
+-->
+<!--
+/*
+ * reddit is fun
+ *
+ * by talklittle
+ */
+-->
+
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="fill_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:minHeight="?android:attr/listPreferredItemHeight"
+    >
+
+	<LinearLayout
+		android:layout_width="fill_parent"
+		android:layout_height="wrap_content"
+		android:orientation="horizontal"
+		android:baselineAligned="false"
+		>
+		
+		<RelativeLayout android:id="@+id/threads_list_left_section"
+		    android:layout_width="wrap_content"
+		    android:layout_height="wrap_content"
+		    android:paddingTop="2dip"
+		    android:paddingBottom="2dip"
+		    >
+		    <ImageView android:id="@+id/vote_up_image"
+				android:layout_width="16dip"
+				android:layout_height="8dip"
+				android:layout_marginLeft="12dip"
+				android:layout_marginRight="12dip"
+				android:layout_marginTop="4dip"
+				android:src="@drawable/vote_up_gray"
+				android:contentDescription="@string/vote_up_arrow_content_description"
+				/>
+				
+			<TextView android:id="@+id/votes"
+		        android:layout_width="40dip"
+		        android:layout_height="32dip"
+		        android:layout_alignParentLeft="true"
+		        android:layout_below="@id/vote_up_image"
+		      
+		      	android:singleLine="true"
+		        android:ellipsize="marquee"
+		        android:gravity="center"
+		        android:textSize="14sp"
+		        android:textStyle="bold"
+		    />
+		
+			<ImageView android:id="@+id/vote_down_image"
+				android:layout_width="16dip"
+				android:layout_height="8dip"
+				android:layout_marginLeft="12dip"
+				android:layout_marginRight="12dip"
+				android:layout_below="@id/votes"
+				android:src="@drawable/vote_down_gray"
+				android:contentDescription="@string/vote_down_arrow_content_description"
+				/>
+	    </RelativeLayout>
+	
+		<LinearLayout
+		    android:layout_width="0dp"
+		    android:layout_height="wrap_content"
+		    android:layout_weight="1"
+		    android:minHeight="?android:attr/listPreferredItemHeight"
+		    android:paddingTop="2dip"
+		    android:paddingBottom="2dip"
+		    android:paddingLeft="5dip"
+		    android:orientation="vertical"
+		    >
+		    
+			<!-- Top row -->
+		
+		    <TextView android:id="@+id/title"
+		        android:layout_width="wrap_content"
+		        android:layout_height="wrap_content"
+		        android:layout_marginBottom="1dip"
+		        android:textAppearance="?android:attr/textAppearanceLarge"
+		    />
+		    
+		    <!-- Next row -->
+		    
+		    <LinearLayout
+		        android:layout_width="wrap_content"
+		        android:layout_height="wrap_content"
+		        android:orientation="horizontal"
+		        >
+			    <TextView android:id="@+id/nsfw"
+			  		android:layout_width="wrap_content"
+			        android:layout_height="wrap_content"
+			        android:layout_marginRight="5dip"
+			        android:textAppearance="?android:attr/textAppearanceSmall"
+			        android:text="nsfw"
+			        android:textColor="@color/red"
+			    />
+			    
+		        <TextView android:id="@+id/numCommentsSubreddit"
+			        android:layout_width="wrap_content"
+			        android:layout_height="wrap_content"
+			        android:layout_marginRight="5dip"
+			        android:layout_gravity="left"
+			        android:text="0 comments"
+			        android:textAppearance="?android:attr/textAppearanceSmall"
+			    />
+	        </LinearLayout>
+		
+			<!-- A bottommost row used for OP posts in commentslist -->		
+		
+			<TextView android:id="@+id/submissionTime_submitter"
+		        android:layout_width="wrap_content"
+		        android:layout_height="wrap_content"
+			    android:layout_marginRight="4dip"
+			    android:text="very recently"
+		        android:visibility="gone"
+		        
+		        android:singleLine="true"
+		        android:ellipsize="marquee"
+		        android:textAppearance="?android:attr/textAppearanceSmall"
+		    />
+		</LinearLayout>
+		
+		<LinearLayout android:id="@+id/thumbnail_view"
+            android:layout_width="wrap_content"
+            android:layout_height="fill_parent"
+            android:orientation="horizontal">
+            
+            <View android:id="@+id/divider"
+                android:layout_width="1px"
+                android:layout_height="fill_parent"
+                android:layout_marginTop="5dip"
+                android:layout_marginBottom="5dip"
+                android:background="@drawable/divider_vertical_dark"
+            />
+            
+            <com.andrewshu.android.reddit.threads.DontPressWithParentFrameLayout
+                android:id="@+id/thumbnail_frame"
+                android:layout_width="?android:attr/listPreferredItemHeight"
+                android:layout_height="fill_parent"
+                android:paddingTop="5dp"
+                android:paddingBottom="5dp"
+                >
+                <ImageView android:id="@+id/thumbnail"
+                    android:layout_width="?android:attr/listPreferredItemHeight"
+                    android:layout_height="?android:attr/listPreferredItemHeight"
+                    android:paddingRight="5dp"
+                    android:src="@drawable/go_arrow"
+                    android:scaleType="fitCenter"
+                    android:contentDescription="@string/thumbnail_content_description"
+                />
+                
+                <ProgressBar android:id="@+id/indeterminate_progress"
+                    android:layout_width="?android:attr/listPreferredItemHeight"
+                    android:layout_height="?android:attr/listPreferredItemHeight"
+                    android:paddingRight="5dp"
+                    android:indeterminate="true"
+                    android:visibility="gone"
+                    />
+            </com.andrewshu.android.reddit.threads.DontPressWithParentFrameLayout>
+            
+        </LinearLayout>
+		
+	</LinearLayout>
+	
+    <TextView android:id="@+id/selftext"
+    	android:layout_width="fill_parent"
+	    android:layout_height="wrap_content"
+	    android:layout_marginLeft="8dip"
+	    android:layout_marginRight="8dip"
+	    android:background="@drawable/selftext_border"
+	    android:textAppearance="?android:attr/textAppearanceMedium"
+	    android:visibility="gone"
+    />
+
+</LinearLayout>

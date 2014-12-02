@@ -1,0 +1,86 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+ * Copyright 2009 Andrew Shu
+ *
+ * This file is part of "reddit is fun".
+ *
+ * "reddit is fun" is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * "reddit is fun" is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with "reddit is fun".  If not, see <http://www.gnu.org/licenses/>.
+-->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+              android:layout_width="wrap_content"
+              android:layout_height="wrap_content"
+              android:orientation="horizontal"
+              >
+              
+    <!-- Comment Indentation: set background color to desired line color -->
+    <View android:id="@+id/left_indent1"
+    	android:layout_width="1dp"
+    	android:layout_height="fill_parent"
+    	android:layout_marginLeft="5dp"
+    	android:layout_marginRight="4dp"
+    	/>
+    <View android:id="@+id/left_indent2"
+    	android:layout_width="1dp"
+    	android:layout_height="fill_parent"
+    	android:layout_marginLeft="5dp"
+    	android:layout_marginRight="4dp"
+    	/>
+    <View android:id="@+id/left_indent3"
+    	android:layout_width="1dp"
+    	android:layout_height="fill_parent"
+    	android:layout_marginLeft="5dp"
+    	android:layout_marginRight="4dp"
+    	/>
+    <View android:id="@+id/left_indent4"
+    	android:layout_width="1dp"
+    	android:layout_height="fill_parent"
+    	android:layout_marginLeft="5dp"
+    	android:layout_marginRight="4dp"
+    	/>
+    <View android:id="@+id/left_indent5"
+    	android:layout_width="1dp"
+    	android:layout_height="fill_parent"
+    	android:layout_marginLeft="5dp"
+    	android:layout_marginRight="4dp"
+    	/>
+    <View android:id="@+id/left_indent6"
+    	android:layout_width="1dp"
+    	android:layout_height="fill_parent"
+    	android:layout_marginLeft="5dp"
+    	android:layout_marginRight="4dp"
+    	/>
+    <View android:id="@+id/left_indent7"
+    	android:layout_width="1dp"
+    	android:layout_height="fill_parent"
+    	android:layout_marginLeft="5dp"
+    	android:layout_marginRight="4dp"
+    	/>
+    <View android:id="@+id/left_indent8"
+    	android:layout_width="1dp"
+    	android:layout_height="fill_parent"
+    	android:layout_marginLeft="5dp"
+    	android:layout_marginRight="4dp"
+    	/>
+    
+    <TextView android:id="@+id/more_comments_text"
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content"
+        android:padding="5dp"
+        android:text="@string/more_comments"
+        android:textAppearance="?android:attr/textAppearanceSmall"
+        android:textStyle="bold"
+        android:textColor="@color/markdown_link_color"
+        />
+    
+</LinearLayout>
