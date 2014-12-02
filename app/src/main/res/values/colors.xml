@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+ * Copyright 2009 Andrew Shu
+ *
+ * This file is part of "reddit is fun".
+ *
+ * "reddit is fun" is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * "reddit is fun" is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with "reddit is fun".  If not, see <http://www.gnu.org/licenses/>.
+-->
+<resources>
+    <color name="android_dark_background">#FF191919</color>
+    
+    <color name="error_toast_background">#ECCC</color>
+    
+    <color name="markdown_link_color">#ff2288cc</color>
+    
+    <color name="white">#ffffffff</color>
+    <color name="black">#ff000000</color>
+    <color name="dark_gray">#ff1f1f1f</color>
+    <color name="gray_25">#ff3f3f3f</color>
+    <color name="gray_50">#ff7f7f7f</color>
+    <color name="gray_75">#ffbfbfbf</color>
+    <color name="light_gray">#ffdfdfdf</color>
+    <color name="light_light_gray">#ffefefef</color>
+    <color name="red">#ffff0000</color>
+    
+    <color name="pale_blue">#ffcee2ff</color>
+    <color name="blue">#ff0000ff</color>
+    <color name="dark_blue">#ff000077</color>
+    <color name="purple">#ff551a8b</color>
+    <color name="arrow_red">#ffff8a63</color>
+    <color name="arrow_blue">#ff9494ff</color>
+    <color name="arrow_gray">#ffc0c0c0</color>
+    
+    <color name="medium_pale_yellow">#ffffff99</color>
+    <color name="translucent_yellow">#80ffff00</color>
+</resources>
