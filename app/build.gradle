@@ -1,0 +1,28 @@
+apply plugin: 'com.android.application'
+
+android {
+    compileSdkVersion 11
+    buildToolsVersion "21.1.1"
+
+    defaultConfig {
+        applicationId "com.andrewshu.android.reddit"
+        minSdkVersion 4
+        targetSdkVersion 11
+
+        testApplicationId "com.andrewshu.android.reddit.test"
+        testInstrumentationRunner "android.test.InstrumentationTestRunner"
+    }
+
+    buildTypes {
+        release {
+            runProguard true
+            proguardFiles 'proguard.cfg'
+        }
+    }
+}
+
+dependencies {
+    compile files('libs/automaton.jar')
+    compile files('libs/jackson-core-asl-1.8.5.jar')
+    compile files('libs/jackson-mapper-asl-1.8.5.jar')
+}

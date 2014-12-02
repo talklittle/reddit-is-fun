@@ -1,0 +1,78 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+ * Copyright 2009 Andrew Shu
+ *
+ * This file is part of "reddit is fun".
+ *
+ * "reddit is fun" is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * "reddit is fun" is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with "reddit is fun".  If not, see <http://www.gnu.org/licenses/>.
+-->
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+              android:orientation="vertical"
+              android:layout_width="wrap_content"
+              android:layout_height="fill_parent"
+              android:padding="10dp"
+              >
+    
+    <!-- TODO: something like username you're replying to
+   	<TextView android:id="@+id/url"
+   		android:layout_width="wrap_content"
+   		android:layout_height="wrap_content"
+   		android:singleLine="true"
+   		android:ellipsize="marquee"
+   		android:textSize="9sp"
+   		/>
+   		-->
+	
+	<ScrollView android:id="@+id/bodyscroll"
+		android:layout_width="fill_parent"
+		android:layout_height="wrap_content"
+		>
+		<EditText android:id="@+id/body"
+	   		android:layout_width="fill_parent"
+	   		android:layout_height="wrap_content"
+	   		android:minLines="9"
+	   		android:maxLines="21"
+	   		android:textSize="12sp"
+	   		android:gravity="top|left"
+	   		android:inputType="text|textMultiLine|textCapSentences"
+	   		/>
+	</ScrollView>
+   	
+   	<Button android:id="@+id/reply_save_button"
+   		android:layout_width="wrap_content"
+   		android:layout_height="wrap_content"
+   		android:layout_marginBottom="10dip"
+   		android:layout_alignLeft="@id/bodyscroll"
+   		android:layout_below="@id/bodyscroll"
+   		android:text="@string/reply_save_button"
+   		/>
+	<Button android:id="@+id/reply_cancel_button"
+		android:layout_width="wrap_content"
+		android:layout_height="wrap_content"
+		android:layout_marginLeft="8dip"
+		android:layout_toRightOf="@id/reply_save_button"
+		android:layout_alignBaseline="@id/reply_save_button"
+		android:text="@string/reply_cancel_button"
+		/>
+	
+	<ViewStub android:id="@+id/markhelpStub"
+		android:inflatedId="@+id/markhelp"
+		android:layout="@layout/markhelp_view"
+		android:layout_width="wrap_content"
+		android:layout_height="wrap_content"
+		/>
+		
+   	
+</RelativeLayout>
+

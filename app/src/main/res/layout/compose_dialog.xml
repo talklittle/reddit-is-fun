@@ -1,0 +1,128 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+ * Copyright 2009 Andrew Shu
+ *
+ * This file is part of "reddit is fun".
+ *
+ * "reddit is fun" is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * "reddit is fun" is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with "reddit is fun".  If not, see <http://www.gnu.org/licenses/>.
+-->
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+              android:orientation="vertical"
+              android:layout_width="wrap_content"
+              android:layout_height="fill_parent"
+              android:padding="10dp"
+              >
+	<ScrollView android:id="@+id/bodyscroll"
+		android:layout_width="fill_parent"
+		android:layout_height="wrap_content"
+		>
+		<RelativeLayout
+			android:layout_width="fill_parent"
+			android:layout_height="wrap_content"
+			>
+			<TextView android:id="@+id/compose_destination_textview"
+		        android:layout_width="wrap_content"
+		        android:layout_height="wrap_content"
+		        android:text="@string/compose_destination_text"
+		        android:layout_alignParentTop="true"
+		        android:layout_alignParentLeft="true"
+		        />
+		    <EditText android:id="@+id/compose_destination_input"
+				android:layout_width="fill_parent"
+				android:layout_height="wrap_content"
+				android:layout_below="@id/compose_destination_textview"
+				android:layout_alignParentLeft="true"
+				android:inputType="text"
+				/>    
+			<TextView android:id="@+id/compose_subject_textview"
+		        android:layout_width="wrap_content"
+		        android:layout_height="wrap_content"
+		        android:text="@string/compose_subject_text"
+		        android:layout_below="@id/compose_destination_input"
+		        android:layout_alignParentLeft="true"
+		        />	
+			<EditText android:id="@+id/compose_subject_input"
+				android:layout_width="fill_parent"
+				android:layout_height="wrap_content"
+				android:lines="1"
+				android:layout_below="@id/compose_subject_textview"
+				android:layout_alignParentLeft="true"
+				android:inputType="text"
+				/>
+			<TextView android:id="@+id/compose_message_textview"
+		        android:layout_width="wrap_content"
+		        android:layout_height="wrap_content"
+		        android:text="@string/compose_message_text"
+		        android:layout_below="@id/compose_subject_input"
+		        android:layout_alignParentLeft="true"
+		        />
+			<EditText android:id="@+id/compose_text_input"
+				android:layout_width="fill_parent"
+				android:layout_height="wrap_content"
+				android:lines="8"
+				android:layout_below="@id/compose_message_textview"
+				android:layout_alignParentLeft="true"
+				android:gravity="top|left"
+		   		android:inputType="text|textMultiLine|textCapSentences"
+			/>
+			<TextView android:id="@+id/compose_captcha_textview"
+            	android:text="@string/compose_captcha_text"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_below="@id/compose_text_input"
+                android:padding="4dip"
+                android:visibility="gone"
+                />
+            <ImageView android:id="@+id/compose_captcha_image"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_below="@id/compose_captcha_textview"
+                android:padding="4dip"
+                android:visibility="gone"
+                />
+            <EditText android:id="@+id/compose_captcha_input"
+            	android:layout_width="fill_parent"
+            	android:layout_height="wrap_content"
+            	android:layout_below="@id/compose_captcha_image"
+            	android:singleLine="true"
+            	android:visibility="gone"
+            	android:inputType="text"
+            	/>
+            <TextView android:id="@+id/compose_captcha_loading"
+            	android:text="@string/compose_captcha_loading"
+            	android:layout_width="wrap_content"
+            	android:layout_height="wrap_content"
+            	android:layout_below="@id/compose_text_input"
+            	android:padding="4dip"
+            	/>
+    		<!-- Hide the send button until we know if captcha is needed -->
+    		<Button android:id="@+id/compose_send_button"
+				android:layout_width="wrap_content"
+				android:layout_height="wrap_content"
+				android:text="@string/compose_send_button"
+				android:layout_below="@id/compose_captcha_input"
+				android:layout_alignParentLeft="true"
+				android:visibility="invisible"
+				/>
+			<Button android:id="@+id/compose_cancel_button"
+				android:layout_width="wrap_content"
+				android:layout_height="wrap_content"
+				android:text="@string/compose_cancel_button"
+				android:layout_below="@id/compose_captcha_input"
+				android:layout_toRightOf="@id/compose_send_button"
+				android:layout_alignBaseline="@id/compose_send_button"
+				/>
+		</RelativeLayout>
+	</ScrollView>
+</FrameLayout>

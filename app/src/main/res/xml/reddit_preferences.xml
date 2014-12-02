@@ -1,0 +1,115 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+ * Copyright 2009 Andrew Shu
+ *
+ * This file is part of "reddit is fun".
+ *
+ * "reddit is fun" is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * "reddit is fun" is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with "reddit is fun".  If not, see <http://www.gnu.org/licenses/>.
+-->
+
+<PreferenceScreen
+        xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <PreferenceCategory android:title="@string/pref_general_category">
+        
+        <EditTextPreference
+			android:key="homepage"
+			android:title="@string/pref_homepage"
+			android:hint="@string/pref_homepage_hint"
+	        android:inputType="text"
+	        android:singleLine="true" />
+                
+        <CheckBoxPreference
+			android:key="use_external_browser"
+			android:title="@string/pref_use_external_browser" />
+			
+		<CheckBoxPreference
+			android:key="confirm_quit"
+			android:title="@string/pref_confirm_quit" />
+			
+		<CheckBoxPreference
+			android:key="save_history"
+			android:title="@string/pref_save_history" />
+			
+	</PreferenceCategory>
+	
+	<PreferenceCategory android:title="@string/pref_appearance_category">
+	    
+        <ListPreference
+       		android:key="theme"
+       		android:title="@string/pref_theme"
+       		android:defaultValue="THEME_LIGHT"
+       		android:entries="@array/pref_theme_choices"
+       		android:entryValues="@array/pref_theme_values"
+       		android:dialogTitle="@string/pref_theme_dialogtitle" />
+        		
+        <ListPreference
+            android:key="text_size"
+            android:title="@string/pref_text_size"
+            android:defaultValue="MEDIUM"
+            android:entries="@array/pref_text_size_choices"
+            android:entryValues="@array/pref_text_size_values"
+            android:dialogTitle="@string/pref_text_size_dialogtitle" />
+        
+        <CheckBoxPreference
+			android:key="show_comment_guide_lines"
+			android:title="@string/pref_show_comment_guide_lines" />
+			
+		<CheckBoxPreference
+			android:key="always_show_next_previous"
+			android:title="@string/pref_always_show_next_previous" />
+
+   		<ListPreference
+			android:key="rotation"
+      		android:title="@string/pref_rotation"
+      		android:defaultValue="ROTATION_UNSPECIFIED"
+      		android:entries="@array/pref_rotation_choices"
+      		android:entryValues="@array/pref_rotation_values"
+      		android:dialogTitle="@string/pref_rotation_dialogtitle" />
+        		
+	</PreferenceCategory>
+	
+	<PreferenceCategory android:title="@string/pref_mail_category">
+        
+        <ListPreference
+       		android:key="mail_notification_style"
+       		android:title="@string/pref_mail_notification_style"
+       		android:defaultValue="MAIL_NOTIFICATION_STYLE_REGULAR"
+       		android:entries="@array/pref_mail_notification_style_choices"
+       		android:entryValues="@array/pref_mail_notification_style_values"
+       		android:dialogTitle="@string/pref_mail_notification_style_dialogtitle" />
+
+        <ListPreference
+       		android:key="mail_notification_service"
+       		android:title="@string/pref_mail_notification_service"
+       		android:defaultValue="MAIL_NOTIFICATION_SERVICE_OFF"
+       		android:entries="@array/pref_mail_notification_service_choices"
+       		android:entryValues="@array/pref_mail_notification_service_values"
+       		android:dialogTitle="@string/pref_mail_notification_service_dialogtitle" />
+
+    </PreferenceCategory>
+	
+	<PreferenceCategory android:title="@string/pref_thumbnail_category">
+		<CheckBoxPreference
+			android:key="load_thumbnails"
+			android:defaultValue="true"
+			android:title="@string/pref_load_thumbnails" />
+		<CheckBoxPreference
+			android:key="load_thumbnails_only_wifi"
+			android:title="@string/pref_load_thumbnails_only_wifi"
+			android:defaultValue="false"
+			android:dependency="load_thumbnails" />
+	</PreferenceCategory>
+
+</PreferenceScreen>

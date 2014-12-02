@@ -1,0 +1,79 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+ * Copyright 2009 Andrew Shu
+ *
+ * This file is part of "reddit is fun".
+ *
+ * "reddit is fun" is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * "reddit is fun" is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with "reddit is fun".  If not, see <http://www.gnu.org/licenses/>.
+-->
+<!--
+/*
+ * reddit is fun
+ *
+ * by talklittle
+ */
+ -->
+
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+        android:layout_width="fill_parent"
+        android:layout_height="fill_parent"
+        android:orientation="vertical">
+        
+    <include layout="@layout/loading_light" />
+    <include layout="@layout/loading_dark" />
+    
+    <RelativeLayout
+    	android:layout_width="fill_parent"
+    	android:layout_height="?android:attr/listPreferredItemHeight"
+    	android:orientation="horizontal"
+    	>
+    	<Button android:id="@+id/pick_subreddit_button"
+	    	android:layout_width="?android:attr/listPreferredItemHeight"
+	    	android:layout_height="?android:attr/listPreferredItemHeight"
+	    	android:layout_alignParentRight="true"
+	    	android:text="@string/pick_subreddit_button"
+	    	/>
+	    <!-- Disable focus initially so soft keyboard doesn't pop up -->
+	    <EditText android:id="@+id/pick_subreddit_input"
+	    	android:layout_width="fill_parent"
+	    	android:layout_height="fill_parent"
+	    	android:layout_toLeftOf="@id/pick_subreddit_button"
+	    	android:focusable="false"
+	    	android:inputType="text"
+	    	/>
+   	</RelativeLayout>
+
+    <ListView android:id="@android:id/list"
+    	android:layout_width="fill_parent"
+	    android:layout_height="fill_parent"
+    />
+
+    <ScrollView android:id="@android:id/empty"
+        android:layout_width="fill_parent"
+        android:layout_height="fill_parent"
+        android:fillViewport="true"
+    >
+        <TextView android:id="@+id/emptyText"
+            android:layout_width="fill_parent"
+            android:layout_height="wrap_content"
+            android:text="@string/noSubreddits"
+            android:textSize="20sp"
+            android:textColor="?android:attr/textColorSecondary"
+            android:paddingLeft="10dip"
+            android:paddingRight="10dip"
+            android:paddingTop="10dip"
+            android:lineSpacingMultiplier="0.92"
+        />
+    </ScrollView>
+</LinearLayout>
