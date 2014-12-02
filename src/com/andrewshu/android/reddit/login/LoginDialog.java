@@ -65,6 +65,14 @@ public abstract class LoginDialog extends Dialog {
 		final Button loginButton = (Button) findViewById(R.id.login_button);
 		loginButton.setOnClickListener(new View.OnClickListener() {
 			public void onClick(View v) {
+
+                Context context = getApplicationContext();
+                CharSequence text = "Hold while we log you in...";
+                int duration = Toast.LENGTH_SHORT;
+
+                Toast toast = Toast.makeText(context, text, duration);
+                toast.show();
+
 				handleLoginChosen();
 		    }
 		});
