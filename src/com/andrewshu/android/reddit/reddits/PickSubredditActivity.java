@@ -37,10 +37,12 @@ import org.apache.http.params.HttpParams;
 
 import android.app.Dialog;
 import android.app.ListActivity;
+import android.app.LoaderManager;
 import android.app.ProgressDialog;
+import android.content.AsyncTaskLoader;
 import android.content.Context;
 import android.content.Intent;
-import android.os.AsyncTask;
+import android.content.Loader;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.ContextThemeWrapper;
@@ -68,7 +70,8 @@ import com.andrewshu.android.reddit.common.util.CollectionUtils;
 import com.andrewshu.android.reddit.common.util.Util;
 import com.andrewshu.android.reddit.settings.RedditSettings;
 
-public final class PickSubredditActivity extends ListActivity {
+public final class PickSubredditActivity extends ListActivity implements
+    LoaderManager.LoaderCallbacks<ArrayList<String>> {
 	
 	private static final String TAG = "PickSubredditActivity";
 	
@@ -85,7 +88,6 @@ public final class PickSubredditActivity extends ListActivity {
 	private static final Object ADAPTER_LOCK = new Object();
 	private EditText mEt;
 	
-    private AsyncTask<?, ?, ?> mCurrentTask = null;
     private final Object mCurrentTaskLock = new Object();
 	
     public static final String[] DEFAULT_SUBREDDITS = {
@@ -151,7 +153,7 @@ public final class PickSubredditActivity extends ListActivity {
             restoreLastNonConfigurationInstance();
         
         if (CollectionUtils.isEmpty(mSubredditsList)) {
-        	new DownloadRedditsTask().execute();
+                getLoaderManager().initLoader(0, null, this);
         }
         else {
 	        addFakeSubredditsUnlessSuppressed();
@@ -261,9 +263,37 @@ public final class PickSubredditActivity extends ListActivity {
     	getWindow().setFeatureInt(Window.FEATURE_PROGRESS, Window.PROGRESS_END);
     }
     
-    class DownloadRedditsTask extends AsyncTask<Void, Void, ArrayList<String>> {
+    @Override
+    public Loader<ArrayList<String>> onCreateLoader(int id, Bundle args) {
+        return new DownloadRedditsTask(this);
+    }
+
+    @Override
+    public void onLoadFinished(Loader<ArrayList<String>> loader, ArrayList<String> reddits) {
+        disableLoadingScreen();
+
+        if (reddits == null || reddits.size() == 0) {
+            // Need to make a copy because Arrays.asList returns List backed by original array
+            mSubredditsList = new ArrayList<String>();
+            mSubredditsList.addAll(Arrays.asList(DEFAULT_SUBREDDITS));
+        } else {
+            mSubredditsList = reddits;
+        }
+        addFakeSubredditsUnlessSuppressed();
+        resetUI(new PickSubredditAdapter(PickSubredditActivity.this, mSubredditsList));
+    }
+
+    @Override
+    public void onLoaderReset(Loader<ArrayList<String>> loader) {
+    }
+
+    class DownloadRedditsTask extends AsyncTaskLoader<ArrayList<String>> {
+        DownloadRedditsTask(Context context) {
+            super(context);
+        }
+
     	@Override
-    	public ArrayList<String> doInBackground(Void... voidz) {
+        public ArrayList<String> loadInBackground() {
     		ArrayList<String> reddits = null;
     		HttpEntity entity = null;
             try {
@@ -325,34 +355,9 @@ public final class PickSubredditActivity extends ListActivity {
 	    }
     	
     	@Override
-    	public void onPreExecute() {
-    		synchronized (mCurrentTaskLock) {
-	    		if (mCurrentTask != null) {
-	    			this.cancel(true);
-	    			return;
-	    		}
-    			mCurrentTask = this;
-    		}
+        public void onStartLoading() {
     		resetUI(null);
     		enableLoadingScreen();
-    	}
-    	
-    	@Override
-    	public void onPostExecute(ArrayList<String> reddits) {
-    		synchronized (mCurrentTaskLock) {
-    			mCurrentTask = null;
-    		}
-    		disableLoadingScreen();
-			
-    		if (reddits == null || reddits.size() == 0) {
-    			// Need to make a copy because Arrays.asList returns List backed by original array
-    	        mSubredditsList = new ArrayList<String>();
-    	        mSubredditsList.addAll(Arrays.asList(DEFAULT_SUBREDDITS));
-    		} else {
-    			mSubredditsList = reddits;
-    		}
-    		addFakeSubredditsUnlessSuppressed();
-	        resetUI(new PickSubredditAdapter(PickSubredditActivity.this, mSubredditsList));
     	}
     }
     
